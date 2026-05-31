@@ -2,6 +2,7 @@ export const queryKeys = {
   auth: {
     me: ["auth", "me"] as const,
   },
+  search: (params: Record<string, unknown>) => ["search", params] as const,
   catalog: {
     categories: ["catalog", "categories"] as const,
     attrCategories: ["catalog", "attr-categories"] as const,

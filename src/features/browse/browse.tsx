@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Icon, Logo, Button, Spinner, IconButton, RatingStars, Chip, VerifiedBadge, StatusPill, Price, Placeholder, VideoPlayer, SkeletonCard, EmptyState, QtyStepper, Toast, SectionHead, TINTS, HelpLifeline, AllInPriceCard, OTPInput, MenuRow, ChipGroup, MobileBuyBar, BottomNav, LandmarkAddress, VoiceMicButton, usePaged, usePages, LoadMore, PageBar, BackToTop, ApiState } from "@/components/ui";
 import { useCatalog } from "@/hooks/use-catalog";
+import { useSearch } from "@/hooks/use-search";
+import type { SearchParams } from "@/services/api/search";
 import { BazaarCtx, useBz, Himalaya, KathmanduSkyline, ProductCard, ProductRail, CategoryTile, Navbar, Footer, DevViewSwitcher } from "@/components/common";
 import { ASSETS } from "@/config/assets";
 
@@ -86,13 +88,6 @@ export function Browse() {
   const [sort, setSort] = useState("popular");
   const [sheet, setSheet] = useState(false);
 
-  useEffect(() => {
-    if (catalogLoading) return;
-    setLoading(true);
-    const id = setTimeout(() => setLoading(false), 600);
-    return () => clearTimeout(id);
-  }, [cats, quick, priceBand, priceMin, priceMax, query, sort, catalogLoading]);
-
   const correctedQuery = (query && PHONETIC[query.toLowerCase().trim()]) || query;
   const effectiveQuery = correctedQuery;
   const band = PLP_PRICE_BANDS.find(b => b.id === priceBand);
@@ -107,20 +102,54 @@ export function Browse() {
     ? `Rs. ${customMin ?? 0}${customMax !== null ? ` – ${customMax}` : "+"}`
     : (band ? band.label : "");
 
-  let matches = PRODUCTS.filter(p => {
-    if (effectiveQuery && !(`${p.name} ${p.ne} ${sellerOf(p)?.name ?? ""}`.toLowerCase().includes(effectiveQuery.toLowerCase()))) return false;
-    if (cats.length && !cats.includes(p.cat)) return false;
-    if (priceActive && (p.price < effMin || p.price > effMax)) return false;
-    if (quick.includes("verified") && !sellerOf(p)?.verified) return false;
-    if (quick.includes("free") && p.price < 1000) return false;
-    if (quick.includes("rating4") && p.rating < 4) return false;
-    // "cod" and "returnable" pass everything — design-only trust signal chips.
-    return true;
-  });
+  const SORT_MAP: Record<string, SearchParams["sort"]> = {
+    popular: "relevance", low: "price_low", high: "price_high", rating: "rating",
+  };
 
-  if (sort === "low") matches.sort((a, b) => a.price - b.price);
-  else if (sort === "high") matches.sort((a, b) => b.price - a.price);
-  else if (sort === "rating") matches.sort((a, b) => b.rating - a.rating);
+  const searchParams: SearchParams | null = effectiveQuery ? {
+    query: effectiveQuery,
+    categories: cats.length ? cats : undefined,
+    price_min: priceActive ? effMin : undefined,
+    price_max: priceActive && effMax < 1e9 ? effMax : undefined,
+    verified: quick.includes("verified") || undefined,
+    rating4: quick.includes("rating4") || undefined,
+    free: quick.includes("free") || undefined,
+    sort: SORT_MAP[sort] ?? "relevance",
+    page: 1,
+    limit: 100,
+  } : null;
+
+  const { data: searchData, isLoading: searchLoading } = useSearch(searchParams);
+
+  useEffect(() => {
+    if (catalogLoading || searchLoading) return;
+    setLoading(true);
+    const id = setTimeout(() => setLoading(false), 600);
+    return () => clearTimeout(id);
+  }, [cats, quick, priceBand, priceMin, priceMax, query, sort, catalogLoading, searchLoading]);
+
+  const searchProducts = useMemo(() => {
+    if (!searchData?.items?.length) return null;
+    return searchData.items;
+  }, [searchData]);
+
+  let matches = searchProducts
+    ? searchProducts
+    : PRODUCTS.filter(p => {
+        if (effectiveQuery && !(`${p.name} ${p.ne} ${sellerOf(p)?.name ?? ""}`.toLowerCase().includes(effectiveQuery.toLowerCase()))) return false;
+        if (cats.length && !cats.includes(p.cat)) return false;
+        if (priceActive && (p.price < effMin || p.price > effMax)) return false;
+        if (quick.includes("verified") && !sellerOf(p)?.verified) return false;
+        if (quick.includes("free") && p.price < 1000) return false;
+        if (quick.includes("rating4") && p.rating < 4) return false;
+        return true;
+      });
+
+  if (!searchProducts) {
+    if (sort === "low") matches.sort((a, b) => a.price - b.price);
+    else if (sort === "high") matches.sort((a, b) => b.price - a.price);
+    else if (sort === "rating") matches.sort((a, b) => b.rating - a.rating);
+  }
 
   const strict = matches.filter(p => !isAccessory(p, effectiveQuery) && !p.outOfStock);
   const related = matches.filter(p => isAccessory(p, effectiveQuery) && !p.outOfStock);

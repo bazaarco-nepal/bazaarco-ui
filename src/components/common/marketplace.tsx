@@ -1,10 +1,45 @@
-'use client';
+"use client";
 
 import React, { useState, useEffect, useRef, useContext, createContext } from "react";
-import { Icon, Logo, Button, Spinner, IconButton, RatingStars, Chip, VerifiedBadge, StatusPill, Price, Placeholder, VideoPlayer, SkeletonCard, EmptyState, QtyStepper, Toast, SectionHead, TINTS, HelpLifeline, AllInPriceCard, OTPInput, MenuRow, ChipGroup, MobileBuyBar, BottomNav, LandmarkAddress, VoiceMicButton, usePaged, usePages, LoadMore, PageBar, BackToTop } from "@/components/ui";
-import { CATEGORIES, ATTR_CATEGORIES, CATEGORY_ATTRIBUTES, PRODUCTS, SELLERS, REVIEWS, byId, sellerOf, inCat, videoProducts, flashProducts, productProfile, P } from "@/constants/catalog";
+import {
+  Icon,
+  Logo,
+  Button,
+  Spinner,
+  IconButton,
+  RatingStars,
+  Chip,
+  VerifiedBadge,
+  StatusPill,
+  Price,
+  Placeholder,
+  VideoPlayer,
+  SkeletonCard,
+  EmptyState,
+  QtyStepper,
+  Toast,
+  SectionHead,
+  TINTS,
+  HelpLifeline,
+  AllInPriceCard,
+  OTPInput,
+  MenuRow,
+  ChipGroup,
+  MobileBuyBar,
+  BottomNav,
+  LandmarkAddress,
+  VoiceMicButton,
+  usePaged,
+  usePages,
+  LoadMore,
+  PageBar,
+  BackToTop,
+} from "@/components/ui";
+import { useCatalog } from "@/hooks/use-catalog";
+import { useLogout } from "@/hooks/use-auth";
+import { displayName, userInitial } from "@/lib/display";
+import { useBazaarStore } from "@/store/bazaar-store";
 import { ASSETS } from "@/config/assets";
-
 
 import type { BazaarContextValue } from "@/types/bazaar";
 
@@ -20,39 +55,67 @@ export const useBz = (): BazaarContextValue => {
 /* ---------- Himalayan outline (legacy hero accent) ---------- */
 export function Himalaya({ color = "rgba(255,255,255,.18)", height = 90, style }) {
   return (
-    <svg viewBox="0 0 1280 120" preserveAspectRatio="none" style={{ width: "100%", height, display: "block", ...style }} aria-hidden="true">
-      <path fill={color} d="M0,120 L0,70 L120,42 L210,78 L330,30 L430,76 L520,18 L610,72 L700,40 L820,84 L900,48 L1010,90 L1110,52 L1190,82 L1280,58 L1280,120 Z"/>
-      <path fill="none" stroke={color} strokeWidth="2" d="M0,70 L120,42 L210,78 L330,30 L430,76 L520,18 L610,72 L700,40 L820,84 L900,48 L1010,90 L1110,52 L1190,82 L1280,58"/>
+    <svg
+      viewBox="0 0 1280 120"
+      preserveAspectRatio="none"
+      style={{ width: "100%", height, display: "block", ...style }}
+      aria-hidden="true"
+    >
+      <path
+        fill={color}
+        d="M0,120 L0,70 L120,42 L210,78 L330,30 L430,76 L520,18 L610,72 L700,40 L820,84 L900,48 L1010,90 L1110,52 L1190,82 L1280,58 L1280,120 Z"
+      />
+      <path
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        d="M0,70 L120,42 L210,78 L330,30 L430,76 L520,18 L610,72 L700,40 L820,84 L900,48 L1010,90 L1110,52 L1190,82 L1280,58"
+      />
     </svg>
   );
 }
 
 /* ---------- Kathmandu valley skyline (image-based footer band) ---------- */
-export function KathmanduSkyline({ src = ASSETS.skyline, height = 300, opacity = 0.82, scale = 0.82, position = "center 60%", style }) {
-  const mask = "linear-gradient(to bottom, transparent 0%, #000 30%, #000 88%, transparent 100%), linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%)";
+export function KathmanduSkyline({
+  src = ASSETS.skyline,
+  height = 300,
+  opacity = 0.82,
+  scale = 0.82,
+  position = "center 60%",
+  style,
+}) {
+  const mask =
+    "linear-gradient(to bottom, transparent 0%, #000 30%, #000 88%, transparent 100%), linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%)";
   return (
-    <div aria-hidden="true" style={{
-      width: "100%", height, display: "block",
-      marginBottom: -1, pointerEvents: "none",
-      backgroundImage: `url(${src})`,
-      backgroundSize: `${scale * 100}% auto`,
-      backgroundPosition: position,
-      backgroundRepeat: "no-repeat",
-      opacity,
-      filter: "invert(1) grayscale(1) brightness(1.6) contrast(1.45)",
-      mixBlendMode: "screen",
-      WebkitMaskImage: mask,
-      maskImage: mask,
-      WebkitMaskComposite: "source-in",
-      maskComposite: "intersect",
-      ...style,
-    }}/>
+    <div
+      aria-hidden="true"
+      style={{
+        width: "100%",
+        height,
+        display: "block",
+        marginBottom: -1,
+        pointerEvents: "none",
+        backgroundImage: `url(${src})`,
+        backgroundSize: `${scale * 100}% auto`,
+        backgroundPosition: position,
+        backgroundRepeat: "no-repeat",
+        opacity,
+        filter: "invert(1) grayscale(1) brightness(1.6) contrast(1.45)",
+        mixBlendMode: "screen",
+        WebkitMaskImage: mask,
+        maskImage: mask,
+        WebkitMaskComposite: "source-in",
+        maskComposite: "intersect",
+        ...style,
+      }}
+    />
   );
 }
 
 /* ---------- Product card ---------- */
 export function ProductCard({ p, onClick }) {
   const { toggleWish, wish } = useBz();
+  const { sellerOf } = useCatalog();
   const [hov, setHov] = useState(false);
   const s = sellerOf(p);
   const disc = p.original ? Math.round((1 - p.price / p.original) * 100) : 0;
@@ -61,16 +124,43 @@ export function ProductCard({ p, onClick }) {
   const allIn = p.price + deliveryFee;
   // Sold count as social proof — derived from reviews × deterministic factor
   const soldCount = Math.max(p.reviews * 3, 12);
-  const soldLabel = soldCount >= 1000 ? `${(soldCount / 1000).toFixed(1).replace(/\.0$/, "")}k sold` : `${soldCount} sold`;
+  const soldLabel =
+    soldCount >= 1000
+      ? `${(soldCount / 1000).toFixed(1).replace(/\.0$/, "")}k sold`
+      : `${soldCount} sold`;
   return (
-    <div onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} onClick={() => onClick(p)}
-      style={{ background: "#fff", border: `1px solid ${hov ? "var(--ink-300)" : "var(--line-200)"}`, borderRadius: "var(--r-lg)",
-        overflow: "hidden", cursor: "pointer", transition: "border-color var(--dur-standard) var(--ease), box-shadow var(--dur-standard) var(--ease)",
-        boxShadow: hov ? "var(--sh-1)" : "none", display: "flex", flexDirection: "column" }}>
+    <div
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      onClick={() => onClick(p)}
+      style={{
+        background: "#fff",
+        border: `1px solid ${hov ? "var(--ink-300)" : "var(--line-200)"}`,
+        borderRadius: "var(--r-lg)",
+        overflow: "hidden",
+        cursor: "pointer",
+        transition:
+          "border-color var(--dur-standard) var(--ease), box-shadow var(--dur-standard) var(--ease)",
+        boxShadow: hov ? "var(--sh-1)" : "none",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <div style={{ position: "relative" }}>
         {p.img ? (
-          <div style={{ position: "relative", width: "100%", aspectRatio: "1 / 1", overflow: "hidden" }}>
-            <img src={p.img} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          <div
+            style={{
+              position: "relative",
+              width: "100%",
+              aspectRatio: "1 / 1",
+              overflow: "hidden",
+            }}
+          >
+            <img
+              src={p.img}
+              alt={p.name}
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            />
           </div>
         ) : (
           <Placeholder icon={p.icon} tint={p.tint} radius="0" ratio="1 / 1" />
@@ -78,42 +168,145 @@ export function ProductCard({ p, onClick }) {
         {/* Single discount badge — only one platform-badge style allowed */}
         {disc > 0 && (
           <div style={{ position: "absolute", top: 10, left: 10 }}>
-            <Chip tone="red" size="sm">-{disc}%</Chip>
+            <Chip tone="red" size="sm">
+              -{disc}%
+            </Chip>
           </div>
         )}
         {/* wishlist — 44×44 per WCAG / Material touch target */}
-        <button onClick={(e) => { e.stopPropagation(); toggleWish(p.id); }} aria-label="Add to wishlist"
-          style={{ position: "absolute", top: 8, right: 8, width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,.95)",
-            border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "var(--sh-1)",
-            color: wished ? "var(--red)" : "var(--ink-500)" }}>
-          <Icon name="heart" size={20} fill={wished ? "currentColor" : "none"} /></button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleWish(p.id);
+          }}
+          aria-label="Add to wishlist"
+          style={{
+            position: "absolute",
+            top: 8,
+            right: 8,
+            width: 44,
+            height: 44,
+            borderRadius: "50%",
+            background: "rgba(255,255,255,.95)",
+            border: "none",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "var(--sh-1)",
+            color: wished ? "var(--red)" : "var(--ink-500)",
+          }}
+        >
+          <Icon name="heart" size={20} fill={wished ? "currentColor" : "none"} />
+        </button>
         {/* Video — minimal icon-only chip, no label */}
         {p.hasVideo && (
-          <div style={{ position: "absolute", bottom: 10, left: 10, width: 28, height: 28, borderRadius: "50%",
-            background: "rgba(11,18,32,.72)", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+          <div
+            style={{
+              position: "absolute",
+              bottom: 10,
+              left: 10,
+              width: 28,
+              height: 28,
+              borderRadius: "50%",
+              background: "rgba(11,18,32,.72)",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             <Icon name="play" size={13} fill="#fff" />
           </div>
         )}
         {/* Urgency only — low stock */}
-        {p.lowStock && <div style={{ position: "absolute", bottom: 10, right: 10 }}><Chip tone="saffron" size="sm">Only {p.lowStock} left</Chip></div>}
+        {p.lowStock && (
+          <div style={{ position: "absolute", bottom: 10, right: 10 }}>
+            <Chip tone="saffron" size="sm">
+              Only {p.lowStock} left
+            </Chip>
+          </div>
+        )}
       </div>
-      <div style={{ padding: "12px 14px 14px", display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
-        <div style={{ fontSize: ".9375rem", fontWeight: 600, color: "var(--ink-900)", lineHeight: 1.35, display: "-webkit-box",
-          WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: "2.5em" }}>{p.name}</div>
+      <div
+        style={{
+          padding: "12px 14px 14px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 6,
+          flex: 1,
+        }}
+      >
+        <div
+          style={{
+            fontSize: ".9375rem",
+            fontWeight: 600,
+            color: "var(--ink-900)",
+            lineHeight: 1.35,
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            minHeight: "2.5em",
+          }}
+        >
+          {p.name}
+        </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
           <RatingStars value={p.rating} size={13} showVal />
           <span style={{ fontSize: ".75rem", color: "var(--ink-400)" }}>({p.reviews})</span>
           <span style={{ fontSize: ".75rem", color: "var(--ink-400)" }}>· {soldLabel}</span>
-          {s.verified && <Icon name="badgeCheck" size={14} color="var(--gold)" title="Verified seller" />}
+          {s?.verified && (
+            <Icon name="badgeCheck" size={14} color="var(--gold)" title="Verified seller" />
+          )}
         </div>
         {/* Single price line: all-in price + strikethrough original — via Price primitive */}
         <Price value={allIn} original={p.original} size="md" />
         {/* Trust row — max 2 chips, Nepal-relevant: pay on delivery + return */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: 2 }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 7px", borderRadius: "var(--r-sm)", background: "#e8f5e9", color: "#1e6a31", fontSize: ".6875rem", fontWeight: 700 }}>Cash on delivery</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 7px", borderRadius: "var(--r-sm)", background: "var(--tint-blue-50)", color: "var(--blue)", fontSize: ".6875rem", fontWeight: 700 }}>7-day return</span>
+        <div
+          style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: 2 }}
+        >
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              padding: "2px 7px",
+              borderRadius: "var(--r-sm)",
+              background: "#e8f5e9",
+              color: "#1e6a31",
+              fontSize: ".6875rem",
+              fontWeight: 700,
+            }}
+          >
+            Cash on delivery
+          </span>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              padding: "2px 7px",
+              borderRadius: "var(--r-sm)",
+              background: "var(--tint-blue-50)",
+              color: "var(--blue)",
+              fontSize: ".6875rem",
+              fontWeight: 700,
+            }}
+          >
+            7-day return
+          </span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 5, color: "var(--ink-500)", fontSize: ".75rem", marginTop: "auto", paddingTop: 4 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
+            color: "var(--ink-500)",
+            fontSize: ".75rem",
+            marginTop: "auto",
+            paddingTop: 4,
+          }}
+        >
           <Icon name="truck" size={14} color="var(--ink-500)" /> By {p.eta}
         </div>
       </div>
@@ -123,41 +316,89 @@ export function ProductCard({ p, onClick }) {
 
 /* ---------- Horizontal rail of cards ---------- */
 export function ProductRail({ items, onOpen, cols }) {
-  return <div className="bz-grid-cards" style={{ display: "grid", gridTemplateColumns: `repeat(${cols || 5}, 1fr)`, gap: 18 }}>
-    {items.map(p => <ProductCard key={p.id} p={p} onClick={onOpen} />)}
-  </div>;
+  return (
+    <div
+      className="bz-grid-cards"
+      style={{ display: "grid", gridTemplateColumns: `repeat(${cols || 5}, 1fr)`, gap: 18 }}
+    >
+      {items.map((p) => (
+        <ProductCard key={p.id} p={p} onClick={onOpen} />
+      ))}
+    </div>
+  );
 }
 
 /* ---------- Category tile ---------- */
 export function CategoryTile({ c, onClick }) {
   const [hov, setHov] = useState(false);
   const [imgOk, setImgOk] = useState(!!c.img);
-  return <button onClick={() => onClick(c)} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-    style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: 0 }}>
-    <div style={{ width: 104, height: 104, borderRadius: "var(--r-lg)", overflow: "hidden", position: "relative",
-      background: hov ? "var(--blue)" : "var(--tint-blue-50)",
-      border: `2px solid ${hov ? "var(--blue)" : "transparent"}`,
-      boxShadow: hov ? "var(--sh-2)" : "var(--sh-1)",
-      transition: "all var(--dur-standard) var(--ease)" }}>
-      {imgOk ? (
-        <img src={c.img} alt="" onError={() => setImgOk(false)}
-          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block",
-            transform: hov ? "scale(1.06)" : "scale(1)", transition: "transform var(--dur-standard) var(--ease)" }} />
-      ) : (
-        <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Icon name={c.icon} size={40} color={hov ? "#fff" : "var(--blue)"} stroke={1.7} />
-        </div>
-      )}
-    </div>
-    <div style={{ textAlign: "center" }}>
-      <div style={{ fontSize: ".875rem", fontWeight: 700, color: "var(--ink-900)" }}>{c.en}</div>
-    </div>
-  </button>;
+  return (
+    <button
+      onClick={() => onClick(c)}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 10,
+        padding: 0,
+      }}
+    >
+      <div
+        style={{
+          width: 104,
+          height: 104,
+          borderRadius: "var(--r-lg)",
+          overflow: "hidden",
+          position: "relative",
+          background: hov ? "var(--blue)" : "var(--tint-blue-50)",
+          border: `2px solid ${hov ? "var(--blue)" : "transparent"}`,
+          boxShadow: hov ? "var(--sh-2)" : "var(--sh-1)",
+          transition: "all var(--dur-standard) var(--ease)",
+        }}
+      >
+        {imgOk ? (
+          <img
+            src={c.img}
+            alt=""
+            onError={() => setImgOk(false)}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+              transform: hov ? "scale(1.06)" : "scale(1)",
+              transition: "transform var(--dur-standard) var(--ease)",
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Icon name={c.icon} size={40} color={hov ? "#fff" : "var(--blue)"} stroke={1.7} />
+          </div>
+        )}
+      </div>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: ".875rem", fontWeight: 700, color: "var(--ink-900)" }}>{c.en}</div>
+      </div>
+    </button>
+  );
 }
 
 /* ---------- Navbar ---------- */
 export const SEARCH_HINTS = [
-  'Search · खोज्नुहोस्',
+  "Search · खोज्नुहोस्",
   'Try "Pashmina shawl"',
   'Try "ढाका टोपी"',
   'Try "earbuds"',
@@ -165,18 +406,42 @@ export const SEARCH_HINTS = [
 ];
 export function DevViewSwitcher() {
   const { nav, screen } = useBz();
-  const SELLER = ["s-onboarding", "s-dashboard", "s-inbox", "s-order-detail", "s-add", "s-products", "s-ledger"];
+  const SELLER = [
+    "s-onboarding",
+    "s-dashboard",
+    "s-inbox",
+    "s-order-detail",
+    "s-add",
+    "s-products",
+    "s-ledger",
+  ];
   const isSeller = SELLER.includes(screen);
   const target = isSeller ? "home" : "s-dashboard";
   const icon = isSeller ? "cart" : "store";
   const label = isSeller ? "Switch to buyer view" : "Switch to seller view";
   return (
-    <button onClick={() => nav(target)} title={label} aria-label={label}
-      style={{ position: "fixed", left: 22, bottom: 22, zIndex: 200,
-        width: 56, height: 56, borderRadius: "50%",
-        background: "var(--blue-deep)", color: "#fff", border: "3px solid #fff",
+    <button
+      onClick={() => nav(target)}
+      title={label}
+      aria-label={label}
+      style={{
+        position: "fixed",
+        left: 22,
+        bottom: 22,
+        zIndex: 200,
+        width: 56,
+        height: 56,
+        borderRadius: "50%",
+        background: "var(--blue-deep)",
+        color: "#fff",
+        border: "3px solid #fff",
         boxShadow: "0 6px 20px rgba(11,18,32,.22)",
-        display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "pointer",
+      }}
+    >
       <Icon name={icon} size={26} color="#fff" />
     </button>
   );
@@ -186,10 +451,27 @@ export function NavMenuItem({ icon, label, danger, onClick }) {
   const [hov, setHov] = useState(false);
   const color = danger ? "var(--red)" : "var(--ink-700)";
   return (
-    <button onClick={onClick} role="menuitem" onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
-      style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 12px", border: "none",
-        background: hov ? "var(--line-100)" : "transparent", borderRadius: "var(--r-md)", cursor: "pointer",
-        textAlign: "left", color, fontSize: ".875rem", fontWeight: 600 }}>
+    <button
+      onClick={onClick}
+      role="menuitem"
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        width: "100%",
+        padding: "9px 12px",
+        border: "none",
+        background: hov ? "var(--line-100)" : "transparent",
+        borderRadius: "var(--r-md)",
+        cursor: "pointer",
+        textAlign: "left",
+        color,
+        fontSize: ".875rem",
+        fontWeight: 600,
+      }}
+    >
       <Icon name={icon} size={18} color={color} />
       <span>{label}</span>
     </button>
@@ -198,97 +480,364 @@ export function NavMenuItem({ icon, label, danger, onClick }) {
 
 export function Navbar() {
   const { nav, cartCount, wish, screen, query, setQuery, toast } = useBz();
+  const user = useBazaarStore((s) => s.user);
+  const authed = useBazaarStore((s) => s.authed);
+  const logoutMutation = useLogout();
+  const navLabel = displayName(user, "Account");
+  const navInitial = userInitial(user);
   const [hint, setHint] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
-  useEffect(() => { const id = setInterval(() => setHint(h => (h + 1) % SEARCH_HINTS.length), 2800); return () => clearInterval(id); }, []);
+  useEffect(() => {
+    const id = setInterval(() => setHint((h) => (h + 1) % SEARCH_HINTS.length), 2800);
+    return () => clearInterval(id);
+  }, []);
   useEffect(() => {
     if (!menuOpen) return;
-    const onDocClick = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false); };
-    const onKey = (e) => { if (e.key === "Escape") setMenuOpen(false); };
+    const onDocClick = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+    };
+    const onKey = (e) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
     document.addEventListener("mousedown", onDocClick);
     document.addEventListener("keydown", onKey);
-    return () => { document.removeEventListener("mousedown", onDocClick); document.removeEventListener("keydown", onKey); };
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
   }, [menuOpen]);
-  const goAndClose = (s) => { setMenuOpen(false); nav(s); };
+  const goAndClose = (s) => {
+    setMenuOpen(false);
+    nav(s);
+  };
   const onMic = () => toast?.("Listening… speak the product name");
   return (
-    <header style={{ position: "sticky", top: 0, left: 0, right: 0, width: "100%", zIndex: 100, background: "#fff", borderBottom: "1px solid var(--line-200)" }}>
+    <header
+      style={{
+        position: "sticky",
+        top: 0,
+        left: 0,
+        right: 0,
+        width: "100%",
+        zIndex: 100,
+        background: "#fff",
+        borderBottom: "1px solid var(--line-200)",
+      }}
+    >
       {/* trust ribbon */}
-      <div className="bz-hide-mobile" style={{ background: "var(--blue-deep)", color: "rgba(255,255,255,.92)", fontSize: ".75rem", padding: "8px 0", fontWeight: 500 }}>
-        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px", display: "flex", alignItems: "center", justifyContent: "center", gap: 22, flexWrap: "wrap" }}>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><Icon name="bargain" size={13} color="#fff" /> Bargain freely with every seller</span>
-          <span style={{ opacity: .35 }}>·</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><Icon name="check" size={13} color="#fff" /> Verified sellers</span>
-          <span style={{ opacity: .35 }}>·</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><Icon name="returns" size={13} color="#fff" /> 7-day returns</span>
-          <span style={{ opacity: .35 }}>·</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><Icon name="lock" size={13} color="#fff" /> eSewa · Khalti · IME</span>
+      <div
+        className="bz-hide-mobile"
+        style={{
+          background: "var(--blue-deep)",
+          color: "rgba(255,255,255,.92)",
+          fontSize: ".75rem",
+          padding: "8px 0",
+          fontWeight: 500,
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "var(--container)",
+            margin: "0 auto",
+            padding: "0 28px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 22,
+            flexWrap: "wrap",
+          }}
+        >
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+            <Icon name="bargain" size={13} color="#fff" /> Bargain freely with every seller
+          </span>
+          <span style={{ opacity: 0.35 }}>·</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+            <Icon name="check" size={13} color="#fff" /> Verified sellers
+          </span>
+          <span style={{ opacity: 0.35 }}>·</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+            <Icon name="returns" size={13} color="#fff" /> 7-day returns
+          </span>
+          <span style={{ opacity: 0.35 }}>·</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+            <Icon name="lock" size={13} color="#fff" /> eSewa · Khalti · IME
+          </span>
         </div>
       </div>
-      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px", height: 72, display: "flex", alignItems: "center", gap: 18 }}>
-        <button onClick={() => nav("home")} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, flexShrink: 0 }}>
+      <div
+        style={{
+          maxWidth: "var(--container)",
+          margin: "0 auto",
+          padding: "0 28px",
+          height: 72,
+          display: "flex",
+          alignItems: "center",
+          gap: 18,
+        }}
+      >
+        <button
+          onClick={() => nav("home")}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: 0,
+            flexShrink: 0,
+          }}
+        >
           <Logo height={38} />
         </button>
-        <button onClick={() => toast?.("Pick your delivery area")}
+        <button
+          onClick={() => toast?.("Pick your delivery area")}
           className="bz-hide-mobile"
-          style={{ display: "inline-flex", alignItems: "center", gap: 8, height: 40, padding: "0 12px", background: "var(--line-100)", border: "1px solid var(--line-200)",
-            borderRadius: "var(--r-md)", cursor: "pointer", flexShrink: 0, color: "var(--ink-700)", fontWeight: 600, fontSize: ".8125rem" }}>
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            height: 40,
+            padding: "0 12px",
+            background: "var(--line-100)",
+            border: "1px solid var(--line-200)",
+            borderRadius: "var(--r-md)",
+            cursor: "pointer",
+            flexShrink: 0,
+            color: "var(--ink-700)",
+            fontWeight: 600,
+            fontSize: ".8125rem",
+          }}
+        >
           <Icon name="mapPin" size={16} color="var(--red)" />
           <div style={{ textAlign: "left", lineHeight: 1.15 }}>
-            <div style={{ fontSize: ".625rem", color: "var(--ink-400)", fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase" }}>Deliver to</div>
+            <div
+              style={{
+                fontSize: ".625rem",
+                color: "var(--ink-400)",
+                fontWeight: 700,
+                letterSpacing: ".06em",
+                textTransform: "uppercase",
+              }}
+            >
+              Deliver to
+            </div>
             <div>Kathmandu 44600</div>
           </div>
           <Icon name="chevronDown" size={14} color="var(--ink-500)" />
         </button>
         <div style={{ flex: 1, position: "relative" }}>
-          <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--ink-400)" }}><Icon name="search" size={19} /></span>
-          <input value={query} onChange={e => setQuery(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") nav("browse"); }}
+          <span
+            style={{
+              position: "absolute",
+              left: 14,
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "var(--ink-400)",
+            }}
+          >
+            <Icon name="search" size={19} />
+          </span>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") nav("browse");
+            }}
             placeholder={SEARCH_HINTS[hint]}
-            style={{ width: "100%", height: 48, border: "1.5px solid var(--line-200)", borderRadius: "var(--r-full)", padding: "0 58px 0 44px",
-              fontSize: ".9375rem", fontFamily: "var(--font-sans)", background: "#fff", outline: "none" }} />
-          <span style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)" }}>
+            style={{
+              width: "100%",
+              height: 48,
+              border: "1.5px solid var(--line-200)",
+              borderRadius: "var(--r-full)",
+              padding: "0 58px 0 44px",
+              fontSize: ".9375rem",
+              fontFamily: "var(--font-sans)",
+              background: "#fff",
+              outline: "none",
+            }}
+          />
+          <span
+            style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)" }}
+          >
             <VoiceMicButton onClick={onMic} size={36} />
           </span>
         </div>
         <nav style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-          <button onClick={() => nav("video")} className="bz-hide-mobile" style={{ display: "inline-flex", alignItems: "center", gap: 7, background: screen === "video" ? "var(--tint-red-50)" : "none",
-            border: "none", cursor: "pointer", padding: "8px 12px", borderRadius: "var(--r-md)", color: "var(--red)", fontWeight: 700, fontSize: ".875rem" }}>
-            <Icon name="video" size={19} /> Watch</button>
-          <span className="bz-hide-mobile"><IconButton name="heart" label="Wishlist" badge={wish.length} onClick={() => nav("wishlist")} /></span>
+          <button
+            onClick={() => nav("video")}
+            className="bz-hide-mobile"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 7,
+              background: screen === "video" ? "var(--tint-red-50)" : "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "8px 12px",
+              borderRadius: "var(--r-md)",
+              color: "var(--red)",
+              fontWeight: 700,
+              fontSize: ".875rem",
+            }}
+          >
+            <Icon name="video" size={19} /> Watch
+          </button>
+          <span className="bz-hide-mobile">
+            <IconButton
+              name="heart"
+              label="Wishlist"
+              badge={wish.length}
+              onClick={() => nav("wishlist")}
+            />
+          </span>
           {/* Bargain — BazaarCo's core differentiator. Always visible. */}
-          <button onClick={() => nav("bargains")} aria-label="Bargain" title="Bargain · मोलतोल"
-            style={{ width: 40, height: 40, display: "inline-flex", alignItems: "center", justifyContent: "center",
-              background: "var(--red)", border: "none", cursor: "pointer", borderRadius: "var(--r-md)", flexShrink: 0 }}>
+          <button
+            onClick={() => nav("bargains")}
+            aria-label="Bargain"
+            title="Bargain · मोलतोल"
+            style={{
+              width: 40,
+              height: 40,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "var(--red)",
+              border: "none",
+              cursor: "pointer",
+              borderRadius: "var(--r-md)",
+              flexShrink: 0,
+            }}
+          >
             <Icon name="bargain" size={20} color="#fff" />
           </button>
           <IconButton name="cart" label="Cart" badge={cartCount} onClick={() => nav("cart")} />
           <div ref={menuRef} className="bz-hide-mobile" style={{ position: "relative" }}>
-            <button onClick={() => setMenuOpen(o => !o)} aria-haspopup="menu" aria-expanded={menuOpen}
-              style={{ display: "inline-flex", alignItems: "center", gap: 8,
+            <button
+              onClick={() => setMenuOpen((o) => !o)}
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
                 border: `1px solid ${menuOpen ? "var(--blue)" : "var(--line-200)"}`,
                 background: menuOpen ? "var(--tint-blue-50)" : "#fff",
-                cursor: "pointer", padding: "0 12px 0 8px", height: 40, borderRadius: "var(--r-md)" }}>
-              <span style={{ width: 26, height: 26, borderRadius: "50%", background: "var(--blue-deep)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 12 }}>S</span>
-              <span style={{ fontSize: ".8125rem", fontWeight: 600, color: "var(--ink-700)" }}>Sita</span>
+                cursor: "pointer",
+                padding: "0 12px 0 8px",
+                height: 40,
+                borderRadius: "var(--r-md)",
+              }}
+            >
+              <span
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: "50%",
+                  background: "var(--blue-deep)",
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 700,
+                  fontSize: 12,
+                }}
+              >
+                {navInitial}
+              </span>
+              <span style={{ fontSize: ".8125rem", fontWeight: 600, color: "var(--ink-700)" }}>
+                {navLabel}
+              </span>
               <Icon name="chevronDown" size={14} color="var(--ink-500)" />
             </button>
             {menuOpen && (
-              <div role="menu" style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, minWidth: 240, background: "#fff",
-                border: "1px solid var(--line-200)", borderRadius: "var(--r-lg)", boxShadow: "var(--sh-3)", padding: 6, zIndex: 200 }}>
-                <button onClick={() => goAndClose("profile")} role="menuitem"
-                  style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", border: "1px solid var(--line-200)",
-                    borderRadius: "var(--r-md)", background: "var(--line-100)", cursor: "pointer", width: "100%", textAlign: "left", marginBottom: 6 }}>
-                  <span style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--blue-deep)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13 }}>S</span>
+              <div
+                role="menu"
+                style={{
+                  position: "absolute",
+                  top: "calc(100% + 8px)",
+                  right: 0,
+                  minWidth: 240,
+                  background: "#fff",
+                  border: "1px solid var(--line-200)",
+                  borderRadius: "var(--r-lg)",
+                  boxShadow: "var(--sh-3)",
+                  padding: 6,
+                  zIndex: 200,
+                }}
+              >
+                <button
+                  onClick={() => goAndClose("profile")}
+                  role="menuitem"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "10px 12px",
+                    border: "1px solid var(--line-200)",
+                    borderRadius: "var(--r-md)",
+                    background: "var(--line-100)",
+                    cursor: "pointer",
+                    width: "100%",
+                    textAlign: "left",
+                    marginBottom: 6,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: "50%",
+                      background: "var(--blue-deep)",
+                      color: "#fff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontWeight: 700,
+                      fontSize: 13,
+                    }}
+                  >
+                    {navInitial}
+                  </span>
                   <span style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{ display: "block", fontSize: ".875rem", fontWeight: 700, color: "var(--ink-900)" }}>Sita Maharjan</span>
-                    <span style={{ display: "block", fontSize: ".75rem", color: "var(--blue)", fontWeight: 600 }}>View profile</span>
+                    <span
+                      style={{
+                        display: "block",
+                        fontSize: ".875rem",
+                        fontWeight: 700,
+                        color: "var(--ink-900)",
+                      }}
+                    >
+                      {navLabel}
+                    </span>
+                    <span
+                      style={{
+                        display: "block",
+                        fontSize: ".75rem",
+                        color: "var(--blue)",
+                        fontWeight: 600,
+                      }}
+                    >
+                      View profile
+                    </span>
                   </span>
                 </button>
-                <NavMenuItem icon="package" label="My orders" onClick={() => goAndClose("orders")} />
+                <NavMenuItem
+                  icon="package"
+                  label="My orders"
+                  onClick={() => goAndClose("orders")}
+                />
                 <div style={{ height: 1, background: "var(--line-200)", margin: "6px 4px" }} />
-                <NavMenuItem icon="x" label="Log out" danger onClick={() => goAndClose("splash")} />
+                {authed ? (
+                  <NavMenuItem
+                    icon="x"
+                    label="Log out"
+                    danger
+                    onClick={() =>
+                      logoutMutation.mutate(undefined, { onSuccess: () => goAndClose("home") })
+                    }
+                  />
+                ) : (
+                  <NavMenuItem icon="user" label="Sign in" onClick={() => goAndClose("auth")} />
+                )}
               </div>
             )}
           </div>
@@ -304,44 +853,117 @@ export function Footer() {
   const cols = [
     { h: "BazaarCo", links: ["About us", "Careers", "Press", "Seller stories"] },
     { h: "Buy", links: ["How to order", "Payment options", "Delivery", "Returns & refunds"] },
-    { h: "Sell", links: ["Become a seller", "Seller dashboard", "Commission & fees", "Seller policies"] },
+    {
+      h: "Sell",
+      links: ["Become a seller", "Seller dashboard", "Commission & fees", "Seller policies"],
+    },
     { h: "Help", links: ["Contact support", "Track order", "FAQs", "Report an issue"] },
   ];
   return (
-    <footer style={{ position: "relative", background: "var(--blue-deep)", color: "#fff", marginTop: 64, overflow: "hidden", isolation: "isolate" }}>
+    <footer
+      style={{
+        position: "relative",
+        background: "var(--blue-deep)",
+        color: "#fff",
+        marginTop: 64,
+        overflow: "hidden",
+        isolation: "isolate",
+      }}
+    >
       {/* skyline backdrop — sits behind all content, top-anchored */}
-      <div aria-hidden="true" style={{
-        position: "absolute", top: 0, left: 0, right: 0, height: 220,
-        backgroundImage: `url(${ASSETS.skyline})`,
-        backgroundRepeat: "no-repeat",
-        backgroundPosition: "center 75%",
-        backgroundSize: "78% auto",
-        filter: "invert(1) grayscale(1) brightness(1.6) contrast(1.45)",
-        mixBlendMode: "screen",
-        opacity: 0.08,
-        WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, #000 40%, #000 78%, transparent 100%)",
-        maskImage: "linear-gradient(to bottom, transparent 0%, #000 40%, #000 78%, transparent 100%)",
-        pointerEvents: "none",
-        zIndex: 0,
-      }}/>
-      <div className="bz-footer-grid" style={{ position: "relative", zIndex: 2, maxWidth: "var(--container)", margin: "0 auto", padding: "120px 28px 40px", display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 1fr 1fr", gap: 32 }}>
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 220,
+          backgroundImage: `url(${ASSETS.skyline})`,
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "center 75%",
+          backgroundSize: "78% auto",
+          filter: "invert(1) grayscale(1) brightness(1.6) contrast(1.45)",
+          mixBlendMode: "screen",
+          opacity: 0.08,
+          WebkitMaskImage:
+            "linear-gradient(to bottom, transparent 0%, #000 40%, #000 78%, transparent 100%)",
+          maskImage:
+            "linear-gradient(to bottom, transparent 0%, #000 40%, #000 78%, transparent 100%)",
+          pointerEvents: "none",
+          zIndex: 0,
+        }}
+      />
+      <div
+        className="bz-footer-grid"
+        style={{
+          position: "relative",
+          zIndex: 2,
+          maxWidth: "var(--container)",
+          margin: "0 auto",
+          padding: "120px 28px 40px",
+          display: "grid",
+          gridTemplateColumns: "1.4fr 1fr 1fr 1fr 1fr",
+          gap: 32,
+        }}
+      >
         <div>
           <Logo height={34} mono />
-          <p className="bz-hide-mobile" style={{ color: "rgba(255,255,255,.65)", fontSize: ".875rem", marginTop: 16, maxWidth: 240 }}>Built for the way Nepal shops. Low commission, no hidden charges, video-first shopping.</p>
+          <p
+            className="bz-hide-mobile"
+            style={{
+              color: "rgba(255,255,255,.65)",
+              fontSize: ".875rem",
+              marginTop: 16,
+              maxWidth: 240,
+            }}
+          >
+            Built for the way Nepal shops. Low commission, no hidden charges, video-first shopping.
+          </p>
         </div>
         {cols.map((col, i) => (
           <div key={i}>
-            <div style={{ fontSize: ".8125rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 14, color: "rgba(255,255,255,.9)" }}>{col.h}</div>
+            <div
+              style={{
+                fontSize: ".8125rem",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: ".06em",
+                marginBottom: 14,
+                color: "rgba(255,255,255,.9)",
+              }}
+            >
+              {col.h}
+            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {col.links.map((l, j) => <a key={j} onClick={() => nav("home")} className="bz-footer-link">{l}</a>)}
+              {col.links.map((l, j) => (
+                <a key={j} onClick={() => nav("home")} className="bz-footer-link">
+                  {l}
+                </a>
+              ))}
             </div>
           </div>
         ))}
       </div>
       <div style={{ position: "relative", zIndex: 2, borderTop: "1px solid rgba(255,255,255,.1)" }}>
-        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "18px 28px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-          <span style={{ color: "rgba(255,255,255,.5)", fontSize: ".8125rem" }}>© 2026 BazaarCo Nepal Pvt. Ltd.</span>
-          <span style={{ color: "rgba(255,255,255,.5)", fontSize: ".8125rem" }}>Privacy · Terms</span>
+        <div
+          style={{
+            maxWidth: "var(--container)",
+            margin: "0 auto",
+            padding: "18px 28px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 16,
+            flexWrap: "wrap",
+          }}
+        >
+          <span style={{ color: "rgba(255,255,255,.5)", fontSize: ".8125rem" }}>
+            © 2026 BazaarCo Nepal Pvt. Ltd.
+          </span>
+          <span style={{ color: "rgba(255,255,255,.5)", fontSize: ".8125rem" }}>
+            Privacy · Terms
+          </span>
         </div>
       </div>
     </footer>

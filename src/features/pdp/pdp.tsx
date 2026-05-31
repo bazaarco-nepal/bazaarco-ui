@@ -3,8 +3,8 @@
 
 
 import React, { useState } from "react";
-import { Icon, Logo, Button, Spinner, IconButton, RatingStars, Chip, VerifiedBadge, StatusPill, Price, Placeholder, VideoPlayer, SkeletonCard, EmptyState, QtyStepper, Toast, SectionHead, TINTS, HelpLifeline, AllInPriceCard, OTPInput, MenuRow, ChipGroup, MobileBuyBar, BottomNav, LandmarkAddress, VoiceMicButton, usePaged, usePages, LoadMore, PageBar, BackToTop } from "@/components/ui";
-import { CATEGORIES, ATTR_CATEGORIES, CATEGORY_ATTRIBUTES, PRODUCTS, SELLERS, REVIEWS, RATING_DIST, byId, sellerOf, inCat, videoProducts, flashProducts, productProfile, P } from "@/constants/catalog";
+import { Icon, Logo, Button, Spinner, IconButton, RatingStars, Chip, VerifiedBadge, StatusPill, Price, Placeholder, VideoPlayer, SkeletonCard, EmptyState, QtyStepper, Toast, SectionHead, TINTS, HelpLifeline, AllInPriceCard, OTPInput, MenuRow, ChipGroup, MobileBuyBar, BottomNav, LandmarkAddress, VoiceMicButton, usePaged, usePages, LoadMore, PageBar, BackToTop, ApiState } from "@/components/ui";
+import { useCatalog, useProductReviews, useProductProfile, useRatingDistribution } from "@/hooks/use-catalog";
 import { BazaarCtx, useBz, Himalaya, KathmanduSkyline, ProductCard, ProductRail, CategoryTile, Navbar, Footer, DevViewSwitcher } from "@/components/common";
 import type { PdpProps } from "@/types";
 
@@ -13,6 +13,7 @@ import type { PdpProps } from "@/types";
    ============================================================ */
 function BargainModal({ p, onClose }) {
   const { addToCart, toast } = useBz();
+  const { sellerOf } = useCatalog();
   const [offer, setOffer] = useState(Math.round(p.price * 0.9 / 10) * 10);
   const [stage, setStage] = useState("offer"); // offer | thinking | counter | accepted
   const floor = Math.round(p.price * 0.85);
@@ -52,17 +53,17 @@ function BargainModal({ p, onClose }) {
         </>}
 
         {stage === "thinking" && <div style={{ padding: "30px 0", textAlign: "center" }}>
-          <Spinner size={32} color="var(--blue)" /><p style={{ color: "var(--ink-500)", marginTop: 16 }}>Sending your offer to {sellerOf(p).name}…</p></div>}
+          <Spinner size={32} color="var(--blue)" /><p style={{ color: "var(--ink-500)", marginTop: 16 }}>Sending your offer to {sellerOf(p)?.name ?? "seller"}…</p></div>}
 
         {stage === "accepted" && <div style={{ textAlign: "center", padding: "10px 0" }}>
           <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(22,163,74,.12)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}><Icon name="check" size={30} color="var(--success)" /></div>
           <h3 style={{ margin: 0, fontSize: "1.25rem" }}>Offer accepted! 🎉</h3>
-          <p style={{ color: "var(--ink-500)", marginTop: 8 }}>{sellerOf(p).name} accepted <b className="tnum">Rs. {offer.toLocaleString()}</b>. Add it to your cart at this price.</p>
+          <p style={{ color: "var(--ink-500)", marginTop: 8 }}>{sellerOf(p)?.name} accepted <b className="tnum">Rs. {offer.toLocaleString()}</b>. Add it to your cart at this price.</p>
           <div style={{ marginTop: 18 }}><Button variant="primary" full size="lg" icon="cart" onClick={() => { addToCart({ ...p, price: offer }, 1); toast("Added at bargained price!"); onClose(); }}>Add to cart · Rs. {offer.toLocaleString()}</Button></div>
         </div>}
 
         {stage === "counter" && <div style={{ textAlign: "center", padding: "6px 0" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 8 }}><span style={{ width: 36, height: 36, borderRadius: "50%", background: TINTS[sellerOf(p).tint][0], display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color: TINTS[sellerOf(p).tint][2] }}>{sellerOf(p).name[0]}</span></div>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 8 }}><span style={{ width: 36, height: 36, borderRadius: "50%", background: TINTS[sellerOf(p)?.tint ?? "blue"][0], display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color: TINTS[sellerOf(p)?.tint ?? "blue"][2] }}>{sellerOf(p)?.name?.[0]}</span></div>
           <h3 style={{ margin: 0, fontSize: "1.125rem" }}>Seller countered</h3>
           <p style={{ color: "var(--ink-500)", marginTop: 8 }}>That's a little low. They can do <b className="tnum">Rs. {counter.toLocaleString()}</b>.</p>
           <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
@@ -77,29 +78,37 @@ function BargainModal({ p, onClose }) {
 
 export function PDP({ p }: PdpProps) {
   const { addToCart, buyNow, openProduct, toggleWish, wish, toast, nav } = useBz();
+  const catalog = useCatalog();
+  const { data: reviews = [], isLoading: reviewsLoading } = useProductReviews(p.id);
+  const { data: profile, isLoading: profileLoading } = useProductProfile(p.id);
+  const { data: ratingDist = [], isLoading: ratingLoading } = useRatingDistribution(p.id);
+  const isLoading = catalog.isLoading || reviewsLoading || profileLoading || ratingLoading;
+  const isError = catalog.isError;
+  const error = catalog.error;
+  const { products, categories, sellerOf } = catalog;
+  const s = sellerOf(p);
+  const related = products.filter(x => x.cat === p.cat && x.id !== p.id);
+  const { variants = [], specs = [], desc = "" } = profile ?? {};
   const [tab, setTab] = useState(p.hasVideo ? "video" : "photos");
   const [photoIdx, setPhotoIdx] = useState(0);
   const [qty, setQty] = useState(1);
   const [bargain, setBargain] = useState(false);
   const [descOpen, setDescOpen] = useState(false);
-  const [shown, setShown] = useState(5); // "Customers also bought" load-more page size
-  const s = sellerOf(p);
+  const [shown, setShown] = useState(5);
+  const [variantSel, setVariantSel] = useState(() => Object.fromEntries((profile?.variants ?? []).map(v => [v.name, v.default || 0])));
   const disc = p.original ? Math.round((1 - p.price / p.original) * 100) : 0;
   const wished = wish.includes(p.id);
-  const related = PRODUCTS.filter(x => x.cat === p.cat && x.id !== p.id);
-  // Category-aware: a book gets Format/Language + ISBN, never clothing sizes or wool specs.
-  const { variants, specs, desc } = productProfile(p);
-  const [variantSel, setVariantSel] = useState(() => Object.fromEntries(variants.map(v => [v.name, v.default || 0])));
   const pickVariant = (name, i) => setVariantSel(prev => ({ ...prev, [name]: i }));
 
   const tabs = [["photos", "Photos", "image"], p.hasVideo && ["video", "Video", "video"]].filter(Boolean);
 
   return (
+    <ApiState isLoading={isLoading} isError={isError} error={error}>
     <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 0" }}>
       {/* breadcrumb */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: ".8125rem", color: "var(--ink-400)", marginBottom: 18 }}>
         <span className="bz-crumb" onClick={() => nav("home")}>Home</span><Icon name="chevronRight" size={13} color="var(--ink-300)" />
-        <span className="bz-crumb" onClick={() => nav("browse")}>{CATEGORIES.find(c => c.id === p.cat)?.en}</span><Icon name="chevronRight" size={13} color="var(--ink-300)" />
+        <span className="bz-crumb" onClick={() => nav("browse")}>{(categories ?? []).find(c => c.id === p.cat)?.en}</span><Icon name="chevronRight" size={13} color="var(--ink-300)" />
         <span style={{ color: "var(--ink-700)" }}>{p.name}</span>
       </div>
 
@@ -112,7 +121,7 @@ export function PDP({ p }: PdpProps) {
               background: tab===id ? "var(--tint-blue-50)" : "#fff", color: tab===id ? "var(--blue)" : "var(--ink-500)", fontWeight: 700, fontSize: ".875rem" }}>
               <Icon name={icon} size={16} /> {label} {id==="video" && <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--red)" }} />}</button>)}
           </div>
-          {tab === "video" && <VideoPlayer tint={p.tint} icon={p.icon} ratio="4 / 5" autoplay thumb={p.videoThumb}
+          {tab === "video" && <VideoPlayer tint={p.tint} icon={p.icon} ratio="4 / 5" autoplay thumb={p.videoThumb} src={p.videoUrl}
             overlay={<div style={{ position: "absolute", top: 14, right: 14, background: "rgba(255,255,255,.95)", borderRadius: "var(--r-md)", padding: "8px 12px", boxShadow: "var(--sh-2)" }}>
               <div style={{ fontSize: ".6875rem", color: "var(--ink-400)", fontWeight: 600 }}>In this video</div>
               <Price value={p.price} size="sm" /></div>} />}
@@ -231,11 +240,11 @@ export function PDP({ p }: PdpProps) {
         {/* reviews — customer photos first per guide §3.6 */}
         <div>
           <h3 style={{ fontSize: "1.125rem", fontWeight: 700, marginBottom: 14 }}>Customer photos & reviews</h3>
-          {REVIEWS.some(r => r.photos > 0) ? (
+          {reviews.some(r => r.photos > 0) ? (
             <div style={{ marginBottom: 18 }}>
               <div style={{ fontSize: ".8125rem", fontWeight: 700, color: "var(--ink-500)", marginBottom: 8 }}>Real photos from buyers</div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {REVIEWS.flatMap((r, ri) => Array.from({ length: r.photos }).map((_, j) => (
+                {reviews.flatMap((r, ri) => Array.from({ length: r.photos }).map((_, j) => (
                   <Placeholder key={`${ri}-${j}`} icon={p.icon} tint={[p.tint, "slate", "gold", "blue"][(ri + j) % 4]} style={{ width: 80, height: 80 }} radius="var(--r-sm)" />
                 )))}
               </div>
@@ -251,13 +260,13 @@ export function PDP({ p }: PdpProps) {
               <div className="tnum bz-hero-h2" style={{ fontWeight: 800, color: "var(--blue-deep)", lineHeight: 1 }}>{p.rating.toFixed(1)}</div>
               <RatingStars value={p.rating} size={14} /><div style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 4 }}>{p.reviews} reviews</div>
             </div>
-            <div style={{ flex: 1 }}>{RATING_DIST.map(r => <div key={r.s} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
+            <div style={{ flex: 1 }}>{ratingDist.map(r => <div key={r.s} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
               <span className="tnum" style={{ fontSize: ".75rem", color: "var(--ink-400)", width: 10 }}>{r.s}</span><Icon name="star" size={11} color="var(--gold)" fill="var(--gold)" />
               <div style={{ flex: 1, height: 6, background: "var(--line-100)", borderRadius: 3, overflow: "hidden" }}><div style={{ width: `${r.pct}%`, height: "100%", background: "var(--gold)" }} /></div>
               <span className="tnum" style={{ fontSize: ".75rem", color: "var(--ink-400)", width: 28, textAlign: "right" }}>{r.pct}%</span></div>)}</div>
           </div>
           <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
-            {REVIEWS.map((r, i) => <div key={i} style={{ paddingBottom: 14, borderBottom: i < REVIEWS.length-1 ? "1px solid var(--line-200)" : "none" }}>
+            {reviews.map((r, i) => <div key={i} style={{ paddingBottom: 14, borderBottom: i < reviews.length-1 ? "1px solid var(--line-200)" : "none" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
                 <div style={{ width: 34, height: 34, borderRadius: "50%", overflow: "hidden", border: "1.5px solid var(--line-200)", flexShrink: 0 }}>
                   <img src={r.avatar} alt={r.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
@@ -319,5 +328,6 @@ export function PDP({ p }: PdpProps) {
       {/* Mobile sticky buy bar */}
       <MobileBuyBar onAdd={() => { addToCart(p, qty); toast(`${qty} added to cart`); }} onBuy={() => buyNow(p, qty)} />
     </div>
+    </ApiState>
   );
 }

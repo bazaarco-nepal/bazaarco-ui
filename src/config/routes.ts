@@ -38,6 +38,7 @@ export const SELLER_SCREENS = new Set([
 export const NO_NAV_SCREENS = new Set([
   "splash",
   "auth",
+  "auth-callback",
   "checkout",
   "success",
   "video",
@@ -47,17 +48,26 @@ export const NO_NAV_SCREENS = new Set([
 export const NO_FOOTER_SCREENS = new Set([
   "splash",
   "auth",
+  "auth-callback",
   "video",
   "checkout",
   "success",
   ...SELLER_SCREENS,
 ]);
 
-export const NO_HELP_SCREENS = new Set(["splash", "auth", "checkout", ...SELLER_SCREENS]);
+export const NO_HELP_SCREENS = new Set([
+  "splash",
+  "auth",
+  "auth-callback",
+  "checkout",
+  "video",
+  ...SELLER_SCREENS,
+]);
 
 const SCREEN_PATH: Record<string, string> = {
   splash: "/splash",
   auth: "/auth",
+  "auth-callback": "/auth/callback",
   home: "/home",
   browse: "/browse",
   pdp: "/product",

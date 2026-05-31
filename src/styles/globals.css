@@ -58,8 +58,96 @@
 
 .bz-reel-stage::-webkit-scrollbar,
 .bz-reel-chip-row::-webkit-scrollbar,
-.bz-reel-thumbs::-webkit-scrollbar {
+.bz-reel-thumbs::-webkit-scrollbar,
+.bz-video-theater__thumbs::-webkit-scrollbar,
+.bz-video-panel::-webkit-scrollbar {
   display: none;
+}
+
+/* Immersive Watch page — fill viewport, no light page bleed */
+#app-scroll.bz-app--video {
+  min-height: 100dvh;
+  background: var(--ink-900);
+}
+
+.bz-main--video {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--ink-900);
+  padding: 0;
+  min-height: 0;
+}
+
+.bz-video-theater {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: calc(100dvh - 72px);
+  background: var(--ink-900);
+}
+
+.bz-video-theater__header {
+  flex-shrink: 0;
+  max-width: var(--container);
+  width: 100%;
+  margin: 0 auto;
+  padding: 16px 28px 12px;
+}
+
+.bz-video-theater__layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr) minmax(320px, 400px);
+  gap: 20px 28px;
+  align-items: center;
+  max-width: var(--container);
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 28px 20px;
+  min-height: 0;
+}
+
+.bz-video-theater__stage-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 0;
+  position: relative;
+}
+
+.bz-video-theater__stage {
+  position: relative;
+  width: min(380px, calc((100dvh - 200px) * 9 / 16));
+  height: min(calc(100dvh - 200px), calc(min(380px, calc((100dvh - 200px) * 9 / 16)) * 16 / 9));
+  max-height: calc(100dvh - 200px);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.bz-video-theater__thumbs {
+  max-height: min(680px, calc(100dvh - 200px));
+}
+
+.bz-video-panel {
+  align-self: center;
+}
+
+@media (max-width: 1100px) {
+  .bz-video-theater__layout {
+    grid-template-columns: 88px 1fr;
+  }
+  .bz-video-panel {
+    display: none;
+  }
+}
+
+.bz-reel-feed {
+  scrollbar-width: none;
 }
 
 #app-scroll {

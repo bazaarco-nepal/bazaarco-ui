@@ -1,10 +1,17 @@
 'use client';
 
 import React, { useState, useEffect } from "react";
-import { Icon, Logo, Button, Spinner, IconButton, RatingStars, Chip, VerifiedBadge, StatusPill, Price, Placeholder, VideoPlayer, SkeletonCard, EmptyState, QtyStepper, Toast, SectionHead, TINTS, HelpLifeline, AllInPriceCard, OTPInput, MenuRow, ChipGroup, MobileBuyBar, BottomNav, LandmarkAddress, VoiceMicButton, usePaged, usePages, LoadMore, PageBar, BackToTop } from "@/components/ui";
-import { CATEGORIES, ATTR_CATEGORIES, CATEGORY_ATTRIBUTES, PRODUCTS, SELLERS, REVIEWS, byId, sellerOf, inCat, videoProducts, flashProducts, productProfile, P } from "@/constants/catalog";
+import { Icon, Logo, Button, Spinner, IconButton, RatingStars, Chip, VerifiedBadge, StatusPill, Price, Placeholder, VideoPlayer, SkeletonCard, EmptyState, QtyStepper, Toast, SectionHead, TINTS, HelpLifeline, AllInPriceCard, OTPInput, MenuRow, ChipGroup, MobileBuyBar, BottomNav, LandmarkAddress, VoiceMicButton, usePaged, usePages, LoadMore, PageBar, BackToTop, ApiState } from "@/components/ui";
+import { useCatalog } from "@/hooks/use-catalog";
 import { BazaarCtx, useBz, Himalaya, KathmanduSkyline, ProductCard, ProductRail, CategoryTile, Navbar, Footer, DevViewSwitcher } from "@/components/common";
 import { ASSETS } from "@/config/assets";
+
+const PLP_SORT_OPTIONS = [
+  { value: "popular", label: "Popular" },
+  { value: "low", label: "Price: low to high" },
+  { value: "high", label: "Price: high to low" },
+  { value: "rating", label: "Rating" },
+];
 
 const PLP_QUICK_FILTERS = [
   { id: "cod",        label: "Cash on delivery", icon: "wallet"      },
@@ -68,6 +75,8 @@ const PHONETIC = {
 
 export function Browse() {
   const { openProduct, nav, query, setQuery } = useBz();
+  const catalog = useCatalog();
+  const { products: PRODUCTS, categories: CATEGORIES, sellerOf, isLoading: catalogLoading, isError: catalogError, error: catalogErr } = catalog;
   const [loading, setLoading] = useState(true);
   const [cats, setCats] = useState([]);
   const [quick, setQuick] = useState([]);
@@ -78,10 +87,11 @@ export function Browse() {
   const [sheet, setSheet] = useState(false);
 
   useEffect(() => {
+    if (catalogLoading) return;
     setLoading(true);
     const id = setTimeout(() => setLoading(false), 600);
     return () => clearTimeout(id);
-  }, [cats, quick, priceBand, priceMin, priceMax, query, sort]);
+  }, [cats, quick, priceBand, priceMin, priceMax, query, sort, catalogLoading]);
 
   const correctedQuery = (query && PHONETIC[query.toLowerCase().trim()]) || query;
   const effectiveQuery = correctedQuery;
@@ -98,10 +108,10 @@ export function Browse() {
     : (band ? band.label : "");
 
   let matches = PRODUCTS.filter(p => {
-    if (effectiveQuery && !(`${p.name} ${p.ne} ${sellerOf(p).name}`.toLowerCase().includes(effectiveQuery.toLowerCase()))) return false;
+    if (effectiveQuery && !(`${p.name} ${p.ne} ${sellerOf(p)?.name ?? ""}`.toLowerCase().includes(effectiveQuery.toLowerCase()))) return false;
     if (cats.length && !cats.includes(p.cat)) return false;
     if (priceActive && (p.price < effMin || p.price > effMax)) return false;
-    if (quick.includes("verified") && !sellerOf(p).verified) return false;
+    if (quick.includes("verified") && !sellerOf(p)?.verified) return false;
     if (quick.includes("free") && p.price < 1000) return false;
     if (quick.includes("rating4") && p.rating < 4) return false;
     // "cod" and "returnable" pass everything — design-only trust signal chips.
@@ -132,7 +142,7 @@ export function Browse() {
       return f && { key: `q-${id}`, label: f.label, onRemove: () => toggleQuick(id) };
     }),
     ...cats.map(id => {
-      const c = CATEGORIES.find(x => x.id === id);
+      const c = (CATEGORIES ?? []).find(x => x.id === id);
       return c && { key: `c-${id}`, label: c.en, onRemove: () => toggleCat(id) };
     }),
     priceActive && { key: "p-range", label: priceLabel, onRemove: clearPrice },
@@ -145,6 +155,7 @@ export function Browse() {
   const mobilePaged = usePaged(strict.concat(related), 20, filterKey);
 
   return (
+    <ApiState isLoading={catalogLoading} isError={catalogError} error={catalogErr}>
     <div className="bz-container-pad" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "16px 28px 0" }}>
       <BackToTop />
       {/* Mobile browse — sticky filter bar + product list when filtered, category grid otherwise */}
@@ -201,7 +212,7 @@ export function Browse() {
               Shop by category
             </h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, paddingBottom: 24 }}>
-              {CATEGORIES.map(c => (
+              {(CATEGORIES ?? []).map(c => (
                 <button key={c.id} onClick={() => toggleCat(c.id)}
                   style={{ background: "#fff", border: "1px solid var(--line-200)", borderRadius: "var(--r-lg)", padding: "14px 8px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, minHeight: 100 }}>
                   <div style={{ width: 56, height: 56, borderRadius: "var(--r-md)", background: "var(--tint-blue-50)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
@@ -282,7 +293,7 @@ export function Browse() {
       {/* Shop by category — placed directly below search/header (Amazon pattern) */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
         <span style={{ fontSize: ".75rem", fontWeight: 700, color: "var(--ink-400)", textTransform: "uppercase", letterSpacing: ".06em", marginRight: 4 }}>Shop by</span>
-        {CATEGORIES.map(c => {
+        {(CATEGORIES ?? []).map(c => {
           const on = cats.includes(c.id);
           return (
             <button key={c.id} onClick={() => toggleCat(c.id)} aria-pressed={on}
@@ -515,7 +526,7 @@ export function Browse() {
               <div style={{ marginBottom: 22 }}>
                 <div style={{ fontWeight: 700, marginBottom: 10, fontSize: ".875rem" }}>Category</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {CATEGORIES.map(c => {
+                  {(CATEGORIES ?? []).map(c => {
                     const on = cats.includes(c.id);
                     return (
                       <button key={c.id} onClick={() => toggleCat(c.id)} aria-pressed={on}
@@ -538,5 +549,6 @@ export function Browse() {
         </div>
       )}
     </div>
+    </ApiState>
   );
 }

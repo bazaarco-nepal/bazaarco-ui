@@ -3,7 +3,8 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { BazaarCtx } from "@/components/common";
-import { byId } from "@/constants/catalog";
+import { useCurrentUser } from "@/hooks/use-auth";
+import { useProduct } from "@/hooks/use-catalog";
 import { pathFromScreen, productIdFromPath, screenFromPath } from "@/config/routes";
 import { useBazaarStore } from "@/store/bazaar-store";
 import type { Product } from "@/types";
@@ -19,6 +20,8 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   const screen = screenFromPath(pathname);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [toastMsg, setToastMsg] = useState<ToastState | null>(null);
+
+  useCurrentUser(true);
 
   const authed = useBazaarStore((s) => s.authed);
   const setAuthed = useBazaarStore((s) => s.setAuthed);
@@ -82,13 +85,15 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
 
   const cartCount = cart.reduce((sum, item) => sum + item.qty, 0);
 
+  const routeProductId = productIdFromPath(pathname);
+  const { data: routeProduct } = useProduct(routeProductId);
+
   const productFromRoute = useMemo(() => {
-    const id = productIdFromPath(pathname);
-    if (!id) {
+    if (!routeProductId) {
       return activeProduct;
     }
-    return byId(id) ?? activeProduct;
-  }, [pathname, activeProduct]);
+    return routeProduct ?? activeProduct;
+  }, [routeProductId, activeProduct, routeProduct]);
 
   const value = useMemo(
     () => ({

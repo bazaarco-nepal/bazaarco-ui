@@ -1,10 +1,12 @@
 "use client";
 
+import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 import { screenFromPath } from "@/config/routes";
 import {
   Splash,
   Auth,
+  AuthCallback,
   Home,
   Browse,
   PDP,
@@ -50,6 +52,13 @@ export function MarketplaceScreen() {
 
   if (screen === "splash") return <Splash />;
   if (screen === "auth") return <Auth />;
+  if (screen === "auth-callback") {
+    return (
+      <Suspense fallback={null}>
+        <AuthCallback />
+      </Suspense>
+    );
+  }
   if (screen === "home") return <Home />;
   if (screen === "browse") return <Browse />;
   if (screen === "pdp" && product) return <PDP p={product} />;

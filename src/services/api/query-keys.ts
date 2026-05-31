@@ -1,4 +1,7 @@
 export const queryKeys = {
+  auth: {
+    me: ["auth", "me"] as const,
+  },
   catalog: {
     categories: ["catalog", "categories"] as const,
     attrCategories: ["catalog", "attr-categories"] as const,
@@ -18,6 +21,9 @@ export const queryKeys = {
   },
   tracking: (orderId: string) => ["tracking", orderId] as const,
   bargains: ["bargains"] as const,
+  videos: {
+    feed: (tab: string) => ["videos", "feed", tab] as const,
+  },
   seller: {
     dashboard: ["seller", "dashboard"] as const,
     inbox: ["seller", "inbox"] as const,

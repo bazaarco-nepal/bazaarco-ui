@@ -3,12 +3,14 @@ import type { BazaarStoreState } from "@/types/store";
 
 export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
   authed: false,
+  user: null,
   cart: [],
-  wish: ["bz-3", "bz-8"],
+  wish: [],
   query: "",
   orderTotal: 0,
   activeProduct: null,
   setAuthed: (authed) => set({ authed }),
+  setUser: (user) => set({ user }),
   setCart: (cart) =>
     set((state) => ({
       cart: typeof cart === "function" ? cart(state.cart) : cart,
@@ -26,9 +28,7 @@ export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
       if (existing) {
         return {
           cart: state.cart.map((item) =>
-            item.id === product.id
-              ? { ...item, qty: item.qty + qty, price: product.price }
-              : item,
+            item.id === product.id ? { ...item, qty: item.qty + qty, price: product.price } : item,
           ),
         };
       }

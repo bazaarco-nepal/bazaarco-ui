@@ -122,7 +122,11 @@ export function useCatalog(): CatalogHelpers {
   const sellers = Object.fromEntries(sellersList.map((s) => [s.id, s]));
 
   const byId = (id: string) => products.find((p) => p.id === id);
-  const sellerOf = (product: Product) => sellers[product.seller];
+  const sellerOf = (product: Product) => {
+    const key = product.seller ?? (product as Product & { sellerId?: string }).sellerId;
+    if (!key) return undefined;
+    return sellers[key] ?? sellersList.find((s) => s.id === key);
+  };
   const inCat = (categoryId: string) => products.filter((p) => p.cat === categoryId);
   const videoProducts = () => products.filter((p) => p.hasVideo);
   const flashProducts = () => products.filter((p) => p.original);
@@ -139,11 +143,10 @@ export function useCatalog(): CatalogHelpers {
     sellersQuery.isError ||
     attributesQuery.isError;
 
-  const error =
-    (productsQuery.error ??
-      categoriesQuery.error ??
-      sellersQuery.error ??
-      attributesQuery.error) as Error | null;
+  const error = (productsQuery.error ??
+    categoriesQuery.error ??
+    sellersQuery.error ??
+    attributesQuery.error) as Error | null;
 
   return {
     products,

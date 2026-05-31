@@ -28,6 +28,7 @@ import {
   MobileBuyBar,
   BottomNav,
   LandmarkAddress,
+  DeliverToModal,
   VoiceMicButton,
   usePaged,
   usePages,
@@ -39,6 +40,7 @@ import { useCatalog } from "@/hooks/use-catalog";
 import { useLogout } from "@/hooks/use-auth";
 import { displayName, userInitial } from "@/lib/display";
 import { useBazaarStore } from "@/store/bazaar-store";
+import { formatDeliverToLabel } from "@/lib/delivery-location";
 import { ASSETS } from "@/config/assets";
 
 import type { BazaarContextValue } from "@/types/bazaar";
@@ -487,6 +489,10 @@ export function Navbar() {
   const navInitial = userInitial(user);
   const [hint, setHint] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [deliverOpen, setDeliverOpen] = useState(false);
+  const deliveryLocation = useBazaarStore((s) => s.deliveryLocation);
+  const setDeliveryLocation = useBazaarStore((s) => s.setDeliveryLocation);
+  const deliverLabel = formatDeliverToLabel(deliveryLocation);
   const menuRef = useRef(null);
   useEffect(() => {
     const id = setInterval(() => setHint((h) => (h + 1) % SEARCH_HINTS.length), 2800);
@@ -589,7 +595,10 @@ export function Navbar() {
           <Logo height={38} />
         </button>
         <button
-          onClick={() => toast?.("Pick your delivery area")}
+          type="button"
+          onClick={() => setDeliverOpen(true)}
+          aria-haspopup="dialog"
+          aria-expanded={deliverOpen}
           className="bz-hide-mobile"
           style={{
             display: "inline-flex",
@@ -620,10 +629,20 @@ export function Navbar() {
             >
               Deliver to
             </div>
-            <div>Kathmandu 44600</div>
+            <div>{deliverLabel}</div>
           </div>
           <Icon name="chevronDown" size={14} color="var(--ink-500)" />
         </button>
+        <DeliverToModal
+          open={deliverOpen}
+          value={deliveryLocation}
+          onClose={() => setDeliverOpen(false)}
+          onSave={(loc) => {
+            setDeliveryLocation(loc);
+            setDeliverOpen(false);
+            toast(`Delivering to ${formatDeliverToLabel(loc)}`);
+          }}
+        />
         <div style={{ flex: 1, position: "relative" }}>
           <span
             style={{

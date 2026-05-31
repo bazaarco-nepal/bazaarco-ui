@@ -1,4 +1,9 @@
 import { create } from "zustand";
+import {
+  DEFAULT_DELIVERY,
+  readDeliveryFromStorage,
+  writeDeliveryToStorage,
+} from "@/lib/delivery-location";
 import type { BazaarStoreState } from "@/types/store";
 
 export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
@@ -9,7 +14,17 @@ export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
   query: "",
   orderTotal: 0,
   activeProduct: null,
+  deliveryLocation: DEFAULT_DELIVERY,
+  deliveryHydrated: false,
   setAuthed: (authed) => set({ authed }),
+  hydrateDelivery: () => {
+    if (get().deliveryHydrated) return;
+    set({ deliveryLocation: readDeliveryFromStorage(), deliveryHydrated: true });
+  },
+  setDeliveryLocation: (deliveryLocation) => {
+    writeDeliveryToStorage(deliveryLocation);
+    set({ deliveryLocation, deliveryHydrated: true });
+  },
   setUser: (user) => set({ user }),
   setCart: (cart) =>
     set((state) => ({

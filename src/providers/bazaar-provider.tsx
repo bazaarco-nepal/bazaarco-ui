@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { BazaarCtx } from "@/components/common";
 import { useCurrentUser } from "@/hooks/use-auth";
@@ -22,6 +22,11 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   const [toastMsg, setToastMsg] = useState<ToastState | null>(null);
 
   useCurrentUser(true);
+
+  const hydrateDelivery = useBazaarStore((s) => s.hydrateDelivery);
+  useEffect(() => {
+    hydrateDelivery();
+  }, [hydrateDelivery]);
 
   const authed = useBazaarStore((s) => s.authed);
   const setAuthed = useBazaarStore((s) => s.setAuthed);

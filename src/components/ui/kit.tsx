@@ -3,6 +3,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { ASSETS } from "@/config/assets";
+import { postalForCity } from "@/lib/delivery-location";
+import { MapPinPicker } from "@/components/ui/map-pin-picker";
 
 /* ============================================================
    BazaarCo — Component Kit
@@ -1871,6 +1873,7 @@ export function ChipGroup({ options, value, onChange }) {
 export function MobileBuyBar({ onAdd, onBuy }) {
   return (
     <div
+      className="bz-mobile-only"
       style={{
         position: "fixed",
         left: 0,
@@ -1880,11 +1883,9 @@ export function MobileBuyBar({ onAdd, onBuy }) {
         background: "#fff",
         borderTop: "1px solid var(--line-200)",
         padding: "10px 14px calc(10px + env(safe-area-inset-bottom))",
-        display: "flex",
         gap: 10,
         boxShadow: "0 -2px 12px rgba(15,23,42,.08)",
       }}
-      className="bz-mobile-only"
     >
       <Button variant="secondary" size="lg" full icon="cart" onClick={onAdd}>
         Add to Cart
@@ -1957,7 +1958,31 @@ export function BottomNav({
 
 /* ---------- Landmark address picker ---------- */
 export function LandmarkAddress({ value, onChange }) {
-  const v = value || { city: "", area: "", landmark: "" };
+  const v = value || { city: "", area: "", landmark: "", lat: null, lng: null };
+  const [mapOpen, setMapOpen] = useState(false);
+  const [geoError, setGeoError] = useState(null);
+  const hasPin = typeof v.lat === "number" && typeof v.lng === "number";
+
+  const useMyLocation = () => {
+    if (!navigator.geolocation) {
+      setGeoError("Your browser does not support location.");
+      return;
+    }
+    setGeoError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        onChange({
+          ...v,
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+        setMapOpen(true);
+      },
+      () =>
+        setGeoError("Could not get your location. Allow location access or drop a pin manually."),
+      { enableHighAccuracy: true, timeout: 12000 },
+    );
+  };
   const cities = [
     "Kathmandu",
     "Lalitpur",
@@ -1994,7 +2019,10 @@ export function LandmarkAddress({ value, onChange }) {
         </label>
         <select
           value={v.city}
-          onChange={(e) => onChange({ ...v, city: e.target.value, area: "" })}
+          onChange={(e) => {
+            setMapOpen(false);
+            onChange({ ...v, city: e.target.value, area: "", lat: undefined, lng: undefined });
+          }}
           style={{
             width: "100%",
             height: 48,
@@ -2073,24 +2101,77 @@ export function LandmarkAddress({ value, onChange }) {
           }}
         />
       </div>
-      <button
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 7,
-          background: "var(--tint-blue-50)",
-          border: "1.5px dashed var(--blue)",
-          color: "var(--blue)",
-          padding: "12px 16px",
-          borderRadius: "var(--r-md)",
-          cursor: "pointer",
-          fontWeight: 700,
-          fontSize: ".875rem",
-          alignSelf: "flex-start",
-        }}
-      >
-        <Icon name="mapPin" size={18} /> Drop a pin on the map (optional)
-      </button>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+        <button
+          type="button"
+          disabled={!v.city}
+          onClick={() => {
+            setGeoError(null);
+            setMapOpen((open) => !open);
+          }}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 7,
+            background: mapOpen || hasPin ? "var(--tint-blue-50)" : "var(--tint-blue-50)",
+            border: `1.5px dashed ${mapOpen || hasPin ? "var(--blue)" : "var(--blue)"}`,
+            color: "var(--blue)",
+            padding: "12px 16px",
+            borderRadius: "var(--r-md)",
+            cursor: v.city ? "pointer" : "not-allowed",
+            fontWeight: 700,
+            fontSize: ".875rem",
+            opacity: v.city ? 1 : 0.55,
+          }}
+        >
+          <Icon name="mapPin" size={18} />
+          {mapOpen ? "Hide map" : hasPin ? "Edit pin on map" : "Drop a pin on the map (optional)"}
+        </button>
+        <button
+          type="button"
+          disabled={!v.city}
+          onClick={useMyLocation}
+          style={{
+            background: "none",
+            border: "none",
+            color: "var(--blue)",
+            fontWeight: 700,
+            fontSize: ".8125rem",
+            cursor: v.city ? "pointer" : "not-allowed",
+            opacity: v.city ? 1 : 0.55,
+            padding: "8px 4px",
+          }}
+        >
+          Use my location
+        </button>
+      </div>
+      {!v.city && (
+        <p style={{ margin: 0, fontSize: ".75rem", color: "var(--ink-400)" }}>
+          Select a city first to open the map.
+        </p>
+      )}
+      {geoError && (
+        <p style={{ margin: 0, fontSize: ".75rem", color: "var(--danger)" }}>{geoError}</p>
+      )}
+      {hasPin && !mapOpen && (
+        <p style={{ margin: 0, fontSize: ".75rem", color: "var(--success)", fontWeight: 600 }}>
+          <Icon
+            name="check"
+            size={14}
+            color="var(--success)"
+            style={{ verticalAlign: "middle", marginRight: 4 }}
+          />
+          Pin saved ({v.lat.toFixed(5)}, {v.lng.toFixed(5)})
+        </p>
+      )}
+      {mapOpen && v.city && (
+        <MapPinPicker
+          city={v.city}
+          lat={v.lat}
+          lng={v.lng}
+          onPick={(lat, lng) => onChange({ ...v, lat, lng })}
+        />
+      )}
       <div
         style={{
           display: "flex",
@@ -2104,6 +2185,170 @@ export function LandmarkAddress({ value, onChange }) {
       >
         <Icon name="shieldCheck" size={18} color="var(--blue-deep)" style={{ flexShrink: 0 }} />
         <span>Don't worry — our rider will call before arriving to find your exact gate.</span>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Deliver-to modal (navbar) ---------- */
+export function DeliverToModal({ open, value, onClose, onSave }) {
+  const [draft, setDraft] = useState(value);
+
+  useEffect(() => {
+    if (open) setDraft(value);
+  }, [open, value]);
+
+  if (!open) return null;
+
+  const canSave = !!(draft?.city && draft?.area);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="deliver-to-title"
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 700,
+        background: "rgba(11,18,32,.5)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+      }}
+      onClick={onClose}
+    >
+      <div
+        className="fade-up"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "#fff",
+          borderRadius: "var(--r-xl)",
+          width: "min(440px, 100%)",
+          maxHeight: "min(90vh, 640px)",
+          overflow: "auto",
+          padding: "22px 24px 24px",
+          boxShadow: "var(--sh-3)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 16 }}>
+          <span
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: "var(--r-md)",
+              background: "var(--tint-red-50)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <Icon name="mapPin" size={20} color="var(--red)" />
+          </span>
+          <div style={{ flex: 1 }}>
+            <h2
+              id="deliver-to-title"
+              style={{
+                margin: 0,
+                fontSize: "1.125rem",
+                fontWeight: 800,
+                color: "var(--blue-deep)",
+              }}
+            >
+              Deliver to
+            </h2>
+            <p
+              style={{
+                margin: "4px 0 0",
+                fontSize: ".875rem",
+                color: "var(--ink-500)",
+                lineHeight: 1.45,
+              }}
+            >
+              We use this for delivery fees and estimated arrival on product pages.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            style={{
+              background: "var(--line-100)",
+              border: "none",
+              borderRadius: "var(--r-full)",
+              width: 36,
+              height: 36,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Icon name="x" size={18} color="var(--ink-500)" />
+          </button>
+        </div>
+
+        <LandmarkAddress
+          value={{
+            city: draft.city,
+            area: draft.area,
+            landmark: draft.landmark ?? "",
+            lat: draft.lat ?? null,
+            lng: draft.lng ?? null,
+          }}
+          onChange={(addr) => {
+            const postal = postalForCity(addr.city) || draft.postal;
+            setDraft({ ...draft, ...addr, postal });
+          }}
+        />
+
+        <div style={{ marginTop: 14 }}>
+          <label
+            style={{
+              fontSize: ".8125rem",
+              fontWeight: 600,
+              color: "var(--ink-700)",
+              display: "block",
+              marginBottom: 6,
+            }}
+          >
+            Postal code
+          </label>
+          <input
+            value={draft.postal ?? ""}
+            onChange={(e) =>
+              setDraft({ ...draft, postal: e.target.value.replace(/\D/g, "").slice(0, 5) })
+            }
+            placeholder="44600"
+            inputMode="numeric"
+            style={{
+              width: "100%",
+              height: 48,
+              border: "1px solid var(--line-200)",
+              borderRadius: "var(--r-md)",
+              padding: "0 14px",
+              fontSize: ".9375rem",
+              fontFamily: "var(--font-sans)",
+              background: "#fff",
+            }}
+          />
+        </div>
+
+        <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+          <Button variant="ghost" full onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            full
+            disabled={!canSave}
+            onClick={() => canSave && onSave(draft)}
+          >
+            Save location
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -2,8 +2,8 @@
 
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Icon, Logo, Button, Spinner, IconButton, RatingStars, Chip, VerifiedBadge, StatusPill, Price, Placeholder, VideoPlayer, SkeletonCard, EmptyState, QtyStepper, Toast, SectionHead, TINTS, HelpLifeline, AllInPriceCard, OTPInput, MenuRow, ChipGroup, MobileBuyBar, BottomNav, LandmarkAddress, VoiceMicButton, usePaged, usePages, LoadMore, PageBar, BackToTop } from "@/components/ui";
-import { CATEGORIES, ATTR_CATEGORIES, CATEGORY_ATTRIBUTES, PRODUCTS, SELLERS, REVIEWS, byId, sellerOf, inCat, videoProducts, flashProducts, productProfile, P } from "@/constants/catalog";
+import { Icon, Logo, Button, Spinner, IconButton, RatingStars, Chip, VerifiedBadge, StatusPill, Price, Placeholder, VideoPlayer, SkeletonCard, EmptyState, QtyStepper, Toast, SectionHead, TINTS, HelpLifeline, AllInPriceCard, OTPInput, MenuRow, ChipGroup, MobileBuyBar, BottomNav, LandmarkAddress, VoiceMicButton, usePaged, usePages, LoadMore, PageBar, BackToTop, ApiState } from "@/components/ui";
+import { useCatalog } from "@/hooks/use-catalog";
 import { BazaarCtx, useBz, Himalaya, KathmanduSkyline, ProductCard, ProductRail, CategoryTile, Navbar, Footer, DevViewSwitcher } from "@/components/common";
 
 
@@ -160,6 +160,7 @@ function ReelItem({
   p, isMobile, isActive, follows, onToggleFollow, muted, radius,
 }) {
   const { openProduct, addToCart, toggleWish, wish, toast } = useBz();
+  const { sellerOf } = useCatalog();
   const s = sellerOf(p);
   const wished = wish.includes(p.id);
   const followed = follows.has(s.id);
@@ -205,7 +206,7 @@ function ReelItem({
     >
       <VideoPlayer
         key={p.id} tint={p.tint} icon={p.icon} fill radius="0"
-        autoplay compact label={false} thumb={p.videoThumb}
+        autoplay compact label={false} thumb={p.videoThumb} src={p.videoUrl}
       />
 
       {/* index pill */}
@@ -388,7 +389,8 @@ function ReelItem({
    ============================================================ */
 export function VideoTheater() {
   const { openProduct, addToCart, toggleWish, wish, toast, nav } = useBz();
-  const vids = videoProducts();
+  const catalog = useCatalog();
+  const vids = catalog.videoProducts();
   const [activeIndex, setActiveIndex] = useState(0);
   const [tab, setTab] = useState("foryou");
   const [follows, setFollows] = useState(() => new Set());
@@ -399,16 +401,16 @@ export function VideoTheater() {
   const programmaticScroll = useRef(false);
 
   const p = vids[activeIndex];
-  const s = sellerOf(p);
-  const tint = TINTS[p.tint] || TINTS.blue;
-  const caption = captionFor(p, s);
+  const s = p ? catalog.sellerOf(p) : undefined;
+  const tint = TINTS[p?.tint] || TINTS.blue;
+  const caption = p && s ? captionFor(p, s) : "";
 
   const toggleFollow = (sellerId) => {
     setFollows((set) => {
       const n = new Set(set);
       const has = n.has(sellerId);
       has ? n.delete(sellerId) : n.add(sellerId);
-      toast(has ? "Unfollowed" : `Following ${sellerOf(p).name}`);
+      toast(has ? "Unfollowed" : `Following ${catalog.sellerOf(p)?.name ?? "seller"}`);
       return n;
     });
   };
@@ -662,6 +664,10 @@ export function VideoTheater() {
   /* ============================================================
      LAYOUT
      ============================================================ */
+  if (catalog.isLoading || catalog.isError) {
+    return <ApiState isLoading={catalog.isLoading} isError={catalog.isError} error={catalog.error}><div /></ApiState>;
+  }
+
   if (isMobile) {
     return (
       <div style={{

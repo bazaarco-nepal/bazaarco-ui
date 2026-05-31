@@ -2,31 +2,28 @@
 
 
 import React from "react";
-import { Icon, Logo, Button, Spinner, IconButton, RatingStars, Chip, VerifiedBadge, StatusPill, Price, Placeholder, VideoPlayer, SkeletonCard, EmptyState, QtyStepper, Toast, SectionHead, TINTS, HelpLifeline, AllInPriceCard, OTPInput, MenuRow, ChipGroup, MobileBuyBar, BottomNav, LandmarkAddress, VoiceMicButton, usePaged, usePages, LoadMore, PageBar, BackToTop } from "@/components/ui";
-import { CATEGORIES, ATTR_CATEGORIES, CATEGORY_ATTRIBUTES, PRODUCTS, SELLERS, REVIEWS, byId, sellerOf, inCat, videoProducts, flashProducts, productProfile, P } from "@/constants/catalog";
+import { Icon, Logo, Button, Spinner, IconButton, RatingStars, Chip, VerifiedBadge, StatusPill, Price, Placeholder, VideoPlayer, SkeletonCard, EmptyState, QtyStepper, Toast, SectionHead, TINTS, HelpLifeline, AllInPriceCard, OTPInput, MenuRow, ChipGroup, MobileBuyBar, BottomNav, LandmarkAddress, VoiceMicButton, usePaged, usePages, LoadMore, PageBar, BackToTop, ApiState } from "@/components/ui";
+import { useCatalog } from "@/hooks/use-catalog";
+import { useTracking } from "@/hooks/use-tracking";
+import { useBargains } from "@/hooks/use-bargains";
 import { BazaarCtx, useBz, Himalaya, KathmanduSkyline, ProductCard, ProductRail, CategoryTile, Navbar, Footer, DevViewSwitcher } from "@/components/common";
 
 
 export function Tracking() {
   const { nav, cart } = useBz();
-  const nodes = [
-    { t: "Order Placed", loc: "Online", time: "May 29, 2:14 PM", state: "done", detail: "We received your order #BZ-24501." },
-    { t: "Confirmed", loc: "BazaarCo · Bhaktapur", time: "May 29, 2:40 PM", state: "done", detail: "Seller accepted and is preparing your items." },
-    { t: "Packed", loc: "Bhaktapur warehouse", time: "May 29, 6:05 PM", state: "current", detail: "Your parcel is packed and ready for pickup." },
-    { t: "Shipped", loc: "In transit", time: "Expected May 30", state: "future", detail: "Out for delivery to Pokhara." },
-    { t: "Delivered", loc: "Lakeside-6, Pokhara", time: "Expected May 30–Jun 1", state: "future", detail: "Handed to you or your nominee." },
-  ];
+  const { data, isLoading, isError, error } = useTracking("BZ-24501");
+  const nodes = data?.nodes ?? [];
   return (
+    <ApiState isLoading={isLoading} isError={isError} error={error}>
     <div style={{ maxWidth: 820, margin: "0 auto", padding: "24px 28px 0" }}>
       <button onClick={() => nav("home")} style={{ background: "none", border: "none", color: "var(--ink-500)", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 16, fontSize: ".875rem" }}><Icon name="chevronLeft" size={16} /> Back to home</button>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
-        <div><h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>Order <span className="tnum">#BZ-24501</span></h1>
+        <div><h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>Order <span className="tnum">#{data?.orderId ?? "BZ-24501"}</span></h1>
           <span style={{ fontSize: ".875rem", color: "var(--ink-400)" }}>Placed May 29, 2026</span></div>
         <StatusPill status="packed" />
       </div>
 
       <div className="bz-stack-900" style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 28, alignItems: "start" }}>
-        {/* timeline */}
         <div style={{ background: "#fff", border: "1px solid var(--line-200)", borderRadius: "var(--r-lg)", padding: 28 }}>
           {nodes.map((n, i) => <div key={i} style={{ display: "flex", gap: 16, position: "relative" }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -45,9 +42,19 @@ export function Tracking() {
           </div>)}
         </div>
 
-        {/* side */}
+        <TrackingSidebar nav={nav} cart={cart} />
+      </div>
+    </div>
+    </ApiState>
+  );
+}
+
+function TrackingSidebar({ nav, cart }) {
+  const { byId } = useCatalog();
+  const fallbackItems = [byId("bz-1"), byId("bz-3")].filter(Boolean);
+  const displayItems = cart.length ? cart : fallbackItems;
+  return (
         <div style={{ display: "flex", flexDirection: "column", gap: 14, position: "sticky", top: 96 }}>
-          {/* CALL RIDER — guide §3.11 single most important post-purchase feature */}
           <button style={{ background: "var(--success)", color: "#fff", border: "none", borderRadius: "var(--r-lg)", padding: "18px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, boxShadow: "var(--sh-2)", animation: "bz-pulse-ring 2s infinite" }}>
             <span style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <Icon name="phone" size={22} color="#fff" />
@@ -72,7 +79,7 @@ export function Tracking() {
           </div>
           <div style={{ background: "#fff", border: "1px solid var(--line-200)", borderRadius: "var(--r-lg)", padding: 18 }}>
             <div style={{ fontWeight: 700, fontSize: ".9375rem", marginBottom: 12 }}>Items</div>
-            {(cart.length ? cart : [byId("bz-1"), byId("bz-3")]).slice(0,3).map(it => <div key={it.id} style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 10 }}>
+            {displayItems.slice(0,3).map(it => <div key={it.id} style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 10 }}>
               {it.img ? (
                 <img src={it.img} alt={it.name} style={{ width: 40, height: 40, objectFit: "cover", borderRadius: "var(--r-sm)" }} />
               ) : (
@@ -83,15 +90,18 @@ export function Tracking() {
           <Button variant="ghost" full icon="headphones">Need help?</Button>
           <Button variant="danger" full>Return / Refund</Button>
         </div>
-      </div>
-    </div>
   );
 }
 
 export function Wishlist() {
   const { wish, nav, openProduct } = useBz();
+  const catalog = useCatalog();
+  const { byId, isLoading, isError, error } = catalog;
   const items = wish.map(byId).filter(Boolean);
   const paged = usePaged(items, 12, items.length);
+  if (catalog.isLoading) {
+    return <ApiState isLoading={isLoading} isError={isError} error={error}><div /></ApiState>;
+  }
   if (items.length === 0) return <div style={{ maxWidth: 700, margin: "0 auto", padding: "20px 28px" }}>
     <EmptyState title="Your wishlist is empty" message="Tap the heart on any product to save it here for later." cta="Start exploring" onCta={() => nav("home")} secondary="Watch" onSecondary={() => nav("video")} />
   </div>;
@@ -104,17 +114,13 @@ export function Wishlist() {
 
 export function Bargains() {
   const { nav, openProduct, toast } = useBz();
-  const offers = [
-    { id: "OF-201", productId: "bz-3",  yourOffer: 1850, listed: 2200, sellerCounter: null, status: "pending",  age: "2 min ago",  expires: "23 hrs" },
-    { id: "OF-198", productId: "bz-1",  yourOffer: 480,  listed: 620,  sellerCounter: 540,  status: "countered", age: "1 hr ago",   expires: "22 hrs" },
-    { id: "OF-188", productId: "bz-8",  yourOffer: 2100, listed: 2450, sellerCounter: null, status: "accepted", age: "yesterday", expires: null },
-    { id: "OF-176", productId: "bz-12", yourOffer: 1500, listed: 2450, sellerCounter: null, status: "declined", age: "3 days ago", expires: null },
-  ].map(o => ({ ...o, p: byId(o.productId) })).filter(o => o.p);
+  const { data: offers = [], isLoading, isError, error } = useBargains();
 
   const tones = { pending: "saffron", countered: "blue", accepted: "success", declined: "neutral" };
   const labels = { pending: "Waiting for seller", countered: "Seller countered", accepted: "Accepted · add to cart", declined: "Declined" };
 
   return (
+    <ApiState isLoading={isLoading} isError={isError} error={error}>
     <div className="bz-container-pad" style={{ maxWidth: 820, margin: "0 auto", padding: "20px 28px 100px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
         <div style={{ width: 44, height: 44, borderRadius: "var(--r-md)", background: "var(--red)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -183,5 +189,6 @@ export function Bargains() {
         <Button variant="secondary" full icon="bargain" onClick={() => nav("browse")}>Find products to bargain on</Button>
       </div>
     </div>
+    </ApiState>
   );
 }

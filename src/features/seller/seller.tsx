@@ -2,12 +2,42 @@
 
 
 import React, { useState, useEffect, Fragment } from "react";
-import { Icon, Logo, Button, Spinner, IconButton, RatingStars, Chip, VerifiedBadge, StatusPill, Price, Placeholder, VideoPlayer, SkeletonCard, EmptyState, QtyStepper, Toast, SectionHead, TINTS, HelpLifeline, AllInPriceCard, OTPInput, MenuRow, ChipGroup, MobileBuyBar, BottomNav, LandmarkAddress, VoiceMicButton, usePaged, usePages, LoadMore, PageBar, BackToTop } from "@/components/ui";
-import { CATEGORIES, ATTR_CATEGORIES, CATEGORY_ATTRIBUTES, PRODUCTS, SELLERS, REVIEWS, byId, sellerOf, inCat, videoProducts, flashProducts, productProfile, P } from "@/constants/catalog";
-import { BazaarCtx, useBz, Himalaya, KathmanduSkyline, ProductCard, ProductRail, CategoryTile, Navbar, Footer, DevViewSwitcher } from "@/components/common";
+import { Icon, Logo, Button, Spinner, IconButton, RatingStars, Chip, VerifiedBadge, StatusPill, Price, Placeholder, VideoPlayer, SkeletonCard, EmptyState, QtyStepper, Toast, SectionHead, TINTS, HelpLifeline, AllInPriceCard, OTPInput, MenuRow, ChipGroup, MobileBuyBar, BottomNav, LandmarkAddress, VoiceMicButton, usePaged, usePages, LoadMore, PageBar, BackToTop, ApiState } from "@/components/ui";
+import { useAttrCategories, useCategoryAttributes } from "@/hooks/use-catalog";
+import {
+  useSellerDashboard,
+  useSellerInbox,
+  useSellerInventory,
+  useSellerBargains,
+  useSellerReviews,
+  useSellerChat,
+  useSellerPromotions,
+  useSellerVideos,
+  useSellerAnalytics,
+  useSellerReports,
+  useSellerNotifications,
+  useSellerStorefront,
+  useSellerLedger,
+} from "@/hooks/use-seller";
+import { BazaarCtx, useBz, Himalaya, KathmanduSkyline, ProductCard, ProductRail, CategoryTile, Navbar, Footer, DevViewSwitcher, VideoUploadForm } from "@/components/common";
 import { ASSETS } from "@/config/assets";
 
-export const sellerOrderRef = { current: null as (typeof INBOX_ORDERS)[number] | null };
+export type SellerInboxOrderItem = {
+  id: string;
+  buyer: string;
+  city: string;
+  item: string;
+  qty: number;
+  price: number;
+  pay: string;
+  status: string;
+  time: string;
+  phone: string;
+  icon: string;
+  tint: string;
+};
+
+export const sellerOrderRef = { current: null as SellerInboxOrderItem | null };
 export const sellerCoachedRef = { current: false };
 
 
@@ -565,8 +595,9 @@ export function SellerFunnel({ rows }) {
 
 export function SellerDashboard() {
   const { nav, toast } = useBz();
+  const { data: dashboard, isLoading, isError, error } = useSellerDashboard();
   const [coach, setCoach] = useState(false);
-  const [range, setRange] = useState("week"); // today | week | month
+  const [range, setRange] = useState("week");
 
   useEffect(() => {
     if (!sellerCoachedRef.current) {
@@ -577,71 +608,17 @@ export function SellerDashboard() {
 
   const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
 
-  const salesByDay = [
-    { label: "Sat", value: 12500 },
-    { label: "Sun", value: 18200 },
-    { label: "Mon", value: 9600 },
-    { label: "Tue", value: 21800 },
-    { label: "Wed", value: 14200 },
-    { label: "Thu", value: 18900 },
-    { label: "Fri", value: 24500, highlight: true },
-  ];
-
-  const paymentSplit = [
-    { label: "Cash on Delivery", value: 58, color: "var(--saffron)" },
-    { label: "eSewa",            value: 24, color: "#16a34a" },
-    { label: "Khalti",           value: 12, color: "#7360F2" },
-    { label: "Fonepay / IME",    value:  6, color: "var(--blue)" },
-  ];
-
-  const funnel = [
-    { label: "Product views",  value: 4820, icon: "image",   color: "var(--blue)" },
-    { label: "Added to cart",  value:  612, icon: "cart",    color: "var(--saffron)" },
-    { label: "Checkout start", value:  214, icon: "package", color: "var(--red)" },
-    { label: "Orders placed",  value:  118, icon: "check",   color: "var(--success)" },
-  ];
-
-  const topProducts = [
-    { name: "Green Cotton Kurta Suit",  units: 24, rev: 28800, icon: "shirt", tint: "green",   spark: [3, 5, 4, 6, 4, 7, 9] },
-    { name: "Pashmina Shawl — Maroon",  units: 18, rev: 44100, icon: "shirt", tint: "red",     spark: [2, 3, 2, 4, 5, 6, 6] },
-    { name: "Brass Diyo (pair)",        units: 15, rev: 20250, icon: "home",  tint: "gold",    spark: [4, 4, 3, 5, 4, 4, 5] },
-    { name: "Dhaka Topi — Classic",     units: 12, rev: 10200, icon: "shirt", tint: "blue",    spark: [1, 2, 3, 3, 4, 2, 3] },
-    { name: "Lokta Paper Journal",      units:  8, rev:  5200, icon: "book",  tint: "gold",    spark: [2, 1, 1, 2, 1, 2, 1] },
-  ];
-
-  const activity = [
-    { t: "2 min ago",  icon: "package", color: "var(--red)",     text: "New order from Sarita Thapa, Lalitpur — Rs. 1,200" },
-    { t: "14 min ago", icon: "package", color: "var(--red)",     text: "New order from Anjali Gurung, Pokhara — Rs. 2,900" },
-    { t: "1 hr ago",   icon: "wallet",  color: "var(--success)", text: "Rs. 17,820 received in eSewa wallet" },
-    { t: "3 hr ago",   icon: "truck",   color: "var(--blue)",    text: "Order BZ-24496 shipped via Pathao" },
-    { t: "5 hr ago",   icon: "star",    color: "var(--gold)",    text: "Bikash Rai left a 5-star review" },
-    { t: "yesterday",  icon: "zap",     color: "var(--saffron)", text: "Dhaka Topi running low — only 2 left" },
-  ];
-
-  const kpis = [
-    { label: "Today's sales",         sub: "आजको बिक्री",        value: "Rs. 24,000", delta: "+12%",  up: true,  color: "var(--blue)",    spark: [10,12,9,14,11,18,24] },
-    { label: "Orders to pack",        sub: "प्याक गर्न बाँकी",    value: "2",          delta: "new",   up: true,  color: "var(--danger)",  spark: [0,1,0,2,1,2,2] },
-    { label: "Visitors who bought",   sub: "१०० मध्ये किनेकाहरू",  value: "3 of 100",   delta: "+1",    up: true,  color: "var(--saffron)", spark: [2,2,3,2,3,3,3] },
-    { label: "Money on the way",      sub: "आउँदै",               value: "Rs. 38,200", delta: "2 days",up: true,  color: "var(--success)", spark: [12,18,9,21,14,18,38],
-      couriers: [
-        { name: "Pathao", amount: "Rs. 18,200", to: "s-inbox" },
-        { name: "NCM",    amount: "Rs. 20,000", to: "s-inbox" },
-      ] },
-  ];
-
-  const bargainGlance = { pending: 1, accepted: 4, avgGiven: 8, marginGiven: 1840 };
-
-  const hourHeat = [
-    [0,0,0,0,0,1,2,3,4,3,2,2,3,5,6,8,9,11,12,10,7,4,2,1],
-    [0,0,0,0,0,1,2,4,5,4,3,3,4,6,8,10,12,14,13,10,6,3,1,1],
-    [0,0,0,0,1,2,3,5,6,5,4,4,5,7,9,11,13,15,14,11,7,4,2,1],
-    [0,0,0,0,0,1,2,3,4,3,3,3,4,6,7,9,10,12,11,9,6,3,1,0],
-    [0,0,0,0,1,2,3,5,7,6,5,4,5,7,9,12,14,16,15,12,8,4,2,1],
-    [0,0,0,0,1,2,4,6,8,7,6,5,6,8,10,13,15,18,17,13,9,5,2,1],
-    [0,0,0,0,1,1,3,4,5,4,4,3,4,6,8,10,12,13,12,10,7,4,2,1],
-  ];
+  const salesByDay = dashboard?.salesByDay ?? [];
+  const paymentSplit = dashboard?.paymentSplit ?? [];
+  const funnel = dashboard?.funnel ?? [];
+  const topProducts = dashboard?.topProducts ?? [];
+  const activity = dashboard?.activity ?? [];
+  const kpis = dashboard?.kpis ?? [];
+  const bargainGlance = dashboard?.bargainGlance ?? { pending: 0, accepted: 0, avgGiven: 0, marginGiven: 0 };
+  const hourHeat = dashboard?.hourHeat ?? [];
 
   return (
+    <ApiState isLoading={isLoading} isError={isError} error={error}>
     <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
       <SellerHelpBar tutorial onTutorial={() => setCoach(true)} />
 
@@ -948,30 +925,11 @@ export function SellerDashboard() {
 
       {coach && <SellerCoachmark steps={COACH_DASHBOARD} onDone={() => setCoach(false)} />}
     </div>
+    </ApiState>
   );
 }
 
 /* ---------- 4.3 Orders Inbox (Viber-style feed) ---------- */
-export const INBOX_ORDERS = [
-  { id: "BZ-24512", buyer: "Sarita Thapa",   city: "Lalitpur",   item: "Green Cotton Kurtha — Size XL",  qty: 1, price: 1200, pay: "Cash on Delivery", status: "new",     time: "2 min ago",   phone: "98XXXXXXXX", icon: "shirt", tint: "green" },
-  { id: "BZ-24509", buyer: "Anjali Gurung",  city: "Pokhara",    item: "Tibetan Singing Bowl",            qty: 1, price: 2900, pay: "eSewa",            status: "new",     time: "14 min ago",  phone: "98XXXXXXXX", icon: "home",  tint: "gold" },
-  { id: "BZ-24502", buyer: "Bikash Rai",     city: "Biratnagar", item: "Brass Diyo Oil Lamp (pair)",     qty: 2, price: 2700, pay: "COD",              status: "packed",  time: "1 hr ago",    phone: "98XXXXXXXX", icon: "home",  tint: "saffron" },
-  { id: "BZ-24496", buyer: "Kabita Magar",   city: "Butwal",     item: "Handwoven Dhaka Cushion",         qty: 1, price: 1100, pay: "Khalti",           status: "shipped", time: "3 hr ago",    phone: "98XXXXXXXX", icon: "shirt", tint: "red" },
-  { id: "BZ-24491", buyer: "Deepak Shah",    city: "Janakpur",   item: "Bluetooth Earbuds Pro",          qty: 1, price: 2990, pay: "Fonepay",          status: "new",     time: "22 min ago",  phone: "98XXXXXXXX", icon: "phone", tint: "slate" },
-  { id: "BZ-24488", buyer: "Mina Tamang",    city: "Kathmandu",  item: "Himalayan Wool Socks (3 pk)",    qty: 3, price: 1350, pay: "COD",              status: "new",     time: "38 min ago",  phone: "98XXXXXXXX", icon: "shirt", tint: "blue" },
-  { id: "BZ-24480", buyer: "Ramesh Adhikari",city: "Hetauda",    item: "Wild Mountain Honey 500g",       qty: 2, price: 1440, pay: "eSewa",            status: "packed",  time: "2 hr ago",    phone: "98XXXXXXXX", icon: "leaf",  tint: "gold" },
-  { id: "BZ-24472", buyer: "Sunita Bhattarai",city: "Dharan",    item: "Ceramic Planter — Glazed",       qty: 1, price: 920,  pay: "IME Pay",          status: "packed",  time: "4 hr ago",    phone: "98XXXXXXXX", icon: "home",  tint: "teal" },
-  { id: "BZ-24465", buyer: "Hari Bhandari",  city: "Nepalgunj",  item: "Smart Fitness Watch",            qty: 1, price: 3490, pay: "Card",             status: "shipped", time: "yesterday",   phone: "98XXXXXXXX", icon: "watch", tint: "blue" },
-  { id: "BZ-24458", buyer: "Gita Karki",     city: "Lalitpur",   item: "Organic Argan Hair Serum",       qty: 2, price: 2500, pay: "Khalti",           status: "shipped", time: "yesterday",   phone: "98XXXXXXXX", icon: "sparkles", tint: "purple" },
-  { id: "BZ-24450", buyer: "Prakash Limbu",  city: "Itahari",    item: "Leather Sling Bag",              qty: 1, price: 2350, pay: "COD",              status: "done",    time: "2 days ago",  phone: "98XXXXXXXX", icon: "tag",   tint: "saffron" },
-  { id: "BZ-24442", buyer: "Laxmi Sapkota",  city: "Bharatpur",  item: "Felt Wool Slippers",             qty: 2, price: 1380, pay: "eSewa",            status: "done",    time: "3 days ago",  phone: "98XXXXXXXX", icon: "shirt", tint: "red" },
-  { id: "BZ-24437", buyer: "Niraj Pandey",   city: "Pokhara",    item: "Stainless Steel Water Bottle",   qty: 4, price: 3120, pay: "Fonepay",          status: "done",    time: "4 days ago",  phone: "98XXXXXXXX", icon: "dumbbell", tint: "teal" },
-  { id: "BZ-24429", buyer: "Sabina Rai",     city: "Kathmandu",  item: "Lokta Paper Journal",            qty: 3, price: 1950, pay: "COD",              status: "done",    time: "5 days ago",  phone: "98XXXXXXXX", icon: "book",  tint: "gold" },
-  { id: "BZ-24420", buyer: "Bishal Thapa",   city: "Birgunj",    item: "Thanka Painting — Mandala",      qty: 1, price: 5500, pay: "Card",             status: "done",    time: "6 days ago",  phone: "98XXXXXXXX", icon: "palette", tint: "purple" },
-  { id: "BZ-24412", buyer: "Pratima Joshi",  city: "Damak",      item: "Allo Nettle Fibre Scarf",        qty: 2, price: 2400, pay: "Khalti",           status: "shipped", time: "yesterday",   phone: "98XXXXXXXX", icon: "palette", tint: "green" },
-  { id: "BZ-24405", buyer: "Suresh Khadka",  city: "Tulsipur",   item: "Brass Singing Bell",             qty: 1, price: 1650, pay: "eSewa",            status: "packed",  time: "5 hr ago",    phone: "98XXXXXXXX", icon: "home",  tint: "gold" },
-];
-
 export const INBOX_TONE = { new: "red", packed: "saffron", shipped: "blue", done: "success" };
 export const INBOX_LABEL = {
   new:     { en: "New order",  ne: "नयाँ अर्डर",      icon: "package" },
@@ -1021,6 +979,7 @@ export function inDateRange(o, range) {
 
 export function SellerInbox() {
   const { nav } = useBz();
+  const { data: INBOX_ORDERS = [], isLoading, isError, error } = useSellerInbox();
   const [tab, setTab] = useState("all");
   const [view, setView] = useState("list"); // list | kanban
   const [search, setSearch] = useState("");
@@ -1054,6 +1013,7 @@ export function SellerInbox() {
   ];
 
   return (
+    <ApiState isLoading={isLoading} isError={isError} error={error}>
     <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
       <SellerHelpBar />
 
@@ -1173,13 +1133,15 @@ export function SellerInbox() {
         </>
       )}
     </div>
+    </ApiState>
   );
 }
 
 /* ---------- 4.3b Order detail — full-screen, one big action ---------- */
 export function SellerOrderDetail() {
   const { nav, toast } = useBz();
-  const o = sellerOrderRef.current || INBOX_ORDERS[0];
+  const { data: inboxOrders = [] } = useSellerInbox();
+  const o = sellerOrderRef.current || inboxOrders[0];
   const [busy, setBusy] = useState(false);
 
   const accept = () => {
@@ -1307,7 +1269,8 @@ export function SellerOrderDetail() {
 
 /* ---------- 4.4a Category-specific attribute fields ---------- */
 export function CategoryAttrFields({ category, values, onChange }) {
-  const fields = CATEGORY_ATTRIBUTES[category] || [];
+  const { data: categoryAttributes = {} } = useCategoryAttributes();
+  const fields = categoryAttributes[category] || [];
   if (!fields.length) return null;
   const inputStyle = { width: "100%", height: 48, fontSize: ".9375rem", border: "1.5px solid var(--line-200)", borderRadius: "var(--r-md)", padding: "0 14px", outline: "none", background: "#fff", fontFamily: "var(--font-sans)" };
   const set = (k, v) => onChange({ ...values, [k]: v });
@@ -1382,6 +1345,8 @@ export const attrFilled = (f: { t: string }, v: unknown) => {
 /* ---------- 4.4 Add Product — Three-Tap Listing ---------- */
 export function SellerAddProduct() {
   const { nav, toast } = useBz();
+  const { data: attrCategories = [] } = useAttrCategories();
+  const { data: categoryAttributes = {} } = useCategoryAttributes();
   const [photos, setPhotos] = useState(0);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
@@ -1400,7 +1365,7 @@ export function SellerAddProduct() {
   // New category → start its attributes fresh (never carry the wrong category's fields).
   const pickCategory = (id) => { setCategory(id); setAttrs({}); };
 
-  const attrFields = CATEGORY_ATTRIBUTES[category] || [];
+  const attrFields = categoryAttributes[category] || [];
   const reqFields = attrFields.filter(f => f.req);
   const missingReq = reqFields.filter(f => !attrFilled(f, attrs[f.k]));
   const filledCount = attrFields.filter(f => attrFilled(f, attrs[f.k])).length;
@@ -1500,7 +1465,7 @@ export function SellerAddProduct() {
         <select value={category} onChange={e => pickCategory(e.target.value)}
           style={{ width: "100%", height: 56, fontSize: "1rem", border: "1.5px solid var(--line-200)", borderRadius: "var(--r-md)", padding: "0 14px", outline: "none", background: "#fff", fontFamily: "var(--font-sans)" }}>
           <option value="">Pick a category</option>
-          {ATTR_CATEGORIES.map(c => (
+          {attrCategories.map(c => (
             <option key={c.id} value={c.id}>{c.en} · {c.ne}</option>
           ))}
         </select>
@@ -1645,25 +1610,6 @@ export function SellerAddProduct() {
 }
 
 /* ---------- 4.5 Inventory — swipe-to-sell ---------- */
-export const SELLER_INVENTORY = [
-  { id: "s1", name: "Green Cotton Kurta Suit", price: 1200, stock: 12, icon: "shirt", tint: "green" },
-  { id: "s2", name: "Pashmina Shawl — Maroon", price: 2450, stock: 4,  icon: "shirt", tint: "red" },
-  { id: "s3", name: "Brass Diyo (pair)",       price: 1350, stock: 28, icon: "home",  tint: "gold" },
-  { id: "s4", name: "Dhaka Topi — Classic",    price: 850,  stock: 2,  icon: "shirt", tint: "blue" },
-  { id: "s5", name: "Lokta Paper Journal",     price: 650,  stock: 0,  icon: "book",  tint: "gold" },
-  { id: "s6",  name: "Allo Nettle Fibre Scarf",   price: 1200, stock: 9,  icon: "palette", tint: "green" },
-  { id: "s7",  name: "Wild Mountain Honey 500g",  price: 720,  stock: 34, icon: "leaf",    tint: "gold" },
-  { id: "s8",  name: "Hemp Crossbody Backpack",   price: 1650, stock: 6,  icon: "tag",     tint: "green" },
-  { id: "s9",  name: "Thanka Painting — Mandala", price: 5500, stock: 3,  icon: "palette", tint: "purple" },
-  { id: "s10", name: "Yak Cheese Wheel 250g",     price: 980,  stock: 0,  icon: "leaf",    tint: "saffron" },
-  { id: "s11", name: "Polarised Sunglasses",      price: 1450, stock: 18, icon: "tag",     tint: "slate" },
-  { id: "s12", name: "Everyday Canvas Sneakers",  price: 2100, stock: 11, icon: "tag",     tint: "blue" },
-  { id: "s13", name: "Himalayan Herbal Soap (4)", price: 540,  stock: 47, icon: "sparkles",tint: "green" },
-  { id: "s14", name: "Ceramic Planter — Glazed",  price: 920,  stock: 2,  icon: "home",    tint: "teal" },
-  { id: "s15", name: "Felt Wool Slippers",        price: 690,  stock: 23, icon: "shirt",   tint: "red" },
-  { id: "s16", name: "Tibetan Singing Bowl",      price: 2900, stock: 1,  icon: "bowl",    tint: "gold" },
-];
-
 export const INV_SORTS = [
   { value: "added",    label: "Recently added" },
   { value: "stockLow", label: "Stock low → high" },
@@ -1673,7 +1619,9 @@ export const INV_SORTS = [
 
 export function SellerInventory() {
   const { nav, toast } = useBz();
-  const [items, setItems] = useState(SELLER_INVENTORY);
+  const { data: inventoryData = [], isLoading, isError, error } = useSellerInventory();
+  const [items, setItems] = useState([]);
+  useEffect(() => { if (inventoryData.length) setItems(inventoryData); }, [inventoryData]);
   const [expanded, setExpanded] = useState(null);
   const [status, setStatus] = useState("all"); // all | active | low | oos
   const [search, setSearch] = useState("");
@@ -1740,6 +1688,7 @@ export function SellerInventory() {
   const invPaged = usePages(visible, 8, `${status}|${search}|${sort}`);
 
   return (
+    <ApiState isLoading={isLoading} isError={isError} error={error}>
     <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
       <SellerHelpBar />
 
@@ -1968,19 +1917,15 @@ export function SellerInventory() {
         </div>
       )}
     </div>
+    </ApiState>
   );
 }
 
 /* ---------- 4.6 Payouts Ledger ---------- */
 export function SellerLedger() {
   const { nav } = useBz();
-  const rows = [
-    { date: "May 28", cash: 24500, fee: 500, net: 24000, status: "received" },
-    { date: "May 27", cash: 18200, fee: 380, net: 17820, status: "received" },
-    { date: "May 26", cash: 21800, fee: 440, net: 21360, status: "received" },
-    { date: "May 25", cash: 9600,  fee: 200, net: 9400,  status: "sending" },
-    { date: "May 24", cash: 14200, fee: 300, net: 13900, status: "held" },
-  ];
+  const { data: ledger, isLoading, isError, error } = useSellerLedger();
+  const rows = ledger?.rows ?? [];
   const statusLabel = {
     received: { en: "Received", ne: "पैसा आयो ✓", color: "var(--success)", bg: "rgba(22,163,74,.1)" },
     sending:  { en: "Sending",  ne: "पठाउँदै",     color: "var(--saffron)", bg: "rgba(247,127,0,.1)" },
@@ -1988,6 +1933,7 @@ export function SellerLedger() {
   };
 
   return (
+    <ApiState isLoading={isLoading} isError={isError} error={error}>
     <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
       <SellerHelpBar />
 
@@ -2053,45 +1999,30 @@ export function SellerLedger() {
         <Button variant="ghost" full icon="phone">Talk to support</Button>
       </div>
     </div>
+    </ApiState>
   );
 }
 
 /* ---------- 4.7 Customer Chat ---------- */
-export const CHAT_QUICK_REPLIES = [
-  { en: "Yes, in stock.",                  ne: "हो, छ।" },
-  { en: "Will ship today.",                ne: "आज पठाउँछौँ।" },
-  { en: "Lowest price already.",           ne: "अहिले नै सबभन्दा कम।" },
-  { en: "Delivery in 2-3 days.",           ne: "२-३ दिनमा पुग्छ।" },
-  { en: "Sorry, out of stock.",            ne: "माफ गर्नुहोस्, सकियो।" },
-  { en: "Bargain accepted.",               ne: "मोलतोल स्वीकार।" },
-];
-
-export const CHAT_THREADS = [
-  { id: "c1", buyer: "Sarita Thapa",  city: "Lalitpur",  last: "Is size XL still available?",                 unread: 2, time: "2m",  avatar: "S", tone: "green" },
-  { id: "c2", buyer: "Anjali Gurung", city: "Pokhara",   last: "Can you ship to Pokhara?",                    unread: 1, time: "14m", avatar: "A", tone: "blue" },
-  { id: "c3", buyer: "Bikash Rai",    city: "Biratnagar",last: "Thank you, received the diyo today",          unread: 0, time: "1h",  avatar: "B", tone: "gold" },
-  { id: "c4", buyer: "Kabita Magar",  city: "Butwal",    last: "I want 2 cushions, any discount?",            unread: 0, time: "3h",  avatar: "K", tone: "red" },
-];
-
 export function SellerChat() {
   const { toast } = useBz();
-  const [active, setActive] = useState(CHAT_THREADS[0]);
+  const { data: chatData, isLoading, isError, error } = useSellerChat();
+  const CHAT_THREADS = chatData?.threads ?? [];
+  const CHAT_QUICK_REPLIES = chatData?.quickReplies ?? [];
+  const [active, setActive] = useState(null);
+  useEffect(() => { if (CHAT_THREADS.length && !active) setActive(CHAT_THREADS[0]); }, [CHAT_THREADS, active]);
   const [msg, setMsg] = useState("");
-  const [messages, setMessages] = useState({
-    c1: [
-      { from: "buyer", text: "Hi! Is the green kurta size XL still available?", t: "10:42" },
-      { from: "buyer", text: "Is size XL still available?", t: "10:45" },
-    ],
-    c2: [{ from: "buyer", text: "Can you ship to Pokhara?", t: "09:30" }],
-    c3: [{ from: "buyer", text: "Thank you, received the diyo today", t: "yesterday" }],
-    c4: [{ from: "buyer", text: "I want 2 cushions, any discount?", t: "yesterday" }],
-  });
+  const [messages, setMessages] = useState({});
 
   const send = (text) => {
-    if (!text.trim()) return;
+    if (!text.trim() || !active) return;
     setMessages(m => ({ ...m, [active.id]: [...(m[active.id] || []), { from: "me", text, t: "now" }] }));
     setMsg("");
   };
+
+  if (isLoading || isError || !active) {
+    return <ApiState isLoading={isLoading} isError={isError} error={error}><div /></ApiState>;
+  }
 
   return (
     <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
@@ -2179,18 +2110,14 @@ export function SellerChat() {
 }
 
 /* ---------- 4.8 Bargaining ---------- */
-export const BARGAIN_OFFERS = [
-  { id: "b1", buyer: "Anjali Gurung",  city: "Pokhara",   product: "Pashmina Shawl — Maroon", listed: 2450, offered: 2100, discount: 14, time: "12 min ago",   icon: "shirt", tint: "red"   },
-  { id: "b2", buyer: "Sarita Thapa",   city: "Lalitpur",  product: "Green Cotton Kurta",       listed: 1200, offered: 1050, discount: 13, time: "Accepted 1h", icon: "shirt", tint: "green", accepted: true },
-  { id: "b3", buyer: "Bikash Rai",     city: "Biratnagar",product: "Brass Diyo (pair)",        listed: 1350, offered: 1100, discount: 19, time: "Rejected 3h", icon: "home",  tint: "gold",  rejected: true },
-];
-
 export function SellerBargain() {
   const { toast } = useBz();
+  const { data: BARGAIN_OFFERS = [], isLoading, isError, error } = useSellerBargains();
   const [maxPct, setMaxPct] = useState(12);
   const [enabled, setEnabled] = useState(true);
 
   return (
+    <ApiState isLoading={isLoading} isError={isError} error={error}>
     <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
       <SellerHelpBar />
       <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
@@ -2274,25 +2201,20 @@ export function SellerBargain() {
         })}
       </div>
     </div>
+    </ApiState>
   );
 }
 
 /* ---------- 4.9 Promotions ---------- */
 export function SellerPromotions() {
   const { toast } = useBz();
+  const { data: promos, isLoading, isError, error } = useSellerPromotions();
   const [activeTab, setActiveTab] = useState("active");
-  const promoTypes = [
-    { id: "flash",   icon: "zap",      en: "Flash sale",        ne: "फ्ल्यास सेल",     desc: "Time-limited % off on selected items" },
-    { id: "percent", icon: "percent",  en: "Percent discount",  ne: "प्रतिशत छुट",     desc: "Plain % off, no countdown" },
-    { id: "bogo",    icon: "gift",     en: "Buy 1 Get 1",       ne: "१ किने १ फ्री",   desc: "Pair products as BOGO deals" },
-    { id: "coupon",  icon: "ticket",   en: "Coupon code",       ne: "कुपन कोड",        desc: "Codes buyers type at checkout" },
-  ];
-  const active = [
-    { type: "Flash sale", name: "Friday 5pm — Pashmina 20% off", ends: "in 3 days", uses: 12, max: 50, color: "var(--saffron)" },
-    { type: "Coupon",     name: "NEWBUYER100 — Rs. 100 off",      ends: "30 days",  uses: 38, max: 200, color: "var(--blue)" },
-  ];
+  const promoTypes = promos?.promoTypes ?? [];
+  const active = promos?.active ?? [];
 
   return (
+    <ApiState isLoading={isLoading} isError={isError} error={error}>
     <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
       <SellerHelpBar />
       <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>Promotions <span className="ne" style={{ fontSize: "1rem", color: "var(--ink-500)", fontWeight: 600 }}>· छुट</span></h1>
@@ -2343,24 +2265,20 @@ export function SellerPromotions() {
         ))}
       </div>
     </div>
+    </ApiState>
   );
 }
 
 /* ---------- 4.10 Reviews ---------- */
-export const REVIEWS_DATA = [
-  { id: "r1", buyer: "Anjali G.",  stars: 5, product: "Brass Diyo (pair)",      text: "Beautiful work. Lighter than expected but elegant. Delivered fast.", time: "2 days ago", replied: true,  reply: "Thank you Anjali! Glad you liked it." },
-  { id: "r2", buyer: "Sarita T.",  stars: 4, product: "Green Cotton Kurta",     text: "Good quality cotton. Color slightly darker than photo.",              time: "5 days ago", replied: false },
-  { id: "r3", buyer: "Bikash R.",  stars: 2, product: "Dhaka Topi — Classic",   text: "Stitching loose on one side.",                                          time: "1 week ago", replied: false, low: true },
-  { id: "r4", buyer: "Kabita M.",  stars: 5, product: "Pashmina Shawl",         text: "Soft, warm, perfect for winter. Will buy again.",                      time: "1 week ago", replied: true,  reply: "धन्यवाद! आगामी सिजनमा नयाँ रङ ल्याउँदैछौँ।" },
-];
-
 export function SellerReviews() {
   const { toast } = useBz();
+  const { data: REVIEWS_DATA = [], isLoading, isError, error } = useSellerReviews();
   const [filter, setFilter] = useState("all");
   const list = REVIEWS_DATA.filter(r => filter === "all" || (filter === "unreplied" && !r.replied) || (filter === "low" && r.stars <= 3));
-  const avg = (REVIEWS_DATA.reduce((s, r) => s + r.stars, 0) / REVIEWS_DATA.length).toFixed(1);
+  const avg = REVIEWS_DATA.length ? (REVIEWS_DATA.reduce((s, r) => s + r.stars, 0) / REVIEWS_DATA.length).toFixed(1) : "0.0";
 
   return (
+    <ApiState isLoading={isLoading} isError={isError} error={error}>
     <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
       <SellerHelpBar />
       <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>Reviews <span className="ne" style={{ fontSize: "1rem", color: "var(--ink-500)", fontWeight: 600 }}>· समीक्षा</span></h1>
@@ -2420,20 +2338,17 @@ export function SellerReviews() {
         ))}
       </div>
     </div>
+    </ApiState>
   );
 }
 
 /* ---------- 4.11 Storefront builder ---------- */
 export function SellerStorefront() {
   const { toast } = useBz();
+  const { data: storefront, isLoading, isError, error } = useSellerStorefront();
   const [viewMobile, setViewMobile] = useState(true);
-  const [blocks, setBlocks] = useState([
-    { id: "hero",       en: "Hero banner",         enabled: true },
-    { id: "featured",   en: "Featured products",   enabled: true },
-    { id: "video",      en: "Video reel",          enabled: true },
-    { id: "about",      en: "About us",            enabled: true },
-    { id: "categories", en: "Category grid",       enabled: false },
-  ]);
+  const [blocks, setBlocks] = useState([]);
+  useEffect(() => { if (storefront?.blocks) setBlocks(storefront.blocks); }, [storefront]);
 
   const move = (idx, dir) => {
     const arr = [...blocks];
@@ -2444,6 +2359,7 @@ export function SellerStorefront() {
   };
 
   return (
+    <ApiState isLoading={isLoading} isError={isError} error={error}>
     <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
       <SellerHelpBar />
       <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>Storefront <span className="ne" style={{ fontSize: "1rem", color: "var(--ink-500)", fontWeight: 600 }}>· पसल सजावट</span></h1>
@@ -2513,31 +2429,42 @@ export function SellerStorefront() {
         </div>
       </div>
     </div>
+    </ApiState>
   );
 }
 
 /* ---------- 4.12 Videos ---------- */
-export const SELLER_VIDEOS = [
-  { id: "v1", title: "Green Cotton Kurta — try-on",  views: 1240, likes: 87, product: "Green Cotton Kurta",    tint: "green", thumb: "https://picsum.photos/seed/seller-video-1/400/600" },
-  { id: "v2", title: "Pashmina shawl unboxing",       views: 980,  likes: 64, product: "Pashmina Shawl",         tint: "red", thumb: "https://picsum.photos/seed/seller-video-2/400/600" },
-  { id: "v3", title: "How to use brass diyo",         views: 720,  likes: 42, product: "Brass Diyo",            tint: "gold", thumb: "https://picsum.photos/seed/seller-video-3/400/600" },
-];
-
 export function SellerVideos() {
   const { toast } = useBz();
+  const { data: videosData, isLoading, isError, error, refetch } = useSellerVideos();
+  const SELLER_VIDEOS = videosData?.items ?? [];
+  const [showUpload, setShowUpload] = useState(false);
+
   return (
+    <ApiState isLoading={isLoading} isError={isError} error={error}>
     <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
       <SellerHelpBar />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, flexWrap: "wrap", gap: 10 }}>
         <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>Videos <span className="ne" style={{ fontSize: "1rem", color: "var(--ink-500)", fontWeight: 600 }}>· भिडियो</span></h1>
-        <Button variant="primary" icon="plus" onClick={() => toast("Upload video — coming soon")}>Add video</Button>
+        <Button variant="primary" icon="plus" onClick={() => setShowUpload(s => !s)}>{showUpload ? "Close" : "Add video"}</Button>
       </div>
-      <p style={{ margin: "0 0 18px", fontSize: ".875rem", color: "var(--ink-500)" }}>Products with video sell 2× more. Keep videos under 30 seconds.</p>
+      <p style={{ margin: "0 0 18px", fontSize: ".875rem", color: "var(--ink-500)" }}>Products with video sell 2× more. Keep videos under 30 seconds. Videos are stored on Cloudinary.</p>
+
+      {showUpload && (
+        <VideoUploadForm
+          onCancel={() => setShowUpload(false)}
+          onSuccess={() => {
+            setShowUpload(false);
+            void refetch();
+            toast("Video uploaded");
+          }}
+        />
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
         {SELLER_VIDEOS.map(v => (
           <div key={v.id} style={{ background: "#fff", border: "1.5px solid var(--line-200)", borderRadius: "var(--r-lg)", overflow: "hidden" }}>
-            <VideoPlayer tint={v.tint} icon="shirt" ratio="4/5" radius="0" thumb={v.thumb} />
+            <VideoPlayer tint={v.tint} icon={v.icon || "shirt"} ratio="4/5" radius="0" thumb={v.thumb} src={v.videoUrl} />
             <div style={{ padding: 12 }}>
               <div style={{ fontWeight: 800, fontSize: ".875rem" }}>{v.title}</div>
               <div style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 2 }}>For: {v.product}</div>
@@ -2554,6 +2481,7 @@ export function SellerVideos() {
         ))}
       </div>
     </div>
+    </ApiState>
   );
 }
 
@@ -2938,7 +2866,8 @@ export const NOTIF_CHANNELS = [
 
 export function SellerSettings() {
   const { toast } = useBz();
-  const [tab, setTab] = useState("shop"); // shop | alerts | account
+  const { data: notifications } = useSellerNotifications();
+  const [tab, setTab] = useState("shop");
   const [notif, setNotif] = useState(NOTIF_EVENTS.map(e => [...e.defaults]));
 
   return (
@@ -3021,6 +2950,17 @@ export function SellerSettings() {
       {tab === "alerts" && (
         <div>
           <p style={{ margin: "0 0 12px", fontSize: ".875rem", color: "var(--ink-500)" }}>Pick how we tell you about each thing. New-order alerts are always on.</p>
+          {(notifications?.items ?? []).length > 0 && (
+            <div style={{ background: "#fff", border: "1.5px solid var(--line-200)", borderRadius: "var(--r-lg)", padding: 14, marginBottom: 14 }}>
+              <div style={{ fontWeight: 800, fontSize: ".875rem", marginBottom: 10 }}>Recent alerts</div>
+              {(notifications.items).map(n => (
+                <div key={n.id} style={{ padding: "8px 0", borderBottom: "1px solid var(--line-200)", fontSize: ".8125rem" }}>
+                  <div style={{ fontWeight: 700 }}>{n.title}</div>
+                  <div style={{ color: "var(--ink-500)" }}>{n.body} · {n.time}</div>
+                </div>
+              ))}
+            </div>
+          )}
           <div style={{ background: "#fff", border: "1.5px solid var(--line-200)", borderRadius: "var(--r-lg)", overflow: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 480 }}>
               <thead>
@@ -3159,25 +3099,14 @@ export function SellerProfile() {
 /* ---------- NEW: Simple Analytics ("My shop") for non-tech 40+ users ---------- */
 
 export function SellerAnalytics() {
-  const salesByDay = [
-    { label: "Sat", value: 12500 }, { label: "Sun", value: 18200 }, { label: "Mon", value: 9600 },
-    { label: "Tue", value: 21800 }, { label: "Wed", value: 14200 }, { label: "Thu", value: 18900 },
-    { label: "Fri", value: 24500, highlight: true },
-  ];
-  const topProducts = [
-    { name: "Pashmina Shawl — Maroon",  units: 18, rev: 44100, icon: "shirt", tint: "red"   },
-    { name: "Green Cotton Kurta",       units: 12, rev: 14400, icon: "shirt", tint: "green" },
-    { name: "Brass Diyo (pair)",        units: 15, rev: 20250, icon: "home",  tint: "gold"  },
-  ];
-  const moneyBuckets = [
-    { en: "In my bank",      ne: "मेरो बैंकमा",     v: 24000, c: "var(--success)" },
-    { en: "Sold today",      ne: "आज बेचेको",      v: 24500, c: "var(--blue-deep)" },
-    { en: "With courier",    ne: "कुरियरसँग",     v: 38200, c: "var(--saffron)" },
-    { en: "Returns / on hold",ne: "रोकिएको",       v:  1840, c: "var(--danger)" },
-  ];
-  const maxBucket = Math.max(...moneyBuckets.map(b => b.v));
+  const { data: analytics, isLoading, isError, error } = useSellerAnalytics();
+  const salesByDay = analytics?.salesByDay ?? [];
+  const topProducts = analytics?.topProducts ?? [];
+  const moneyBuckets = analytics?.moneyBuckets ?? [];
+  const maxBucket = Math.max(...moneyBuckets.map(b => b.v), 1);
 
   return (
+    <ApiState isLoading={isLoading} isError={isError} error={error}>
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "20px 28px 100px" }}>
       <SellerHelpBar />
 
@@ -3255,6 +3184,7 @@ export function SellerAnalytics() {
         Want to know what to fix? Open <b>What to do · के गर्ने</b> in the sidebar.
       </p>
     </div>
+    </ApiState>
   );
 }
 
@@ -3262,72 +3192,12 @@ export function SellerAnalytics() {
 
 export function SellerReports() {
   const { toast, nav } = useBz();
-
-  const cards = [
-    {
-      icon: "refresh", color: "var(--saffron)",
-      title: "Restock these now",
-      ne: "यी सामान सकिँदै",
-      sub: "3 items will run out in less than 5 days",
-      action: "See list",
-      items: ["Dhaka Topi — only 2 left", "Lokta Journal — 0 left", "Pashmina Maroon — 4 left"],
-      to: "s-products",
-    },
-    {
-      icon: "trendingUp", color: "var(--success)",
-      title: "Hot this week — make a video",
-      ne: "यो हप्ता राम्रो",
-      sub: "These items are selling 50% more than last week",
-      action: "Open videos",
-      items: ["Brass Diyo — selling 2× more", "Tibetan Singing Bowl — selling 1.7× more"],
-      to: "s-videos",
-    },
-    {
-      icon: "trendingDown", color: "var(--danger)",
-      title: "Sitting too long — give a discount",
-      ne: "धेरै दिनदेखि नबिकेको",
-      sub: "4 items had no sale in last 14 days",
-      action: "Start offer",
-      items: ["Wool Cap", "Pashmina Beige", "Singing Bowl Small", "Felt Slippers"],
-      to: "s-promos",
-    },
-    {
-      icon: "returns", color: "var(--danger)",
-      title: "Too many returns",
-      ne: "धेरै फिर्ता",
-      sub: "15 of 100 orders came back undelivered. Healthy is below 10.",
-      action: "Call buyers to confirm",
-      items: ["Tip: Call COD buyers before shipping. Verify their address."],
-      to: "s-inbox",
-    },
-    {
-      icon: "user", color: "var(--blue)",
-      title: "Buyers who didn't come back",
-      ne: "फेरि नआएका खरिदकर्ता",
-      sub: "18 buyers bought once 30+ days ago. Send a coupon.",
-      action: "Make coupon",
-      items: [],
-      to: "s-promos",
-    },
-    {
-      icon: "wallet", color: "var(--saffron)",
-      title: "Rs. 38,200 stuck with courier",
-      ne: "कुरियरसँग रोकिएको",
-      sub: "Cash on Delivery money — comes in 2 days. Nothing to do.",
-      action: "See payouts",
-      items: [],
-      to: "s-ledger",
-    },
-  ];
-
-  const downloads = [
-    { en: "Tax report (PDF)",        ne: "कर रिपोर्ट",         icon: "file"  },
-    { en: "Sales this month (CSV)",   ne: "मासिक बिक्री",       icon: "file"  },
-    { en: "All my buyers (CSV)",      ne: "खरिदकर्ता सूची",      icon: "user"  },
-    { en: "Current stock (CSV)",      ne: "मौजुदा सामान",        icon: "store" },
-  ];
+  const { data: reports, isLoading, isError, error } = useSellerReports();
+  const cards = reports?.cards ?? [];
+  const downloads = reports?.downloads ?? [];
 
   return (
+    <ApiState isLoading={isLoading} isError={isError} error={error}>
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "20px 28px 100px" }}>
       <SellerHelpBar />
       <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 800, color: "var(--blue-deep)" }}>What to do this week</h1>
@@ -3389,5 +3259,6 @@ export function SellerReports() {
         ))}
       </div>
     </div>
+    </ApiState>
   );
 }

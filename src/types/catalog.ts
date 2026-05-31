@@ -68,6 +68,7 @@ export interface Product {
   reviews: number;
   hasVideo?: boolean;
   videoThumb?: string;
+  videoUrl?: string | null;
   eta: string;
   tag?: string;
   img?: string;

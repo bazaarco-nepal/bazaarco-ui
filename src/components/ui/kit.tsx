@@ -306,25 +306,65 @@ export function Placeholder({ icon = "package", tint = "slate", radius = "var(--
 }
 
 /* ---------- Simulated video player ---------- */
-export function VideoPlayer({ tint = "blue", icon = "shirt", ratio = "4 / 5", radius = "var(--r-lg)", autoplay, label, overlay, compact, fill, thumb }) {
+export function VideoPlayer({ tint = "blue", icon = "shirt", ratio = "4 / 5", radius = "var(--r-lg)", autoplay, label, overlay, compact, fill, thumb, src }) {
+  const videoRef = useRef(null);
   const [playing, setPlaying] = useState(!!autoplay);
-  const [t, setT] = useState(autoplay ? 0 : 0);
+  const [t, setT] = useState(0);
+  const [dur, setDur] = useState(18);
   const [muted, setMuted] = useState(true);
-  const dur = 18;
+  const hasSrc = Boolean(src);
+
   useEffect(() => {
-    if (!playing) return;
+    if (hasSrc || !playing) return;
     const id = setInterval(() => setT(x => (x + 0.1 >= dur ? 0 : x + 0.1)), 100);
     return () => clearInterval(id);
-  }, [playing]);
+  }, [playing, dur, hasSrc]);
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el || !hasSrc) return;
+    el.muted = muted;
+    if (playing) {
+      void el.play().catch(() => setPlaying(false));
+    } else {
+      el.pause();
+    }
+  }, [playing, muted, hasSrc, src]);
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el || !hasSrc) return;
+    const onTime = () => setT(el.currentTime);
+    const onMeta = () => setDur(el.duration || 18);
+    el.addEventListener("timeupdate", onTime);
+    el.addEventListener("loadedmetadata", onMeta);
+    return () => {
+      el.removeEventListener("timeupdate", onTime);
+      el.removeEventListener("loadedmetadata", onMeta);
+    };
+  }, [hasSrc, src]);
+
   const c = TINTS[tint] || TINTS.blue;
   const fmt = s => `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,"0")}`;
+  const togglePlay = () => setPlaying(p => !p);
+
   return (
     <div style={{ position: "relative", width: "100%",
       ...(fill ? { height: "100%" } : { aspectRatio: ratio }),
       borderRadius: radius, overflow: "hidden",
-      background: thumb ? "#000" : `linear-gradient(160deg, ${c[1]}, ${c[0]})`, cursor: "pointer" }}
-      onClick={() => setPlaying(p => !p)}>
-      {thumb ? (
+      background: thumb || src ? "#000" : `linear-gradient(160deg, ${c[1]}, ${c[0]})`, cursor: "pointer" }}
+      onClick={togglePlay}>
+      {hasSrc ? (
+        <video
+          ref={videoRef}
+          src={src}
+          poster={thumb || undefined}
+          playsInline
+          loop
+          muted={muted}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      ) : thumb ? (
         <img src={thumb} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: playing ? 0.7 : 1, transition: "opacity 0.3s" }} />
       ) : (
         <Icon name={icon} color={c[2]} stroke={1.3} style={{ position: "absolute", top: "50%", left: "50%", width: "46%", height: "46%",
@@ -353,7 +393,12 @@ export function VideoPlayer({ tint = "blue", icon = "shirt", ratio = "4 / 5", ra
         background: "linear-gradient(transparent, rgba(11,18,32,.55))", display: "flex", flexDirection: "column", gap: 6 }}
         onClick={e => e.stopPropagation()}>
         <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,.35)", position: "relative", cursor: "pointer" }}
-          onClick={e => { const r = e.currentTarget.getBoundingClientRect(); setT(((e.clientX-r.left)/r.width)*dur); }}>
+          onClick={e => {
+            const r = e.currentTarget.getBoundingClientRect();
+            const next = ((e.clientX - r.left) / r.width) * dur;
+            setT(next);
+            if (videoRef.current) videoRef.current.currentTime = next;
+          }}>
           <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${(t/dur)*100}%`, background: "var(--red)", borderRadius: 2 }} />
         </div>
         {!compact && <div style={{ display: "flex", alignItems: "center", gap: 12, color: "#fff" }}>

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useContext, createContext } from "react";
 import { Icon, Logo, Button, Spinner, IconButton, RatingStars, Chip, VerifiedBadge, StatusPill, Price, Placeholder, VideoPlayer, SkeletonCard, EmptyState, QtyStepper, Toast, SectionHead, TINTS, HelpLifeline, AllInPriceCard, OTPInput, MenuRow, ChipGroup, MobileBuyBar, BottomNav, LandmarkAddress, VoiceMicButton, usePaged, usePages, LoadMore, PageBar, BackToTop } from "@/components/ui";
-import { CATEGORIES, ATTR_CATEGORIES, CATEGORY_ATTRIBUTES, PRODUCTS, SELLERS, REVIEWS, byId, sellerOf, inCat, videoProducts, flashProducts, productProfile, P } from "@/constants/catalog";
+import { useCatalog } from "@/hooks/use-catalog";
 import { ASSETS } from "@/config/assets";
 
 
@@ -53,6 +53,7 @@ export function KathmanduSkyline({ src = ASSETS.skyline, height = 300, opacity =
 /* ---------- Product card ---------- */
 export function ProductCard({ p, onClick }) {
   const { toggleWish, wish } = useBz();
+  const { sellerOf } = useCatalog();
   const [hov, setHov] = useState(false);
   const s = sellerOf(p);
   const disc = p.original ? Math.round((1 - p.price / p.original) * 100) : 0;
@@ -104,7 +105,7 @@ export function ProductCard({ p, onClick }) {
           <RatingStars value={p.rating} size={13} showVal />
           <span style={{ fontSize: ".75rem", color: "var(--ink-400)" }}>({p.reviews})</span>
           <span style={{ fontSize: ".75rem", color: "var(--ink-400)" }}>· {soldLabel}</span>
-          {s.verified && <Icon name="badgeCheck" size={14} color="var(--gold)" title="Verified seller" />}
+          {s?.verified && <Icon name="badgeCheck" size={14} color="var(--gold)" title="Verified seller" />}
         </div>
         {/* Single price line: all-in price + strikethrough original — via Price primitive */}
         <Price value={allIn} original={p.original} size="md" />

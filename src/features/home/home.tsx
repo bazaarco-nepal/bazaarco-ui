@@ -2,8 +2,9 @@
 
 
 import React, { useState, useEffect } from "react";
-import { Icon, Logo, Button, Spinner, IconButton, RatingStars, Chip, VerifiedBadge, StatusPill, Price, Placeholder, VideoPlayer, SkeletonCard, EmptyState, QtyStepper, Toast, SectionHead, TINTS, HelpLifeline, AllInPriceCard, OTPInput, MenuRow, ChipGroup, MobileBuyBar, BottomNav, LandmarkAddress, VoiceMicButton, usePaged, usePages, LoadMore, PageBar, BackToTop } from "@/components/ui";
-import { CATEGORIES, ATTR_CATEGORIES, CATEGORY_ATTRIBUTES, PRODUCTS, SELLERS, REVIEWS, byId, sellerOf, inCat, videoProducts, flashProducts, productProfile, P } from "@/constants/catalog";
+import { Icon, Logo, Button, Spinner, IconButton, RatingStars, Chip, VerifiedBadge, StatusPill, Price, Placeholder, VideoPlayer, SkeletonCard, EmptyState, QtyStepper, Toast, SectionHead, TINTS, HelpLifeline, AllInPriceCard, OTPInput, MenuRow, ChipGroup, MobileBuyBar, BottomNav, LandmarkAddress, VoiceMicButton, usePaged, usePages, LoadMore, PageBar, BackToTop, ApiState } from "@/components/ui";
+import { useCatalog } from "@/hooks/use-catalog";
+import { useHome } from "@/hooks/use-home";
 import { BazaarCtx, useBz, Himalaya, KathmanduSkyline, ProductCard, ProductRail, CategoryTile, Navbar, Footer, DevViewSwitcher } from "@/components/common";
 
 
@@ -20,18 +21,19 @@ function Countdown({ initial = 3 * 3600 + 42 * 60 + 9 }) {
     <Box v={hh} /><span style={{ color: "#fff", fontWeight: 800 }}>:</span><Box v={mm} /><span style={{ color: "#fff", fontWeight: 800 }}>:</span><Box v={ss} /></span>;
 }
 
-const HERO_SLIDES = [
+const HERO_SLIDES_FALLBACK = [
   { eyebrow: "Festive Sale",       title: "Up to 50% off —",      accent: "shop the season",  sub: "Handpicked deals from verified Nepali sellers. Bargain freely, no hidden fees.", icon: "gift",    tint: "red",     cta: "Shop the sale" },
   { eyebrow: "Now on BazaarCo",    title: "Watch it. Love it.",   accent: "Buy it.",          sub: "Video-first shopping — see products in motion before you order. No more guessing from photos.", icon: "video", tint: "blue", cta: "Start watching" },
   { eyebrow: "Made in Nepal",      title: "Buy Nepali.",          accent: "Bargain freely.",  sub: "From Bhaktapur pottery to Pokhara honey — direct from makers, fair prices, no hidden fees.", icon: "palette", tint: "saffron", cta: "Discover local" },
 ];
 
-function Hero() {
+function Hero({ slides }) {
   const { nav } = useBz();
+  const heroSlides = slides?.length ? slides : HERO_SLIDES_FALLBACK;
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
-  useEffect(() => { if (paused) return; const id = setInterval(() => setI(x => (x + 1) % HERO_SLIDES.length), 5000); return () => clearInterval(id); }, [paused]);
-  const sl = HERO_SLIDES[i];
+  useEffect(() => { if (paused) return; const id = setInterval(() => setI(x => (x + 1) % heroSlides.length), 5000); return () => clearInterval(id); }, [paused, heroSlides.length]);
+  const sl = heroSlides[i];
   const c = TINTS[sl.tint];
   return (
     <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
@@ -57,7 +59,7 @@ function Hero() {
           </span>
         </div>
         <div style={{ display: "flex", gap: 8, marginTop: 32 }}>
-          {HERO_SLIDES.map((_, j) => <button key={j} onClick={() => setI(j)} aria-label={`Slide ${j+1}`}
+          {heroSlides.map((_, j) => <button key={j} onClick={() => setI(j)} aria-label={`Slide ${j+1}`}
             style={{ width: j === i ? 28 : 9, height: 9, borderRadius: 999, border: "none", cursor: "pointer",
               background: j === i ? "var(--red)" : "rgba(255,255,255,.35)", transition: "all var(--dur-standard) var(--ease)" }} />)}
         </div>
@@ -104,22 +106,22 @@ function TrustCard({ it }) {
   );
 }
 
-function TrustStrip() {
-  const items = [
+function TrustStrip({ items }) {
+  const trustItems = items?.length ? items : [
     { icon: "percent", t: "Low Commission", s: "Sellers keep more, you pay less." },
     { icon: "lock",    t: "Secure Payment",    s: "eSewa, Khalti, Fonepay, IME." },
     { icon: "truck",   t: "Fast Delivery",     s: "Same-day in Kathmandu valley." },
     { icon: "returns", t: "Easy Returns",      s: "7-day no-questions returns." },
   ];
   return <div className="bz-row-4up" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20 }}>
-    {items.map((it, i) => <TrustCard key={i} it={it} />)}
+    {trustItems.map((it, i) => <TrustCard key={i} it={it} />)}
   </div>;
 }
 
 function VideoRailCard({ p, onOpen, live }) {
   return <div onClick={() => onOpen(p)} style={{ cursor: "pointer", flexShrink: 0, width: 188, position: "relative" }}>
     <div style={{ position: "relative" }}>
-      <VideoPlayer tint={p.tint} icon={p.icon} ratio="9 / 14" compact label="WATCH" thumb={p.videoThumb} />
+      <VideoPlayer tint={p.tint} icon={p.icon} ratio="9 / 14" compact label="WATCH" thumb={p.videoThumb} src={p.videoUrl} />
       {live && (
         <span style={{ position: "absolute", top: 10, left: 10, display: "inline-flex", alignItems: "center", gap: 5,
           padding: "4px 9px", borderRadius: 999, background: "var(--red)", color: "#fff", fontWeight: 800, fontSize: ".7rem", letterSpacing: ".04em" }}>
@@ -140,9 +142,9 @@ function VideoRailCard({ p, onOpen, live }) {
   </div>;
 }
 
-function FeaturedSellers() {
+function FeaturedSellers({ sellers }) {
   const { nav } = useBz();
-  const list = Object.values(SELLERS).filter(s => s.verified).slice(0, 4);
+  const list = Object.values(sellers ?? {}).filter(s => s.verified).slice(0, 4);
   // Curated section: cap columns to actual count so a short list never leaves a trailing empty track.
   return <div className="bz-grid-cards" style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(list.length, 4)},1fr)`, gap: 18 }}>
     {list.map(s => <div key={s.id} style={{ background: "#fff", border: "1px solid var(--line-200)", borderRadius: "var(--r-lg)", padding: 22, textAlign: "center" }}>
@@ -167,16 +169,22 @@ function SkeletonRail({ cols = 5 }) {
 
 export function Home() {
   const { nav, openProduct } = useBz();
-  const [loading, setLoading] = useState(true);
-  useEffect(() => { const id = setTimeout(() => setLoading(false), 900); return () => clearTimeout(id); }, []);
+  const { data: homeData, isLoading: homeLoading, isError: homeError, error: homeErr } = useHome();
+  const catalog = useCatalog();
+  const loading = homeLoading || catalog.isLoading;
+  const isError = homeError || catalog.isError;
+  const error = homeErr ?? catalog.error;
+  const { products, categories, sellers, byId, videoProducts, flashProducts } = catalog;
+  const trending = homeData?.trending?.length ? homeData.trending : [byId("bz-12"), byId("bz-1"), byId("bz-8"), byId("bz-3"), byId("bz-11")].filter(Boolean);
+  const madeInNepal = [byId("bz-8"), byId("bz-11"), byId("bz-3"), byId("bz-12"), byId("bz-1")].filter(Boolean);
+  const feedPaged = usePaged(products.filter(p => !p.outOfStock), 20);
   const W = ({ children, style }) => <section className="bz-container-pad" style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px", ...style }}>{children}</section>;
-  const trending = [byId("bz-12"), byId("bz-1"), byId("bz-8"), byId("bz-3"), byId("bz-11")].filter(Boolean);
-  const feedPaged = usePaged(PRODUCTS.filter(p => !p.outOfStock), 20);
   return (
+    <ApiState isLoading={loading} isError={isError} error={error}>
     <div style={{ paddingBottom: 8 }}>
       <BackToTop />
       {/* Desktop hero — hidden on phones */}
-      <div className="bz-hide-mobile"><W style={{ paddingTop: 22 }}><Hero /></W></div>
+      <div className="bz-hide-mobile"><W style={{ paddingTop: 22 }}><Hero slides={homeData?.heroSlides} /></W></div>
 
       {/* Mobile-only compact greeting + offer banner */}
       <div className="bz-show-mobile">
@@ -221,7 +229,7 @@ export function Home() {
       <W style={{ paddingTop: 24 }}>
         <SectionHead eyebrow="Browse" title="Shop by category" action="All categories" onAction={() => nav("browse")} />
         <div className="bz-cat-row no-scrollbar" style={{ display: "flex", justifyContent: "space-between", gap: 12, overflowX: "auto", scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}>
-          {CATEGORIES.map(c => <CategoryTile key={c.id} c={c} onClick={() => nav("browse")} />)}
+          {(categories ?? []).map(c => <CategoryTile key={c.id} c={c} onClick={() => nav("browse")} />)}
         </div>
       </W>
 
@@ -306,21 +314,21 @@ export function Home() {
       {/* made in nepal */}
       <W style={{ paddingTop: 52, position: "relative" }}>
         <SectionHead eyebrow="Made in Nepal" title="Loved in Nepal" action="See more" onAction={() => nav("browse")} />
-        {loading ? <SkeletonRail cols={5} /> : <ProductRail items={[byId("bz-8"), byId("bz-11"), byId("bz-3"), byId("bz-12"), byId("bz-1")].filter(Boolean)} onOpen={openProduct} cols={5} />}
+        {loading ? <SkeletonRail cols={5} /> : <ProductRail items={madeInNepal} onOpen={openProduct} cols={5} />}
       </W>
 
       {/* featured sellers — desktop only; Meesho-style buyer doesn't need seller browsing here */}
       <div className="bz-hide-mobile">
         <W style={{ paddingTop: 52 }}>
           <SectionHead eyebrow="Trusted stores" title="Featured" accent="sellers" action="All sellers" onAction={() => nav("browse")} />
-          <FeaturedSellers />
+          <FeaturedSellers sellers={sellers} />
         </W>
       </div>
 
       {/* trust strip — desktop only; mobile already has trust pills above */}
       <div className="bz-hide-mobile">
         <W style={{ paddingTop: 56 }}>
-          <TrustStrip />
+          <TrustStrip items={homeData?.trustItems} />
         </W>
       </div>
 
@@ -335,5 +343,6 @@ export function Home() {
         </W>
       </div>
     </div>
+    </ApiState>
   );
 }

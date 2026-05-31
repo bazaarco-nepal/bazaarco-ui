@@ -4,7 +4,7 @@
 
 import React, { useState } from "react";
 import { Icon, Logo, Button, Spinner, IconButton, RatingStars, Chip, VerifiedBadge, StatusPill, Price, Placeholder, VideoPlayer, SkeletonCard, EmptyState, QtyStepper, Toast, SectionHead, TINTS, HelpLifeline, AllInPriceCard, OTPInput, MenuRow, ChipGroup, MobileBuyBar, BottomNav, LandmarkAddress, VoiceMicButton, usePaged, usePages, LoadMore, PageBar, BackToTop } from "@/components/ui";
-import { CATEGORIES, ATTR_CATEGORIES, CATEGORY_ATTRIBUTES, PRODUCTS, SELLERS, REVIEWS, byId, sellerOf, inCat, videoProducts, flashProducts, productProfile, P } from "@/constants/catalog";
+import { useCatalog } from "@/hooks/use-catalog";
 import { BazaarCtx, useBz, Himalaya, KathmanduSkyline, ProductCard, ProductRail, CategoryTile, Navbar, Footer, DevViewSwitcher } from "@/components/common";
 
 
@@ -25,6 +25,7 @@ function Row({ label, value, strong, free, color }) {
 /* ---------- CART ---------- */
 export function Cart() {
   const { cart, setCart, nav, openProduct, toast } = useBz();
+  const { sellerOf } = useCatalog();
   const [coupon, setCoupon] = useState("");
   const [confirm, setConfirm] = useState(null);
   const bd = priceBreakdown(cart);
@@ -65,7 +66,7 @@ export function Cart() {
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
                   <div onClick={() => openProduct(it)} style={{ cursor: "pointer" }}>
                     <div style={{ fontWeight: 600, fontSize: ".9375rem" }}>{it.name}</div>
-                    <div style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 3, display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="badgeCheck" size={13} color="var(--gold)" /> {s.name}</div>
+                    <div style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 3, display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="badgeCheck" size={13} color="var(--gold)" /> {s?.name}</div>
                     {it.coupon && <div style={{ marginTop: 6 }}><Chip tone="success" size="sm" icon="tag">Coupon applied</Chip></div>}
                   </div>
                   <Price value={it.price} size="sm" />

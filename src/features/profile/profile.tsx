@@ -3,8 +3,9 @@
 
 
 import React, { useState } from "react";
-import { Icon, Logo, Button, Spinner, IconButton, RatingStars, Chip, VerifiedBadge, StatusPill, Price, Placeholder, VideoPlayer, SkeletonCard, EmptyState, QtyStepper, Toast, SectionHead, TINTS, HelpLifeline, AllInPriceCard, OTPInput, MenuRow, ChipGroup, MobileBuyBar, BottomNav, LandmarkAddress, VoiceMicButton, usePaged, usePages, LoadMore, PageBar, BackToTop } from "@/components/ui";
-import { CATEGORIES, ATTR_CATEGORIES, CATEGORY_ATTRIBUTES, PRODUCTS, SELLERS, REVIEWS, byId, sellerOf, inCat, videoProducts, flashProducts, productProfile, P } from "@/constants/catalog";
+import { Icon, Logo, Button, Spinner, IconButton, RatingStars, Chip, VerifiedBadge, StatusPill, Price, Placeholder, VideoPlayer, SkeletonCard, EmptyState, QtyStepper, Toast, SectionHead, TINTS, HelpLifeline, AllInPriceCard, OTPInput, MenuRow, ChipGroup, MobileBuyBar, BottomNav, LandmarkAddress, VoiceMicButton, usePaged, usePages, LoadMore, PageBar, BackToTop, ApiState } from "@/components/ui";
+import { useCatalog } from "@/hooks/use-catalog";
+import { useOrders } from "@/hooks/use-orders";
 import { BazaarCtx, useBz, Himalaya, KathmanduSkyline, ProductCard, ProductRail, CategoryTile, Navbar, Footer, DevViewSwitcher } from "@/components/common";
 import type { WriteReviewProps } from "@/types";
 
@@ -12,42 +13,6 @@ import type { WriteReviewProps } from "@/types";
    BazaarCo — Profile, Orders list, Write review
    Guide §3.10, §3.13, §3.14
    ============================================================ */
-
-export const SAMPLE_ORDERS = [
-  {
-    id: "BZ-24501",
-    status: "shipped",
-    placed: "May 28",
-    eta: "Tomorrow",
-    total: 1260,
-    items: ["bz-1", "bz-3"],
-    rider: { name: "Ramesh K.", eta: "25 min" },
-  },
-  {
-    id: "BZ-24412",
-    status: "delivered",
-    placed: "May 15",
-    eta: "May 18",
-    total: 2450,
-    items: ["bz-12"],
-  },
-  {
-    id: "BZ-24201",
-    status: "applied",
-    placed: "May 28",
-    eta: "Awaiting seller",
-    total: 850,
-    items: ["bz-5"],
-  },
-  {
-    id: "BZ-24108",
-    status: "cancelled",
-    placed: "May 10",
-    eta: "—",
-    total: 690,
-    items: ["bz-20"],
-  },
-];
 
 const ORDER_STATUS_META = {
   applied:   { tone: "blue",    label: "Awaiting confirmation", action: "Cancel order", actionVariant: "ghost" },
@@ -60,8 +25,10 @@ const ORDER_STATUS_META = {
 
 export function Orders() {
   const { nav } = useBz();
+  const { data: ordersData = [], isLoading, isError, error } = useOrders();
+  const { byId } = useCatalog();
   const [filter, setFilter] = useState("all");
-  const orders = SAMPLE_ORDERS.filter(o => {
+  const orders = ordersData.filter(o => {
     if (filter === "active") return ["applied", "confirmed", "packed", "shipped"].includes(o.status);
     if (filter === "delivered") return o.status === "delivered";
     if (filter === "cancelled") return o.status === "cancelled";
@@ -69,6 +36,7 @@ export function Orders() {
   });
 
   return (
+    <ApiState isLoading={isLoading} isError={isError} error={error}>
     <div style={{ maxWidth: 820, margin: "0 auto", padding: "24px 28px 80px" }}>
       <h1 style={{ margin: "0 0 16px", fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
         My orders <span className="ne" style={{ color: "var(--ink-500)", fontWeight: 600, fontSize: "1rem" }}>· मेरा अर्डर</span>
@@ -137,11 +105,13 @@ export function Orders() {
           </div>
         )}
     </div>
+    </ApiState>
   );
 }
 
 export function Profile() {
   const { nav, cartCount, wish, toast, setAuthed } = useBz();
+  const { data: ordersData = [] } = useOrders();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteText, setDeleteText] = useState("");
   const canDelete = deleteText.trim().toUpperCase() === "DELETE";
@@ -208,7 +178,7 @@ export function Profile() {
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
           {[
-            { label: "Orders", value: SAMPLE_ORDERS.length, onClick: () => nav("orders") },
+            { label: "Orders", value: ordersData.length, onClick: () => nav("orders") },
             { label: "Wishlist", value: wish.length, onClick: () => nav("wishlist") },
             { label: "Cart", value: cartCount, onClick: () => nav("cart") },
           ].map(s => (
@@ -306,7 +276,8 @@ export function Profile() {
 
 export function WriteReview({ productId }: WriteReviewProps) {
   const { nav, toast } = useBz();
-  const p = productId ? byId(productId) : (PRODUCTS[0]);
+  const { byId, products } = useCatalog();
+  const p = productId ? byId(productId) : products[0];
   const [rating, setRating] = useState(0);
   const [text, setText] = useState("");
   const [photos, setPhotos] = useState(0);

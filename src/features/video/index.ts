@@ -1,0 +1,1 @@
+export { VideoTheater } from "./video";

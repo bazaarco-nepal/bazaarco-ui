@@ -1,4 +1,4 @@
-export type VideoFeedTab = "foryou" | "following" | "nepal" | "flash" | "live";
+export type VideoFeedTab = "foryou" | "following" | "nepal" | "flash";
 
 export interface VideoFeedEngagement {
   views: number;

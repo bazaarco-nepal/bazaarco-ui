@@ -19,7 +19,6 @@ import {
   QtyStepper,
   Toast,
   SectionHead,
-  TINTS,
   HelpLifeline,
   AllInPriceCard,
   OTPInput,
@@ -36,6 +35,7 @@ import {
   BackToTop,
   ApiState,
 } from "@/components/ui";
+import { ASSETS } from "@/config/assets";
 import { useCatalog } from "@/hooks/use-catalog";
 import { useHome } from "@/hooks/use-home";
 import { useBazaarStore } from "@/store/bazaar-store";
@@ -91,289 +91,127 @@ function Countdown({ initial = 3 * 3600 + 42 * 60 + 9 }) {
   );
 }
 
-function Hero({ slides }) {
+// Single sponsored placement — one premium paid ad, no carousel.
+function Hero() {
   const { nav } = useBz();
-  const heroSlides = slides?.length ? slides : [];
-  const [i, setI] = useState(0);
-  const [paused, setPaused] = useState(false);
-  useEffect(() => {
-    if (paused) return;
-    const id = setInterval(() => setI((x) => (x + 1) % heroSlides.length), 5000);
-    return () => clearInterval(id);
-  }, [paused, heroSlides.length]);
-  if (!heroSlides.length) {
-    return (
-      <div
-        style={{
-          borderRadius: "var(--r-xl)",
-          background: "var(--blue-deep)",
-          minHeight: 200,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 32,
-        }}
-      >
-        <p style={{ color: "rgba(255,255,255,.8)", margin: 0 }}>Welcome to BazaarCo</p>
-      </div>
-    );
-  }
-  const sl = heroSlides[i];
-  const c = TINTS[sl.tint] ?? TINTS.blue;
   return (
     <div
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
       className="bz-split-hero"
       style={{
         position: "relative",
         borderRadius: "var(--r-xl)",
         overflow: "hidden",
-        background: "var(--blue-deep)",
-        minHeight: 340,
+        minHeight: 360,
         display: "flex",
+        alignItems: "center",
+        background: "radial-gradient(130% 150% at 86% 50%, #eef0fc 0%, #e6ebfb 45%, #dde6f7 100%)",
       }}
     >
-      <TempleWatermark />
+      {/* Sponsor disclosure — top-left, honest and unobtrusive */}
+      <span
+        style={{
+          position: "absolute",
+          top: 18,
+          left: 24,
+          zIndex: 3,
+          fontSize: ".6875rem",
+          fontWeight: 700,
+          letterSpacing: ".12em",
+          textTransform: "uppercase",
+          color: "var(--ink-400)",
+        }}
+      >
+        Sponsored
+      </span>
+
+      {/* Copy — minimal, catchy */}
       <div
-        key={i}
         className="fade-up"
         style={{
           position: "relative",
           zIndex: 2,
           flex: 1,
-          padding: "52px 56px",
+          padding: "56px 56px",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          maxWidth: 620,
+          maxWidth: 560,
         }}
       >
-        <div
+        <span
           style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            alignSelf: "flex-start",
-            marginBottom: 18,
+            fontSize: ".8125rem",
+            fontWeight: 700,
+            letterSpacing: ".22em",
+            textTransform: "uppercase",
+            color: "var(--ink-500)",
+            marginBottom: 10,
           }}
         >
-          <span
-            style={{
-              fontSize: ".8125rem",
-              fontWeight: 700,
-              letterSpacing: ".1em",
-              textTransform: "uppercase",
-              color: "#fff",
-              background: "var(--red)",
-              padding: "5px 12px",
-              borderRadius: "var(--r-sm)",
-            }}
-          >
-            {sl.eyebrow}
-          </span>
-          <span
-            style={{
-              fontSize: ".75rem",
-              fontWeight: 700,
-              color: "rgba(255,255,255,.7)",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
-            }}
-          >
-            <Icon name="badgeCheck" size={13} color="rgba(255,255,255,.7)" /> Low commission
-            marketplace
-          </span>
-        </div>
+          Samsung
+        </span>
         <h1
           className="bz-hero-h1"
-          style={{ margin: 0, fontWeight: 800, color: "#fff", letterSpacing: "-.02em" }}
+          style={{ margin: 0, fontWeight: 800, color: "var(--ink-900)", letterSpacing: "-.02em" }}
         >
-          {sl.title} <span style={{ color: "#ff6b75" }}>{sl.accent}</span>
+          Galaxy S26 Ultra
         </h1>
         <p
           style={{
-            color: "rgba(255,255,255,.78)",
+            color: "var(--ink-600)",
             fontSize: "1.0625rem",
-            marginTop: 18,
-            maxWidth: 460,
-            lineHeight: 1.55,
+            marginTop: 14,
+            lineHeight: 1.5,
           }}
         >
-          {sl.sub}
+          Now on BazaarCo. Pre-order &amp; save up to{" "}
+          <strong style={{ color: "var(--ink-900)" }}>Rs 18,000</strong>.
         </p>
-        <div style={{ display: "flex", gap: 12, marginTop: 28, alignItems: "center" }}>
+        <div style={{ marginTop: 30 }}>
           <Button
             variant="primary"
             size="lg"
             style={{ borderRadius: "var(--r-full)" }}
             iconRight="arrowRight"
-            onClick={() => nav(i === 1 ? "video" : "browse")}
+            onClick={() => nav("browse")}
           >
-            {sl.cta}
+            Shop now
           </Button>
-          <span
-            style={{
-              color: "rgba(255,255,255,.65)",
-              fontSize: ".8125rem",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            <Icon name="truck" size={14} color="rgba(255,255,255,.65)" /> Same-day in Kathmandu
-            valley
-          </span>
-        </div>
-        <div style={{ display: "flex", gap: 8, marginTop: 32 }}>
-          {heroSlides.map((_, j) => (
-            <button
-              key={j}
-              onClick={() => setI(j)}
-              aria-label={`Slide ${j + 1}`}
-              style={{
-                width: j === i ? 28 : 9,
-                height: 9,
-                borderRadius: 999,
-                border: "none",
-                cursor: "pointer",
-                background: j === i ? "var(--red)" : "rgba(255,255,255,.35)",
-                transition: "all var(--dur-standard) var(--ease)",
-              }}
-            />
-          ))}
         </div>
       </div>
+
+      {/* Product — white-bg render blended onto light panel via multiply (drops the white box) */}
       <div
+        className="bz-hero-art"
         style={{
           position: "relative",
           zIndex: 2,
-          width: 420,
+          width: 480,
           flexShrink: 0,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: 40,
+          padding: "24px 40px",
         }}
       >
-        <div
+        <img
+          src={ASSETS.promotions.sponsoredS26Ultra}
+          alt="Samsung Galaxy S26 Ultra"
           style={{
-            width: 300,
-            height: 300,
-            borderRadius: "var(--r-xl)",
-            background: `linear-gradient(150deg, ${c[1]}, ${c[0]})`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "var(--sh-3)",
-            transform: "rotate(-3deg)",
+            width: "100%",
+            maxWidth: 400,
+            height: "auto",
+            objectFit: "contain",
+            mixBlendMode: "multiply",
+            filter: "drop-shadow(0 18px 40px rgba(40,40,80,.22))",
           }}
-        >
-          <Icon name={sl.icon} size={130} color={c[2]} stroke={1.3} style={{ opacity: 0.7 }} />
-        </div>
+        />
       </div>
     </div>
   );
 }
 
-function TempleWatermark({ opacity = 0.07 }) {
-  return (
-    <svg
-      viewBox="0 0 400 300"
-      style={{
-        position: "absolute",
-        right: 0,
-        bottom: 0,
-        height: "100%",
-        width: "auto",
-        zIndex: 1,
-        opacity,
-      }}
-      aria-hidden="true"
-    >
-      <g fill="#fff">
-        <path d="M200 20 L250 70 L150 70 Z" />
-        <rect x="160" y="70" width="80" height="14" />
-        <path d="M200 84 L240 124 L160 124 Z" />
-        <rect x="168" y="124" width="64" height="12" />
-        <path d="M200 136 L232 170 L168 170 Z" />
-        <rect x="150" y="170" width="100" height="110" />
-        <rect x="185" y="210" width="30" height="70" />
-      </g>
-    </svg>
-  );
-}
-
-function TrustCard({ it }) {
-  const [hov, setHov] = useState(false);
-  return (
-    <div
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        background: "#fff",
-        border: `1.5px solid ${hov ? "var(--blue)" : "var(--line-200)"}`,
-        borderRadius: "var(--r-lg)",
-        padding: "24px 22px",
-        display: "flex",
-        gap: 14,
-        alignItems: "flex-start",
-        transition:
-          "border-color var(--dur-standard) var(--ease), box-shadow var(--dur-standard) var(--ease)",
-        boxShadow: hov ? "var(--sh-2)" : "var(--sh-1)",
-      }}
-    >
-      <div
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: "var(--r-md)",
-          background: hov ? "var(--blue)" : "var(--tint-blue-50)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-          transition: "all var(--dur-standard) var(--ease)",
-          color: hov ? "#fff" : "var(--blue)",
-        }}
-      >
-        <Icon name={it.icon} size={20} color="currentColor" />
-      </div>
-      <div>
-        <div style={{ fontWeight: 700, fontSize: ".9375rem", color: "var(--ink-900)" }}>{it.t}</div>
-        <div
-          style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 6, lineHeight: 1.45 }}
-        >
-          {it.s}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function TrustStrip({ items }) {
-  const trustItems = items?.length
-    ? items
-    : [
-        { icon: "percent", t: "Low Commission", s: "Sellers keep more, you pay less." },
-        { icon: "lock", t: "Secure Payment", s: "eSewa, Khalti, Fonepay, IME." },
-        { icon: "truck", t: "Fast Delivery", s: "Same-day in Kathmandu valley." },
-        { icon: "returns", t: "Easy Returns", s: "7-day no-questions returns." },
-      ];
-  return (
-    <div
-      className="bz-row-4up"
-      style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 20 }}
-    >
-      {trustItems.map((it, i) => (
-        <TrustCard key={i} it={it} />
-      ))}
-    </div>
-  );
-}
-
-function VideoRailCard({ p, onOpen, live }) {
+function VideoRailCard({ p, onOpen }) {
   return (
     <div
       onClick={() => onOpen(p)}
@@ -389,36 +227,6 @@ function VideoRailCard({ p, onOpen, live }) {
           thumb={p.videoThumb}
           src={p.videoUrl}
         />
-        {live && (
-          <span
-            style={{
-              position: "absolute",
-              top: 10,
-              left: 10,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-              padding: "4px 9px",
-              borderRadius: 999,
-              background: "var(--red)",
-              color: "#fff",
-              fontWeight: 800,
-              fontSize: ".7rem",
-              letterSpacing: ".04em",
-            }}
-          >
-            <span
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: "50%",
-                background: "#fff",
-                animation: "bz-mic-pulse 1.2s ease-in-out infinite",
-              }}
-            />
-            LIVE
-          </span>
-        )}
       </div>
       <div style={{ marginTop: 10 }}>
         <div
@@ -465,14 +273,14 @@ function FeaturedSellers({ sellers }) {
   const { nav } = useBz();
   const list = Object.values(sellers ?? {})
     .filter((s) => s.verified)
-    .slice(0, 4);
+    .slice(0, 5);
   // Curated section: cap columns to actual count so a short list never leaves a trailing empty track.
   return (
     <div
       className="bz-grid-cards"
       style={{
         display: "grid",
-        gridTemplateColumns: `repeat(${Math.min(list.length, 4)},1fr)`,
+        gridTemplateColumns: `repeat(${Math.min(list.length, 5)},1fr)`,
         gap: 18,
       }}
     >
@@ -584,7 +392,7 @@ export function Home() {
         {/* Desktop hero — hidden on phones */}
         <div className="bz-hide-mobile">
           <W style={{ paddingTop: 22 }}>
-            <Hero slides={homeData?.heroSlides} />
+            <Hero />
           </W>
         </div>
 
@@ -654,44 +462,6 @@ export function Home() {
               </div>
               <Icon name="arrowRight" size={18} color="var(--red)" />
             </button>
-
-            {/* Trust pills — honest differentiators */}
-            <div
-              style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 14 }}
-            >
-              {[
-                { icon: "returns", t: "7-day returns" },
-                { icon: "bargain", t: "Bargain freely" },
-                { icon: "video", t: "Real videos" },
-              ].map((p, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    textAlign: "center",
-                    gap: 6,
-                    padding: "10px 6px",
-                    background: "#fff",
-                    border: "1px solid var(--line-200)",
-                    borderRadius: "var(--r-md)",
-                  }}
-                >
-                  <Icon name={p.icon} size={18} color="var(--blue)" />
-                  <div
-                    style={{
-                      fontSize: ".6875rem",
-                      fontWeight: 700,
-                      color: "var(--ink-700)",
-                      lineHeight: 1.2,
-                    }}
-                  >
-                    {p.t}
-                  </div>
-                </div>
-              ))}
-            </div>
           </W>
         </div>
 
@@ -788,66 +558,9 @@ export function Home() {
             {loading ? (
               <SkeletonRail cols={5} />
             ) : (
-              <ProductRail items={flashProducts().slice(0, 5)} onOpen={openProduct} cols={5} />
+              <ProductRail items={flashProducts().slice(0, 5)} onOpen={openProduct} cols={5} sale />
             )}
           </div>
-        </W>
-
-        {/* Bargain hero strip — BazaarCo's core differentiator vs Daraz/SastoDeal. Show on every screen size. */}
-        <W style={{ paddingTop: 36 }}>
-          <button
-            onClick={() => nav("bargains")}
-            style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              gap: 16,
-              textAlign: "left",
-              background: "linear-gradient(120deg, var(--blue-deep) 0%, #1e3a8a 100%)",
-              border: "none",
-              borderRadius: "var(--r-xl)",
-              padding: "22px 24px",
-              cursor: "pointer",
-              color: "#fff",
-              boxShadow: "var(--sh-2)",
-            }}
-          >
-            <div
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: "50%",
-                background: "var(--red)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              <Icon name="bargain" size={28} color="#fff" />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  fontSize: ".75rem",
-                  fontWeight: 700,
-                  letterSpacing: ".08em",
-                  textTransform: "uppercase",
-                  color: "#ff6b75",
-                  marginBottom: 4,
-                }}
-              >
-                BazaarCo difference
-              </div>
-              <div style={{ fontSize: "1.0625rem", fontWeight: 800, lineHeight: 1.25 }}>
-                Found something? <span style={{ color: "#ff6b75" }}>Bargain.</span>
-              </div>
-              <div style={{ fontSize: ".8125rem", color: "rgba(255,255,255,.78)", marginTop: 2 }}>
-                Make an offer on any product · मोलतोल गर्नुहोस्
-              </div>
-            </div>
-            <Icon name="arrowRight" size={22} color="#fff" />
-          </button>
         </W>
 
         {/* trending in Kathmandu — hyperlocal */}
@@ -904,31 +617,6 @@ export function Home() {
                     }}
                   >
                     <Icon name="video" size={15} color="#ff6b75" /> Watch
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 4,
-                        marginLeft: 8,
-                        padding: "2px 8px",
-                        borderRadius: 999,
-                        background: "rgba(220,38,38,.2)",
-                        color: "#fff",
-                        fontSize: ".65rem",
-                        letterSpacing: ".04em",
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: "50%",
-                          background: "var(--red)",
-                          animation: "bz-mic-pulse 1.2s ease-in-out infinite",
-                        }}
-                      />{" "}
-                      3 LIVE NOW
-                    </span>
                   </div>
                   <h2 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "#fff" }}>
                     See it in motion before you <span style={{ color: "#ff6b75" }}>buy</span>
@@ -942,8 +630,8 @@ export function Home() {
                 className="no-scrollbar"
                 style={{ display: "flex", gap: 16, overflowX: "auto", paddingBottom: 4 }}
               >
-                {videoProducts().map((p, i) => (
-                  <VideoRailCard key={p.id} p={p} onOpen={openProduct} live={i < 3} />
+                {videoProducts().map((p) => (
+                  <VideoRailCard key={p.id} p={p} onOpen={openProduct} />
                 ))}
               </div>
             </div>
@@ -976,13 +664,6 @@ export function Home() {
               onAction={() => nav("browse")}
             />
             <FeaturedSellers sellers={sellers} />
-          </W>
-        </div>
-
-        {/* trust strip — desktop only; mobile already has trust pills above */}
-        <div className="bz-hide-mobile">
-          <W style={{ paddingTop: 56 }}>
-            <TrustStrip items={homeData?.trustItems} />
           </W>
         </div>
 

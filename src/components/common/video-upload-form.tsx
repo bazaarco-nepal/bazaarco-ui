@@ -66,7 +66,14 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
         marginBottom: 18,
       }}
     >
-      <h2 style={{ margin: "0 0 14px", fontSize: "1.125rem", fontWeight: 800, color: "var(--blue-deep)" }}>
+      <h2
+        style={{
+          margin: "0 0 14px",
+          fontSize: "1.125rem",
+          fontWeight: 800,
+          color: "var(--blue-deep)",
+        }}
+      >
         Upload product video
       </h2>
 
@@ -120,7 +127,14 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
           <div style={{ fontSize: ".75rem", color: "var(--ink-500)", marginBottom: 4 }}>
             Uploading… {progress}%
           </div>
-          <div style={{ height: 6, borderRadius: 999, background: "var(--line-100)", overflow: "hidden" }}>
+          <div
+            style={{
+              height: 6,
+              borderRadius: 999,
+              background: "var(--line-100)",
+              overflow: "hidden",
+            }}
+          >
             <div
               style={{
                 width: `${progress}%`,
@@ -134,7 +148,14 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
       )}
 
       {error && (
-        <p style={{ margin: "0 0 12px", color: "var(--danger)", fontSize: ".8125rem", fontWeight: 600 }}>
+        <p
+          style={{
+            margin: "0 0 12px",
+            color: "var(--danger)",
+            fontSize: ".8125rem",
+            fontWeight: 600,
+          }}
+        >
           {error}
         </p>
       )}

@@ -10,7 +10,7 @@ import {
   screenFromPath,
 } from "@/config/routes";
 import { BottomNav, HelpLifeline, Toast } from "@/components/ui";
-import { DevViewSwitcher, Footer, Navbar, useBz } from "@/components/common";
+import { Footer, Navbar, useBz } from "@/components/common";
 import { AuthRoleGuard } from "@/components/layouts/auth-role-guard";
 
 function BottomNavBridge() {
@@ -66,7 +66,6 @@ export function MarketplaceShell({ children }: { children: React.ReactNode }) {
       </div>
       <BottomNavBridge />
       <Toast toast={ctx.toastMsg ?? null} />
-      <DevViewSwitcher />
       {showHelp && <HelpLifeline />}
     </>
   );

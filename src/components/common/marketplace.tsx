@@ -231,7 +231,7 @@ export function SellerRow({ seller, sellerId, saved = false, onToggleSave, compa
 }
 
 /* ---------- Product card ---------- */
-export function ProductCard({ p, onClick }) {
+export function ProductCard({ p, onClick, sale = false }) {
   const { toggleWish, wish } = useBz();
   const { sellerOf } = useCatalog();
   const [hov, setHov] = useState(false);
@@ -240,7 +240,7 @@ export function ProductCard({ p, onClick }) {
   const wished = wish.includes(p.id);
   const deliveryFee = 80;
   const allIn = p.price + deliveryFee;
-  // Sold count as social proof — derived from reviews × deterministic factor
+  // Sold count as social proof — sale cards only; derived from reviews × deterministic factor
   const soldCount = Math.max(p.reviews * 3, 12);
   const soldLabel =
     soldCount >= 1000
@@ -372,75 +372,36 @@ export function ProductCard({ p, onClick }) {
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
           <RatingStars value={p.rating} size={13} showVal />
           <span style={{ fontSize: ".75rem", color: "var(--ink-400)" }}>({p.reviews})</span>
-          <span style={{ fontSize: ".75rem", color: "var(--ink-400)" }}>· {soldLabel}</span>
+          {sale && (
+            <span style={{ fontSize: ".75rem", color: "var(--ink-400)" }}>· {soldLabel}</span>
+          )}
           {s?.verified && (
             <Icon name="badgeCheck" size={14} color="var(--gold)" title="Verified seller" />
           )}
         </div>
         {/* Single price line: all-in price + strikethrough original — via Price primitive */}
+        {/* Trust row (cash on delivery / 7-day return) and delivery ETA live on the PDP only, not on cards. */}
         <Price value={allIn} original={p.original} size="md" />
-        {/* Trust row — max 2 chips, Nepal-relevant: pay on delivery + return */}
-        <div
-          style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: 2 }}
-        >
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
-              padding: "2px 7px",
-              borderRadius: "var(--r-sm)",
-              background: "#e8f5e9",
-              color: "#1e6a31",
-              fontSize: ".6875rem",
-              fontWeight: 700,
-            }}
-          >
-            Cash on delivery
-          </span>
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
-              padding: "2px 7px",
-              borderRadius: "var(--r-sm)",
-              background: "var(--tint-blue-50)",
-              color: "var(--blue)",
-              fontSize: ".6875rem",
-              fontWeight: 700,
-            }}
-          >
-            7-day return
-          </span>
-        </div>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 5,
-            color: "var(--ink-500)",
-            fontSize: ".75rem",
-            marginTop: "auto",
-            paddingTop: 4,
-          }}
-        >
-          <Icon name="truck" size={14} color="var(--ink-500)" /> By {p.eta}
-        </div>
       </div>
     </div>
   );
 }
 
+/* ---------- Sale product card ---------- */
+/* Inherits ProductCard; adds sold-count social proof. */
+export function SaleProductCard(props) {
+  return <ProductCard {...props} sale />;
+}
+
 /* ---------- Horizontal rail of cards ---------- */
-export function ProductRail({ items, onOpen, cols }) {
+export function ProductRail({ items, onOpen, cols, sale = false }) {
   return (
     <div
       className="bz-grid-cards"
       style={{ display: "grid", gridTemplateColumns: `repeat(${cols || 5}, 1fr)`, gap: 18 }}
     >
       {items.map((p) => (
-        <ProductCard key={p.id} p={p} onClick={onOpen} />
+        <ProductCard key={p.id} p={p} onClick={onOpen} sale={sale} />
       ))}
     </div>
   );

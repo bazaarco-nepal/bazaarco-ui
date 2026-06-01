@@ -6,25 +6,15 @@ import { queryKeys } from "@/services/api/query-keys";
 
 export function useUploadImage() {
   return useMutation({
-    mutationFn: ({
-      file,
-      onProgress,
-    }: {
-      file: File;
-      onProgress?: (pct: number) => void;
-    }) => mediaApi.uploadImage(file, onProgress),
+    mutationFn: ({ file, onProgress }: { file: File; onProgress?: (pct: number) => void }) =>
+      mediaApi.uploadImage(file, onProgress),
   });
 }
 
 export function useUploadVideo() {
   return useMutation({
-    mutationFn: ({
-      file,
-      onProgress,
-    }: {
-      file: File;
-      onProgress?: (pct: number) => void;
-    }) => mediaApi.uploadVideo(file, onProgress),
+    mutationFn: ({ file, onProgress }: { file: File; onProgress?: (pct: number) => void }) =>
+      mediaApi.uploadVideo(file, onProgress),
   });
 }
 

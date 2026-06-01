@@ -647,7 +647,7 @@ body {
 
 /* Product / card grids — auto-fit pattern that always fills row */
 .bz-grid-cards {
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
   gap: 24px !important;
 }
 .bz-grid-cards > * {

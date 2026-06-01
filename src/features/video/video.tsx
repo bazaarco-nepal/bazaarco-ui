@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   Icon,
   Logo,
@@ -76,12 +77,11 @@ function fmtCount(n) {
   return String(v);
 }
 
-const REEL_TABS: { id: VideoFeedTab; en: string; live?: boolean }[] = [
+const REEL_TABS: { id: VideoFeedTab; en: string }[] = [
   { id: "foryou", en: "For You" },
   { id: "following", en: "Following" },
   { id: "nepal", en: "Made in Nepal" },
   { id: "flash", en: "Flash Deals" },
-  { id: "live", en: "Live", live: true },
 ];
 
 const TAB_EMPTY: Partial<Record<VideoFeedTab, { title: string; message: string }>> = {
@@ -89,7 +89,6 @@ const TAB_EMPTY: Partial<Record<VideoFeedTab, { title: string; message: string }
     title: "No followed sellers yet",
     message: "Follow shops from product pages — their videos will show here.",
   },
-  live: { title: "No live streams right now", message: "Check back later or browse For You." },
   nepal: { title: "No Made in Nepal videos", message: "Try For You to see all product clips." },
   flash: {
     title: "No flash-deal videos",
@@ -735,6 +734,11 @@ function ReelItem({
    ============================================================ */
 export function VideoTheater() {
   const { openProduct, addToCart, toggleWish, wish, toast, nav } = useBz();
+  const router = useRouter();
+  const goBack = useCallback(() => {
+    if (typeof window !== "undefined" && window.history.length > 1) router.back();
+    else nav("home");
+  }, [router, nav]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [tab, setTab] = useState<VideoFeedTab>("foryou");
   const { data: feed, isLoading, isError, error } = useVideoFeed(tab);
@@ -880,17 +884,6 @@ export function VideoTheater() {
               transition: "background var(--dur-standard) var(--ease)",
             }}
           >
-            {tb.live && (
-              <span
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: "50%",
-                  background: "var(--red)",
-                  boxShadow: "0 0 0 2px rgba(230,57,70,.35)",
-                }}
-              />
-            )}
             {tb.en}
           </button>
         );
@@ -1245,7 +1238,28 @@ export function VideoTheater() {
     return (
       <div className="bz-video-theater" style={{ padding: "28px" }}>
         <div style={{ maxWidth: "var(--container)", margin: "0 auto" }}>
-          <div style={{ marginBottom: 20 }}>{tabsRow}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+            <button
+              onClick={goBack}
+              aria-label="Back"
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                border: "none",
+                background: "rgba(255,255,255,.12)",
+                color: "#fff",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <Icon name="chevronLeft" size={22} />
+            </button>
+            <div style={{ flex: 1, minWidth: 0 }}>{tabsRow}</div>
+          </div>
           <EmptyState
             title={emptyCopy?.title ?? "No videos yet"}
             message={emptyCopy?.message ?? "When sellers add product videos, they appear here."}
@@ -1281,7 +1295,7 @@ export function VideoTheater() {
           }}
         >
           <button
-            onClick={() => nav("home")}
+            onClick={goBack}
             aria-label="Back"
             style={{
               marginLeft: 12,
@@ -1336,24 +1350,45 @@ export function VideoTheater() {
             flexWrap: "wrap",
           }}
         >
-          <div>
-            <div
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <button
+              onClick={goBack}
+              aria-label="Back"
               style={{
-                display: "inline-flex",
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                border: "none",
+                background: "rgba(255,255,255,.12)",
+                color: "#fff",
+                cursor: "pointer",
+                display: "flex",
                 alignItems: "center",
-                gap: 8,
-                color: "#ff6b75",
-                fontWeight: 700,
-                fontSize: ".8125rem",
-                letterSpacing: ".08em",
-                textTransform: "uppercase",
+                justifyContent: "center",
+                flexShrink: 0,
               }}
             >
-              <Icon name="video" size={16} color="#ff6b75" /> Watch
+              <Icon name="chevronLeft" size={22} />
+            </button>
+            <div>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  color: "#ff6b75",
+                  fontWeight: 700,
+                  fontSize: ".8125rem",
+                  letterSpacing: ".08em",
+                  textTransform: "uppercase",
+                }}
+              >
+                <Icon name="video" size={16} color="#ff6b75" /> Watch
+              </div>
+              <h1 style={{ margin: "4px 0 0", color: "#fff", fontSize: "1.5rem", fontWeight: 800 }}>
+                Watch, bargain, <span style={{ color: "#ff6b75" }}>buy</span>
+              </h1>
             </div>
-            <h1 style={{ margin: "4px 0 0", color: "#fff", fontSize: "1.5rem", fontWeight: 800 }}>
-              Watch, bargain, <span style={{ color: "#ff6b75" }}>buy</span>
-            </h1>
           </div>
           <div style={{ flex: 1, minWidth: 280, maxWidth: 560 }}>{tabsRow}</div>
           <div

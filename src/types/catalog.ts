@@ -1,12 +1,4 @@
-export type Tint =
-  | "red"
-  | "blue"
-  | "saffron"
-  | "purple"
-  | "slate"
-  | "green"
-  | "gold"
-  | "teal";
+export type Tint = "red" | "blue" | "saffron" | "purple" | "slate" | "green" | "gold" | "teal";
 
 export interface Category {
   id: string;
@@ -24,13 +16,7 @@ export interface AttrCategory {
   icon: string;
 }
 
-export type CategoryAttributeType =
-  | "select"
-  | "multi"
-  | "text"
-  | "num"
-  | "toggle"
-  | "date";
+export type CategoryAttributeType = "select" | "multi" | "text" | "num" | "toggle" | "date";
 
 export interface CategoryAttributeField {
   k: string;

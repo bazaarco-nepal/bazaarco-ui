@@ -27,36 +27,37 @@ export function Splash() {
   const { nav } = useBz();
   const goAuth = () => nav("auth");
 
+  const heroButtonStyle: React.CSSProperties = {
+    flex: 1,
+    width: "100%",
+    maxWidth: 480,
+    margin: "0 auto",
+    padding: "48px 28px 0",
+    textAlign: "center",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    fontFamily: "inherit",
+    color: "inherit",
+  };
+
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={goAuth}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          goAuth();
-        }
-      }}
       style={{
         minHeight: "calc(100vh - 110px)",
         background: "var(--page)",
         display: "flex",
         flexDirection: "column",
-        cursor: "pointer",
       }}
     >
-      <div
-        style={{
-          flex: 1,
-          maxWidth: 480,
-          margin: "0 auto",
-          padding: "48px 28px 0",
-          textAlign: "center",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-        }}
+      <button
+        type="button"
+        onClick={goAuth}
+        style={heroButtonStyle}
+        aria-label="Continue to sign in"
       >
         <img
           src={ASSETS.mascot}
@@ -87,21 +88,13 @@ export function Splash() {
         >
           Low fees. Real product videos. Fast delivery across Nepal.
         </p>
-      </div>
+      </button>
 
       <div style={{ padding: "24px 28px 40px", maxWidth: 480, margin: "0 auto", width: "100%" }}>
         <Button variant="primary" size="lg" full iconRight="arrowRight" onClick={goAuth}>
           Get started · सुरु गर्नुहोस्
         </Button>
-        <Button
-          variant="ghost"
-          full
-          onClick={(e) => {
-            e.stopPropagation();
-            nav("home");
-          }}
-          style={{ marginTop: 10 }}
-        >
+        <Button variant="ghost" full onClick={() => nav("home")} style={{ marginTop: 10 }}>
           Skip — browse as guest · पछि गर्ने
         </Button>
         <p
@@ -112,7 +105,7 @@ export function Splash() {
             marginTop: 14,
           }}
         >
-          Tap anywhere to continue
+          Tap the hero or Get started to continue
         </p>
       </div>
     </div>

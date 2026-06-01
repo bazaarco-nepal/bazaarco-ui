@@ -36,7 +36,13 @@ import {
   BackToTop,
   ApiState,
 } from "@/components/ui";
-import { useCompleteOnboarding, useLogout } from "@/hooks/use-auth";
+import { ProductPhotoPicker, type ProductPhoto } from "@/components/seller/product-photo-picker";
+import {
+  SellerVerificationBanner,
+  SellerVerificationBlocked,
+} from "@/components/seller/seller-verification-banner";
+import { useCompleteOnboarding, useLogout, useCurrentUser } from "@/hooks/use-auth";
+import { usePendingSellerVerifications, useReviewSellerVerification } from "@/hooks/use-admin";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { displayName, userInitial } from "@/lib/display";
 import { useAttrCategories, useCategoryAttributes } from "@/hooks/use-catalog";
@@ -46,15 +52,33 @@ import {
   useSellerInventory,
   useSellerBargains,
   useSellerReviews,
-  useSellerChat,
   useSellerPromotions,
   useSellerVideos,
   useSellerAnalytics,
   useSellerReports,
   useSellerNotifications,
+  useSellerSettings,
+  useUpdateSellerSettings,
+  useSellerOrganization,
+  useSetupSellerOrganization,
+  useSubmitSellerVerification,
   useSellerStorefront,
+  useUpdateStorefront,
+  useUploadStorefrontBanner,
+  useUploadStorefrontLogo,
   useSellerLedger,
 } from "@/hooks/use-seller";
+import { useChatInbox, useChatMessages, useInvalidateChat } from "@/hooks/use-chat";
+import {
+  connectChatSocket,
+  disconnectChatSocket,
+  emitTypingStart,
+  emitTypingStop,
+  joinConversation,
+  leaveConversation,
+  sendChatMessageSocket,
+} from "@/lib/chat-socket";
+import { chatApi, type ChatMessage, type ChatThread } from "@/services/api/chat";
 import {
   BazaarCtx,
   useBz,
@@ -76,6 +100,7 @@ import {
   PRODUCT_CATEGORY_IDS,
   downloadProductImportSample,
 } from "@/lib/seller-product-import";
+import { SHIPPING_ZONES } from "@/services/api/seller-settings";
 
 export type SellerInboxOrderItem = {
   id: string;
@@ -239,10 +264,11 @@ export function SellerSidebar({
 
 export function SellerShell({ screen, children }) {
   const { nav } = useBz();
+  const { data: organization, isLoading: orgLoading } = useSellerOrganization();
   const { data: inbox = [] } = useSellerInbox();
   const { data: bargains = [] } = useSellerBargains();
-  const { data: chat } = useSellerChat();
-  const chatThreads = (chat as { threads?: Array<{ unread?: number }> })?.threads ?? [];
+  const { data: chatInbox } = useChatInbox();
+  const chatThreads = chatInbox?.threads ?? [];
   const badges = {
     orders: inbox.filter((o: { status?: string }) => o.status === "new" || o.status === "pending")
       .length,
@@ -271,6 +297,13 @@ export function SellerShell({ screen, children }) {
     window.addEventListener("bz-seller-menu", h);
     return () => window.removeEventListener("bz-seller-menu", h);
   }, []);
+
+  useEffect(() => {
+    if (orgLoading || screen === "s-onboarding") return;
+    if (organization && !organization.linked) {
+      nav("s-onboarding");
+    }
+  }, [organization, orgLoading, screen, nav]);
 
   const current = SELLER_NAV.flatMap((g) => g.items).find((it) => it.id === screen);
 
@@ -306,8 +339,152 @@ export function SellerShell({ screen, children }) {
           </button>
           <h2>{current ? current.en : "BazaarCo Seller"}</h2>
         </div>
+        {organization?.linked &&
+          organization.verification &&
+          organization.verification.status !== "approved" && (
+            <div style={{ padding: "16px 24px 0", maxWidth: "100%" }}>
+              <SellerVerificationBanner
+                status={organization.verification.status}
+                note={organization.verification.note}
+              />
+            </div>
+          )}
         {children}
       </section>
+    </div>
+  );
+}
+
+/* ---------- Admin: seller verification queue ---------- */
+
+function isAdminUser(email: string | undefined): boolean {
+  const list = (process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  if (!email || list.length === 0) return false;
+  return list.includes(email.toLowerCase());
+}
+
+export function AdminSellerVerifications() {
+  const { data: me } = useCurrentUser();
+  const {
+    data: pending = [],
+    isLoading,
+    isError,
+    refetch,
+  } = usePendingSellerVerifications(isAdminUser(me?.email));
+  const review = useReviewSellerVerification();
+
+  if (!isAdminUser(me?.email)) {
+    return (
+      <div className="bz-seller-page">
+        <p style={{ color: "var(--ink-600)" }}>
+          Admin access only. Set NEXT_PUBLIC_ADMIN_EMAILS to match your login.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bz-seller-page">
+      <h1
+        style={{
+          margin: "0 0 8px",
+          fontSize: "1.5rem",
+          fontWeight: 800,
+          color: "var(--blue-deep)",
+        }}
+      >
+        Seller verifications
+      </h1>
+      <p style={{ margin: "0 0 20px", color: "var(--ink-500)", fontSize: ".875rem" }}>
+        Approve NID/PAN uploads before sellers can add products or videos.
+      </p>
+      {isLoading && <p>Loading…</p>}
+      {isError && (
+        <p style={{ color: "var(--red)" }}>
+          Could not load queue. Check ADMIN_EMAILS on the backend matches your account.
+        </p>
+      )}
+      {!isLoading && pending.length === 0 && (
+        <p style={{ color: "var(--ink-500)" }}>No pending verifications.</p>
+      )}
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        {pending.map((row) => (
+          <div
+            key={row.sellerId}
+            style={{
+              background: "#fff",
+              border: "1.5px solid var(--line-200)",
+              borderRadius: "var(--r-lg)",
+              padding: 16,
+            }}
+          >
+            <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+              {row.verification.docUrl && (
+                <a href={row.verification.docUrl} target="_blank" rel="noreferrer">
+                  <img
+                    src={row.verification.docUrl}
+                    alt=""
+                    style={{
+                      width: 140,
+                      height: 90,
+                      objectFit: "cover",
+                      borderRadius: "var(--r-sm)",
+                      border: "1px solid var(--line-200)",
+                    }}
+                  />
+                </a>
+              )}
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={{ fontWeight: 800, fontSize: "1.05rem" }}>{row.shopName}</div>
+                <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 4 }}>
+                  {row.userEmail} · {row.verification.docType?.toUpperCase()}
+                  {row.verification.docIdNumber ? ` · ${row.verification.docIdNumber}` : ""}
+                </div>
+                {row.verification.ownerName && (
+                  <div style={{ fontSize: ".8125rem", marginTop: 6 }}>
+                    {row.verification.ownerName}
+                  </div>
+                )}
+                <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    disabled={review.isPending}
+                    onClick={() =>
+                      review.mutate(
+                        { sellerId: row.sellerId, action: "approve" },
+                        { onSuccess: () => void refetch() },
+                      )
+                    }
+                  >
+                    Approve
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={review.isPending}
+                    onClick={() =>
+                      review.mutate(
+                        {
+                          sellerId: row.sellerId,
+                          action: "reject",
+                          note: "Document unclear or invalid",
+                        },
+                        { onSuccess: () => void refetch() },
+                      )
+                    }
+                  >
+                    Reject
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -576,23 +753,68 @@ export function SellerCoachmark({ steps, onDone }) {
 
 /* ---------- 4.1 Seller Onboarding ---------- */
 export function SellerOnboarding() {
-  const { nav } = useBz();
-  const [stage, setStage] = useState("hero"); // hero | docPick | scanning | review | bank | done
+  const { nav, toast } = useBz();
+  const setupOrganization = useSetupSellerOrganization();
+  const submitVerification = useSubmitSellerVerification();
+  const docInputRef = useRef(null);
+  const [stage, setStage] = useState("hero"); // hero | docPick | docUpload | review | bank | done
   const [docType, setDocType] = useState(null); // pan | nid
+  const [docFile, setDocFile] = useState(null);
+  const [docPreview, setDocPreview] = useState(null);
   const [scanned, setScanned] = useState(null);
   const [wallet, setWallet] = useState(null);
+  const [shopName, setShopName] = useState("");
 
-  const snap = (type) => {
+  const finishSetup = async () => {
+    const name = (scanned?.shop || shopName || "").trim();
+    if (name.length < 2) {
+      toast("Enter your shop name to continue");
+      return;
+    }
+    if (!docFile || !docType) {
+      toast("Upload your NID or PAN photo first");
+      return;
+    }
+    try {
+      await setupOrganization.mutateAsync({
+        shopName: name,
+        city: scanned?.address?.split(",").pop()?.trim() || undefined,
+      });
+      await submitVerification.mutateAsync({
+        file: docFile,
+        docType,
+        docIdNumber: scanned?.docId?.trim() || undefined,
+        ownerName: scanned?.name?.trim() || undefined,
+        address: scanned?.address?.trim() || undefined,
+      });
+      setStage("done");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Could not register your shop");
+    }
+  };
+
+  const startDocUpload = (type) => {
     setDocType(type);
-    setStage("scanning");
-    setTimeout(() => {
-      setScanned(
-        type === "pan"
-          ? { name: "", shop: "", docLabel: "PAN", docId: "", address: "" }
-          : { name: "", shop: "", docLabel: "NID", docId: "", address: "" },
-      );
-      setStage("review");
-    }, 1800);
+    setScanned({
+      name: "",
+      shop: "",
+      docLabel: type === "pan" ? "PAN" : "NID",
+      docId: "",
+      address: "",
+    });
+    setStage("docUpload");
+  };
+
+  const onDocFile = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !file.type.startsWith("image/")) {
+      toast("Please choose an image file");
+      return;
+    }
+    if (docPreview) URL.revokeObjectURL(docPreview);
+    setDocFile(file);
+    setDocPreview(URL.createObjectURL(file));
   };
 
   return (
@@ -732,7 +954,7 @@ export function SellerOnboarding() {
             ].map((d) => (
               <button
                 key={d.id}
-                onClick={() => snap(d.id)}
+                onClick={() => startDocUpload(d.id)}
                 style={{
                   width: "100%",
                   display: "flex",
@@ -797,39 +1019,71 @@ export function SellerOnboarding() {
           </div>
         )}
 
-        {stage === "scanning" && (
-          <div style={{ textAlign: "center", padding: "60px 0" }}>
-            <div
+        {stage === "docUpload" && (
+          <div>
+            <button
+              onClick={() => setStage("docPick")}
               style={{
-                width: 280,
-                height: 180,
-                margin: "0 auto",
-                background: "var(--ink-900)",
-                borderRadius: "var(--r-lg)",
-                position: "relative",
-                overflow: "hidden",
+                background: "none",
+                border: "none",
+                color: "var(--ink-500)",
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                marginBottom: 14,
               }}
             >
-              <div
-                className="skel"
-                style={{ position: "absolute", inset: 12, borderRadius: "var(--r-md)" }}
-              />
-              <div
+              <Icon name="chevronLeft" size={16} /> Back
+            </button>
+            <h2 style={{ margin: "0 0 6px", fontSize: "1.25rem", fontWeight: 800 }}>
+              Upload your {docType === "pan" ? "PAN" : "NID"} photo
+            </h2>
+            <p className="ne" style={{ color: "var(--ink-500)", marginTop: 0, marginBottom: 16 }}>
+              फोटो अपलोड गर्नुहोस् — BazaarCo admin ले जाँच गर्नेछ
+            </p>
+            <input
+              ref={docInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              style={{ display: "none" }}
+              onChange={onDocFile}
+            />
+            {docPreview ? (
+              <img
+                src={docPreview}
+                alt=""
                 style={{
-                  position: "absolute",
-                  inset: 0,
-                  border: "2px solid var(--red)",
-                  borderRadius: "var(--r-lg)",
-                  animation: "bz-mic-pulse 1.6s ease-in-out infinite",
+                  width: "100%",
+                  maxHeight: 220,
+                  objectFit: "contain",
+                  borderRadius: "var(--r-md)",
+                  border: "1px solid var(--line-200)",
+                  marginBottom: 12,
+                  background: "var(--line-100)",
                 }}
               />
+            ) : null}
+            <Button
+              variant="secondary"
+              full
+              icon="image"
+              onClick={() => docInputRef.current?.click()}
+            >
+              {docPreview ? "Choose another photo" : "Choose from gallery or camera"}
+            </Button>
+            <div style={{ marginTop: 16 }}>
+              <Button
+                variant="primary"
+                full
+                size="lg"
+                disabled={!docFile}
+                onClick={() => setStage("review")}
+              >
+                Continue · अगाडि बढ्नुहोस्
+              </Button>
             </div>
-            <h2 style={{ margin: "24px 0 6px", fontSize: "1.125rem" }}>
-              Scanning your {docType === "pan" ? "PAN card" : "NID card"}…
-            </h2>
-            <p className="ne" style={{ color: "var(--ink-500)" }}>
-              कागजात पढ्दैछौँ — एक छिन पर्खनुहोस्
-            </p>
           </div>
         )}
 
@@ -845,49 +1099,80 @@ export function SellerOnboarding() {
                 marginBottom: 12,
               }}
             >
-              <Icon name="check" size={20} color="var(--success)" /> Document recognised · पढियो
+              <Icon name="check" size={20} color="var(--success)" /> Document uploaded · अपलोड भयो
             </div>
             <h2 style={{ margin: "0 0 16px", fontSize: "1.25rem", fontWeight: 800 }}>
               Confirm your details
             </h2>
-            {[
-              ["Shop name · पसलको नाम", scanned.shop],
-              ["Owner · मालिक", scanned.name],
-              [`${scanned.docLabel} no.`, scanned.docId],
-              ["Address · ठेगाना", scanned.address],
-            ].map(([k, v]) => (
-              <div
-                key={k}
+            <div
+              style={{
+                background: "#fff",
+                border: "1.5px solid var(--line-200)",
+                borderRadius: "var(--r-md)",
+                padding: "12px 14px",
+                marginBottom: 10,
+              }}
+            >
+              <label
                 style={{
-                  background: "#fff",
-                  border: "1px solid var(--line-200)",
-                  borderRadius: "var(--r-md)",
-                  padding: "12px 14px",
-                  marginBottom: 10,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
+                  fontSize: ".75rem",
+                  color: "var(--ink-400)",
+                  fontWeight: 700,
+                  display: "block",
+                  marginBottom: 8,
                 }}
               >
-                <Icon name="check" size={18} color="var(--success)" />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: ".75rem", color: "var(--ink-400)", fontWeight: 700 }}>
-                    {k}
-                  </div>
-                  <div style={{ fontWeight: 600 }}>{v}</div>
-                </div>
-                <button
+                Shop name · पसलको नाम (required)
+              </label>
+              <input
+                value={scanned.shop || shopName}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setShopName(v);
+                  setScanned((s) => (s ? { ...s, shop: v } : s));
+                }}
+                placeholder="e.g. Bhaktapur Handicraft"
+                style={{
+                  width: "100%",
+                  height: 44,
+                  padding: "0 12px",
+                  border: "1.5px solid var(--line-200)",
+                  borderRadius: "var(--r-md)",
+                  fontSize: ".9375rem",
+                  fontFamily: "var(--font-sans)",
+                }}
+              />
+            </div>
+            {[
+              ["Owner · मालिक", "name"],
+              [`${scanned.docLabel} no.`, "docId"],
+              ["Address · ठेगाना", "address"],
+            ].map(([label, key]) => (
+              <div key={key} style={{ marginBottom: 10 }}>
+                <label
                   style={{
-                    background: "none",
-                    border: "none",
-                    color: "var(--blue)",
+                    fontSize: ".75rem",
+                    color: "var(--ink-400)",
                     fontWeight: 700,
-                    cursor: "pointer",
-                    fontSize: ".8125rem",
+                    display: "block",
+                    marginBottom: 6,
                   }}
                 >
-                  Edit
-                </button>
+                  {label}
+                </label>
+                <input
+                  value={scanned[key] ?? ""}
+                  onChange={(e) => setScanned((s) => (s ? { ...s, [key]: e.target.value } : s))}
+                  style={{
+                    width: "100%",
+                    height: 44,
+                    padding: "0 12px",
+                    border: "1.5px solid var(--line-200)",
+                    borderRadius: "var(--r-md)",
+                    fontSize: ".9375rem",
+                    fontFamily: "var(--font-sans)",
+                  }}
+                />
               </div>
             ))}
             <div style={{ marginTop: 18 }}>
@@ -1000,10 +1285,12 @@ export function SellerOnboarding() {
                 variant="primary"
                 full
                 size="lg"
-                disabled={!wallet}
-                onClick={() => setStage("done")}
+                disabled={!wallet || setupOrganization.isPending || submitVerification.isPending}
+                onClick={() => void finishSetup()}
               >
-                Save and go live · पसल खोल्नुहोस्
+                {setupOrganization.isPending || submitVerification.isPending
+                  ? "Submitting for review…"
+                  : "Submit for admin review · जाँचको लागि पठाउनुहोस्"}
               </Button>
             </div>
           </div>
@@ -1025,16 +1312,36 @@ export function SellerOnboarding() {
             >
               <Icon name="check" size={42} color="var(--success)" />
             </div>
-            <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800 }}>You're live!</h1>
+            <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800 }}>Submitted for review</h1>
             <p className="ne" style={{ color: "var(--ink-500)", marginTop: 6 }}>
-              पसल खुल्यो — पहिलो सामान थप्नुहोस्
+              BazaarCo admin will verify your {docType === "pan" ? "PAN" : "NID"}. You can use the
+              dashboard meanwhile.
             </p>
+            <div
+              style={{
+                marginTop: 16,
+                padding: 12,
+                background: "rgba(247,127,0,.08)",
+                borderRadius: "var(--r-md)",
+                fontSize: ".8125rem",
+                color: "var(--blue-deep)",
+                textAlign: "left",
+              }}
+            >
+              <Icon
+                name="shieldCheck"
+                size={16}
+                color="var(--saffron)"
+                style={{ verticalAlign: "middle", marginRight: 6 }}
+              />
+              Adding products and videos unlocks after approval.
+            </div>
             <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 10 }}>
-              <Button variant="primary" size="lg" full icon="plus" onClick={() => nav("s-add")}>
-                Add your first product
+              <Button variant="primary" size="lg" full onClick={() => nav("s-dashboard")}>
+                Open dashboard · ड्यासबोर्ड
               </Button>
-              <Button variant="ghost" full onClick={() => nav("s-dashboard")}>
-                Open dashboard · ड्यासबोर्ड हेर्नुहोस्
+              <Button variant="ghost" full onClick={() => nav("s-onboarding")}>
+                Re-upload document · कागजात फेरि पठाउनुहोस्
               </Button>
             </div>
           </div>
@@ -1075,64 +1382,141 @@ export const COACH_DASHBOARD = [
 
 /* Inline SVG charts (no deps) */
 
-export function SellerBarChart({ data, height = 180 }) {
+export function SellerBarChart({ data, height = 280 }) {
   const max = Math.max(...data.map((d) => d.value), 1);
-  const W = 100,
-    H = 100;
-  const n = data.length;
-  const barW = (W - 8) / n - 2;
+  const total = data.reduce((sum, d) => sum + d.value, 0);
+  const avg = data.length ? Math.round(total / data.length) : 0;
+  const peakIdx = data.reduce((best, d, i) => (d.value > data[best].value ? i : best), 0);
+  const chartH = Math.max(height - 72, 160);
+
   return (
-    <div>
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        preserveAspectRatio="none"
-        style={{ width: "100%", height, display: "block" }}
-      >
-        {[0, 25, 50, 75, 100].map((y) => (
-          <line key={y} x1="0" x2={W} y1={y} y2={y} stroke="var(--line-200)" strokeWidth=".3" />
-        ))}
-        {data.map((d, i) => {
-          const h = (d.value / max) * 88;
-          const x = 4 + i * ((W - 8) / n) + 1;
-          const y = 96 - h;
-          return (
-            <g key={i}>
-              <rect
-                x={x}
-                y={y}
-                width={barW}
-                height={h}
-                fill={d.highlight ? "var(--red)" : "var(--blue)"}
-                rx="1"
-              />
-              <text
-                x={x + barW / 2}
-                y={y - 1.5}
-                textAnchor="middle"
-                fontSize="3.4"
-                fontWeight="700"
-                fill="var(--ink-700)"
-              >
-                {d.value >= 1000 ? `${(d.value / 1000).toFixed(0)}k` : d.value}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
+    <div style={{ width: "100%" }}>
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: `repeat(${n}, 1fr)`,
-          marginTop: 6,
-          fontSize: ".7rem",
-          color: "var(--ink-500)",
-          textAlign: "center",
-          fontWeight: 600,
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 12,
+          marginBottom: 16,
         }}
       >
-        {data.map((d, i) => (
-          <div key={i}>{d.label}</div>
+        {[
+          {
+            label: "7-day total",
+            value: `Rs. ${total.toLocaleString()}`,
+            tint: "var(--blue-deep)",
+          },
+          { label: "Daily average", value: `Rs. ${avg.toLocaleString()}`, tint: "var(--ink-700)" },
+          {
+            label: "Best day",
+            value: data[peakIdx]?.value
+              ? `${data[peakIdx].label} · Rs. ${data[peakIdx].value.toLocaleString()}`
+              : "—",
+            tint: "var(--saffron)",
+          },
+        ].map((s) => (
+          <div
+            key={s.label}
+            style={{
+              flex: "1 1 140px",
+              padding: "12px 14px",
+              background: "var(--line-100)",
+              borderRadius: "var(--r-md)",
+              border: "1px solid var(--line-200)",
+            }}
+          >
+            <div
+              style={{
+                fontSize: ".7rem",
+                fontWeight: 700,
+                color: "var(--ink-500)",
+                textTransform: "uppercase",
+                letterSpacing: ".04em",
+              }}
+            >
+              {s.label}
+            </div>
+            <div
+              className="tnum"
+              style={{ fontSize: "1rem", fontWeight: 800, color: s.tint, marginTop: 4 }}
+            >
+              {s.value}
+            </div>
+          </div>
         ))}
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "stretch",
+          gap: 10,
+          height: chartH,
+          padding: "8px 4px 0",
+          background: "linear-gradient(180deg, #f8fafc 0%, #fff 100%)",
+          borderRadius: "var(--r-md)",
+          border: "1px solid var(--line-100)",
+        }}
+      >
+        {data.map((d, i) => {
+          const pct = max > 0 ? (d.value / max) * 100 : 0;
+          const barPct = Math.max(pct, d.value > 0 ? 8 : 4);
+          const isPeak = i === peakIdx && d.value > 0;
+          return (
+            <div
+              key={d.label}
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                minWidth: 0,
+              }}
+            >
+              <div
+                className="tnum"
+                style={{
+                  fontSize: ".68rem",
+                  fontWeight: 700,
+                  color: d.value > 0 ? "var(--ink-700)" : "var(--ink-400)",
+                  marginBottom: 6,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {d.value > 0 ? `Rs.${d.value.toLocaleString()}` : "—"}
+              </div>
+              <div
+                title={`${d.label}: Rs. ${d.value.toLocaleString()}`}
+                style={{
+                  width: "100%",
+                  maxWidth: 64,
+                  height: `${barPct}%`,
+                  minHeight: d.value > 0 ? 12 : 6,
+                  borderRadius: "10px 10px 4px 4px",
+                  background: isPeak
+                    ? "linear-gradient(180deg, #fbbf24 0%, #f77f00 45%, #e63946 100%)"
+                    : d.value > 0
+                      ? "linear-gradient(180deg, #60a5fa 0%, #1d4ed8 100%)"
+                      : "var(--line-200)",
+                  boxShadow: isPeak
+                    ? "0 4px 14px rgba(230,57,70,.25)"
+                    : "0 2px 8px rgba(29,78,216,.15)",
+                  transition: "height .2s ease",
+                }}
+              />
+              <div
+                style={{
+                  marginTop: 10,
+                  fontSize: ".75rem",
+                  fontWeight: isPeak ? 800 : 600,
+                  color: isPeak ? "var(--red)" : "var(--ink-500)",
+                }}
+              >
+                {d.label}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -3365,9 +3749,11 @@ export const attrFilled = (f: { t: string }, v: unknown) => {
 /* ---------- 4.4 Add Product — Three-Tap Listing ---------- */
 export function SellerAddProduct() {
   const { nav, toast } = useBz();
+  const { data: organization } = useSellerOrganization();
+  const canSell = organization?.verification?.canSell === true;
   const { data: attrCategories = [] } = useAttrCategories();
   const { data: categoryAttributes = {} } = useCategoryAttributes();
-  const [photos, setPhotos] = useState(0);
+  const [productPhotos, setProductPhotos] = useState<ProductPhoto[]>([]);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [price, setPrice] = useState("");
@@ -3416,7 +3802,13 @@ export function SellerAddProduct() {
 
   const titleOk = title.trim().length >= 3;
   const variantsOk = !hasVariants || variants.every((v) => v.price && v.stock);
-  const canPublish = photos > 0 && titleOk && (hasVariants ? variantsOk : price && stock);
+  const canPublish =
+    productPhotos.length > 0 && titleOk && (hasVariants ? variantsOk : price && stock);
+  const categoryMeta = attrCategories.find((c) => c.id === category);
+  const displayPrice = hasVariants ? variants.find((v) => v.price)?.price : price;
+  const displayStock = hasVariants
+    ? variants.reduce((sum, v) => sum + (parseInt(v.stock, 10) || 0), 0)
+    : stock;
 
   const updateVariant = (id, key, val) =>
     setVariants((arr) => arr.map((v) => (v.id === id ? { ...v, [key]: val } : v)));
@@ -3424,237 +3816,67 @@ export function SellerAddProduct() {
     setVariants((arr) => [...arr, { id: Date.now(), name: "", price: "", stock: "" }]);
   const removeVariant = (id) => setVariants((arr) => arr.filter((v) => v.id !== id));
 
-  return (
-    <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
-      <div style={{ maxWidth: 680, margin: "0 auto" }}>
+  if (!canSell) {
+    return (
+      <div className="bz-seller-page">
         <SellerHelpBar />
+        <SellerVerificationBlocked actionLabel="add products" />
+        <Button variant="secondary" onClick={() => nav("s-onboarding")}>
+          Complete verification · प्रमाणीकरण
+        </Button>
+      </div>
+    );
+  }
 
-        <button
-          onClick={() => nav("s-dashboard")}
-          style={{
-            background: "none",
-            border: "none",
-            color: "var(--ink-500)",
-            fontWeight: 600,
-            cursor: "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            marginBottom: 12,
-            fontSize: ".875rem",
-          }}
-        >
-          <Icon name="chevronLeft" size={16} /> Back to dashboard
-        </button>
+  return (
+    <div className="bz-seller-page">
+      <div className="bz-seller-add-layout">
+        <div>
+          <SellerHelpBar />
 
-        <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-          Add a product
-        </h1>
-        <p className="ne" style={{ color: "var(--ink-500)", margin: "4px 0 12px" }}>
-          ३ ट्यापमा सामान थप्नुहोस्
-        </p>
-
-        {/* Progress */}
-        <div style={{ display: "flex", gap: 6, marginBottom: 22 }}>
-          {[photos > 0, titleOk, hasVariants ? variantsOk : price && stock].map((done, i) => (
-            <div
-              key={i}
-              style={{
-                flex: 1,
-                height: 6,
-                borderRadius: 999,
-                background: done ? "var(--success)" : "var(--line-200)",
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Step 1 — Photos */}
-        <div
-          style={{
-            background: "#fff",
-            border: "1.5px solid var(--line-200)",
-            borderRadius: "var(--r-lg)",
-            padding: 18,
-            marginBottom: 14,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-            <span
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: "50%",
-                background: photos > 0 ? "var(--success)" : "var(--saffron)",
-                color: "#fff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: 800,
-              }}
-            >
-              {photos > 0 ? <Icon name="check" size={18} color="#fff" /> : 1}
-            </span>
-            <div>
-              <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>Take 3 photos</h3>
-              <div className="ne" style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
-                ३ फोटो खिच्नुहोस्
-              </div>
-            </div>
-          </div>
           <button
-            onClick={() => setPhotos((p) => Math.min(p + 1, 3))}
+            onClick={() => nav("s-dashboard")}
             style={{
-              width: "100%",
-              padding: 22,
-              background: "rgba(247,127,0,.08)",
-              border: "1.5px dashed var(--saffron)",
-              borderRadius: "var(--r-md)",
-              color: "var(--saffron)",
-              fontWeight: 800,
+              background: "none",
+              border: "none",
+              color: "var(--ink-500)",
+              fontWeight: 600,
               cursor: "pointer",
-              display: "flex",
+              display: "inline-flex",
               alignItems: "center",
-              justifyContent: "center",
-              gap: 10,
-              fontSize: "1rem",
+              gap: 6,
+              marginBottom: 12,
+              fontSize: ".875rem",
             }}
           >
-            <Icon name="image" size={26} color="var(--saffron)" />
-            {photos === 0
-              ? "Open camera · क्यामेरा खोल्नुहोस्"
-              : `${photos}/3 photos · tap for next`}
+            <Icon name="chevronLeft" size={16} /> Back to dashboard
           </button>
-          {photos > 0 && (
-            <>
-              <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                {Array.from({ length: photos }).map((_, i) => (
-                  <Placeholder
-                    key={i}
-                    icon="shirt"
-                    tint="green"
-                    style={{ width: 70, height: 70 }}
-                    radius="var(--r-sm)"
-                  />
-                ))}
-              </div>
-              <p style={{ fontSize: ".8125rem", color: "var(--success)", marginTop: 10 }}>
-                <Icon
-                  name="check"
-                  size={14}
-                  color="var(--success)"
-                  style={{ verticalAlign: "middle" }}
-                />{" "}
-                Background auto-removed · पृष्ठभूमि हटाइयो
-              </p>
-            </>
-          )}
-        </div>
 
-        {/* Step 2 — Describe */}
-        <div
-          style={{
-            background: "#fff",
-            border: "1.5px solid var(--line-200)",
-            borderRadius: "var(--r-lg)",
-            padding: 18,
-            marginBottom: 14,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-            <span
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: "50%",
-                background: titleOk ? "var(--success)" : "var(--blue)",
-                color: "#fff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: 800,
-              }}
-            >
-              {titleOk ? <Icon name="check" size={18} color="#fff" /> : 2}
-            </span>
-            <div>
-              <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>
-                Describe your product
-              </h3>
-              <div className="ne" style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
-                सामानको बारेमा लेख्नुहोस्
-              </div>
-            </div>
+          <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
+            Add a product
+          </h1>
+          <p className="ne" style={{ color: "var(--ink-500)", margin: "4px 0 12px" }}>
+            ३ ट्यापमा सामान थप्नुहोस्
+          </p>
+
+          {/* Progress */}
+          <div style={{ display: "flex", gap: 6, marginBottom: 22 }}>
+            {[productPhotos.length > 0, titleOk, hasVariants ? variantsOk : price && stock].map(
+              (done, i) => (
+                <div
+                  key={i}
+                  style={{
+                    flex: 1,
+                    height: 6,
+                    borderRadius: 999,
+                    background: done ? "var(--success)" : "var(--line-200)",
+                  }}
+                />
+              ),
+            )}
           </div>
 
-          <label
-            style={{
-              fontSize: ".8125rem",
-              fontWeight: 700,
-              color: "var(--ink-700)",
-              display: "block",
-              marginBottom: 6,
-            }}
-          >
-            Product name · नाम
-          </label>
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Green cotton kurta — size XL"
-            style={{
-              width: "100%",
-              height: 56,
-              fontSize: "1rem",
-              border: "1.5px solid var(--line-200)",
-              borderRadius: "var(--r-md)",
-              padding: "0 16px",
-              outline: "none",
-              fontFamily: "var(--font-sans)",
-              marginBottom: 12,
-            }}
-          />
-
-          <label
-            style={{
-              fontSize: ".8125rem",
-              fontWeight: 700,
-              color: "var(--ink-700)",
-              display: "block",
-              marginBottom: 6,
-            }}
-          >
-            Category · वर्ग
-          </label>
-          <select
-            value={category}
-            onChange={(e) => pickCategory(e.target.value)}
-            style={{
-              width: "100%",
-              height: 56,
-              fontSize: "1rem",
-              border: "1.5px solid var(--line-200)",
-              borderRadius: "var(--r-md)",
-              padding: "0 14px",
-              outline: "none",
-              background: "#fff",
-              fontFamily: "var(--font-sans)",
-            }}
-          >
-            <option value="">Pick a category</option>
-            {attrCategories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.en} · {c.ne}
-              </option>
-            ))}
-          </select>
-          <p style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 6 }}>
-            Picking the right category shows buyers the right details — and helps them find you.
-          </p>
-        </div>
-
-        {/* Product details — category-specific, optional but boosts findability */}
-        {category && attrFields.length > 0 && (
+          {/* Step 1 — Photos */}
           <div
             style={{
               background: "#fff",
@@ -3664,77 +3886,542 @@ export function SellerAddProduct() {
               marginBottom: 14,
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
               <span
                 style={{
                   width: 32,
                   height: 32,
                   borderRadius: "50%",
-                  background: "var(--tint-blue-50)",
-                  color: "var(--blue)",
+                  background: productPhotos.length > 0 ? "var(--success)" : "var(--saffron)",
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 800,
+                }}
+              >
+                {productPhotos.length > 0 ? <Icon name="check" size={18} color="#fff" /> : 1}
+              </span>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>Add 3 photos</h3>
+                <div className="ne" style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
+                  ३ फोटो छान्नुहोस् — crop गर्न सकिन्छ
+                </div>
+              </div>
+            </div>
+            <ProductPhotoPicker photos={productPhotos} onChange={setProductPhotos} max={3} />
+          </div>
+
+          {/* Step 2 — Describe */}
+          <div
+            style={{
+              background: "#fff",
+              border: "1.5px solid var(--line-200)",
+              borderRadius: "var(--r-lg)",
+              padding: 18,
+              marginBottom: 14,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+              <span
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  background: titleOk ? "var(--success)" : "var(--blue)",
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 800,
+                }}
+              >
+                {titleOk ? <Icon name="check" size={18} color="#fff" /> : 2}
+              </span>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>
+                  Describe your product
+                </h3>
+                <div className="ne" style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
+                  सामानको बारेमा लेख्नुहोस्
+                </div>
+              </div>
+            </div>
+
+            <label
+              style={{
+                fontSize: ".8125rem",
+                fontWeight: 700,
+                color: "var(--ink-700)",
+                display: "block",
+                marginBottom: 6,
+              }}
+            >
+              Product name · नाम
+            </label>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Green cotton kurta — size XL"
+              style={{
+                width: "100%",
+                height: 56,
+                fontSize: "1rem",
+                border: "1.5px solid var(--line-200)",
+                borderRadius: "var(--r-md)",
+                padding: "0 16px",
+                outline: "none",
+                fontFamily: "var(--font-sans)",
+                marginBottom: 12,
+              }}
+            />
+
+            <label
+              style={{
+                fontSize: ".8125rem",
+                fontWeight: 700,
+                color: "var(--ink-700)",
+                display: "block",
+                marginBottom: 6,
+              }}
+            >
+              Category · वर्ग
+            </label>
+            <select
+              value={category}
+              onChange={(e) => pickCategory(e.target.value)}
+              style={{
+                width: "100%",
+                height: 56,
+                fontSize: "1rem",
+                border: "1.5px solid var(--line-200)",
+                borderRadius: "var(--r-md)",
+                padding: "0 14px",
+                outline: "none",
+                background: "#fff",
+                fontFamily: "var(--font-sans)",
+              }}
+            >
+              <option value="">Pick a category</option>
+              {attrCategories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.en} · {c.ne}
+                </option>
+              ))}
+            </select>
+            <p style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 6 }}>
+              Picking the right category shows buyers the right details — and helps them find you.
+            </p>
+          </div>
+
+          {/* Product details — category-specific, optional but boosts findability */}
+          {category && attrFields.length > 0 && (
+            <div
+              style={{
+                background: "#fff",
+                border: "1.5px solid var(--line-200)",
+                borderRadius: "var(--r-lg)",
+                padding: 18,
+                marginBottom: 14,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
+                <span
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "50%",
+                    background: "var(--tint-blue-50)",
+                    color: "var(--blue)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Icon name="sliders" size={18} color="var(--blue)" />
+                </span>
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>
+                    Product details{" "}
+                    <span style={{ fontSize: ".75rem", color: "var(--ink-400)", fontWeight: 600 }}>
+                      Optional · ऐच्छिक
+                    </span>
+                  </h3>
+                  <div className="ne" style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
+                    विवरण भर्नुहोस् — किनेर फिर्ता आउने सम्भावना घट्छ
+                  </div>
+                </div>
+              </div>
+              <p style={{ margin: "0 0 14px", fontSize: ".8125rem", color: "var(--ink-500)" }}>
+                More detail = buyers find you in filters and get fewer surprises (fewer returns).{" "}
+                <span style={{ color: "var(--red)", fontWeight: 800 }}>*</span> = important.
+              </p>
+
+              {/* AI auto-fill from photos */}
+              <button
+                type="button"
+                onClick={productPhotos.length > 0 ? aiFill : undefined}
+                disabled={productPhotos.length === 0}
+                style={{
+                  width: "100%",
+                  padding: "12px 14px",
+                  marginBottom: 16,
+                  borderRadius: "var(--r-md)",
+                  cursor: productPhotos.length > 0 ? "pointer" : "default",
+                  border: "1.5px solid var(--blue)",
+                  background: productPhotos.length > 0 ? "var(--tint-blue-50)" : "var(--line-100)",
+                  color: productPhotos.length > 0 ? "var(--blue)" : "var(--ink-400)",
+                  fontWeight: 700,
+                  fontSize: ".875rem",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                }}
+              >
+                <Icon
+                  name="sparkles"
+                  size={16}
+                  color={productPhotos.length > 0 ? "var(--blue)" : "var(--ink-400)"}
+                />
+                {productPhotos.length > 0
+                  ? "Auto-fill from my photos · फोटोबाट भर्नुहोस्"
+                  : "Add photos first to auto-fill"}
+              </button>
+
+              <CategoryAttrFields category={category} values={attrs} onChange={setAttrs} />
+
+              {/* Listing quality + missing warning */}
+              {quality && (
+                <div
+                  style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--line-200)" }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 6,
+                    }}
+                  >
+                    <span
+                      style={{ fontSize: ".8125rem", fontWeight: 700, color: "var(--ink-700)" }}
+                    >
+                      Listing quality · स्तर
+                    </span>
+                    <span style={{ fontSize: ".8125rem", fontWeight: 800, color: quality.color }}>
+                      {quality.label} · {quality.ne}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      height: 8,
+                      borderRadius: 999,
+                      background: "var(--line-200)",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${quality.pct}%`,
+                        height: "100%",
+                        background: quality.color,
+                        borderRadius: 999,
+                      }}
+                    />
+                  </div>
+                  {missingReq.length > 0 && (
+                    <div
+                      style={{
+                        margin: "12px 0 0",
+                        padding: "10px 12px",
+                        borderRadius: "var(--r-md)",
+                        background: "rgba(247,127,0,.08)",
+                        borderLeft: "3px solid var(--saffron)",
+                        fontSize: ".8125rem",
+                        color: "var(--ink-700)",
+                      }}
+                    >
+                      You can still publish now, but adding{" "}
+                      <b>{missingReq.map((f) => f.en).join(", ")}</b> helps buyers trust and find
+                      this product.
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Step 3 — Price & stock (or variants) */}
+          <div
+            style={{
+              background: "#fff",
+              border: "1.5px solid var(--line-200)",
+              borderRadius: "var(--r-lg)",
+              padding: 18,
+              marginBottom: 14,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+              <span
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  background: (hasVariants ? variantsOk : price && stock)
+                    ? "var(--success)"
+                    : "var(--ink-400)",
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 800,
+                }}
+              >
+                {(hasVariants ? variantsOk : price && stock) ? (
+                  <Icon name="check" size={18} color="#fff" />
+                ) : (
+                  3
+                )}
+              </span>
+              <div style={{ flex: 1 }}>
+                <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>Price &amp; stock</h3>
+                <div className="ne" style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
+                  मूल्य र संख्या
+                </div>
+              </div>
+              <label
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: ".8125rem",
+                  fontWeight: 700,
+                  color: "var(--ink-700)",
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={hasVariants}
+                  onChange={(e) => setHasVariants(e.target.checked)}
+                  style={{ width: 18, height: 18, accentColor: "var(--red)" }}
+                />
+                Has sizes/colors
+              </label>
+            </div>
+
+            {!hasVariants ? (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label
+                    style={{
+                      fontSize: ".8125rem",
+                      fontWeight: 700,
+                      color: "var(--ink-700)",
+                      display: "block",
+                      marginBottom: 6,
+                    }}
+                  >
+                    Price (Rs.) · मूल्य
+                  </label>
+                  <input
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value.replace(/\D/g, ""))}
+                    inputMode="numeric"
+                    placeholder="1200"
+                    className="tnum"
+                    style={{
+                      width: "100%",
+                      height: 64,
+                      fontSize: "1.5rem",
+                      fontWeight: 800,
+                      textAlign: "center",
+                      border: "1.5px solid var(--line-200)",
+                      borderRadius: "var(--r-md)",
+                      fontFamily: "var(--font-sans)",
+                      outline: "none",
+                    }}
+                  />
+                </div>
+                <div>
+                  <label
+                    style={{
+                      fontSize: ".8125rem",
+                      fontWeight: 700,
+                      color: "var(--ink-700)",
+                      display: "block",
+                      marginBottom: 6,
+                    }}
+                  >
+                    Stock · संख्या
+                  </label>
+                  <input
+                    value={stock}
+                    onChange={(e) => setStock(e.target.value.replace(/\D/g, ""))}
+                    inputMode="numeric"
+                    placeholder="15"
+                    className="tnum"
+                    style={{
+                      width: "100%",
+                      height: 64,
+                      fontSize: "1.5rem",
+                      fontWeight: 800,
+                      textAlign: "center",
+                      border: "1.5px solid var(--line-200)",
+                      borderRadius: "var(--r-md)",
+                      fontFamily: "var(--font-sans)",
+                      outline: "none",
+                    }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div>
+                <p style={{ margin: "0 0 10px", fontSize: ".8125rem", color: "var(--ink-500)" }}>
+                  Add one row per variant (e.g. size, color).
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {variants.map((v) => (
+                    <div
+                      key={v.id}
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1.4fr 1fr 1fr auto",
+                        gap: 8,
+                        alignItems: "center",
+                      }}
+                    >
+                      <input
+                        value={v.name}
+                        onChange={(e) => updateVariant(v.id, "name", e.target.value)}
+                        placeholder="Variant (e.g. Large, Red)"
+                        style={{
+                          height: 48,
+                          padding: "0 12px",
+                          border: "1.5px solid var(--line-200)",
+                          borderRadius: "var(--r-md)",
+                          fontFamily: "var(--font-sans)",
+                          outline: "none",
+                        }}
+                      />
+                      <input
+                        value={v.price}
+                        onChange={(e) =>
+                          updateVariant(v.id, "price", e.target.value.replace(/\D/g, ""))
+                        }
+                        inputMode="numeric"
+                        placeholder="Price"
+                        className="tnum"
+                        style={{
+                          height: 48,
+                          padding: "0 12px",
+                          border: "1.5px solid var(--line-200)",
+                          borderRadius: "var(--r-md)",
+                          fontFamily: "var(--font-sans)",
+                          outline: "none",
+                          textAlign: "center",
+                        }}
+                      />
+                      <input
+                        value={v.stock}
+                        onChange={(e) =>
+                          updateVariant(v.id, "stock", e.target.value.replace(/\D/g, ""))
+                        }
+                        inputMode="numeric"
+                        placeholder="Stock"
+                        className="tnum"
+                        style={{
+                          height: 48,
+                          padding: "0 12px",
+                          border: "1.5px solid var(--line-200)",
+                          borderRadius: "var(--r-md)",
+                          fontFamily: "var(--font-sans)",
+                          outline: "none",
+                          textAlign: "center",
+                        }}
+                      />
+                      <button
+                        onClick={() => removeVariant(v.id)}
+                        disabled={variants.length <= 1}
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: "var(--r-md)",
+                          border: "1.5px solid var(--line-200)",
+                          background: "#fff",
+                          cursor: variants.length <= 1 ? "default" : "pointer",
+                          color: "var(--danger)",
+                          opacity: variants.length <= 1 ? 0.3 : 1,
+                        }}
+                      >
+                        <Icon name="trash" size={16} color="var(--danger)" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon="plus"
+                  onClick={addVariant}
+                  style={{ marginTop: 10 }}
+                >
+                  Add another
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Step 4 — Bargaining (optional) */}
+          <div
+            style={{
+              background: "#fff",
+              border: "1.5px solid var(--line-200)",
+              borderRadius: "var(--r-lg)",
+              padding: 18,
+              marginBottom: 22,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+              <span
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  background: "var(--tint-red-50)",
+                  color: "var(--red)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <Icon name="sliders" size={18} color="var(--blue)" />
+                <Icon name="bargain" size={18} color="var(--red)" />
               </span>
               <div style={{ flex: 1 }}>
                 <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>
-                  Product details{" "}
+                  Allow bargaining?{" "}
                   <span style={{ fontSize: ".75rem", color: "var(--ink-400)", fontWeight: 600 }}>
-                    Optional · ऐच्छिक
+                    Optional
                   </span>
                 </h3>
                 <div className="ne" style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
-                  विवरण भर्नुहोस् — किनेर फिर्ता आउने सम्भावना घट्छ
+                  मोलतोल स्वीकार?
                 </div>
               </div>
-            </div>
-            <p style={{ margin: "0 0 14px", fontSize: ".8125rem", color: "var(--ink-500)" }}>
-              More detail = buyers find you in filters and get fewer surprises (fewer returns).{" "}
-              <span style={{ color: "var(--red)", fontWeight: 800 }}>*</span> = important.
-            </p>
-
-            {/* AI auto-fill from photos */}
-            <button
-              type="button"
-              onClick={photos > 0 ? aiFill : undefined}
-              disabled={photos === 0}
-              style={{
-                width: "100%",
-                padding: "12px 14px",
-                marginBottom: 16,
-                borderRadius: "var(--r-md)",
-                cursor: photos > 0 ? "pointer" : "default",
-                border: "1.5px solid var(--blue)",
-                background: photos > 0 ? "var(--tint-blue-50)" : "var(--line-100)",
-                color: photos > 0 ? "var(--blue)" : "var(--ink-400)",
-                fontWeight: 700,
-                fontSize: ".875rem",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-              }}
-            >
-              <Icon
-                name="sparkles"
-                size={16}
-                color={photos > 0 ? "var(--blue)" : "var(--ink-400)"}
-              />
-              {photos > 0
-                ? "Auto-fill from my photos · फोटोबाट भर्नुहोस्"
-                : "Add photos first to auto-fill"}
-            </button>
-
-            <CategoryAttrFields category={category} values={attrs} onChange={setAttrs} />
-
-            {/* Listing quality + missing warning */}
-            {quality && (
-              <div
-                style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--line-200)" }}
+              <label
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}
               >
+                <input
+                  type="checkbox"
+                  checked={bargainOk}
+                  onChange={(e) => setBargainOk(e.target.checked)}
+                  style={{ width: 18, height: 18, accentColor: "var(--red)" }}
+                />
+              </label>
+            </div>
+            {bargainOk && (
+              <>
                 <div
                   style={{
                     display: "flex",
@@ -3743,376 +4430,206 @@ export function SellerAddProduct() {
                     marginBottom: 6,
                   }}
                 >
-                  <span style={{ fontSize: ".8125rem", fontWeight: 700, color: "var(--ink-700)" }}>
-                    Listing quality · स्तर
+                  <span style={{ fontSize: ".8125rem", color: "var(--ink-700)" }}>
+                    Max discount you allow
                   </span>
-                  <span style={{ fontSize: ".8125rem", fontWeight: 800, color: quality.color }}>
-                    {quality.label} · {quality.ne}
+                  <span className="tnum" style={{ fontWeight: 800, color: "var(--red)" }}>
+                    {bargainPct}%
                   </span>
                 </div>
-                <div
-                  style={{
-                    height: 8,
-                    borderRadius: 999,
-                    background: "var(--line-200)",
-                    overflow: "hidden",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: `${quality.pct}%`,
-                      height: "100%",
-                      background: quality.color,
-                      borderRadius: 999,
-                    }}
-                  />
-                </div>
-                {missingReq.length > 0 && (
-                  <div
-                    style={{
-                      margin: "12px 0 0",
-                      padding: "10px 12px",
-                      borderRadius: "var(--r-md)",
-                      background: "rgba(247,127,0,.08)",
-                      borderLeft: "3px solid var(--saffron)",
-                      fontSize: ".8125rem",
-                      color: "var(--ink-700)",
-                    }}
-                  >
-                    You can still publish now, but adding{" "}
-                    <b>{missingReq.map((f) => f.en).join(", ")}</b> helps buyers trust and find this
-                    product.
-                  </div>
-                )}
-              </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={30}
+                  value={bargainPct}
+                  onChange={(e) => setBargainPct(parseInt(e.target.value))}
+                  style={{ width: "100%", accentColor: "var(--red)" }}
+                />
+                <p style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 4 }}>
+                  Buyers see only &quot;Make an offer&quot; — never your limit.
+                </p>
+              </>
             )}
           </div>
-        )}
 
-        {/* Step 3 — Price & stock (or variants) */}
-        <div
-          style={{
-            background: "#fff",
-            border: "1.5px solid var(--line-200)",
-            borderRadius: "var(--r-lg)",
-            padding: 18,
-            marginBottom: 14,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-            <span
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: "50%",
-                background: (hasVariants ? variantsOk : price && stock)
-                  ? "var(--success)"
-                  : "var(--ink-400)",
-                color: "#fff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: 800,
-              }}
-            >
-              {(hasVariants ? variantsOk : price && stock) ? (
-                <Icon name="check" size={18} color="#fff" />
-              ) : (
-                3
-              )}
-            </span>
-            <div style={{ flex: 1 }}>
-              <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>Price &amp; stock</h3>
-              <div className="ne" style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
-                मूल्य र संख्या
-              </div>
-            </div>
-            <label
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                fontSize: ".8125rem",
-                fontWeight: 700,
-                color: "var(--ink-700)",
-                cursor: "pointer",
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={hasVariants}
-                onChange={(e) => setHasVariants(e.target.checked)}
-                style={{ width: 18, height: 18, accentColor: "var(--red)" }}
-              />
-              Has sizes/colors
-            </label>
-          </div>
-
-          {!hasVariants ? (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              <div>
-                <label
-                  style={{
-                    fontSize: ".8125rem",
-                    fontWeight: 700,
-                    color: "var(--ink-700)",
-                    display: "block",
-                    marginBottom: 6,
-                  }}
-                >
-                  Price (Rs.) · मूल्य
-                </label>
-                <input
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value.replace(/\D/g, ""))}
-                  inputMode="numeric"
-                  placeholder="1200"
-                  className="tnum"
-                  style={{
-                    width: "100%",
-                    height: 64,
-                    fontSize: "1.5rem",
-                    fontWeight: 800,
-                    textAlign: "center",
-                    border: "1.5px solid var(--line-200)",
-                    borderRadius: "var(--r-md)",
-                    fontFamily: "var(--font-sans)",
-                    outline: "none",
-                  }}
-                />
-              </div>
-              <div>
-                <label
-                  style={{
-                    fontSize: ".8125rem",
-                    fontWeight: 700,
-                    color: "var(--ink-700)",
-                    display: "block",
-                    marginBottom: 6,
-                  }}
-                >
-                  Stock · संख्या
-                </label>
-                <input
-                  value={stock}
-                  onChange={(e) => setStock(e.target.value.replace(/\D/g, ""))}
-                  inputMode="numeric"
-                  placeholder="15"
-                  className="tnum"
-                  style={{
-                    width: "100%",
-                    height: 64,
-                    fontSize: "1.5rem",
-                    fontWeight: 800,
-                    textAlign: "center",
-                    border: "1.5px solid var(--line-200)",
-                    borderRadius: "var(--r-md)",
-                    fontFamily: "var(--font-sans)",
-                    outline: "none",
-                  }}
-                />
-              </div>
-            </div>
-          ) : (
-            <div>
-              <p style={{ margin: "0 0 10px", fontSize: ".8125rem", color: "var(--ink-500)" }}>
-                Add one row per variant (e.g. size, color).
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {variants.map((v) => (
-                  <div
-                    key={v.id}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1.4fr 1fr 1fr auto",
-                      gap: 8,
-                      alignItems: "center",
-                    }}
-                  >
-                    <input
-                      value={v.name}
-                      onChange={(e) => updateVariant(v.id, "name", e.target.value)}
-                      placeholder="Variant (e.g. Large, Red)"
-                      style={{
-                        height: 48,
-                        padding: "0 12px",
-                        border: "1.5px solid var(--line-200)",
-                        borderRadius: "var(--r-md)",
-                        fontFamily: "var(--font-sans)",
-                        outline: "none",
-                      }}
-                    />
-                    <input
-                      value={v.price}
-                      onChange={(e) =>
-                        updateVariant(v.id, "price", e.target.value.replace(/\D/g, ""))
-                      }
-                      inputMode="numeric"
-                      placeholder="Price"
-                      className="tnum"
-                      style={{
-                        height: 48,
-                        padding: "0 12px",
-                        border: "1.5px solid var(--line-200)",
-                        borderRadius: "var(--r-md)",
-                        fontFamily: "var(--font-sans)",
-                        outline: "none",
-                        textAlign: "center",
-                      }}
-                    />
-                    <input
-                      value={v.stock}
-                      onChange={(e) =>
-                        updateVariant(v.id, "stock", e.target.value.replace(/\D/g, ""))
-                      }
-                      inputMode="numeric"
-                      placeholder="Stock"
-                      className="tnum"
-                      style={{
-                        height: 48,
-                        padding: "0 12px",
-                        border: "1.5px solid var(--line-200)",
-                        borderRadius: "var(--r-md)",
-                        fontFamily: "var(--font-sans)",
-                        outline: "none",
-                        textAlign: "center",
-                      }}
-                    />
-                    <button
-                      onClick={() => removeVariant(v.id)}
-                      disabled={variants.length <= 1}
-                      style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: "var(--r-md)",
-                        border: "1.5px solid var(--line-200)",
-                        background: "#fff",
-                        cursor: variants.length <= 1 ? "default" : "pointer",
-                        color: "var(--danger)",
-                        opacity: variants.length <= 1 ? 0.3 : 1,
-                      }}
-                    >
-                      <Icon name="trash" size={16} color="var(--danger)" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                icon="plus"
-                onClick={addVariant}
-                style={{ marginTop: 10 }}
-              >
-                Add another
-              </Button>
-            </div>
-          )}
-        </div>
-
-        {/* Step 4 — Bargaining (optional) */}
-        <div
-          style={{
-            background: "#fff",
-            border: "1.5px solid var(--line-200)",
-            borderRadius: "var(--r-lg)",
-            padding: 18,
-            marginBottom: 22,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-            <span
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: "50%",
-                background: "var(--tint-red-50)",
-                color: "var(--red)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Icon name="bargain" size={18} color="var(--red)" />
-            </span>
-            <div style={{ flex: 1 }}>
-              <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>
-                Allow bargaining?{" "}
-                <span style={{ fontSize: ".75rem", color: "var(--ink-400)", fontWeight: 600 }}>
-                  Optional
-                </span>
-              </h3>
-              <div className="ne" style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
-                मोलतोल स्वीकार?
-              </div>
-            </div>
-            <label
-              style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}
-            >
-              <input
-                type="checkbox"
-                checked={bargainOk}
-                onChange={(e) => setBargainOk(e.target.checked)}
-                style={{ width: 18, height: 18, accentColor: "var(--red)" }}
-              />
-            </label>
-          </div>
-          {bargainOk && (
-            <>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 6,
-                }}
-              >
-                <span style={{ fontSize: ".8125rem", color: "var(--ink-700)" }}>
-                  Max discount you allow
-                </span>
-                <span className="tnum" style={{ fontWeight: 800, color: "var(--red)" }}>
-                  {bargainPct}%
-                </span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={30}
-                value={bargainPct}
-                onChange={(e) => setBargainPct(parseInt(e.target.value))}
-                style={{ width: "100%", accentColor: "var(--red)" }}
-              />
-              <p style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 4 }}>
-                Buyers see only &quot;Make an offer&quot; — never your limit.
-              </p>
-            </>
-          )}
-        </div>
-
-        <Button
-          variant="primary"
-          size="lg"
-          full
-          disabled={!canPublish}
-          onClick={() => {
-            toast("Product published! · प्रकाशित भयो");
-            nav("s-products");
-          }}
-        >
-          Publish · प्रकाशित गर्नुहोस्
-        </Button>
-        {!canPublish && (
-          <p
-            style={{
-              fontSize: ".75rem",
-              color: "var(--ink-400)",
-              marginTop: 8,
-              textAlign: "center",
+          <Button
+            variant="primary"
+            size="lg"
+            full
+            disabled={!canPublish}
+            onClick={() => {
+              toast("Product published! · प्रकाशित भयो");
+              nav("s-products");
             }}
           >
-            Complete all 3 steps to publish
-          </p>
-        )}
+            Publish · प्रकाशित गर्नुहोस्
+          </Button>
+          {!canPublish && (
+            <p
+              style={{
+                fontSize: ".75rem",
+                color: "var(--ink-400)",
+                marginTop: 8,
+                textAlign: "center",
+              }}
+            >
+              Complete all 3 steps to publish
+            </p>
+          )}
+        </div>
+
+        <aside className="bz-seller-add-preview" aria-label="Listing preview">
+          <div
+            style={{
+              background: "#fff",
+              border: "1.5px solid var(--line-200)",
+              borderRadius: "var(--r-lg)",
+              padding: 18,
+              boxShadow: "var(--sh-2)",
+            }}
+          >
+            <div
+              style={{
+                fontSize: ".7rem",
+                fontWeight: 800,
+                textTransform: "uppercase",
+                letterSpacing: ".06em",
+                color: "var(--ink-500)",
+                marginBottom: 12,
+              }}
+            >
+              Buyer preview
+            </div>
+            {productPhotos.length > 0 ? (
+              <img
+                src={productPhotos[0].previewUrl}
+                alt=""
+                style={{
+                  width: "100%",
+                  aspectRatio: "1",
+                  marginBottom: 12,
+                  borderRadius: "var(--r-md)",
+                  objectFit: "cover",
+                  border: "1px solid var(--line-200)",
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: "100%",
+                  aspectRatio: "1",
+                  marginBottom: 12,
+                  borderRadius: "var(--r-md)",
+                  background: "var(--line-100)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "var(--ink-400)",
+                  fontSize: ".875rem",
+                  fontWeight: 600,
+                }}
+              >
+                Add photos
+              </div>
+            )}
+            <div
+              style={{
+                fontWeight: 800,
+                fontSize: "1.05rem",
+                color: "var(--blue-deep)",
+                lineHeight: 1.3,
+              }}
+            >
+              {titleOk ? title : "Product title"}
+            </div>
+            {categoryMeta && (
+              <p
+                className="ne"
+                style={{ margin: "6px 0 0", fontSize: ".8125rem", color: "var(--ink-500)" }}
+              >
+                {categoryMeta.en}
+              </p>
+            )}
+            <div
+              className="tnum"
+              style={{
+                marginTop: 12,
+                fontSize: "1.35rem",
+                fontWeight: 800,
+                color: displayPrice ? "var(--blue-deep)" : "var(--ink-400)",
+              }}
+            >
+              {displayPrice ? `Rs. ${Number(displayPrice).toLocaleString()}` : "Set price"}
+            </div>
+            {displayStock ? (
+              <p style={{ margin: "6px 0 0", fontSize: ".8125rem", color: "var(--ink-500)" }}>
+                {displayStock} in stock
+                {hasVariants ? " (all sizes)" : ""}
+              </p>
+            ) : null}
+            {quality && (
+              <div
+                style={{
+                  marginTop: 14,
+                  padding: "10px 12px",
+                  borderRadius: "var(--r-md)",
+                  background: "var(--line-100)",
+                  border: `1px solid ${quality.color}`,
+                }}
+              >
+                <div style={{ fontWeight: 800, fontSize: ".875rem", color: quality.color }}>
+                  {quality.label}
+                </div>
+                <div className="ne" style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
+                  {quality.ne}
+                </div>
+              </div>
+            )}
+            <ul
+              style={{
+                margin: "16px 0 0",
+                padding: 0,
+                listStyle: "none",
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              {[
+                { done: productPhotos.length > 0, label: "Photos" },
+                { done: titleOk, label: "Title & category" },
+                { done: hasVariants ? variantsOk : !!(price && stock), label: "Price & stock" },
+              ].map((step) => (
+                <li
+                  key={step.label}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    fontSize: ".8125rem",
+                    color: step.done ? "var(--success)" : "var(--ink-400)",
+                    fontWeight: 600,
+                  }}
+                >
+                  {step.done ? (
+                    <Icon name="check" size={14} color="currentColor" />
+                  ) : (
+                    <span
+                      style={{
+                        width: 14,
+                        height: 14,
+                        borderRadius: "50%",
+                        border: "2px solid currentColor",
+                        flexShrink: 0,
+                      }}
+                    />
+                  )}
+                  {step.label}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </aside>
       </div>
     </div>
   );
@@ -5293,28 +5810,203 @@ export function SellerLedger() {
 }
 
 /* ---------- 4.7 Customer Chat ---------- */
-export function SellerChat() {
+export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
   const { toast } = useBz();
-  const { data: chatData, isLoading, isError, error } = useSellerChat();
-  const CHAT_THREADS = chatData?.threads ?? [];
-  const CHAT_QUICK_REPLIES = chatData?.quickReplies ?? [];
-  const [active, setActive] = useState(null);
-  useEffect(() => {
-    if (CHAT_THREADS.length && !active) setActive(CHAT_THREADS[0]);
-  }, [CHAT_THREADS, active]);
+  const { data: inbox, isLoading, isError, error } = useChatInbox();
+  const { invalidateInbox, invalidateMessages } = useInvalidateChat();
+  const CHAT_THREADS = inbox?.threads ?? [];
+  const CHAT_QUICK_REPLIES = inbox?.quickReplies ?? [];
+  const [active, setActive] = useState<ChatThread | null>(null);
   const [msg, setMsg] = useState("");
-  const [messages, setMessages] = useState({});
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [peerTyping, setPeerTyping] = useState(false);
+  const [sending, setSending] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const typingStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const send = (text) => {
-    if (!text.trim() || !active) return;
-    setMessages((m) => ({
-      ...m,
-      [active.id]: [...(m[active.id] || []), { from: "me", text, t: "now" }],
-    }));
-    setMsg("");
+  const { data: msgPage, isLoading: msgsLoading } = useChatMessages(active?.id ?? null);
+
+  useEffect(() => {
+    if (CHAT_THREADS.length && !active) setActive(CHAT_THREADS[0] ?? null);
+  }, [CHAT_THREADS, active]);
+
+  useEffect(() => {
+    if (!buyerMode || typeof sessionStorage === "undefined") return;
+    const sellerId = sessionStorage.getItem("bz_open_chat_seller");
+    if (!sellerId) return;
+    sessionStorage.removeItem("bz_open_chat_seller");
+    void chatApi
+      .createConversation(sellerId)
+      .then((thread) => {
+        setActive(thread);
+        void invalidateInbox();
+      })
+      .catch((e) => {
+        toast(e instanceof Error ? e.message : "Could not open chat");
+      });
+  }, [buyerMode, invalidateInbox, toast]);
+
+  useEffect(() => {
+    if (msgPage?.messages) setMessages(msgPage.messages);
+  }, [msgPage]);
+
+  const appendMessage = useCallback((message: ChatMessage) => {
+    setMessages((prev) => {
+      if (prev.some((m) => m.id === message.id)) {
+        return prev.map((m) => (m.id === message.id ? message : m));
+      }
+      return [...prev, message];
+    });
+  }, []);
+
+  useEffect(() => {
+    connectChatSocket();
+    return () => {
+      disconnectChatSocket();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!active?.id) return;
+    const socket = connectChatSocket();
+    joinConversation(active.id);
+
+    const onNew = (payload: { conversationId: string; message: ChatMessage }) => {
+      if (payload.conversationId !== active.id) return;
+      appendMessage(payload.message);
+      void invalidateInbox();
+    };
+
+    const onStatus = (payload: {
+      conversationId: string;
+      messageId: string;
+      deliveredAt?: string;
+      readAt?: string;
+    }) => {
+      if (payload.conversationId !== active.id) return;
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== payload.messageId || m.from !== "me") return m;
+          if (payload.readAt) return { ...m, status: "read" };
+          if (payload.deliveredAt) return { ...m, status: "delivered" };
+          return m;
+        }),
+      );
+    };
+
+    const onTyping = (payload: { conversationId: string; userId: string; isTyping: boolean }) => {
+      if (payload.conversationId !== active.id) return;
+      if (payload.userId === active.peerUserId) setPeerTyping(payload.isTyping);
+    };
+
+    const onInbox = () => {
+      void invalidateInbox();
+    };
+
+    const onPresence = (payload: { userId: string; isOnline: boolean; lastSeenAt: string }) => {
+      if (payload.userId !== active.peerUserId) return;
+      setActive((cur) =>
+        cur
+          ? {
+              ...cur,
+              isOnline: payload.isOnline,
+              lastSeenLabel: payload.isOnline
+                ? "Online"
+                : `Last seen ${new Date(payload.lastSeenAt).toLocaleTimeString()}`,
+            }
+          : cur,
+      );
+    };
+
+    socket.on("message_new", onNew);
+    socket.on("message_status", onStatus);
+    socket.on("typing", onTyping);
+    socket.on("inbox_updated", onInbox);
+    socket.on("presence_broadcast", onPresence);
+
+    return () => {
+      leaveConversation(active.id);
+      socket.off("message_new", onNew);
+      socket.off("message_status", onStatus);
+      socket.off("typing", onTyping);
+      socket.off("inbox_updated", onInbox);
+      socket.off("presence_broadcast", onPresence);
+      setPeerTyping(false);
+    };
+  }, [active?.id, active?.peerUserId, appendMessage, invalidateInbox]);
+
+  const notifyTyping = useCallback(() => {
+    if (!active?.id) return;
+    emitTypingStart(active.id);
+    if (typingStopTimer.current) clearTimeout(typingStopTimer.current);
+    typingStopTimer.current = setTimeout(() => {
+      emitTypingStop(active.id);
+    }, 1500);
+  }, [active?.id]);
+
+  const send = async (text: string, attachment?: ChatMessage["attachment"]) => {
+    if (!active?.id || sending) return;
+    const trimmed = text.trim();
+    if (!trimmed && !attachment) return;
+    setSending(true);
+    try {
+      const clientMessageId =
+        typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}`;
+      const sent = await sendChatMessageSocket(active.id, {
+        body: trimmed || undefined,
+        clientMessageId,
+        attachment: attachment
+          ? {
+              url: attachment.url,
+              thumbnailUrl: attachment.thumbnailUrl ?? undefined,
+              mimeType: attachment.mimeType,
+              mediaType: attachment.mediaType as "image" | "video",
+            }
+          : undefined,
+      });
+      appendMessage(sent);
+      setMsg("");
+      emitTypingStop(active.id);
+      void invalidateInbox();
+      void invalidateMessages(active.id);
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Could not send message");
+    } finally {
+      setSending(false);
+    }
   };
 
-  if (isLoading || isError || !active) {
+  const onPickMedia = async (file: File) => {
+    if (!active?.id) return;
+    const isVideo = file.type.startsWith("video/");
+    const allowedImage = ["image/jpeg", "image/png", "image/webp"];
+    const allowedVideo = ["video/mp4", "video/quicktime", "video/webm"];
+    if (!isVideo && !allowedImage.includes(file.type)) {
+      toast("Use JPEG, PNG, or WebP images");
+      return;
+    }
+    if (isVideo && !allowedVideo.includes(file.type)) {
+      toast("Use MP4, MOV, or WebM videos");
+      return;
+    }
+    setSending(true);
+    try {
+      const uploaded = isVideo ? await chatApi.uploadVideo(file) : await chatApi.uploadImage(file);
+      await send("", {
+        url: uploaded.url,
+        thumbnailUrl: "thumbnailUrl" in uploaded ? uploaded.thumbnailUrl : uploaded.url,
+        mediaType: isVideo ? "video" : "image",
+        mimeType: file.type,
+      });
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Upload failed");
+    } finally {
+      setSending(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  if (isLoading || isError) {
     return (
       <ApiState isLoading={isLoading} isError={isError} error={error}>
         <div />
@@ -5322,9 +6014,29 @@ export function SellerChat() {
     );
   }
 
+  if (!CHAT_THREADS.length) {
+    return (
+      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
+        {!buyerMode ? <SellerHelpBar /> : null}
+        <EmptyState
+          title="No conversations yet"
+          message="When buyers message you, chats will appear here."
+        />
+      </div>
+    );
+  }
+
+  if (!active) {
+    return (
+      <ApiState isLoading>
+        <div />
+      </ApiState>
+    );
+  }
+
   return (
     <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
-      <SellerHelpBar />
+      {!buyerMode ? <SellerHelpBar /> : null}
       <div
         style={{
           display: "flex",
@@ -5337,7 +6049,7 @@ export function SellerChat() {
       >
         <div>
           <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-            Chat{" "}
+            {buyerMode ? "Messages" : "Chat"}{" "}
             <span
               className="ne"
               style={{ fontSize: "1rem", color: "var(--ink-500)", fontWeight: 600 }}
@@ -5374,7 +6086,11 @@ export function SellerChat() {
             return (
               <button
                 key={t.id}
-                onClick={() => setActive(t)}
+                onClick={() => {
+                  setActive(t);
+                  setMessages([]);
+                  setPeerTyping(false);
+                }}
                 style={{
                   display: "flex",
                   gap: 10,
@@ -5483,7 +6199,9 @@ export function SellerChat() {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 800, fontSize: ".9375rem" }}>{active.buyer}</div>
               <div style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
-                {active.city} · usually replies in 1h
+                {peerTyping
+                  ? `${active.buyer} is typing...`
+                  : `${active.city} · ${active.lastSeenLabel}`}
               </div>
             </div>
             <a
@@ -5515,9 +6233,14 @@ export function SellerChat() {
               gap: 8,
             }}
           >
-            {(messages[active.id] || []).map((m, i) => (
+            {msgsLoading && !messages.length ? (
+              <div style={{ textAlign: "center", color: "var(--ink-400)", fontSize: ".8125rem" }}>
+                Loading messages...
+              </div>
+            ) : null}
+            {messages.map((m) => (
               <div
-                key={i}
+                key={m.id}
                 style={{ alignSelf: m.from === "me" ? "flex-end" : "flex-start", maxWidth: "75%" }}
               >
                 <div
@@ -5530,7 +6253,27 @@ export function SellerChat() {
                     border: m.from === "me" ? "none" : "1px solid var(--line-200)",
                   }}
                 >
-                  {m.text}
+                  {m.attachment?.mediaType === "image" ? (
+                    <a href={m.attachment.url} download target="_blank" rel="noopener noreferrer">
+                      <img
+                        src={m.attachment.thumbnailUrl || m.attachment.url}
+                        alt=""
+                        style={{ maxWidth: "100%", borderRadius: 8, display: "block" }}
+                      />
+                    </a>
+                  ) : m.attachment?.mediaType === "video" ? (
+                    <video
+                      src={m.attachment.url}
+                      controls
+                      style={{ maxWidth: "100%", borderRadius: 8, display: "block" }}
+                    />
+                  ) : null}
+                  {m.text && m.messageType === "text" ? m.text : null}
+                  {m.text && m.messageType !== "text" ? (
+                    <div style={{ marginTop: m.attachment ? 6 : 0, fontSize: ".8125rem" }}>
+                      {m.text}
+                    </div>
+                  ) : null}
                 </div>
                 <div
                   style={{
@@ -5538,9 +6281,21 @@ export function SellerChat() {
                     color: "var(--ink-400)",
                     marginTop: 2,
                     textAlign: m.from === "me" ? "right" : "left",
+                    display: "flex",
+                    gap: 6,
+                    justifyContent: m.from === "me" ? "flex-end" : "flex-start",
                   }}
                 >
-                  {m.t}
+                  <span>{m.t}</span>
+                  {m.from === "me" && m.status ? (
+                    <span>
+                      {m.status === "read"
+                        ? "Read"
+                        : m.status === "delivered"
+                          ? "Delivered"
+                          : "Sent"}
+                    </span>
+                  ) : null}
                 </div>
               </div>
             ))}
@@ -5590,9 +6345,46 @@ export function SellerChat() {
             }}
           >
             <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
+              style={{ display: "none" }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void onPickMedia(file);
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={sending}
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: "50%",
+                background: "#fff",
+                border: "1.5px solid var(--line-200)",
+                cursor: sending ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              aria-label="Attach media"
+            >
+              <Icon name="image" size={20} color="var(--ink-500)" />
+            </button>
+            <input
               value={msg}
-              onChange={(e) => setMsg(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && send(msg)}
+              onChange={(e) => {
+                setMsg(e.target.value);
+                notifyTyping();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  void send(msg);
+                }
+              }}
               placeholder="Type a message · सन्देश लेख्नुहोस्"
               style={{
                 flex: 1,
@@ -5606,16 +6398,16 @@ export function SellerChat() {
               }}
             />
             <button
-              onClick={() => send(msg)}
-              disabled={!msg.trim()}
+              onClick={() => void send(msg)}
+              disabled={!msg.trim() || sending}
               style={{
                 width: 44,
                 height: 44,
                 borderRadius: "50%",
-                background: msg.trim() ? "var(--red)" : "var(--line-200)",
+                background: msg.trim() && !sending ? "var(--red)" : "var(--line-200)",
                 color: "#fff",
                 border: "none",
-                cursor: msg.trim() ? "pointer" : "not-allowed",
+                cursor: msg.trim() && !sending ? "pointer" : "not-allowed",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -6248,11 +7040,57 @@ export function SellerReviews() {
 export function SellerStorefront() {
   const { toast } = useBz();
   const { data: storefront, isLoading, isError, error } = useSellerStorefront();
+  const updateStorefront = useUpdateStorefront();
+  const uploadLogo = useUploadStorefrontLogo();
+  const uploadBanner = useUploadStorefrontBanner();
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
   const [viewMobile, setViewMobile] = useState(true);
   const [blocks, setBlocks] = useState([]);
+  const [about, setAbout] = useState("");
+  const [shopName, setShopName] = useState("");
+
   useEffect(() => {
-    if (storefront?.blocks) setBlocks(storefront.blocks);
+    if (!storefront) return;
+    if (storefront.blocks) setBlocks(storefront.blocks);
+    setAbout(storefront.about ?? "");
+    setShopName(storefront.shopName ?? "");
   }, [storefront]);
+
+  const logoUrl = storefront?.logoUrl;
+  const bannerUrl = storefront?.bannerUrl;
+  const previewRating = storefront?.rating ?? 0;
+  const previewVerified = storefront?.verified ?? false;
+  const previewTint = storefront?.tint ?? "blue";
+  const busy = updateStorefront.isPending || uploadLogo.isPending || uploadBanner.isPending;
+
+  const pickImage = async (file: File, kind: "logo" | "banner") => {
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowed.includes(file.type)) {
+      toast("Use JPEG, PNG, or WebP");
+      return;
+    }
+    try {
+      if (kind === "logo") {
+        await uploadLogo.mutateAsync(file);
+        toast("Logo updated");
+      } else {
+        await uploadBanner.mutateAsync(file);
+        toast("Banner updated");
+      }
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Upload failed");
+    }
+  };
+
+  const publish = async () => {
+    try {
+      await updateStorefront.mutateAsync({ about, blocks, shopName: shopName.trim() || undefined });
+      toast("Storefront published — buyers see it now");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Could not save storefront");
+    }
+  };
 
   const move = (idx, dir) => {
     const arr = [...blocks];
@@ -6297,36 +7135,88 @@ export function SellerStorefront() {
               <h3 style={{ margin: "0 0 12px", fontSize: ".9375rem", fontWeight: 800 }}>
                 Shop logo &amp; banner
               </h3>
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                style={{ display: "none" }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void pickImage(file, "logo");
+                  e.target.value = "";
+                }}
+              />
+              <input
+                ref={bannerInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                style={{ display: "none" }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void pickImage(file, "banner");
+                  e.target.value = "";
+                }}
+              />
               <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}>
-                <Placeholder
-                  icon="store"
-                  tint="red"
-                  style={{ width: 64, height: 64 }}
-                  radius="50%"
-                />
+                {logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt=""
+                    style={{
+                      width: 64,
+                      height: 64,
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                      border: "1px solid var(--line-200)",
+                    }}
+                  />
+                ) : (
+                  <Placeholder
+                    icon="store"
+                    tint="red"
+                    style={{ width: 64, height: 64 }}
+                    radius="50%"
+                  />
+                )}
                 <Button
                   variant="secondary"
                   size="sm"
                   icon="image"
-                  onClick={() => toast("Upload logo")}
+                  disabled={busy}
+                  onClick={() => logoInputRef.current?.click()}
                 >
-                  Change logo
+                  {uploadLogo.isPending ? "Uploading…" : "Change logo"}
                 </Button>
               </div>
-              <Placeholder
-                icon="image"
-                tint="blue"
-                style={{ width: "100%", height: 100 }}
-                radius="var(--r-md)"
-              />
+              {bannerUrl ? (
+                <img
+                  src={bannerUrl}
+                  alt=""
+                  style={{
+                    width: "100%",
+                    height: 100,
+                    objectFit: "cover",
+                    borderRadius: "var(--r-md)",
+                    border: "1px solid var(--line-200)",
+                  }}
+                />
+              ) : (
+                <Placeholder
+                  icon="image"
+                  tint="blue"
+                  style={{ width: "100%", height: 100 }}
+                  radius="var(--r-md)"
+                />
+              )}
               <Button
                 variant="secondary"
                 size="sm"
                 icon="image"
-                onClick={() => toast("Upload banner")}
+                disabled={busy}
+                onClick={() => bannerInputRef.current?.click()}
                 style={{ marginTop: 8 }}
               >
-                Change banner
+                {uploadBanner.isPending ? "Uploading…" : "Change banner"}
               </Button>
             </div>
 
@@ -6343,6 +7233,8 @@ export function SellerStorefront() {
                 About us
               </h3>
               <textarea
+                value={about}
+                onChange={(e) => setAbout(e.target.value)}
                 placeholder="Tell buyers your story. e.g. Family-run handicraft shop in Bhaktapur since 2018..."
                 style={{
                   width: "100%",
@@ -6429,10 +7321,11 @@ export function SellerStorefront() {
               variant="primary"
               size="lg"
               full
-              onClick={() => toast("Storefront published — buyers see it in 5 min")}
+              disabled={busy}
+              onClick={() => void publish()}
               style={{ marginTop: 14 }}
             >
-              Publish changes
+              {updateStorefront.isPending ? "Publishing…" : "Publish changes"}
             </Button>
           </div>
 
@@ -6478,26 +7371,48 @@ export function SellerStorefront() {
                   overflow: "hidden",
                 }}
               >
-                <Placeholder
-                  icon="image"
-                  tint="blue"
-                  style={{ width: "100%", height: 120 }}
-                  radius="0"
-                />
+                {bannerUrl ? (
+                  <img
+                    src={bannerUrl}
+                    alt=""
+                    style={{ width: "100%", height: 120, objectFit: "cover" }}
+                  />
+                ) : (
+                  <Placeholder
+                    icon="image"
+                    tint="blue"
+                    style={{ width: "100%", height: 120 }}
+                    radius="0"
+                  />
+                )}
                 <div style={{ padding: 12 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <Placeholder
-                      icon="store"
-                      tint="red"
-                      style={{ width: 44, height: 44 }}
-                      radius="50%"
-                    />
+                    {logoUrl ? (
+                      <img
+                        src={logoUrl}
+                        alt=""
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    ) : (
+                      <Placeholder
+                        icon="store"
+                        tint={previewTint}
+                        style={{ width: 44, height: 44 }}
+                        radius="50%"
+                      />
+                    )}
                     <div>
                       <div style={{ fontWeight: 800, fontSize: ".875rem" }}>
-                        Bhaktapur Handicraft
+                        {shopName || storefront?.shopName || "Your shop"}
                       </div>
                       <div style={{ fontSize: ".7rem", color: "var(--ink-500)" }}>
-                        ★ 4.8 · Verified
+                        ★ {previewRating.toFixed(1)}
+                        {previewVerified ? " · Verified" : ""}
                       </div>
                     </div>
                   </div>
@@ -6530,10 +7445,24 @@ export function SellerStorefront() {
 
 /* ---------- 4.12 Videos ---------- */
 export function SellerVideos() {
-  const { toast } = useBz();
+  const { toast, nav } = useBz();
+  const { data: organization } = useSellerOrganization();
+  const canSell = organization?.verification?.canSell === true;
   const { data: videosData, isLoading, isError, error, refetch } = useSellerVideos();
   const SELLER_VIDEOS = videosData?.items ?? [];
   const [showUpload, setShowUpload] = useState(false);
+
+  if (!canSell) {
+    return (
+      <div className="bz-seller-page">
+        <SellerHelpBar />
+        <SellerVerificationBlocked actionLabel="upload product videos" />
+        <Button variant="secondary" onClick={() => nav("s-onboarding")}>
+          Complete verification · प्रमाणीकरण
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
@@ -6670,330 +7599,390 @@ export const NOTIF_CHANNELS = [
 ];
 
 export function SellerSettings() {
-  const { toast } = useBz();
+  const { toast, nav } = useBz();
   const user = useBazaarStore((s) => s.user);
+  const { data: organization } = useSellerOrganization();
   const { data: notifications } = useSellerNotifications();
+  const {
+    data: settings,
+    isLoading,
+    isError,
+    error,
+  } = useSellerSettings(organization?.linked === true);
+  const updateSettings = useUpdateSellerSettings();
   const [tab, setTab] = useState("shop");
-  const [notif, setNotif] = useState(NOTIF_EVENTS.map((e) => [...e.defaults]));
+  const [shopRules, setShopRules] = useState(null);
+  const [notif, setNotif] = useState(null);
+  const [language, setLanguage] = useState("both");
+
+  useEffect(() => {
+    if (!settings) return;
+    setShopRules({ ...settings.shopRules });
+    setNotif(settings.alertMatrix.map((row) => [...row]));
+    setLanguage(settings.account.language);
+  }, [settings]);
+
+  const toggleZone = (zone) => {
+    setShopRules((prev) => {
+      if (!prev) return prev;
+      const has = prev.shippingZones.includes(zone);
+      const next = has
+        ? prev.shippingZones.filter((z) => z !== zone)
+        : [...prev.shippingZones, zone];
+      return { ...prev, shippingZones: next.length > 0 ? next : [zone] };
+    });
+  };
+
+  const handleSave = async () => {
+    if (!shopRules || !notif) return;
+    try {
+      await updateSettings.mutateAsync({
+        shopRules,
+        alertMatrix: notif,
+        account: { language },
+      });
+      toast("Settings saved");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Could not save settings");
+    }
+  };
+
+  const ready = shopRules && notif;
+
+  if (organization && !organization.linked) {
+    return (
+      <div className="bz-seller-page">
+        <SellerHelpBar />
+        <p style={{ color: "var(--ink-600)" }}>
+          Complete seller onboarding to configure shop rules and alerts.
+        </p>
+        <Button variant="primary" onClick={() => nav("s-onboarding")}>
+          Go to onboarding
+        </Button>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
-      <SellerHelpBar />
-      <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-        Settings{" "}
-        <span className="ne" style={{ fontSize: "1rem", color: "var(--ink-500)", fontWeight: 600 }}>
-          · सेटिङ
-        </span>
-      </h1>
-      <p style={{ margin: "4px 0 18px", fontSize: ".875rem", color: "var(--ink-500)" }}>
-        Set up your shop rules and how we send you alerts.
-      </p>
-
-      {/* Big icon-tab switcher */}
-      <div
-        style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 18 }}
-      >
-        {[
-          { id: "shop", icon: "store", en: "Shop rules", ne: "पसलका नियम" },
-          { id: "alerts", icon: "bell", en: "Alerts", ne: "सूचना" },
-          { id: "account", icon: "lock", en: "Account", ne: "खाता" },
-        ].map((t) => {
-          const active = tab === t.id;
-          return (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              style={{
-                background: active ? "var(--tint-red-50)" : "#fff",
-                border: `1.5px solid ${active ? "var(--red)" : "var(--line-200)"}`,
-                color: active ? "var(--red)" : "var(--ink-700)",
-                borderRadius: "var(--r-md)",
-                padding: "14px 10px",
-                cursor: "pointer",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 6,
-                fontWeight: 700,
-              }}
-            >
-              <Icon name={t.icon} size={22} color={active ? "var(--red)" : "var(--ink-700)"} />
-              <div style={{ fontSize: ".875rem" }}>{t.en}</div>
-              <div
-                className="ne"
-                style={{ fontSize: ".7rem", color: "var(--ink-500)", fontWeight: 600 }}
-              >
-                {t.ne}
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      {tab === "shop" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div
-            style={{
-              background: "#fff",
-              border: "1.5px solid var(--line-200)",
-              borderRadius: "var(--r-lg)",
-              padding: 18,
-            }}
+    <ApiState isLoading={isLoading} isError={isError} error={error}>
+      <div className="bz-seller-page" style={{ maxWidth: "var(--container)", margin: "0 auto" }}>
+        <SellerHelpBar />
+        <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
+          Settings{" "}
+          <span
+            className="ne"
+            style={{ fontSize: "1rem", color: "var(--ink-500)", fontWeight: 600 }}
           >
-            <h3 style={{ margin: "0 0 12px", fontSize: ".9375rem", fontWeight: 800 }}>
-              Shop hours · खुल्ने समय
-            </h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <div>
-                <label
-                  style={{
-                    fontSize: ".75rem",
-                    color: "var(--ink-500)",
-                    fontWeight: 700,
-                    display: "block",
-                    marginBottom: 4,
-                  }}
-                >
-                  Open
-                </label>
-                <input
-                  type="time"
-                  defaultValue="09:00"
-                  style={{
-                    width: "100%",
-                    height: 44,
-                    padding: "0 12px",
-                    border: "1.5px solid var(--line-200)",
-                    borderRadius: "var(--r-md)",
-                    fontFamily: "var(--font-sans)",
-                  }}
-                />
-              </div>
-              <div>
-                <label
-                  style={{
-                    fontSize: ".75rem",
-                    color: "var(--ink-500)",
-                    fontWeight: 700,
-                    display: "block",
-                    marginBottom: 4,
-                  }}
-                >
-                  Close
-                </label>
-                <input
-                  type="time"
-                  defaultValue="19:00"
-                  style={{
-                    width: "100%",
-                    height: 44,
-                    padding: "0 12px",
-                    border: "1.5px solid var(--line-200)",
-                    borderRadius: "var(--r-md)",
-                    fontFamily: "var(--font-sans)",
-                  }}
-                />
-              </div>
-            </div>
-          </div>
+            · सेटिङ
+          </span>
+        </h1>
+        <p style={{ margin: "4px 0 18px", fontSize: ".875rem", color: "var(--ink-500)" }}>
+          Set up your shop rules and how we send you alerts.
+        </p>
 
-          <div
-            style={{
-              background: "#fff",
-              border: "1.5px solid var(--line-200)",
-              borderRadius: "var(--r-lg)",
-              padding: 18,
-            }}
-          >
-            <h3 style={{ margin: "0 0 12px", fontSize: ".9375rem", fontWeight: 800 }}>
-              Return policy · फिर्ता नीति
-            </h3>
-            <select
-              defaultValue="7"
-              style={{
-                width: "100%",
-                height: 44,
-                padding: "0 12px",
-                border: "1.5px solid var(--line-200)",
-                borderRadius: "var(--r-md)",
-                fontFamily: "var(--font-sans)",
-                marginBottom: 10,
-              }}
-            >
-              <option value="0">No returns</option>
-              <option value="3">3-day return</option>
-              <option value="7">7-day return (recommended)</option>
-              <option value="14">14-day return</option>
-            </select>
-            <textarea
-              placeholder="Notes for buyers about returns…"
-              style={{
-                width: "100%",
-                minHeight: 60,
-                padding: 10,
-                border: "1.5px solid var(--line-200)",
-                borderRadius: "var(--r-md)",
-                fontFamily: "var(--font-sans)",
-                fontSize: ".875rem",
-                outline: "none",
-                resize: "vertical",
-              }}
-            />
-          </div>
-
-          <div
-            style={{
-              background: "#fff",
-              border: "1.5px solid var(--line-200)",
-              borderRadius: "var(--r-lg)",
-              padding: 18,
-            }}
-          >
-            <h3 style={{ margin: "0 0 12px", fontSize: ".9375rem", fontWeight: 800 }}>
-              Where you ship · डेलिभरी क्षेत्र
-            </h3>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-                gap: 8,
-              }}
-            >
-              {[
-                "Kathmandu Valley",
-                "Pokhara",
-                "Biratnagar",
-                "Butwal",
-                "Dharan",
-                "Nepalgunj",
-                "Birgunj",
-                "Anywhere in Nepal",
-              ].map((z) => (
-                <label
-                  key={z}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: 10,
-                    border: "1px solid var(--line-200)",
-                    borderRadius: "var(--r-md)",
-                    cursor: "pointer",
-                    fontSize: ".875rem",
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    defaultChecked={["Kathmandu Valley", "Pokhara"].includes(z)}
-                    style={{ width: 18, height: 18, accentColor: "var(--red)" }}
-                  />
-                  {z}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div
-            style={{
-              background: "#fff",
-              border: "1.5px solid var(--line-200)",
-              borderRadius: "var(--r-lg)",
-              padding: 18,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 12,
-              flexWrap: "wrap",
-            }}
-          >
-            <div>
-              <h3 style={{ margin: 0, fontSize: ".9375rem", fontWeight: 800 }}>
-                Shop on holiday · बिदामा
-              </h3>
-              <p style={{ margin: "2px 0 0", fontSize: ".8125rem", color: "var(--ink-500)" }}>
-                Hide all listings without losing data. Switch back anytime.
-              </p>
-            </div>
-            <label style={{ position: "relative", width: 52, height: 30, display: "inline-block" }}>
-              <input type="checkbox" style={{ opacity: 0, width: 0, height: 0 }} />
-              <span
+        {/* Big icon-tab switcher */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: 8,
+            marginBottom: 18,
+          }}
+        >
+          {[
+            { id: "shop", icon: "store", en: "Shop rules", ne: "पसलका नियम" },
+            { id: "alerts", icon: "bell", en: "Alerts", ne: "सूचना" },
+            { id: "account", icon: "lock", en: "Account", ne: "खाता" },
+          ].map((t) => {
+            const active = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
                 style={{
-                  position: "absolute",
-                  inset: 0,
-                  background: "var(--line-200)",
-                  borderRadius: 999,
+                  background: active ? "var(--tint-red-50)" : "#fff",
+                  border: `1.5px solid ${active ? "var(--red)" : "var(--line-200)"}`,
+                  color: active ? "var(--red)" : "var(--ink-700)",
+                  borderRadius: "var(--r-md)",
+                  padding: "14px 10px",
                   cursor: "pointer",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 6,
+                  fontWeight: 700,
                 }}
-              />
-            </label>
-          </div>
+              >
+                <Icon name={t.icon} size={22} color={active ? "var(--red)" : "var(--ink-700)"} />
+                <div style={{ fontSize: ".875rem" }}>{t.en}</div>
+                <div
+                  className="ne"
+                  style={{ fontSize: ".7rem", color: "var(--ink-500)", fontWeight: 600 }}
+                >
+                  {t.ne}
+                </div>
+              </button>
+            );
+          })}
         </div>
-      )}
 
-      {tab === "alerts" && (
-        <div>
-          <p style={{ margin: "0 0 12px", fontSize: ".875rem", color: "var(--ink-500)" }}>
-            Pick how we tell you about each thing. New-order alerts are always on.
-          </p>
-          {(notifications?.items ?? []).length > 0 && (
+        {tab === "shop" && ready && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div
               style={{
                 background: "#fff",
                 border: "1.5px solid var(--line-200)",
                 borderRadius: "var(--r-lg)",
-                padding: 14,
-                marginBottom: 14,
+                padding: 18,
               }}
             >
-              <div style={{ fontWeight: 800, fontSize: ".875rem", marginBottom: 10 }}>
-                Recent alerts
-              </div>
-              {notifications.items.map((n) => (
-                <div
-                  key={n.id}
-                  style={{
-                    padding: "8px 0",
-                    borderBottom: "1px solid var(--line-200)",
-                    fontSize: ".8125rem",
-                  }}
-                >
-                  <div style={{ fontWeight: 700 }}>{n.title}</div>
-                  <div style={{ color: "var(--ink-500)" }}>
-                    {n.body} · {n.time}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          <div
-            style={{
-              background: "#fff",
-              border: "1.5px solid var(--line-200)",
-              borderRadius: "var(--r-lg)",
-              overflow: "auto",
-            }}
-          >
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 480 }}>
-              <thead>
-                <tr style={{ background: "var(--line-100)" }}>
-                  <th
+              <h3 style={{ margin: "0 0 12px", fontSize: ".9375rem", fontWeight: 800 }}>
+                Shop hours · खुल्ने समय
+              </h3>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div>
+                  <label
                     style={{
-                      textAlign: "left",
-                      padding: "12px 16px",
-                      fontSize: ".7rem",
-                      fontWeight: 700,
+                      fontSize: ".75rem",
                       color: "var(--ink-500)",
-                      letterSpacing: ".06em",
-                      textTransform: "uppercase",
+                      fontWeight: 700,
+                      display: "block",
+                      marginBottom: 4,
                     }}
                   >
-                    Tell me about
-                  </th>
-                  {NOTIF_CHANNELS.map((c) => (
+                    Open
+                  </label>
+                  <input
+                    type="time"
+                    value={shopRules.openTime}
+                    onChange={(e) => setShopRules((s) => ({ ...s, openTime: e.target.value }))}
+                    style={{
+                      width: "100%",
+                      height: 44,
+                      padding: "0 12px",
+                      border: "1.5px solid var(--line-200)",
+                      borderRadius: "var(--r-md)",
+                      fontFamily: "var(--font-sans)",
+                    }}
+                  />
+                </div>
+                <div>
+                  <label
+                    style={{
+                      fontSize: ".75rem",
+                      color: "var(--ink-500)",
+                      fontWeight: 700,
+                      display: "block",
+                      marginBottom: 4,
+                    }}
+                  >
+                    Close
+                  </label>
+                  <input
+                    type="time"
+                    value={shopRules.closeTime}
+                    onChange={(e) => setShopRules((s) => ({ ...s, closeTime: e.target.value }))}
+                    style={{
+                      width: "100%",
+                      height: 44,
+                      padding: "0 12px",
+                      border: "1.5px solid var(--line-200)",
+                      borderRadius: "var(--r-md)",
+                      fontFamily: "var(--font-sans)",
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: "#fff",
+                border: "1.5px solid var(--line-200)",
+                borderRadius: "var(--r-lg)",
+                padding: 18,
+              }}
+            >
+              <h3 style={{ margin: "0 0 12px", fontSize: ".9375rem", fontWeight: 800 }}>
+                Return policy · फिर्ता नीति
+              </h3>
+              <select
+                value={String(shopRules.returnDays)}
+                onChange={(e) =>
+                  setShopRules((s) => ({ ...s, returnDays: parseInt(e.target.value, 10) }))
+                }
+                style={{
+                  width: "100%",
+                  height: 44,
+                  padding: "0 12px",
+                  border: "1.5px solid var(--line-200)",
+                  borderRadius: "var(--r-md)",
+                  fontFamily: "var(--font-sans)",
+                  marginBottom: 10,
+                }}
+              >
+                <option value="0">No returns</option>
+                <option value="3">3-day return</option>
+                <option value="7">7-day return (recommended)</option>
+                <option value="14">14-day return</option>
+              </select>
+              <textarea
+                value={shopRules.returnNotes}
+                onChange={(e) => setShopRules((s) => ({ ...s, returnNotes: e.target.value }))}
+                placeholder="Notes for buyers about returns…"
+                style={{
+                  width: "100%",
+                  minHeight: 60,
+                  padding: 10,
+                  border: "1.5px solid var(--line-200)",
+                  borderRadius: "var(--r-md)",
+                  fontFamily: "var(--font-sans)",
+                  fontSize: ".875rem",
+                  outline: "none",
+                  resize: "vertical",
+                }}
+              />
+            </div>
+
+            <div
+              style={{
+                background: "#fff",
+                border: "1.5px solid var(--line-200)",
+                borderRadius: "var(--r-lg)",
+                padding: 18,
+              }}
+            >
+              <h3 style={{ margin: "0 0 12px", fontSize: ".9375rem", fontWeight: 800 }}>
+                Where you ship · डेलिभरी क्षेत्र
+              </h3>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+                  gap: 8,
+                }}
+              >
+                {SHIPPING_ZONES.map((z) => (
+                  <label
+                    key={z}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: 10,
+                      border: "1px solid var(--line-200)",
+                      borderRadius: "var(--r-md)",
+                      cursor: "pointer",
+                      fontSize: ".875rem",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={shopRules.shippingZones.includes(z)}
+                      onChange={() => toggleZone(z)}
+                      style={{ width: 18, height: 18, accentColor: "var(--red)" }}
+                    />
+                    {z}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: "#fff",
+                border: "1.5px solid var(--line-200)",
+                borderRadius: "var(--r-lg)",
+                padding: 18,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+                flexWrap: "wrap",
+              }}
+            >
+              <div>
+                <h3 style={{ margin: 0, fontSize: ".9375rem", fontWeight: 800 }}>
+                  Shop on holiday · बिदामा
+                </h3>
+                <p style={{ margin: "2px 0 0", fontSize: ".8125rem", color: "var(--ink-500)" }}>
+                  Hide all listings without losing data. Switch back anytime.
+                </p>
+              </div>
+              <label
+                style={{ position: "relative", width: 52, height: 30, display: "inline-block" }}
+              >
+                <input
+                  type="checkbox"
+                  checked={shopRules.holidayMode}
+                  onChange={(e) => setShopRules((s) => ({ ...s, holidayMode: e.target.checked }))}
+                  style={{ opacity: 0, width: 0, height: 0, position: "absolute" }}
+                />
+                <span
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: shopRules.holidayMode ? "var(--red)" : "var(--line-200)",
+                    borderRadius: 999,
+                    cursor: "pointer",
+                    transition: "background .2s",
+                  }}
+                />
+              </label>
+            </div>
+          </div>
+        )}
+
+        {tab === "alerts" && notif && (
+          <div>
+            <p style={{ margin: "0 0 12px", fontSize: ".875rem", color: "var(--ink-500)" }}>
+              Pick how we tell you about each thing. New-order alerts are always on.
+            </p>
+            {(notifications?.items ?? []).length > 0 && (
+              <div
+                style={{
+                  background: "#fff",
+                  border: "1.5px solid var(--line-200)",
+                  borderRadius: "var(--r-lg)",
+                  padding: 14,
+                  marginBottom: 14,
+                }}
+              >
+                <div style={{ fontWeight: 800, fontSize: ".875rem", marginBottom: 10 }}>
+                  Recent alerts
+                </div>
+                {notifications.items.map((n) => (
+                  <div
+                    key={n.id}
+                    style={{
+                      padding: "8px 0",
+                      borderBottom: "1px solid var(--line-200)",
+                      fontSize: ".8125rem",
+                    }}
+                  >
+                    <div style={{ fontWeight: 700 }}>{n.title}</div>
+                    <div style={{ color: "var(--ink-500)" }}>
+                      {n.body} · {n.time}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div
+              style={{
+                background: "#fff",
+                border: "1.5px solid var(--line-200)",
+                borderRadius: "var(--r-lg)",
+                overflow: "auto",
+              }}
+            >
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 480 }}>
+                <thead>
+                  <tr style={{ background: "var(--line-100)" }}>
                     <th
-                      key={c.en}
                       style={{
-                        padding: "12px 12px",
+                        textAlign: "left",
+                        padding: "12px 16px",
                         fontSize: ".7rem",
                         fontWeight: 700,
                         color: "var(--ink-500)",
@@ -7001,107 +7990,143 @@ export function SellerSettings() {
                         textTransform: "uppercase",
                       }}
                     >
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                        <Icon name={c.icon} size={14} /> {c.en}
-                      </span>
+                      Tell me about
                     </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {NOTIF_EVENTS.map((e, ri) => (
-                  <tr key={e.en} style={{ borderTop: "1px solid var(--line-200)" }}>
-                    <td style={{ padding: "14px 16px" }}>
-                      <div style={{ fontWeight: 700 }}>{e.en}</div>
-                      <div className="ne" style={{ fontSize: ".7rem", color: "var(--ink-500)" }}>
-                        {e.ne}
-                      </div>
-                    </td>
-                    {NOTIF_CHANNELS.map((_, ci) => (
-                      <td key={ci} style={{ padding: "14px 12px", textAlign: "center" }}>
-                        <input
-                          type="checkbox"
-                          checked={notif[ri][ci]}
-                          onChange={() =>
-                            setNotif((s) =>
-                              s.map((row, i) =>
-                                i === ri ? row.map((v, j) => (j === ci ? !v : v)) : row,
-                              ),
-                            )
-                          }
-                          style={{
-                            width: 20,
-                            height: 20,
-                            accentColor: "var(--red)",
-                            cursor: "pointer",
-                          }}
-                        />
-                      </td>
+                    {NOTIF_CHANNELS.map((c) => (
+                      <th
+                        key={c.en}
+                        style={{
+                          padding: "12px 12px",
+                          fontSize: ".7rem",
+                          fontWeight: 700,
+                          color: "var(--ink-500)",
+                          letterSpacing: ".06em",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                          <Icon name={c.icon} size={14} /> {c.en}
+                        </span>
+                      </th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {NOTIF_EVENTS.map((e, ri) => (
+                    <tr key={e.en} style={{ borderTop: "1px solid var(--line-200)" }}>
+                      <td style={{ padding: "14px 16px" }}>
+                        <div style={{ fontWeight: 700 }}>{e.en}</div>
+                        <div className="ne" style={{ fontSize: ".7rem", color: "var(--ink-500)" }}>
+                          {e.ne}
+                        </div>
+                      </td>
+                      {NOTIF_CHANNELS.map((_, ci) => (
+                        <td key={ci} style={{ padding: "14px 12px", textAlign: "center" }}>
+                          <input
+                            type="checkbox"
+                            checked={notif[ri][ci]}
+                            disabled={ri === 0 && ci === 0}
+                            onChange={() =>
+                              setNotif((s) =>
+                                s.map((row, i) =>
+                                  i === ri ? row.map((v, j) => (j === ci ? !v : v)) : row,
+                                ),
+                              )
+                            }
+                            style={{
+                              width: 20,
+                              height: 20,
+                              accentColor: "var(--red)",
+                              cursor: ri === 0 && ci === 0 ? "not-allowed" : "pointer",
+                            }}
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {tab === "account" && (
-        <div
-          style={{
-            background: "#fff",
-            border: "1.5px solid var(--line-200)",
-            borderRadius: "var(--r-lg)",
-            overflow: "hidden",
-          }}
-        >
-          {[
-            { icon: "lock", en: "Password", sub: "Managed via sign-in" },
-            { icon: "mail", en: "Email", sub: user?.email ?? "—" },
-            {
-              icon: "image",
-              en: "Profile photo",
-              sub: "Upload your face — buyers trust real people",
-            },
-            { icon: "palette", en: "Language", sub: "English + नेपाली" },
-          ].map((r, i, a) => (
-            <button
-              key={r.en}
-              onClick={() => toast(`${r.en} — opens detail`)}
-              style={{
-                width: "100%",
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                padding: 16,
-                background: "#fff",
-                border: "none",
-                borderBottom: i < a.length - 1 ? "1px solid var(--line-200)" : "none",
-                cursor: "pointer",
-                textAlign: "left",
-              }}
-            >
-              <Icon name={r.icon} size={22} color="var(--ink-700)" />
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700 }}>{r.en}</div>
-                <div style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}>{r.sub}</div>
+        {tab === "account" && (
+          <div
+            style={{
+              background: "#fff",
+              border: "1.5px solid var(--line-200)",
+              borderRadius: "var(--r-lg)",
+              overflow: "hidden",
+            }}
+          >
+            {[
+              { icon: "lock", en: "Password", sub: "Managed via sign-in" },
+              { icon: "mail", en: "Email", sub: user?.email ?? "—" },
+              {
+                icon: "image",
+                en: "Profile photo",
+                sub: "Upload your face — buyers trust real people",
+              },
+              {
+                icon: "palette",
+                en: "Language",
+                sub:
+                  language === "en" ? "English" : language === "ne" ? "नेपाली" : "English + नेपाली",
+              },
+            ].map((r, i, a) => (
+              <div
+                key={r.en}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: 16,
+                  background: "#fff",
+                  borderBottom: i < a.length - 1 ? "1px solid var(--line-200)" : "none",
+                }}
+              >
+                <Icon name={r.icon} size={22} color="var(--ink-700)" />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700 }}>{r.en}</div>
+                  {r.en === "Language" ? (
+                    <select
+                      value={language}
+                      onChange={(e) => setLanguage(e.target.value)}
+                      style={{
+                        marginTop: 6,
+                        width: "100%",
+                        height: 40,
+                        border: "1.5px solid var(--line-200)",
+                        borderRadius: "var(--r-md)",
+                        fontFamily: "var(--font-sans)",
+                      }}
+                    >
+                      <option value="both">English + नेपाली</option>
+                      <option value="en">English</option>
+                      <option value="ne">नेपाली</option>
+                    </select>
+                  ) : (
+                    <div style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}>{r.sub}</div>
+                  )}
+                </div>
               </div>
-              <Icon name="chevronRight" size={18} color="var(--ink-400)" />
-            </button>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
 
-      <Button
-        variant="primary"
-        size="lg"
-        full
-        onClick={() => toast("Saved")}
-        style={{ marginTop: 18 }}
-      >
-        Save
-      </Button>
-    </div>
+        <Button
+          variant="primary"
+          size="lg"
+          full
+          disabled={!ready || updateSettings.isPending}
+          onClick={() => void handleSave()}
+          style={{ marginTop: 18 }}
+        >
+          {updateSettings.isPending ? "Saving…" : "Save"}
+        </Button>
+      </div>
+    </ApiState>
   );
 }
 
@@ -7334,285 +8359,384 @@ export function SellerAnalytics() {
     { label: "—", value: 0 },
   );
 
+  const cardStyle = {
+    background: "#fff",
+    border: "1.5px solid var(--line-200)",
+    borderRadius: "var(--r-lg)",
+    padding: 22,
+    boxShadow: "var(--sh-1)",
+  };
+
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "20px 28px 100px" }}>
+      <div className="bz-seller-page">
         <SellerHelpBar />
 
-        <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-          My shop
-        </h1>
-        <p
-          className="ne"
-          style={{ margin: "4px 0 18px", color: "var(--ink-500)", fontSize: ".95rem" }}
-        >
-          मेरो पसल — हालको हालचाल
-        </p>
+        <div className="bz-seller-analytics-span-12" style={{ marginBottom: 18 }}>
+          <h1
+            style={{ margin: 0, fontSize: "1.75rem", fontWeight: 800, color: "var(--blue-deep)" }}
+          >
+            My shop
+          </h1>
+          <p
+            className="ne"
+            style={{ margin: "4px 0 0", color: "var(--ink-500)", fontSize: ".95rem" }}
+          >
+            मेरो पसल — हालको हालचाल
+          </p>
+        </div>
 
-        {/* Big "today" hero */}
-        <div
-          style={{
-            background: "linear-gradient(135deg, #0a2e6b 0%, #1e3a8a 100%)",
-            borderRadius: "var(--r-lg)",
-            padding: 26,
-            color: "#fff",
-            marginBottom: 18,
-          }}
-        >
-          <div style={{ fontSize: ".95rem", opacity: 0.85 }}>Today you sold</div>
+        <div className="bz-seller-analytics-layout">
           <div
-            className="tnum bz-stat-xl"
-            style={{ fontWeight: 800, letterSpacing: "-.02em", margin: "6px 0 4px" }}
-          >
-            Rs. {soldToday.toLocaleString()}
-          </div>
-          <div style={{ fontSize: ".9rem", opacity: 0.85 }}>
-            Sold today · Courier holding Rs. {withCourier.toLocaleString()}
-          </div>
-        </div>
-
-        {/* Sales last 7 days */}
-        <div
-          style={{
-            background: "#fff",
-            border: "1.5px solid var(--line-200)",
-            borderRadius: "var(--r-lg)",
-            padding: 22,
-            marginBottom: 18,
-          }}
-        >
-          <h2
+            className="bz-seller-analytics-span-4"
             style={{
-              margin: "0 0 4px",
-              fontSize: "1.05rem",
-              fontWeight: 800,
-              color: "var(--blue-deep)",
+              ...cardStyle,
+              background: "linear-gradient(135deg, #0a2e6b 0%, #1e3a8a 100%)",
+              color: "#fff",
+              border: "none",
             }}
           >
-            Sales — last 7 days
-          </h2>
-          <p
-            className="ne"
-            style={{ margin: "0 0 14px", fontSize: ".8125rem", color: "var(--ink-500)" }}
-          >
-            ७ दिनको बिक्री
-          </p>
-          <SellerBarChart data={salesByDay} height={200} />
-          <p
-            style={{
-              marginTop: 12,
-              padding: 10,
-              background: "var(--tint-blue-50)",
-              borderRadius: "var(--r-md)",
-              fontSize: ".875rem",
-              color: "var(--blue-deep)",
-            }}
-          >
-            <Icon
-              name="badgeCheck"
-              size={14}
-              color="var(--blue)"
-              style={{ verticalAlign: "middle", marginRight: 6 }}
-            />
-            {bestDay.value > 0
-              ? `${bestDay.label} was your best day in this period. Try posting new products before peak hours.`
-              : "Sales will show here once you start receiving orders."}
-          </p>
-        </div>
-
-        {/* Where my money is — replaces cohort/funnel complexity */}
-        <div
-          style={{
-            background: "#fff",
-            border: "1.5px solid var(--line-200)",
-            borderRadius: "var(--r-lg)",
-            padding: 22,
-            marginBottom: 18,
-          }}
-        >
-          <h2
-            style={{
-              margin: "0 0 4px",
-              fontSize: "1.05rem",
-              fontWeight: 800,
-              color: "var(--blue-deep)",
-            }}
-          >
-            Where my money is
-          </h2>
-          <p
-            className="ne"
-            style={{ margin: "0 0 14px", fontSize: ".8125rem", color: "var(--ink-500)" }}
-          >
-            मेरो पैसा कहाँ छ
-          </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {moneyBuckets.map((b) => {
-              const pct = (b.v / maxBucket) * 100;
-              return (
-                <div key={b.en}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "baseline",
-                      marginBottom: 6,
-                    }}
-                  >
-                    <div>
-                      <span style={{ fontWeight: 700, fontSize: ".95rem" }}>{b.en}</span>
-                      <span
-                        className="ne"
-                        style={{
-                          marginLeft: 8,
-                          color: "var(--ink-500)",
-                          fontSize: ".75rem",
-                          fontWeight: 600,
-                        }}
-                      >
-                        {b.ne}
-                      </span>
-                    </div>
-                    <span
-                      className="tnum"
-                      style={{ fontWeight: 800, fontSize: "1.05rem", color: b.c }}
-                    >
-                      Rs. {b.v.toLocaleString()}
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      height: 14,
-                      background: "var(--line-100)",
-                      borderRadius: 999,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: `${pct}%`,
-                        height: "100%",
-                        background: b.c,
-                        borderRadius: 999,
-                      }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <p
-            style={{
-              marginTop: 14,
-              padding: 10,
-              background: "var(--tint-blue-50)",
-              borderRadius: "var(--r-md)",
-              fontSize: ".875rem",
-              color: "var(--blue-deep)",
-            }}
-          >
-            <Icon
-              name="badgeCheck"
-              size={14}
-              color="var(--blue)"
-              style={{ verticalAlign: "middle", marginRight: 6 }}
-            />
-            {withCourier > 0
-              ? `Rs. ${withCourier.toLocaleString()} is with courier until delivery is confirmed.`
-              : "No payouts in transit right now."}
-          </p>
-        </div>
-
-        {/* Top 3 sellers */}
-        <div
-          style={{
-            background: "#fff",
-            border: "1.5px solid var(--line-200)",
-            borderRadius: "var(--r-lg)",
-            padding: 22,
-            marginBottom: 18,
-          }}
-        >
-          <h2
-            style={{
-              margin: "0 0 4px",
-              fontSize: "1.05rem",
-              fontWeight: 800,
-              color: "var(--blue-deep)",
-            }}
-          >
-            Your top 3 items this week
-          </h2>
-          <p
-            className="ne"
-            style={{ margin: "0 0 14px", fontSize: ".8125rem", color: "var(--ink-500)" }}
-          >
-            सबभन्दा बढी बिक्ने
-          </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {topProducts.length === 0 && (
-              <p style={{ margin: 0, color: "var(--ink-500)", fontSize: ".875rem" }}>
-                No sales yet this week.
-              </p>
-            )}
-            {topProducts.map((p, i) => (
-              <div
-                key={p.name}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 14,
-                  padding: 12,
-                  border: "1px solid var(--line-200)",
-                  borderRadius: "var(--r-md)",
-                }}
-              >
+            <div style={{ fontSize: ".95rem", opacity: 0.9, fontWeight: 700 }}>Today you sold</div>
+            <div
+              className="tnum bz-stat-xl"
+              style={{
+                fontWeight: 800,
+                letterSpacing: "-.02em",
+                margin: "8px 0 6px",
+              }}
+            >
+              Rs. {soldToday.toLocaleString()}
+            </div>
+            <div style={{ fontSize: ".9rem", opacity: 0.85 }}>
+              Sold today · Courier holding Rs. {withCourier.toLocaleString()}
+            </div>
+            <div
+              style={{
+                marginTop: 18,
+                paddingTop: 16,
+                borderTop: "1px dashed rgba(255,255,255,.25)",
+                display: "grid",
+                gap: 10,
+              }}
+            >
+              {moneyBuckets.map((b) => (
                 <div
+                  key={b.en}
+                  style={{ display: "flex", justifyContent: "space-between", gap: 8 }}
+                >
+                  <span style={{ fontSize: ".8125rem", fontWeight: 600, opacity: 0.9 }}>
+                    {b.en}
+                  </span>
+                  <span className="tnum" style={{ fontWeight: 800 }}>
+                    Rs. {b.v.toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bz-seller-analytics-span-8" style={cardStyle}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                gap: 12,
+                flexWrap: "wrap",
+                marginBottom: 4,
+              }}
+            >
+              <div>
+                <h2
                   style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: "50%",
-                    background: i === 0 ? "var(--gold)" : "var(--line-200)",
-                    color: i === 0 ? "#fff" : "var(--ink-700)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
+                    margin: 0,
+                    fontSize: "1.125rem",
                     fontWeight: 800,
-                    flexShrink: 0,
+                    color: "var(--blue-deep)",
                   }}
                 >
-                  {i + 1}
-                </div>
-                <Placeholder
-                  icon={p.icon}
-                  tint={p.tint}
-                  style={{ width: 56, height: 56, flexShrink: 0 }}
-                  radius="var(--r-sm)"
-                />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: ".95rem" }}>{p.name}</div>
+                  Shop snapshot
+                </h2>
+                <p
+                  className="ne"
+                  style={{ margin: "4px 0 0", fontSize: ".8125rem", color: "var(--ink-500)" }}
+                >
+                  हप्ताभरको सारांश
+                </p>
+              </div>
+              <div
+                style={{
+                  padding: "8px 14px",
+                  background: "var(--tint-blue-50)",
+                  borderRadius: 999,
+                  fontSize: ".75rem",
+                  fontWeight: 700,
+                  color: "var(--blue-deep)",
+                }}
+              >
+                Last 7 days
+              </div>
+            </div>
+            <p
+              style={{
+                margin: "0 0 16px",
+                fontSize: ".875rem",
+                color: "var(--ink-600)",
+                maxWidth: 560,
+              }}
+            >
+              {bestDay.value > 0
+                ? `${bestDay.label} was your strongest day — Rs. ${bestDay.value.toLocaleString()} in sales.`
+                : "Sales will show here once you start receiving orders."}
+            </p>
+            <div
+              style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}
+            >
+              {[
+                {
+                  label: "7-day total",
+                  value: `Rs. ${salesByDay.reduce((s, d) => s + d.value, 0).toLocaleString()}`,
+                },
+                {
+                  label: "Daily average",
+                  value: `Rs. ${Math.round(salesByDay.reduce((s, d) => s + d.value, 0) / Math.max(salesByDay.length, 1)).toLocaleString()}`,
+                },
+                { label: "Best day", value: bestDay.value > 0 ? bestDay.label : "—" },
+              ].map((s) => (
+                <div
+                  key={s.label}
+                  style={{
+                    padding: "12px 14px",
+                    background: "var(--line-100)",
+                    borderRadius: "var(--r-md)",
+                    border: "1px solid var(--line-200)",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: ".7rem",
+                      fontWeight: 700,
+                      color: "var(--ink-500)",
+                      textTransform: "uppercase",
+                      letterSpacing: ".04em",
+                    }}
+                  >
+                    {s.label}
+                  </div>
                   <div
                     className="tnum"
-                    style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 2 }}
+                    style={{
+                      fontSize: "1rem",
+                      fontWeight: 800,
+                      color: "var(--blue-deep)",
+                      marginTop: 4,
+                    }}
                   >
-                    {p.units} sold
+                    {s.value}
                   </div>
                 </div>
-                <div
-                  className="tnum"
-                  style={{ fontWeight: 800, color: "var(--success)", fontSize: "1rem" }}
-                >
-                  Rs. {p.rev.toLocaleString()}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Footer hint */}
-        <p style={{ textAlign: "center", color: "var(--ink-500)", fontSize: ".875rem" }}>
-          Want to know what to fix? Open <b>What to do · के गर्ने</b> in the sidebar.
-        </p>
+          <div className="bz-seller-analytics-span-8" style={cardStyle}>
+            <h2
+              style={{
+                margin: "0 0 4px",
+                fontSize: "1.125rem",
+                fontWeight: 800,
+                color: "var(--blue-deep)",
+              }}
+            >
+              Sales — last 7 days
+            </h2>
+            <p
+              className="ne"
+              style={{ margin: "0 0 18px", fontSize: ".8125rem", color: "var(--ink-500)" }}
+            >
+              ७ दिनको बिक्री
+            </p>
+            <SellerBarChart data={salesByDay} height={300} />
+          </div>
+
+          <div className="bz-seller-analytics-span-4" style={cardStyle}>
+            <h2
+              style={{
+                margin: "0 0 4px",
+                fontSize: "1.05rem",
+                fontWeight: 800,
+                color: "var(--blue-deep)",
+              }}
+            >
+              Where my money is
+            </h2>
+            <p
+              className="ne"
+              style={{ margin: "0 0 14px", fontSize: ".8125rem", color: "var(--ink-500)" }}
+            >
+              मेरो पैसा कहाँ छ
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {moneyBuckets.map((b) => {
+                const pct = (b.v / maxBucket) * 100;
+                return (
+                  <div key={b.en}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "baseline",
+                        marginBottom: 6,
+                      }}
+                    >
+                      <div>
+                        <span style={{ fontWeight: 700, fontSize: ".95rem" }}>{b.en}</span>
+                        <span
+                          className="ne"
+                          style={{
+                            marginLeft: 8,
+                            color: "var(--ink-500)",
+                            fontSize: ".75rem",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {b.ne}
+                        </span>
+                      </div>
+                      <span
+                        className="tnum"
+                        style={{ fontWeight: 800, fontSize: "1.05rem", color: b.c }}
+                      >
+                        Rs. {b.v.toLocaleString()}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        height: 14,
+                        background: "var(--line-100)",
+                        borderRadius: 999,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${pct}%`,
+                          height: "100%",
+                          background: b.c,
+                          borderRadius: 999,
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p
+              style={{
+                marginTop: 14,
+                padding: 10,
+                background: "var(--tint-blue-50)",
+                borderRadius: "var(--r-md)",
+                fontSize: ".875rem",
+                color: "var(--blue-deep)",
+              }}
+            >
+              <Icon
+                name="badgeCheck"
+                size={14}
+                color="var(--blue)"
+                style={{ verticalAlign: "middle", marginRight: 6 }}
+              />
+              {withCourier > 0
+                ? `Rs. ${withCourier.toLocaleString()} is with courier until delivery is confirmed.`
+                : "No payouts in transit right now."}
+            </p>
+          </div>
+
+          <div className="bz-seller-analytics-span-12" style={cardStyle}>
+            <h2
+              style={{
+                margin: "0 0 4px",
+                fontSize: "1.125rem",
+                fontWeight: 800,
+                color: "var(--blue-deep)",
+              }}
+            >
+              Your top 3 items this week
+            </h2>
+            <p
+              className="ne"
+              style={{ margin: "0 0 14px", fontSize: ".8125rem", color: "var(--ink-500)" }}
+            >
+              सबभन्दा बढी बिक्ने
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {topProducts.length === 0 && (
+                <p style={{ margin: 0, color: "var(--ink-500)", fontSize: ".875rem" }}>
+                  No sales yet this week.
+                </p>
+              )}
+              {topProducts.map((p, i) => (
+                <div
+                  key={p.name}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 14,
+                    padding: 12,
+                    border: "1px solid var(--line-200)",
+                    borderRadius: "var(--r-md)",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: "50%",
+                      background: i === 0 ? "var(--gold)" : "var(--line-200)",
+                      color: i === 0 ? "#fff" : "var(--ink-700)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontWeight: 800,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {i + 1}
+                  </div>
+                  <Placeholder
+                    icon={p.icon}
+                    tint={p.tint}
+                    style={{ width: 56, height: 56, flexShrink: 0 }}
+                    radius="var(--r-sm)"
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: ".95rem" }}>{p.name}</div>
+                    <div
+                      className="tnum"
+                      style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 2 }}
+                    >
+                      {p.units} sold
+                    </div>
+                  </div>
+                  <div
+                    className="tnum"
+                    style={{ fontWeight: 800, color: "var(--success)", fontSize: "1rem" }}
+                  >
+                    Rs. {p.rev.toLocaleString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <p
+            className="bz-seller-analytics-span-12"
+            style={{ textAlign: "center", color: "var(--ink-500)", fontSize: ".875rem", margin: 0 }}
+          >
+            Want to know what to fix? Open <b>What to do · के गर्ने</b> in the sidebar.
+          </p>
+        </div>
       </div>
     </ApiState>
   );

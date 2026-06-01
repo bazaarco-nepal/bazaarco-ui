@@ -31,7 +31,12 @@ export const queryKeys = {
   videos: {
     feed: (tab: string) => ["videos", "feed", tab] as const,
   },
+  chat: {
+    inbox: ["chat", "inbox"] as const,
+    messages: (conversationId: string) => ["chat", "messages", conversationId] as const,
+  },
   seller: {
+    organization: ["seller", "organization"] as const,
     dashboard: ["seller", "dashboard"] as const,
     inbox: ["seller", "inbox"] as const,
     inventory: ["seller", "inventory"] as const,
@@ -45,5 +50,6 @@ export const queryKeys = {
     notifications: ["seller", "notifications"] as const,
     storefront: ["seller", "storefront"] as const,
     ledger: ["seller", "ledger"] as const,
+    settings: ["seller", "settings"] as const,
   },
 };

@@ -1,4 +1,5 @@
 import { getData } from "./http";
+import type { StorefrontData } from "./storefront";
 
 export const sellerApi = {
   getDashboard<T = unknown>(): Promise<T> {
@@ -45,8 +46,8 @@ export const sellerApi = {
     return getData<T>("/seller/notifications");
   },
 
-  getStorefront<T = unknown>(): Promise<T> {
-    return getData<T>("/seller/storefront");
+  getStorefront(): Promise<StorefrontData> {
+    return getData<StorefrontData>("/seller/storefront");
   },
 
   getLedger<T = unknown>(): Promise<T> {

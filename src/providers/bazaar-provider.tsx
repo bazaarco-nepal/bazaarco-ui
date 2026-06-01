@@ -193,6 +193,15 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
     [router, scrollTop],
   );
 
+  const openTracking = useCallback(
+    (orderId: string) => {
+      setLastOrderId(orderId);
+      router.push(pathFromScreen("tracking", undefined, undefined, orderId));
+      setTimeout(scrollTop, 0);
+    },
+    [router, scrollTop, setLastOrderId],
+  );
+
   const addToCart = useCallback(
     async (product: Product, qty = 1, successMessage?: string) => {
       if (!ensureAuthed("Please sign in to add items to your cart.")) return;
@@ -289,6 +298,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       nav,
       openProduct,
       openStore,
+      openTracking,
       cart,
       cartLoading: cartLoading || cartFetching,
       addToCart,
@@ -316,6 +326,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       nav,
       openProduct,
       openStore,
+      openTracking,
       cart,
       cartLoading,
       cartFetching,

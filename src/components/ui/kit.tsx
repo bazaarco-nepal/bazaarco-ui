@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ASSETS } from "@/config/assets";
 import { postalForCity } from "@/lib/delivery-location";
+import { reverseGeocode } from "@/lib/reverse-geocode";
 import { MapPinPicker } from "@/components/ui/map-pin-picker";
 
 /* ============================================================
@@ -1874,7 +1875,47 @@ export function LandmarkAddress({ value, onChange }) {
   const v = value || { city: "", area: "", landmark: "", lat: null, lng: null };
   const [mapOpen, setMapOpen] = useState(false);
   const [geoError, setGeoError] = useState(null);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const geoWatchRef = useRef(null);
+  const geocodeTimerRef = useRef(null);
   const hasPin = typeof v.lat === "number" && typeof v.lng === "number";
+
+  useEffect(() => {
+    return () => {
+      if (geoWatchRef.current != null) {
+        navigator.geolocation.clearWatch(geoWatchRef.current);
+        geoWatchRef.current = null;
+      }
+      if (geocodeTimerRef.current) {
+        clearTimeout(geocodeTimerRef.current);
+      }
+    };
+  }, []);
+
+  const vRef = useRef(v);
+  vRef.current = v;
+
+  const applyCoords = (lat, lng) => {
+    const next = { ...vRef.current, lat, lng };
+    vRef.current = next;
+    onChange(next);
+    if (geocodeTimerRef.current) clearTimeout(geocodeTimerRef.current);
+    geocodeTimerRef.current = setTimeout(async () => {
+      const place = await reverseGeocode(lat, lng);
+      if (!place) return;
+      const base = vRef.current;
+      const merged = {
+        ...base,
+        lat,
+        lng,
+        city: place.city || base.city,
+        area: place.area || base.area,
+        landmark: base.landmark?.trim() ? base.landmark : place.landmark || base.landmark,
+      };
+      vRef.current = merged;
+      onChange(merged);
+    }, 400);
+  };
 
   const useMyLocation = () => {
     if (!navigator.geolocation) {
@@ -1882,18 +1923,21 @@ export function LandmarkAddress({ value, onChange }) {
       return;
     }
     setGeoError(null);
-    navigator.geolocation.getCurrentPosition(
+    setGeoLoading(true);
+    setMapOpen(true);
+    if (geoWatchRef.current != null) {
+      navigator.geolocation.clearWatch(geoWatchRef.current);
+    }
+    geoWatchRef.current = navigator.geolocation.watchPosition(
       (pos) => {
-        onChange({
-          ...v,
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-        });
-        setMapOpen(true);
+        setGeoLoading(false);
+        applyCoords(pos.coords.latitude, pos.coords.longitude);
       },
-      () =>
-        setGeoError("Could not get your location. Allow location access or drop a pin manually."),
-      { enableHighAccuracy: true, timeout: 12000 },
+      () => {
+        setGeoLoading(false);
+        setGeoError("Could not get your location. Allow location access or drop a pin manually.");
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 },
     );
   };
   const cities = [
@@ -1907,7 +1951,16 @@ export function LandmarkAddress({ value, onChange }) {
     "Nepalgunj",
   ];
   const areas = {
-    Kathmandu: ["Chabahil", "Baneshwor", "Maharajgunj", "Koteshwor", "Kalanki", "Sanepa"],
+    Kathmandu: [
+      "Chabahil",
+      "Baneshwor",
+      "Maharajgunj",
+      "Mahalaxmi",
+      "Koteshwor",
+      "Kalanki",
+      "Sanepa",
+      "Thamel",
+    ],
     Lalitpur: ["Patan", "Jawalakhel", "Pulchowk", "Satdobato"],
     Bhaktapur: ["Suryabinayak", "Thimi", "Durbar Square area"],
     Pokhara: ["Lakeside", "Mahendrapool", "Chipledhunga", "Bagar"],
@@ -1965,10 +2018,12 @@ export function LandmarkAddress({ value, onChange }) {
         >
           Area / Ward · क्षेत्र
         </label>
-        <select
+        <input
+          list={v.city ? `bz-areas-${v.city}` : undefined}
           value={v.area}
           onChange={(e) => onChange({ ...v, area: e.target.value })}
           disabled={!v.city}
+          placeholder={v.city ? "e.g. Mahalaxmi, Chabahil — or pick below" : "Select city first"}
           style={{
             width: "100%",
             height: 48,
@@ -1979,12 +2034,14 @@ export function LandmarkAddress({ value, onChange }) {
             fontFamily: "var(--font-sans)",
             background: v.city ? "#fff" : "var(--line-100)",
           }}
-        >
-          <option value="">Select area…</option>
-          {(areas[v.city] || []).map((a) => (
-            <option key={a}>{a}</option>
-          ))}
-        </select>
+        />
+        {v.city && (
+          <datalist id={`bz-areas-${v.city}`}>
+            {(areas[v.city] || []).map((a) => (
+              <option key={a} value={a} />
+            ))}
+          </datalist>
+        )}
       </div>
       <div>
         <label
@@ -2042,7 +2099,6 @@ export function LandmarkAddress({ value, onChange }) {
         </button>
         <button
           type="button"
-          disabled={!v.city}
           onClick={useMyLocation}
           style={{
             background: "none",
@@ -2050,12 +2106,11 @@ export function LandmarkAddress({ value, onChange }) {
             color: "var(--blue)",
             fontWeight: 700,
             fontSize: ".8125rem",
-            cursor: v.city ? "pointer" : "not-allowed",
-            opacity: v.city ? 1 : 0.55,
+            cursor: "pointer",
             padding: "8px 4px",
           }}
         >
-          Use my location
+          {geoLoading ? "Locating…" : "Use my location"}
         </button>
       </div>
       {!v.city && (
@@ -2082,7 +2137,7 @@ export function LandmarkAddress({ value, onChange }) {
           city={v.city}
           lat={v.lat}
           lng={v.lng}
-          onPick={(lat, lng) => onChange({ ...v, lat, lng })}
+          onPick={(lat, lng) => applyCoords(lat, lng)}
         />
       )}
       <div
@@ -2113,7 +2168,11 @@ export function DeliverToModal({ open, value, onClose, onSave }) {
 
   if (!open) return null;
 
-  const canSave = !!(draft?.city && draft?.area);
+  const hasPin = typeof draft.lat === "number" && typeof draft.lng === "number";
+  const canSave = !!(
+    draft?.city?.trim() &&
+    (draft?.area?.trim() || draft?.landmark?.trim() || hasPin)
+  );
 
   return (
     <div

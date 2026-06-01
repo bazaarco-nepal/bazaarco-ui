@@ -11,6 +11,7 @@ export interface BazaarContextValue {
   nav: (screen: string) => void;
   openProduct: (product: Product) => void;
   openStore: (sellerId: string) => void;
+  openTracking: (orderId: string) => void;
   cart: CartLine[];
   cartLoading: boolean;
   addToCart: (product: Product, qty?: number, successMessage?: string) => Promise<void>;

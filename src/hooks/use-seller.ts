@@ -125,7 +125,7 @@ export function useSellerPromotions() {
 export function useSellerVideos() {
   return useQuery({
     queryKey: queryKeys.seller.videos,
-    queryFn: () => sellerApi.getVideos(),
+    queryFn: () => sellerApi.getVideos<import("@/services/api/media").SellerVideosResponse>(),
     staleTime: STALE_TIME,
   });
 }

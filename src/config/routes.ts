@@ -114,9 +114,17 @@ const PATH_SCREEN: Record<string, string> = Object.fromEntries(
 PATH_SCREEN["/"] = "splash";
 PATH_SCREEN["/product"] = "pdp";
 
-export function pathFromScreen(screen: string, productId?: string, searchQuery?: string): string {
+export function pathFromScreen(
+  screen: string,
+  productId?: string,
+  searchQuery?: string,
+  orderId?: string,
+): string {
   if (screen === "pdp" && productId) {
     return `/product/${productId}`;
+  }
+  if (screen === "tracking" && orderId) {
+    return `/orders/tracking/${encodeURIComponent(orderId)}`;
   }
   if (screen === "browse") {
     const q = searchQuery?.trim();
@@ -140,6 +148,9 @@ export function screenFromPath(pathname: string): string {
   if (pathname.startsWith("/store/")) {
     return "store";
   }
+  if (pathname.startsWith("/orders/tracking")) {
+    return "tracking";
+  }
   const base = pathname.split("?")[0] ?? pathname;
   return PATH_SCREEN[base] ?? "home";
 }
@@ -152,4 +163,9 @@ export function productIdFromPath(pathname: string): string | null {
 export function storeIdFromPath(pathname: string): string | null {
   const match = pathname.match(/^\/store\/([^/]+)/);
   return match?.[1] ?? null;
+}
+
+export function orderIdFromPath(pathname: string): string | null {
+  const match = pathname.match(/^\/orders\/tracking\/([^/]+)/);
+  return match?.[1] ? decodeURIComponent(match[1]) : null;
 }

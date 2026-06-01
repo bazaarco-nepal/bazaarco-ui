@@ -994,8 +994,8 @@ function PolicyDisclosure({ pay }) {
 
 /* ---------- ORDER SUCCESS ---------- */
 export function OrderSuccess({ total }) {
-  const { nav } = useBz();
-  const orderId = useBazaarStore((s) => s.lastOrderId) ?? "BZ-24501";
+  const { nav, openTracking } = useBz();
+  const orderId = useBazaarStore((s) => s.lastOrderId);
   return (
     <div style={{ maxWidth: 620, margin: "0 auto", padding: "40px 28px" }}>
       <div
@@ -1070,7 +1070,14 @@ export function OrderSuccess({ total }) {
         </div>
 
         <div style={{ display: "flex", gap: 12, marginTop: 28 }}>
-          <Button variant="primary" full size="lg" icon="package" onClick={() => nav("tracking")}>
+          <Button
+            variant="primary"
+            full
+            size="lg"
+            icon="package"
+            disabled={!orderId}
+            onClick={() => orderId && openTracking(orderId)}
+          >
             Track order
           </Button>
           <Button variant="secondary" full size="lg" onClick={() => nav("home")}>

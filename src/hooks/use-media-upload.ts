@@ -28,6 +28,35 @@ export function useCreateSellerVideo() {
   });
 }
 
+export function useUpdateSellerVideo() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      videoId,
+      ...payload
+    }: {
+      videoId: string;
+      title?: string;
+      product?: string;
+      hashtags?: string[];
+      status?: "draft" | "published";
+    }) => mediaApi.updateSellerVideo(videoId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.seller.videos });
+    },
+  });
+}
+
+export function useDeleteSellerVideo() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (videoId: string) => mediaApi.deleteSellerVideo(videoId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.seller.videos });
+    },
+  });
+}
+
 export function useUpdateProductMedia() {
   const queryClient = useQueryClient();
   return useMutation({

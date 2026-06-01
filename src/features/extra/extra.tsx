@@ -36,6 +36,8 @@ import {
   BackToTop,
   ApiState,
 } from "@/components/ui";
+import { usePathname } from "next/navigation";
+import { orderIdFromPath } from "@/config/routes";
 import { useCatalog } from "@/hooks/use-catalog";
 import { useTracking } from "@/hooks/use-tracking";
 import { useBargains } from "@/hooks/use-bargains";
@@ -57,15 +59,49 @@ import {
 
 export function Tracking() {
   const { nav, cart } = useBz();
+  const pathname = usePathname();
+  const routeOrderId = orderIdFromPath(pathname);
   const lastOrderId = useBazaarStore((s) => s.lastOrderId);
-  const orderId = lastOrderId ?? "BZ-24501";
-  const { data, isLoading, isError, error } = useTracking(orderId);
+  const orderId = routeOrderId ?? lastOrderId ?? "";
+  const { data, isLoading, isError, error } = useTracking(orderId, Boolean(orderId));
   const nodes = data?.nodes ?? [];
+
+  if (!orderId) {
+    return (
+      <div style={{ maxWidth: 820, margin: "0 auto", padding: "24px 28px 80px" }}>
+        <EmptyState
+          icon="package"
+          title="No order selected"
+          message="Open tracking from My orders or right after checkout."
+          cta="My orders"
+          onCta={() => nav("orders")}
+        />
+      </div>
+    );
+  }
+
+  const trackingStatus = nodes
+    .find((n) => n.state === "current")
+    ?.t?.toLowerCase()
+    .includes("deliver")
+    ? "delivered"
+    : nodes
+          .find((n) => n.state === "current")
+          ?.t?.toLowerCase()
+          .includes("ship")
+      ? "shipped"
+      : nodes
+            .find((n) => n.state === "current")
+            ?.t?.toLowerCase()
+            .includes("pack")
+        ? "packed"
+        : "confirmed";
+
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
       <div style={{ maxWidth: 820, margin: "0 auto", padding: "24px 28px 0" }}>
         <button
-          onClick={() => nav("home")}
+          onClick={() => nav("orders")}
           style={{
             background: "none",
             border: "none",
@@ -79,7 +115,7 @@ export function Tracking() {
             fontSize: ".875rem",
           }}
         >
-          <Icon name="chevronLeft" size={16} /> Back to home
+          <Icon name="chevronLeft" size={16} /> Back to orders
         </button>
         <div
           style={{
@@ -101,7 +137,7 @@ export function Tracking() {
               Track your delivery
             </span>
           </div>
-          <StatusPill status="packed" />
+          <StatusPill status={nodes.length ? trackingStatus : "confirmed"} />
         </div>
 
         <div
@@ -121,6 +157,11 @@ export function Tracking() {
               padding: 28,
             }}
           >
+            {nodes.length === 0 && !isLoading ? (
+              <p style={{ margin: 0, color: "var(--ink-500)", fontSize: ".9375rem" }}>
+                Tracking updates will appear here once the seller ships your order.
+              </p>
+            ) : null}
             {nodes.map((n, i) => (
               <div key={i} style={{ display: "flex", gap: 16, position: "relative" }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>

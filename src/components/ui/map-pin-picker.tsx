@@ -109,7 +109,7 @@ export function MapPinPicker({ city, lat, lng, onPick, height = 220 }: MapPinPic
     if (typeof lat !== "number" || typeof lng !== "number") return;
     const pos: [number, number] = [lat, lng];
     markerRef.current.setLatLng(pos);
-    mapRef.current.panTo(pos);
+    mapRef.current.setView(pos, Math.max(mapRef.current.getZoom(), 15), { animate: true });
   }, [lat, lng]);
 
   return (

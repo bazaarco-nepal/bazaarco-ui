@@ -63,6 +63,12 @@ import type { WriteReviewProps } from "@/types";
    ============================================================ */
 
 const ORDER_STATUS_META = {
+  placed: {
+    tone: "blue",
+    label: "Order placed",
+    action: "Track",
+    actionVariant: "secondary",
+  },
   applied: {
     tone: "blue",
     label: "Awaiting confirmation",
@@ -86,14 +92,25 @@ const ORDER_STATUS_META = {
   cancelled: { tone: "neutral", label: "Cancelled", action: "Order again", actionVariant: "ghost" },
 };
 
+const DEFAULT_ORDER_STATUS_META = {
+  tone: "neutral",
+  label: "Processing",
+  action: "Track",
+  actionVariant: "secondary",
+};
+
+function orderStatusMeta(status: string) {
+  return ORDER_STATUS_META[status] ?? DEFAULT_ORDER_STATUS_META;
+}
+
 export function Orders() {
-  const { nav } = useBz();
+  const { nav, openTracking } = useBz();
   const { data: ordersData = [], isLoading, isError, error } = useOrders();
   const { byId } = useCatalog();
   const [filter, setFilter] = useState("all");
   const orders = ordersData.filter((o) => {
     if (filter === "active")
-      return ["applied", "confirmed", "packed", "shipped"].includes(o.status);
+      return ["placed", "applied", "confirmed", "packed", "shipped"].includes(o.status);
     if (filter === "delivered") return o.status === "delivered";
     if (filter === "cancelled") return o.status === "cancelled";
     return true;
@@ -142,7 +159,7 @@ export function Orders() {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {orders.map((o) => {
-              const meta = ORDER_STATUS_META[o.status];
+              const meta = orderStatusMeta(o.status);
               const items = o.items.map(byId).filter(Boolean);
               return (
                 <div
@@ -226,18 +243,20 @@ export function Orders() {
                       variant={meta.actionVariant}
                       onClick={() => {
                         if (
+                          o.status === "placed" ||
+                          o.status === "applied" ||
                           o.status === "shipped" ||
                           o.status === "confirmed" ||
                           o.status === "packed"
                         )
-                          nav("tracking");
+                          openTracking(o.id);
                         else if (o.status === "delivered") nav("review");
                       }}
                       icon={o.status === "shipped" ? "phone" : undefined}
                     >
                       {meta.action}
                     </Button>
-                    <Button variant="ghost" onClick={() => nav("tracking")}>
+                    <Button variant="ghost" onClick={() => openTracking(o.id)}>
                       View details
                     </Button>
                   </div>

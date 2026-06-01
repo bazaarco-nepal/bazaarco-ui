@@ -36,6 +36,7 @@ import {
   ApiState,
 } from "@/components/ui";
 import { ProductPhotoPicker, type ProductPhoto } from "@/components/seller/product-photo-picker";
+import { SellerVideoLibrary } from "@/components/seller/seller-video-library";
 import {
   SellerVerificationBanner,
   SellerVerificationBlocked,
@@ -91,7 +92,6 @@ import {
   Navbar,
   Footer,
   DevViewSwitcher,
-  VideoUploadForm,
 } from "@/components/common";
 import { ASSETS } from "@/config/assets";
 import {
@@ -3692,6 +3692,17 @@ export function SellerAddProduct() {
     titleOk &&
     Boolean(category) &&
     (hasVariants ? variantsOk : price && stock);
+
+  const publishMissing: string[] = [];
+  if (productPhotos.length === 0) publishMissing.push("at least 1 photo");
+  if (!titleOk) publishMissing.push("product name (3+ characters)");
+  if (!category) publishMissing.push("category");
+  if (hasVariants) {
+    if (!variantsOk) publishMissing.push("price & stock on every variant");
+  } else {
+    if (!price) publishMissing.push("price (Rs.)");
+    if (!stock) publishMissing.push("stock quantity");
+  }
   const categoryMeta = categories.find((c) => c.id === category);
   const displayPrice = hasVariants ? variants.find((v) => v.price)?.price : price;
   const displayStock = hasVariants
@@ -3718,6 +3729,19 @@ export function SellerAddProduct() {
         categoryId: category,
         img: uploaded.url,
         metadata: attrs,
+        stock: hasVariants ? undefined : Number(stock) || 0,
+        variants: hasVariants
+          ? variants
+              .filter((v) => v.name && v.price && v.stock)
+              .map((v) => ({
+                id: String(v.id),
+                name: v.name.trim(),
+                price: Number(v.price),
+                stock: Number(v.stock),
+              }))
+          : undefined,
+        allowBargaining: bargainOk,
+        maxDiscountPct: bargainOk ? bargainPct : 0,
       });
       toast("Product published! · प्रकाशित भयो");
       nav("s-products");
@@ -4328,12 +4352,20 @@ export function SellerAddProduct() {
             <p
               style={{
                 fontSize: ".75rem",
-                color: "var(--ink-400)",
+                color: "var(--ink-500)",
                 marginTop: 8,
                 textAlign: "center",
+                lineHeight: 1.45,
               }}
             >
-              Add a photo, title, category and price to publish
+              <strong style={{ color: "var(--ink-700)" }}>Still needed:</strong>{" "}
+              {publishMissing.join(" · ")}
+              <span
+                className="ne"
+                style={{ display: "block", marginTop: 4, color: "var(--ink-400)" }}
+              >
+                माथि स्क्रोल गरेर फोटो, नाम, वर्ग र मूल्य/स्टक भर्नुहोस्
+              </span>
             </p>
           )}
         </div>
@@ -4490,7 +4522,7 @@ export function SellerInventory() {
   const { data: inventoryData = [], isLoading, isError, error } = useSellerInventory();
   const [items, setItems] = useState([]);
   useEffect(() => {
-    if (inventoryData.length) setItems(inventoryData);
+    setItems(inventoryData);
   }, [inventoryData]);
   const [expanded, setExpanded] = useState(null);
   const [status, setStatus] = useState("all"); // all | active | low | oos
@@ -7291,7 +7323,8 @@ export function SellerVideos() {
   const { data: organization } = useSellerOrganization();
   const canSell = organization?.verification?.canSell === true;
   const { data: videosData, isLoading, isError, error, refetch } = useSellerVideos();
-  const SELLER_VIDEOS = videosData?.items ?? [];
+  const videos = videosData?.items ?? [];
+  const videoAnalytics = videosData?.analytics;
   const [showUpload, setShowUpload] = useState(false);
 
   if (!canSell) {
@@ -7310,113 +7343,14 @@ export function SellerVideos() {
     <ApiState isLoading={isLoading} isError={isError} error={error}>
       <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
         <SellerHelpBar />
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 8,
-            flexWrap: "wrap",
-            gap: 10,
-          }}
-        >
-          <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-            Videos{" "}
-            <span
-              className="ne"
-              style={{ fontSize: "1rem", color: "var(--ink-500)", fontWeight: 600 }}
-            >
-              · भिडियो
-            </span>
-          </h1>
-          <Button variant="primary" icon="plus" onClick={() => setShowUpload((s) => !s)}>
-            {showUpload ? "Close" : "Add video"}
-          </Button>
-        </div>
-        <p style={{ margin: "0 0 18px", fontSize: ".875rem", color: "var(--ink-500)" }}>
-          Products with video sell 2× more. Keep videos under 30 seconds. Videos are stored on
-          Cloudinary.
-        </p>
-
-        {showUpload && (
-          <VideoUploadForm
-            onCancel={() => setShowUpload(false)}
-            onSuccess={() => {
-              setShowUpload(false);
-              void refetch();
-              toast("Video uploaded");
-            }}
-          />
-        )}
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 12,
-          }}
-        >
-          {SELLER_VIDEOS.map((v) => (
-            <div
-              key={v.id}
-              style={{
-                background: "#fff",
-                border: "1.5px solid var(--line-200)",
-                borderRadius: "var(--r-lg)",
-                overflow: "hidden",
-              }}
-            >
-              <VideoPlayer
-                tint={v.tint}
-                icon={v.icon || "shirt"}
-                ratio="4/5"
-                radius="0"
-                thumb={v.thumb}
-                src={v.videoUrl}
-              />
-              <div style={{ padding: 12 }}>
-                <div style={{ fontWeight: 800, fontSize: ".875rem" }}>{v.title}</div>
-                <div style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 2 }}>
-                  For: {v.product}
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 12,
-                    marginTop: 8,
-                    fontSize: ".75rem",
-                    color: "var(--ink-500)",
-                  }}
-                >
-                  <span>
-                    <Icon
-                      name="eye"
-                      size={14}
-                      style={{ verticalAlign: "middle", marginRight: 2 }}
-                    />{" "}
-                    {v.views.toLocaleString()}
-                  </span>
-                  <span>
-                    <Icon
-                      name="heart"
-                      size={14}
-                      style={{ verticalAlign: "middle", marginRight: 2 }}
-                    />{" "}
-                    {v.likes}
-                  </span>
-                </div>
-                <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
-                  <Button variant="ghost" size="sm" icon="edit" full>
-                    Edit
-                  </Button>
-                  <Button variant="ghost" size="sm" icon="trash" full>
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <SellerVideoLibrary
+          videos={videos}
+          analytics={videoAnalytics}
+          showUpload={showUpload}
+          onToggleUpload={() => setShowUpload((s) => !s)}
+          onRefetch={() => void refetch()}
+          onToast={toast}
+        />
       </div>
     </ApiState>
   );

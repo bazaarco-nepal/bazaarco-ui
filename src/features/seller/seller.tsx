@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Fragment } from "react";
+import React, { useState, useEffect, Fragment, useRef } from "react";
 import {
   Icon,
   Logo,
@@ -36,7 +36,7 @@ import {
   BackToTop,
   ApiState,
 } from "@/components/ui";
-import { useLogout } from "@/hooks/use-auth";
+import { useCompleteOnboarding, useLogout } from "@/hooks/use-auth";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { displayName, userInitial } from "@/lib/display";
 import { useAttrCategories, useCategoryAttributes } from "@/hooks/use-catalog";
@@ -69,6 +69,13 @@ import {
   VideoUploadForm,
 } from "@/components/common";
 import { ASSETS } from "@/config/assets";
+import {
+  PRODUCT_IMPORT_COLUMNS,
+  PRODUCT_IMPORT_OPTIONAL,
+  PRODUCT_IMPORT_REQUIRED,
+  PRODUCT_CATEGORY_IDS,
+  downloadProductImportSample,
+} from "@/lib/seller-product-import";
 
 export type SellerInboxOrderItem = {
   id: string;
@@ -86,7 +93,6 @@ export type SellerInboxOrderItem = {
 };
 
 export const sellerOrderRef = { current: null as SellerInboxOrderItem | null };
-export const sellerCoachedRef = { current: false };
 
 export const SELLER_NAV = [
   {
@@ -1308,18 +1314,30 @@ export function SellerFunnel({ rows }) {
 export function SellerDashboard() {
   const { nav, toast } = useBz();
   const user = useBazaarStore((s) => s.user);
+  const setUser = useBazaarStore((s) => s.setUser);
+  const completeOnboardingMutation = useCompleteOnboarding();
   const { data: dashboard, isLoading, isError, error } = useSellerDashboard();
   const { data: inbox = [] } = useSellerInbox();
   const { data: inventory = [] } = useSellerInventory();
   const [coach, setCoach] = useState(false);
   const [range, setRange] = useState("week");
 
+  const finishCoach = () => {
+    setCoach(false);
+    if (user?.onBoarding) return;
+    completeOnboardingMutation.mutate(undefined, {
+      onSuccess: (updated) => setUser(updated),
+      onError: () => {
+        setUser(user ? { ...user, onBoarding: true } : user);
+      },
+    });
+  };
+
   useEffect(() => {
-    if (!sellerCoachedRef.current) {
+    if (user?.intent === "seller" && user.onBoarding === false) {
       setCoach(true);
-      sellerCoachedRef.current = true;
     }
-  }, []);
+  }, [user?.id, user?.intent, user?.onBoarding]);
 
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -1371,7 +1389,7 @@ export function SellerDashboard() {
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
       <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
-        <SellerHelpBar tutorial onTutorial={() => setCoach(true)} />
+        <SellerHelpBar tutorial={!user?.onBoarding} onTutorial={() => setCoach(true)} />
 
         {/* Greeting + range */}
         <div
@@ -2370,7 +2388,7 @@ export function SellerDashboard() {
           ))}
         </div>
 
-        {coach && <SellerCoachmark steps={COACH_DASHBOARD} onDone={() => setCoach(false)} />}
+        {coach && <SellerCoachmark steps={COACH_DASHBOARD} onDone={finishCoach} />}
       </div>
     </ApiState>
   );
@@ -4120,6 +4138,7 @@ export function SellerInventory() {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("added");
   const [showImport, setShowImport] = useState(false);
+  const importFileRef = useRef<HTMLInputElement>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState([]); // ids picked for bulk edit
   const [bulkPct, setBulkPct] = useState(""); // bulk discount %
@@ -4811,9 +4830,12 @@ export function SellerInventory() {
           </div>
         )}
 
-        {/* Import-from-file modal (prototype) */}
+        {/* Import-from-file modal — columns match Product entity */}
         {showImport && (
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="import-products-title"
             style={{
               position: "fixed",
               inset: 0,
@@ -4830,8 +4852,10 @@ export function SellerInventory() {
               style={{
                 background: "#fff",
                 borderRadius: "var(--r-xl)",
-                maxWidth: 460,
+                maxWidth: 520,
                 width: "100%",
+                maxHeight: "min(90vh, 720px)",
+                overflow: "auto",
                 padding: 24,
               }}
               onClick={(e) => e.stopPropagation()}
@@ -4845,6 +4869,7 @@ export function SellerInventory() {
                 }}
               >
                 <h3
+                  id="import-products-title"
                   style={{
                     margin: 0,
                     fontSize: "1.125rem",
@@ -4855,6 +4880,7 @@ export function SellerInventory() {
                   Add many products from a file
                 </h3>
                 <button
+                  type="button"
                   onClick={() => setShowImport(false)}
                   aria-label="Close"
                   style={{
@@ -4877,14 +4903,25 @@ export function SellerInventory() {
                 className="ne"
                 style={{ color: "var(--ink-500)", margin: "0 0 14px", fontSize: ".875rem" }}
               >
-                एकैपटक धेरै सामान थप्नुहोस्
+                एकैपटक धेरै सामान थप्नुहोस् · CSV with headers in row 1
               </p>
 
-              <button
-                onClick={() => {
-                  toast("16 products read from your file · जाँच गर्नुहोस्");
+              <input
+                ref={importFileRef}
+                type="file"
+                accept=".csv,text/csv"
+                style={{ display: "none" }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  toast(`Reading ${file.name} — import API coming soon · जाँच गर्नुहोस्`);
                   setShowImport(false);
+                  e.target.value = "";
                 }}
+              />
+              <button
+                type="button"
+                onClick={() => importFileRef.current?.click()}
                 style={{
                   width: "100%",
                   padding: 28,
@@ -4900,11 +4937,9 @@ export function SellerInventory() {
                 }}
               >
                 <Icon name="filePlus" size={32} color="var(--blue)" />
-                <span style={{ fontWeight: 800, color: "var(--blue)" }}>
-                  Choose a CSV or Excel file
-                </span>
+                <span style={{ fontWeight: 800, color: "var(--blue)" }}>Choose a CSV file</span>
                 <span style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
-                  Tap to pick from your phone
+                  Excel: save as CSV first · Tap to pick from your phone
                 </span>
               </button>
 
@@ -4915,24 +4950,135 @@ export function SellerInventory() {
                   padding: 14,
                   fontSize: ".8125rem",
                   color: "var(--ink-700)",
+                  marginBottom: 12,
                 }}
               >
-                <div style={{ fontWeight: 800, marginBottom: 6 }}>
-                  Your file needs these columns:
+                <div style={{ fontWeight: 800, marginBottom: 8 }}>
+                  Required columns ({PRODUCT_IMPORT_REQUIRED.length})
                 </div>
-                <div className="tnum" style={{ color: "var(--ink-500)" }}>
-                  Name · Category · Price · Stock · Description
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {PRODUCT_IMPORT_REQUIRED.map((col) => (
+                    <div
+                      key={col.header}
+                      style={{
+                        display: "flex",
+                        gap: 8,
+                        alignItems: "flex-start",
+                        padding: "8px 10px",
+                        background: "#fff",
+                        borderRadius: "var(--r-sm)",
+                        border: "1px solid var(--line-200)",
+                      }}
+                    >
+                      <code
+                        style={{
+                          fontWeight: 800,
+                          color: "var(--blue-deep)",
+                          fontSize: ".75rem",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {col.header}
+                      </code>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ color: "var(--ink-500)", fontSize: ".75rem" }}>
+                          {col.hint}
+                        </div>
+                        <div
+                          className="tnum"
+                          style={{ color: "var(--ink-400)", fontSize: ".7rem", marginTop: 2 }}
+                        >
+                          e.g. {col.example}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
+
+              <details style={{ marginBottom: 12 }}>
+                <summary
+                  style={{
+                    cursor: "pointer",
+                    fontWeight: 700,
+                    fontSize: ".8125rem",
+                    color: "var(--blue)",
+                  }}
+                >
+                  Optional columns ({PRODUCT_IMPORT_OPTIONAL.length})
+                </summary>
+                <div
+                  style={{
+                    marginTop: 8,
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 6,
+                  }}
+                >
+                  {PRODUCT_IMPORT_OPTIONAL.map((col) => (
+                    <span
+                      key={col.header}
+                      title={col.hint}
+                      style={{
+                        fontSize: ".7rem",
+                        fontWeight: 700,
+                        padding: "4px 8px",
+                        background: "var(--line-100)",
+                        borderRadius: 999,
+                        color: "var(--ink-600)",
+                      }}
+                    >
+                      {col.header}
+                    </span>
+                  ))}
+                </div>
+              </details>
+
+              <div
+                style={{
+                  background: "var(--tint-blue-50)",
+                  borderRadius: "var(--r-md)",
+                  padding: 12,
+                  fontSize: ".75rem",
+                  color: "var(--blue-deep)",
+                  marginBottom: 12,
+                }}
+              >
+                <div style={{ fontWeight: 800, marginBottom: 6 }}>category_id values</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {PRODUCT_CATEGORY_IDS.map((c) => (
+                    <span
+                      key={c.id}
+                      style={{
+                        background: "#fff",
+                        padding: "3px 8px",
+                        borderRadius: 6,
+                        border: "1px solid var(--line-200)",
+                      }}
+                    >
+                      <code>{c.id}</code> = {c.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <p style={{ margin: "0 0 10px", fontSize: ".75rem", color: "var(--ink-400)" }}>
+                We add <code>id</code> and <code>seller_id</code> automatically — do not put them in
+                your file. There is no &quot;description&quot; or &quot;stock&quot; column on
+                products; use <code>low_stock</code> for low-stock alerts.
+              </p>
+
               <Button
                 variant="ghost"
                 size="sm"
                 icon="download"
                 full
-                style={{ marginTop: 10 }}
-                onClick={() => toast("Sample file downloaded")}
+                onClick={() => {
+                  downloadProductImportSample();
+                  toast("Sample CSV downloaded · नमूना फाइल");
+                }}
               >
-                Download a sample file
+                Download sample CSV ({PRODUCT_IMPORT_COLUMNS.length} columns)
               </Button>
             </div>
           </div>

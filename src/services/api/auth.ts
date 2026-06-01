@@ -74,3 +74,12 @@ export async function logout(): Promise<void> {
     throw mapAuthError(error);
   }
 }
+
+export async function completeOnboarding(): Promise<AuthUser> {
+  try {
+    const { data } = await authClient.patch<ApiSuccessResponse<AuthUser>>("/auth/onboarding");
+    return data.data;
+  } catch (error) {
+    throw mapAuthError(error);
+  }
+}

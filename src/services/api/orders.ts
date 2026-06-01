@@ -1,8 +1,20 @@
-import { getData } from "./http";
+import { getData, postData } from "./http";
 
 export interface OrderRider {
   name: string;
   eta: string;
+}
+
+export interface DeliveryAddress {
+  city: string;
+  area: string;
+  landmark: string;
+}
+
+export interface CheckoutPayload {
+  phone: string;
+  paymentMethod: "cod";
+  deliveryAddress: DeliveryAddress;
 }
 
 export interface Order {
@@ -12,6 +24,9 @@ export interface Order {
   eta: string;
   total: number;
   items: string[];
+  phone?: string | null;
+  paymentMethod?: string | null;
+  deliveryAddress?: DeliveryAddress | null;
   rider?: OrderRider;
 }
 
@@ -22,5 +37,9 @@ export const ordersApi = {
 
   getById(id: string): Promise<Order> {
     return getData<Order>(`/orders/${id}`);
+  },
+
+  checkout(payload: CheckoutPayload): Promise<Order> {
+    return postData<Order>("/orders/checkout", payload);
   },
 };

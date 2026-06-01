@@ -1880,7 +1880,6 @@ export function MobileBuyBar({ onAdd, onBuy }) {
         background: "#fff",
         borderTop: "1px solid var(--line-200)",
         padding: "10px 14px calc(10px + env(safe-area-inset-bottom))",
-        display: "flex",
         gap: 10,
         boxShadow: "0 -2px 12px rgba(15,23,42,.08)",
       }}

@@ -39,6 +39,7 @@ import {
   SellerReports,
   SellerSettings,
   SellerProfile,
+  AdminSellerVerifications,
 } from "@/features";
 import { useBz } from "@/components/common";
 import { SELLER_SCREENS } from "@/config/routes";
@@ -69,6 +70,7 @@ export function MarketplaceScreen() {
   if (screen === "tracking") return <Tracking />;
   if (screen === "wishlist") return <Wishlist />;
   if (screen === "bargains") return <Bargains />;
+  if (screen === "messages") return <SellerChat buyerMode />;
   if (screen === "profile") return <Profile />;
   if (screen === "profile-edit") return <ProfileEdit />;
   if (screen === "orders") return <Orders />;
@@ -93,6 +95,7 @@ export function MarketplaceScreen() {
     else if (screen === "s-reports") inner = <SellerReports />;
     else if (screen === "s-settings") inner = <SellerSettings />;
     else if (screen === "s-profile") inner = <SellerProfile />;
+    else if (screen === "s-admin-verify") inner = <AdminSellerVerifications />;
     else inner = <SellerDashboard />;
     return <SellerShell screen={screen}>{inner}</SellerShell>;
   }

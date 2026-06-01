@@ -729,7 +729,7 @@ export function PDP({ p }: PdpProps) {
               </div>
             ) : (
               <>
-                <div style={{ marginTop: 22 }}>
+                <div style={{ marginTop: 22, display: "flex", flexDirection: "column", gap: 10 }}>
                   <Button
                     variant="secondary"
                     full
@@ -738,6 +738,28 @@ export function PDP({ p }: PdpProps) {
                     onClick={() => setBargain(true)}
                   >
                     Make an offer
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    full
+                    size="lg"
+                    icon="message"
+                    onClick={() => {
+                      if (!authed) {
+                        toast("Sign in to message the seller");
+                        nav("auth");
+                        return;
+                      }
+                      const sid = sellerKey ?? s?.id;
+                      if (!sid) {
+                        toast("Seller not found");
+                        return;
+                      }
+                      sessionStorage.setItem("bz_open_chat_seller", sid);
+                      nav("messages");
+                    }}
+                  >
+                    Message seller
                   </Button>
                 </div>
                 <div className="bz-hide-mobile bz-pdp-buy-actions">

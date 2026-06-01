@@ -13,6 +13,7 @@ export const BUYER_SCREENS = new Set([
   "orders",
   "review",
   "bargains",
+  "messages",
 ]);
 
 export const SELLER_SCREENS = new Set([
@@ -33,6 +34,7 @@ export const SELLER_SCREENS = new Set([
   "s-reports",
   "s-settings",
   "s-profile",
+  "s-admin-verify",
 ]);
 
 export const NO_NAV_SCREENS = new Set([
@@ -82,6 +84,7 @@ const SCREEN_PATH: Record<string, string> = {
   orders: "/orders",
   review: "/review",
   bargains: "/bargains",
+  messages: "/messages",
   "s-onboarding": "/seller/onboarding",
   "s-dashboard": "/seller",
   "s-inbox": "/seller/inbox",
@@ -97,6 +100,7 @@ const SCREEN_PATH: Record<string, string> = {
   "s-videos": "/seller/videos",
   "s-analytics": "/seller/analytics",
   "s-reports": "/seller/reports",
+  "s-admin-verify": "/seller/admin/verifications",
   "s-settings": "/seller/settings",
   "s-profile": "/seller/profile",
 };

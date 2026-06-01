@@ -114,6 +114,122 @@ export function KathmanduSkyline({
   );
 }
 
+/* ---------- Seller row (PDP, cards) ---------- */
+export function SellerRow({ seller, sellerId, saved = false, onToggleSave, compact = false }) {
+  if (!seller) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: compact ? "8px 0" : "12px 0",
+          color: "var(--ink-400)",
+          fontSize: ".875rem",
+        }}
+      >
+        <Spinner size={18} /> Loading seller…
+      </div>
+    );
+  }
+
+  const tint = TINTS[seller.tint] ?? TINTS.slate;
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        padding: compact ? "8px 0" : "12px 0",
+        width: "100%",
+      }}
+    >
+      <div
+        style={{
+          width: compact ? 40 : 48,
+          height: compact ? 40 : 48,
+          borderRadius: "50%",
+          overflow: "hidden",
+          border: "1.5px solid var(--line-200)",
+          flexShrink: 0,
+          background: tint[0],
+        }}
+      >
+        {seller.avatar ? (
+          <img
+            src={seller.avatar}
+            alt={seller.name}
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          />
+        ) : (
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: 800,
+              color: tint[2],
+            }}
+          >
+            {seller.name?.[0] ?? "?"}
+          </div>
+        )}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+          <span
+            style={{
+              fontWeight: 700,
+              fontSize: compact ? ".875rem" : ".9375rem",
+              color: "var(--ink-900)",
+            }}
+          >
+            {seller.name}
+          </span>
+          {seller.verified && <VerifiedBadge />}
+        </div>
+        <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 2 }}>
+          {seller.city}
+          {seller.rating > 0 && (
+            <span>
+              {" "}
+              · <span className="tnum">{seller.rating.toFixed(1)}</span>★ ({seller.reviews})
+            </span>
+          )}
+        </div>
+      </div>
+      {onToggleSave && sellerId && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSave(sellerId);
+          }}
+          aria-label={saved ? "Unsave seller" : "Save seller"}
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: "50%",
+            border: `1.5px solid ${saved ? "var(--red)" : "var(--line-200)"}`,
+            background: saved ? "var(--tint-red-50)" : "#fff",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            color: saved ? "var(--red)" : "var(--ink-500)",
+          }}
+        >
+          <Icon name="heart" size={18} fill={saved ? "currentColor" : "none"} />
+        </button>
+      )}
+    </div>
+  );
+}
+
 /* ---------- Product card ---------- */
 export function ProductCard({ p, onClick }) {
   const { toggleWish, wish } = useBz();
@@ -179,7 +295,7 @@ export function ProductCard({ p, onClick }) {
         <button
           onClick={(e) => {
             e.stopPropagation();
-            toggleWish(p.id);
+            void toggleWish(p.id);
           }}
           aria-label="Add to wishlist"
           style={{
@@ -481,7 +597,8 @@ export function NavMenuItem({ icon, label, danger, onClick }) {
 }
 
 export function Navbar() {
-  const { nav, cartCount, wish, screen, query, setQuery, toast } = useBz();
+  const { nav, cartCount, wish, wishSellers, screen, query, setQuery, submitSearch, toast } =
+    useBz();
   const user = useBazaarStore((s) => s.user);
   const authed = useBazaarStore((s) => s.authed);
   const logoutMutation = useLogout();
@@ -644,22 +761,34 @@ export function Navbar() {
           }}
         />
         <div style={{ flex: 1, position: "relative" }}>
-          <span
+          <button
+            type="button"
+            aria-label="Search"
+            onClick={submitSearch}
             style={{
               position: "absolute",
-              left: 14,
+              left: 8,
               top: "50%",
               transform: "translateY(-50%)",
+              width: 36,
+              height: 36,
+              border: "none",
+              borderRadius: "50%",
+              background: "transparent",
               color: "var(--ink-400)",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
             <Icon name="search" size={19} />
-          </span>
+          </button>
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") nav("browse");
+              if (e.key === "Enter") submitSearch();
             }}
             placeholder={SEARCH_HINTS[hint]}
             style={{
@@ -667,7 +796,7 @@ export function Navbar() {
               height: 48,
               border: "1.5px solid var(--line-200)",
               borderRadius: "var(--r-full)",
-              padding: "0 58px 0 44px",
+              padding: "0 58px 0 48px",
               fontSize: ".9375rem",
               fontFamily: "var(--font-sans)",
               background: "#fff",
@@ -704,7 +833,7 @@ export function Navbar() {
             <IconButton
               name="heart"
               label="Wishlist"
-              badge={wish.length}
+              badge={wish.length + wishSellers.length}
               onClick={() => nav("wishlist")}
             />
           </span>

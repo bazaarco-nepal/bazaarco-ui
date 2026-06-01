@@ -1,8 +1,7 @@
 "use client";
 // @ts-nocheck — legacy design prototype; typed incrementally
 
-import React, { useState, useEffect } from "react";
-import { useBazaarStore } from "@/store/bazaar-store";
+import React, { useState } from "react";
 import {
   Icon,
   Logo,
@@ -50,6 +49,7 @@ import {
   Footer,
   DevViewSwitcher,
 } from "@/components/common";
+import { useBazaarStore } from "@/store/bazaar-store";
 
 export function priceBreakdown(cart) {
   const subtotal = cart.reduce((s, it) => s + it.price * it.qty, 0);
@@ -94,23 +94,49 @@ function Row({ label, value, strong, free, color }) {
 
 /* ---------- CART ---------- */
 export function Cart() {
-  const { cart, setCart, nav, openProduct, toast } = useBz();
+  const {
+    cart,
+    updateCartQty,
+    removeFromCart,
+    nav,
+    openProduct,
+    toast,
+    cartLoading,
+    authed,
+    promptLogin,
+  } = useBz();
   const { sellerOf } = useCatalog();
   const [coupon, setCoupon] = useState("");
   const [confirm, setConfirm] = useState(null);
   const bd = priceBreakdown(cart);
-  const setQty = (id, q) => setCart((c) => c.map((it) => (it.id === id ? { ...it, qty: q } : it)));
+  const setQty = (id, q) => {
+    void updateCartQty(id, q);
+  };
   const remove = (id) => {
-    setCart((c) => c.filter((it) => it.id !== id));
-    setConfirm(null);
-    toast("Removed from cart");
+    void removeFromCart(id).then(() => {
+      setConfirm(null);
+      toast("Removed from cart");
+    });
   };
   const applyCoupon = () => {
-    if (coupon.trim()) {
-      setCart((c) => c.map((it) => ({ ...it, coupon: true })));
-      toast("Coupon applied — 10% off");
-    }
+    if (coupon.trim()) toast("Coupons coming soon");
   };
+
+  if (cartLoading && cart.length === 0) {
+    return (
+      <div
+        style={{
+          maxWidth: 700,
+          margin: "0 auto",
+          padding: "40px 28px",
+          textAlign: "center",
+          color: "var(--ink-500)",
+        }}
+      >
+        Loading your cart…
+      </div>
+    );
+  }
 
   if (cart.length === 0)
     return (
@@ -373,7 +399,10 @@ export function Cart() {
                 full
                 size="lg"
                 iconRight="arrowRight"
-                onClick={() => nav("checkout")}
+                onClick={() => {
+                  if (authed) nav("checkout");
+                  else promptLogin("Please sign in to complete checkout.");
+                }}
               >
                 Checkout · चेकआउट
               </Button>
@@ -389,8 +418,8 @@ export function Cart() {
                 fontSize: ".75rem",
               }}
             >
-              <Icon name="lock" size={13} color="var(--ink-400)" /> Secure checkout · all payment
-              options
+              <Icon name="lock" size={13} color="var(--ink-400)" /> Secure checkout · cash on
+              delivery
             </div>
           </div>
         </div>
@@ -511,76 +540,47 @@ function CheckoutSection({ n, title, summary, complete, open, onToggle, children
   );
 }
 
+function isValidNpPhone(digits) {
+  return /^9[678]\d{8}$/.test(digits.replace(/\D/g, ""));
+}
+
 /* ---------- CHECKOUT (single page, 3 collapsed sections) ---------- */
 export function Checkout() {
   const { cart, nav, placeOrder } = useBz();
-  const [openSec, setOpenSec] = useState(2); // 0 phone, 1 address, 2 payment (default jumps to payment since phone auto-filled & address can be edited inline)
-  const [phone] = useState("98XXXXXX21");
-  const deliveryLocation = useBazaarStore((s) => s.deliveryLocation);
-  const setDeliveryLocation = useBazaarStore((s) => s.setDeliveryLocation);
+  const [openSec, setOpenSec] = useState(0);
+  const [phone, setPhone] = useState("");
   const [address, setAddress] = useState({
-    city: deliveryLocation.city,
-    area: deliveryLocation.area,
-    landmark: deliveryLocation.landmark || "",
+    city: "Kathmandu",
+    area: "Chabahil",
+    landmark: "Next to Bhatbhateni, opposite petrol pump",
   });
-  useEffect(() => {
-    setAddress({
-      city: deliveryLocation.city,
-      area: deliveryLocation.area,
-      landmark: deliveryLocation.landmark || "",
-    });
-  }, [deliveryLocation.city, deliveryLocation.area, deliveryLocation.landmark]);
-  const [pay, setPay] = useState("esewa");
   const [loading, setLoading] = useState(false);
   const bd = priceBreakdown(cart);
   const total = bd.total;
+  const pay = "cod";
 
+  const phoneDigits = phone.replace(/\D/g, "");
+  const phoneComplete = isValidNpPhone(phoneDigits);
   const addressComplete = !!(address.city && address.area && address.landmark);
+  const canPlaceOrder = phoneComplete && addressComplete;
 
-  const submit = () => {
+  const submit = async () => {
+    if (!canPlaceOrder) return;
     setLoading(true);
-    setTimeout(() => {
+    try {
+      await placeOrder({
+        phone: phoneDigits,
+        paymentMethod: "cod",
+        deliveryAddress: address,
+      });
+    } catch {
+      /* toast shown in provider */
+    } finally {
       setLoading(false);
-      placeOrder(total);
-    }, 1600);
+    }
   };
 
-  const payMethods = [
-    {
-      id: "esewa",
-      name: "eSewa",
-      desc: "Pay instantly with your eSewa wallet",
-      icon: "wallet",
-      tint: "green",
-    },
-    { id: "khalti", name: "Khalti", desc: "Khalti digital wallet", icon: "wallet", tint: "purple" },
-    {
-      id: "fonepay",
-      name: "Fonepay",
-      desc: "Fonepay QR / interbank",
-      icon: "wallet",
-      tint: "blue",
-    },
-    {
-      id: "card",
-      name: "Card",
-      desc: "Visa, Mastercard, debit or credit",
-      icon: "lock",
-      tint: "slate",
-    },
-    {
-      id: "cod",
-      name: "Cash on Delivery",
-      desc: `Pay Rs. ${total.toLocaleString()} when delivered`,
-      icon: "wallet",
-      tint: "slate",
-    },
-  ];
-
-  const payLabel =
-    pay === "cod"
-      ? `Confirm order — Pay Rs. ${total.toLocaleString()} on delivery`
-      : `Pay Rs. ${total.toLocaleString()} via ${payMethods.find((m) => m.id === pay).name}`;
+  const payLabel = `Place order — Rs. ${total.toLocaleString()} cash on delivery`;
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "20px 28px 80px" }}>
@@ -619,37 +619,72 @@ export function Checkout() {
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <CheckoutSection
           n={1}
-          title="Phone (auto-filled)"
-          summary={`+977 ${phone} · ✓ verified`}
-          complete
+          title="Phone number"
+          summary={phoneComplete ? `+977 ${phoneDigits}` : "Add your mobile for delivery updates"}
+          complete={phoneComplete}
           open={openSec === 0}
           onToggle={() => setOpenSec(openSec === 0 ? -1 : 0)}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "10px 14px",
-              background: "var(--line-100)",
-              borderRadius: "var(--r-md)",
-            }}
-          >
-            <span style={{ fontWeight: 700, fontSize: ".9375rem", color: "var(--ink-700)" }}>
+          <label style={{ fontSize: ".8125rem", fontWeight: 600, color: "var(--ink-700)" }}>
+            Mobile number
+          </label>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
+            <span
+              style={{
+                fontWeight: 700,
+                fontSize: ".9375rem",
+                color: "var(--ink-700)",
+                flexShrink: 0,
+              }}
+            >
               +977
             </span>
-            <span className="tnum" style={{ fontSize: "1rem", color: "var(--ink-900)" }}>
-              {phone}
-            </span>
-            <span style={{ marginLeft: "auto" }}>
-              <Chip tone="success" icon="check">
-                verified
-              </Chip>
-            </span>
+            <input
+              type="tel"
+              inputMode="numeric"
+              autoComplete="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+              placeholder="98XXXXXXXX"
+              style={{
+                flex: 1,
+                height: 48,
+                border: `1.5px solid ${phoneComplete || !phoneDigits ? "var(--line-200)" : "var(--danger)"}`,
+                borderRadius: "var(--r-md)",
+                padding: "0 14px",
+                fontSize: "1rem",
+                fontWeight: 600,
+                fontFamily: "var(--font-sans)",
+              }}
+            />
           </div>
-          <p style={{ fontSize: ".8125rem", color: "var(--ink-400)", marginTop: 10 }}>
-            This is the phone we used to log you in. Updates go via SMS.
+          {phoneDigits.length > 0 && !phoneComplete && (
+            <p
+              style={{
+                fontSize: ".8125rem",
+                color: "var(--danger)",
+                marginTop: 8,
+                marginBottom: 0,
+              }}
+            >
+              Enter a valid 10-digit Nepal mobile (e.g. 98XXXXXXXX).
+            </p>
+          )}
+          <p
+            style={{
+              fontSize: ".8125rem",
+              color: "var(--ink-400)",
+              marginTop: 10,
+              marginBottom: 0,
+            }}
+          >
+            Used for order updates and delivery calls. We will not share it with sellers.
           </p>
+          <div style={{ marginTop: 14 }}>
+            <Button variant="primary" full onClick={() => setOpenSec(1)} disabled={!phoneComplete}>
+              Continue
+            </Button>
+          </div>
         </CheckoutSection>
 
         <CheckoutSection
@@ -669,15 +704,7 @@ export function Checkout() {
             <Button
               variant="primary"
               full
-              onClick={() => {
-                setDeliveryLocation({
-                  ...deliveryLocation,
-                  city: address.city,
-                  area: address.area,
-                  landmark: address.landmark,
-                });
-                setOpenSec(2);
-              }}
+              onClick={() => setOpenSec(2)}
               disabled={!addressComplete}
             >
               Save address
@@ -688,103 +715,91 @@ export function Checkout() {
         <CheckoutSection
           n={3}
           title="Payment method"
-          summary={payMethods.find((m) => m.id === pay).name}
-          complete={!!pay}
+          summary="Cash on Delivery"
+          complete
           open={openSec === 2}
           onToggle={() => setOpenSec(openSec === 2 ? -1 : 2)}
         >
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {payMethods.map((m) => (
-              <button
-                key={m.id}
-                onClick={() => setPay(m.id)}
-                style={{
-                  width: "100%",
-                  textAlign: "left",
-                  display: "flex",
-                  gap: 14,
-                  padding: 14,
-                  borderRadius: "var(--r-md)",
-                  cursor: "pointer",
-                  border: `1.5px solid ${pay === m.id ? "var(--blue)" : "var(--line-200)"}`,
-                  background: pay === m.id ? "var(--tint-blue-50)" : "#fff",
-                  alignItems: "center",
-                }}
-              >
-                <span
-                  style={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: "50%",
-                    border: `2px solid ${pay === m.id ? "var(--blue)" : "var(--line-200)"}`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  {pay === m.id && (
-                    <span
-                      style={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: "50%",
-                        background: "var(--blue)",
-                      }}
-                    />
-                  )}
-                </span>
-                <span
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: "var(--r-sm)",
-                    background: TINTS[m.tint][0],
-                    color: TINTS[m.tint][2],
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  <Icon name={m.icon} size={20} color={TINTS[m.tint][2]} />
-                </span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <b style={{ fontSize: ".9375rem" }}>{m.name}</b>
-                    {m.recommended && (
-                      <Chip tone="success" size="sm">
-                        Recommended
-                      </Chip>
-                    )}
-                  </div>
-                  <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 2 }}>
-                    {m.desc}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-          {pay === "cod" && (
-            <div
+          <div
+            aria-disabled="true"
+            style={{
+              width: "100%",
+              textAlign: "left",
+              display: "flex",
+              gap: 14,
+              padding: 14,
+              borderRadius: "var(--r-md)",
+              border: "1.5px solid var(--line-200)",
+              background: "var(--line-100)",
+              alignItems: "center",
+              cursor: "not-allowed",
+              opacity: 0.92,
+            }}
+          >
+            <span
               style={{
-                marginTop: 14,
-                background: "var(--tint-blue-50)",
-                borderRadius: "var(--r-md)",
-                padding: 12,
-                fontSize: ".8125rem",
-                color: "var(--blue)",
+                width: 22,
+                height: 22,
+                borderRadius: "50%",
+                border: "2px solid var(--ink-400)",
                 display: "flex",
-                gap: 8,
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
               }}
             >
-              <Icon name="shieldCheck" size={18} color="var(--blue)" style={{ flexShrink: 0 }} />
-              <span>
-                For cash on delivery, our delivery person may call to check your address before
-                sending. Please keep your phone reachable.
-              </span>
+              <span
+                style={{ width: 10, height: 10, borderRadius: "50%", background: "var(--ink-400)" }}
+              />
+            </span>
+            <span
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: "var(--r-sm)",
+                background: "var(--line-200)",
+                color: "var(--ink-500)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <Icon name="wallet" size={20} color="var(--ink-500)" />
+            </span>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <b style={{ fontSize: ".9375rem", color: "var(--ink-700)" }}>Cash on Delivery</b>
+                <Chip tone="neutral" size="sm">
+                  Only option
+                </Chip>
+              </div>
+              <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 2 }}>
+                Pay Rs. {total.toLocaleString()} when your order is delivered
+              </div>
             </div>
-          )}
+          </div>
+          <p style={{ fontSize: ".8125rem", color: "var(--ink-400)", margin: "12px 0 0" }}>
+            eSewa, Khalti, and card payments are coming soon.
+          </p>
+          <div
+            style={{
+              marginTop: 14,
+              background: "var(--tint-blue-50)",
+              borderRadius: "var(--r-md)",
+              padding: 12,
+              fontSize: ".8125rem",
+              color: "var(--blue)",
+              display: "flex",
+              gap: 8,
+            }}
+          >
+            <Icon name="shieldCheck" size={18} color="var(--blue)" style={{ flexShrink: 0 }} />
+            <span>
+              Our delivery partner may call to confirm your address. Please keep your phone
+              reachable.
+            </span>
+          </div>
         </CheckoutSection>
       </div>
 
@@ -812,10 +827,23 @@ export function Checkout() {
             size="lg"
             loading={loading}
             onClick={submit}
-            disabled={!addressComplete}
+            disabled={!canPlaceOrder}
           >
             {loading ? "Placing order…" : payLabel}
           </Button>
+          {!canPlaceOrder && (
+            <p
+              style={{
+                textAlign: "center",
+                fontSize: ".8125rem",
+                color: "var(--ink-500)",
+                marginTop: 10,
+                marginBottom: 0,
+              }}
+            >
+              Add your phone number and delivery address to place the order.
+            </p>
+          )}
         </div>
         <div
           style={{
@@ -830,12 +858,8 @@ export function Checkout() {
         >
           <Icon name="lock" size={13} color="var(--ink-400)" /> Your details are safe with us
           <span style={{ width: 1, height: 12, background: "var(--line-200)" }} />
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-            {["eSewa", "Khalti", "Fonepay"].map((n) => (
-              <span key={n} style={{ fontSize: ".7rem", fontWeight: 700, color: "var(--ink-500)" }}>
-                {n}
-              </span>
-            ))}
+          <span style={{ fontSize: ".7rem", fontWeight: 700, color: "var(--ink-500)" }}>
+            Cash on delivery only
           </span>
         </div>
       </div>
@@ -972,6 +996,7 @@ function PolicyDisclosure({ pay }) {
 /* ---------- ORDER SUCCESS ---------- */
 export function OrderSuccess({ total }) {
   const { nav } = useBz();
+  const orderId = useBazaarStore((s) => s.lastOrderId) ?? "BZ-24501";
   return (
     <div style={{ maxWidth: 620, margin: "0 auto", padding: "40px 28px" }}>
       <div
@@ -1018,7 +1043,7 @@ export function OrderSuccess({ total }) {
         <p style={{ color: "var(--ink-500)", marginTop: 8 }}>
           Order{" "}
           <b className="tnum" style={{ color: "var(--ink-900)" }}>
-            #BZ-24501
+            #{orderId}
           </b>{" "}
           confirmed
           {total > 0 && (

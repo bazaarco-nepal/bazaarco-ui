@@ -108,11 +108,23 @@ const PATH_SCREEN: Record<string, string> = Object.fromEntries(
 PATH_SCREEN["/"] = "splash";
 PATH_SCREEN["/product"] = "pdp";
 
-export function pathFromScreen(screen: string, productId?: string): string {
+export function pathFromScreen(screen: string, productId?: string, searchQuery?: string): string {
   if (screen === "pdp" && productId) {
     return `/product/${productId}`;
   }
+  if (screen === "browse") {
+    const q = searchQuery?.trim();
+    if (q) {
+      return `/browse?q=${encodeURIComponent(q)}`;
+    }
+  }
   return SCREEN_PATH[screen] ?? "/home";
+}
+
+export function searchQueryFromPath(pathname: string): string {
+  const idx = pathname.indexOf("?");
+  if (idx === -1) return "";
+  return new URLSearchParams(pathname.slice(idx + 1)).get("q")?.trim() ?? "";
 }
 
 export function screenFromPath(pathname: string): string {

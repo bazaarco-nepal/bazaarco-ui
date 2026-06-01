@@ -23,7 +23,6 @@ import {
   TINTS,
   HelpLifeline,
   AllInPriceCard,
-  DeliverToModal,
   OTPInput,
   MenuRow,
   ChipGroup,
@@ -43,10 +42,7 @@ import {
   useProductReviews,
   useProductProfile,
   useRatingDistribution,
-  useSeller,
 } from "@/hooks/use-catalog";
-import { isSellerUser } from "@/lib/auth-rbac";
-import { useBazaarStore } from "@/store/bazaar-store";
 import {
   BazaarCtx,
   useBz,
@@ -58,7 +54,9 @@ import {
   Navbar,
   Footer,
   DevViewSwitcher,
+  SellerRow,
 } from "@/components/common";
+import { useSeller } from "@/hooks/use-catalog";
 import type { PdpProps } from "@/types";
 
 /* ============================================================
@@ -262,9 +260,8 @@ function BargainModal({ p, onClose }) {
                 full
                 size="lg"
                 icon="cart"
-                onClick={() => {
-                  addToCart({ ...p, price: offer }, 1);
-                  toast("Added at bargained price!");
+                onClick={async () => {
+                  await addToCart({ ...p, price: offer }, 1, "Added at bargained price!");
                   onClose();
                 }}
               >
@@ -313,9 +310,8 @@ function BargainModal({ p, onClose }) {
                 variant="primary"
                 full
                 icon="cart"
-                onClick={() => {
-                  addToCart({ ...p, price: counter }, 1);
-                  toast("Deal! Added to cart.");
+                onClick={async () => {
+                  await addToCart({ ...p, price: counter }, 1, "Deal! Added to cart.");
                   onClose();
                 }}
               >
@@ -330,15 +326,17 @@ function BargainModal({ p, onClose }) {
 }
 
 export function PDP({ p }: PdpProps) {
-  const { addToCart, buyNow, openProduct, toggleWish, wish, toast, nav } = useBz();
-  const user = useBazaarStore((s) => s.user);
-  const authed = useBazaarStore((s) => s.authed);
-  const sellerView = authed && isSellerUser(user);
-  const deliveryLocation = useBazaarStore((s) => s.deliveryLocation);
-  const setDeliveryLocation = useBazaarStore((s) => s.setDeliveryLocation);
-  const cart = useBazaarStore((s) => s.cart);
-  const inCart = cart.some((item) => item.id === p.id);
-  const [deliverOpen, setDeliverOpen] = useState(false);
+  const {
+    addToCart,
+    buyNow,
+    openProduct,
+    toggleWish,
+    toggleSellerWish,
+    wish,
+    wishSellers,
+    toast,
+    nav,
+  } = useBz();
   const catalog = useCatalog();
   const { data: reviews = [], isLoading: reviewsLoading } = useProductReviews(p.id);
   const { data: profile, isLoading: profileLoading } = useProductProfile(p.id);
@@ -347,10 +345,8 @@ export function PDP({ p }: PdpProps) {
   const isError = catalog.isError;
   const error = catalog.error;
   const { products, categories, sellerOf } = catalog;
-  const sellerKey = p.seller ?? (p as { sellerId?: string }).sellerId;
-  const sellerFromCatalog = sellerOf(p);
-  const { data: sellerById } = useSeller(sellerKey && !sellerFromCatalog ? sellerKey : null);
-  const s = sellerFromCatalog ?? sellerById;
+  const { data: sellerFromApi } = useSeller(p.seller);
+  const s = sellerOf(p) ?? sellerFromApi;
   const related = products.filter((x) => x.cat === p.cat && x.id !== p.id);
   const { variants = [], specs = [], desc = "" } = profile ?? {};
   const [tab, setTab] = useState(p.hasVideo ? "video" : "photos");
@@ -554,41 +550,38 @@ export function PDP({ p }: PdpProps) {
               <AllInPriceCard
                 price={p.price}
                 delivery={p.price >= 1000 ? 0 : 80}
-                area={deliveryLocation.area || deliveryLocation.city}
-                onEditArea={() => setDeliverOpen(true)}
+                area="Chabahil"
+                onEditArea={() => toast("Change delivery area")}
               />
             </div>
 
-            {/* trust row */}
+            {/* seller + ratings */}
             <div
               style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 10,
-                alignItems: "center",
                 padding: "14px 0",
                 borderTop: "1px solid var(--line-200)",
                 borderBottom: "1px solid var(--line-200)",
               }}
             >
-              <RatingStars value={p.rating} size={16} showVal count={p.reviews} />
-              {s?.name && (
-                <>
-                  <span style={{ width: 1, height: 16, background: "var(--line-200)" }} />
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 5,
-                      fontWeight: 700,
-                      fontSize: ".875rem",
-                      color: "var(--ink-700)",
-                    }}
-                  >
-                    <Icon name="badgeCheck" size={17} color="var(--gold)" /> {s.name}
-                  </span>
-                </>
-              )}
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 10,
+                  alignItems: "center",
+                  marginBottom: 10,
+                }}
+              >
+                <RatingStars value={p.rating} size={16} showVal count={p.reviews} />
+              </div>
+              <SellerRow
+                seller={s}
+                sellerId={p.seller}
+                saved={wishSellers.includes(p.seller)}
+                onToggleSave={(id) => {
+                  void toggleSellerWish(id);
+                }}
+              />
             </div>
             <div style={{ display: "flex", gap: 10, margin: "14px 0", flexWrap: "wrap" }}>
               <Chip tone="blue" icon="truck">
@@ -688,102 +681,58 @@ export function PDP({ p }: PdpProps) {
               <QtyStepper value={qty} onChange={setQty} />
             </div>
 
-            {sellerView ? (
-              <div
-                style={{
-                  marginTop: 22,
-                  padding: 18,
-                  background: "var(--tint-blue-50)",
-                  borderRadius: "var(--r-lg)",
-                  border: "1px solid var(--line-200)",
-                }}
+            {/* bargain */}
+            <div style={{ marginTop: 22 }}>
+              <Button
+                variant="secondary"
+                full
+                size="lg"
+                icon="bargain"
+                onClick={() => setBargain(true)}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                  <Icon name="store" size={22} color="var(--blue)" />
-                  <span style={{ fontWeight: 800, color: "var(--blue-deep)" }}>Seller preview</span>
-                </div>
-                <p
-                  style={{
-                    margin: "0 0 14px",
-                    fontSize: ".875rem",
-                    color: "var(--ink-600)",
-                    lineHeight: 1.55,
-                  }}
-                >
-                  You are signed in as a <b>seller</b>. Buyers see Add to cart and Buy now here —
-                  use your seller tools to manage listings.
-                </p>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    icon="store"
-                    onClick={() => nav("s-dashboard")}
-                  >
-                    Seller dashboard
-                  </Button>
-                  <Button variant="secondary" size="lg" onClick={() => nav("s-products")}>
-                    My products
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div style={{ marginTop: 22 }}>
-                  <Button
-                    variant="secondary"
-                    full
-                    size="lg"
-                    icon="bargain"
-                    onClick={() => setBargain(true)}
-                  >
-                    Make an offer
-                  </Button>
-                </div>
-                <div className="bz-hide-mobile bz-pdp-buy-actions">
-                  <Button
-                    variant="secondary"
-                    size="lg"
-                    full
-                    icon="cart"
-                    onClick={() => {
-                      addToCart(p, qty);
-                      toast(`${qty} added to cart`);
-                    }}
-                  >
-                    Add to Cart
-                  </Button>
-                  <Button variant="primary" size="lg" full onClick={() => buyNow(p, qty)}>
-                    Buy Now
-                  </Button>
-                </div>
-                <button
-                  onClick={() => toggleWish(p.id)}
-                  style={{
-                    marginTop: 12,
-                    width: "100%",
-                    height: 40,
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    color: wished ? "var(--red)" : "var(--ink-500)",
-                    fontWeight: 600,
-                    fontSize: ".875rem",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 8,
-                  }}
-                >
-                  <Icon name="heart" size={18} fill={wished ? "currentColor" : "none"} />{" "}
-                  {wished ? "Saved to wishlist" : "Save to wishlist"}
-                  <span
-                    style={{ width: 1, height: 16, background: "var(--line-200)", margin: "0 4px" }}
-                  />
-                  <Icon name="share" size={16} /> Share
-                </button>
-              </>
-            )}
+                Make an offer
+              </Button>
+            </div>
+            {/* buy bar — desktop only; mobile uses sticky MobileBuyBar */}
+            <div className="bz-hide-mobile" style={{ display: "flex", gap: 12, marginTop: 12 }}>
+              <Button
+                variant="secondary"
+                size="lg"
+                full
+                icon="cart"
+                onClick={() => void addToCart(p, qty)}
+              >
+                Add to Cart
+              </Button>
+              <Button variant="primary" size="lg" full onClick={() => buyNow(p, qty)}>
+                Buy Now
+              </Button>
+            </div>
+            <button
+              onClick={() => toggleWish(p.id)}
+              style={{
+                marginTop: 12,
+                width: "100%",
+                height: 40,
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: wished ? "var(--red)" : "var(--ink-500)",
+                fontWeight: 600,
+                fontSize: ".875rem",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+              }}
+            >
+              <Icon name="heart" size={18} fill={wished ? "currentColor" : "none"} />{" "}
+              {wished ? "Saved to wishlist" : "Save to wishlist"}
+              <span
+                style={{ width: 1, height: 16, background: "var(--line-200)", margin: "0 4px" }}
+              />
+              <Icon name="share" size={16} /> Share
+            </button>
           </div>
         </div>
 
@@ -1161,28 +1110,10 @@ export function PDP({ p }: PdpProps) {
           )}
         </div>
 
-        {bargain && !sellerView && <BargainModal p={p} onClose={() => setBargain(false)} />}
+        {bargain && <BargainModal p={p} onClose={() => setBargain(false)} />}
 
-        <DeliverToModal
-          open={deliverOpen}
-          value={deliveryLocation}
-          onClose={() => setDeliverOpen(false)}
-          onSave={(loc) => {
-            setDeliveryLocation(loc);
-            setDeliverOpen(false);
-            toast(`Delivering to ${loc.area}, ${loc.city}`);
-          }}
-        />
-
-        {!sellerView && !inCart && (
-          <MobileBuyBar
-            onAdd={() => {
-              addToCart(p, qty);
-              toast(`${qty} added to cart`);
-            }}
-            onBuy={() => buyNow(p, qty)}
-          />
-        )}
+        {/* Mobile sticky buy bar */}
+        <MobileBuyBar onAdd={() => void addToCart(p, qty)} onBuy={() => void buyNow(p, qty)} />
       </div>
     </ApiState>
   );

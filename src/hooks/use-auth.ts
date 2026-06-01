@@ -2,14 +2,20 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { fetchCurrentUser, login, logout, register } from "@/services/api/auth";
+import { completeOnboarding, fetchCurrentUser, login, logout, register } from "@/services/api/auth";
 import type { LoginPayload, RegisterPayload } from "@/types/auth";
 import { queryKeys } from "@/services/api/query-keys";
 import { useBazaarStore } from "@/store/bazaar-store";
 
+function normalizeAuthUser(user: Awaited<ReturnType<typeof fetchCurrentUser>>) {
+  return { ...user, onBoarding: user.onBoarding ?? false };
+}
+
 function applySession(user: Awaited<ReturnType<typeof fetchCurrentUser>>) {
+  const normalized = normalizeAuthUser(user);
   useBazaarStore.getState().setAuthed(true);
-  useBazaarStore.getState().setUser(user);
+  useBazaarStore.getState().setUser(normalized);
+  return normalized;
 }
 
 export function useCurrentUser(enabled = true) {
@@ -17,8 +23,7 @@ export function useCurrentUser(enabled = true) {
     queryKey: queryKeys.auth.me,
     queryFn: async () => {
       const user = await fetchCurrentUser();
-      applySession(user);
-      return user;
+      return applySession(user);
     },
     enabled,
     retry: false,
@@ -50,6 +55,18 @@ export function useRegister() {
   });
 }
 
+export function useCompleteOnboarding() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: completeOnboarding,
+    onSuccess: async (user) => {
+      applySession(user);
+      await queryClient.setQueryData(queryKeys.auth.me, user);
+    },
+  });
+}
+
 export function useLogout() {
   const queryClient = useQueryClient();
 
@@ -58,7 +75,12 @@ export function useLogout() {
     onSuccess: async () => {
       useBazaarStore.getState().setAuthed(false);
       useBazaarStore.getState().setUser(null);
+      useBazaarStore.getState().setCart([]);
+      useBazaarStore.getState().setWish([]);
+      useBazaarStore.getState().setWishSellers([]);
       await queryClient.removeQueries({ queryKey: queryKeys.auth.me });
+      await queryClient.removeQueries({ queryKey: queryKeys.cart.all });
+      await queryClient.removeQueries({ queryKey: queryKeys.wishlist.all });
     },
   });
 }

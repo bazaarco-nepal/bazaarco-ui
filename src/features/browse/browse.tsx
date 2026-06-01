@@ -20,7 +20,6 @@ import {
   Toast,
   SectionHead,
   TINTS,
-  HelpLifeline,
   AllInPriceCard,
   OTPInput,
   MenuRow,

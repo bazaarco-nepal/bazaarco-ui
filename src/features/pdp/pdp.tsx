@@ -21,7 +21,6 @@ import {
   Toast,
   SectionHead,
   TINTS,
-  HelpLifeline,
   AllInPriceCard,
   OTPInput,
   MenuRow,
@@ -57,6 +56,8 @@ import {
   SellerRow,
 } from "@/components/common";
 import { useSeller } from "@/hooks/use-catalog";
+import { useCreateBargainOffer } from "@/hooks/use-bargains";
+import { ApiRequestError } from "@/services/api/http";
 import type { PdpProps } from "@/types";
 
 /* ============================================================
@@ -65,15 +66,21 @@ import type { PdpProps } from "@/types";
 function BargainModal({ p, onClose }) {
   const { addToCart, toast } = useBz();
   const { sellerOf } = useCatalog();
+  const createOffer = useCreateBargainOffer();
   const [offer, setOffer] = useState(Math.round((p.price * 0.9) / 10) * 10);
   const [stage, setStage] = useState("offer"); // offer | thinking | counter | accepted
-  const floor = Math.round(p.price * 0.85);
-  const counter = Math.round((p.price * 0.93) / 10) * 10;
-  const submit = () => {
+  const [counter, setCounter] = useState(Math.round((p.price * 0.93) / 10) * 10);
+  const submit = async () => {
     setStage("thinking");
-    setTimeout(() => {
-      setStage(offer >= floor ? "accepted" : "counter");
-    }, 1400);
+    try {
+      const result = await createOffer.mutateAsync({ productId: p.id, yourOffer: offer });
+      setCounter(result.sellerCounter ?? Math.round((p.price * 0.93) / 10) * 10);
+      setStage(result.status === "accepted" ? "accepted" : "counter");
+    } catch (error) {
+      const msg = error instanceof ApiRequestError ? error.message : "Could not send offer";
+      toast(msg);
+      setStage("offer");
+    }
   };
   return (
     <div
@@ -330,12 +337,15 @@ export function PDP({ p }: PdpProps) {
     addToCart,
     buyNow,
     openProduct,
+    openStore,
     toggleWish,
     toggleSellerWish,
     wish,
     wishSellers,
     toast,
     nav,
+    authed,
+    promptLogin,
   } = useBz();
   const catalog = useCatalog();
   const { data: reviews = [], isLoading: reviewsLoading } = useProductReviews(p.id);
@@ -581,6 +591,7 @@ export function PDP({ p }: PdpProps) {
                 onToggleSave={(id) => {
                   void toggleSellerWish(id);
                 }}
+                onVisit={openStore}
               />
             </div>
             <div style={{ display: "flex", gap: 10, margin: "14px 0", flexWrap: "wrap" }}>
@@ -688,7 +699,13 @@ export function PDP({ p }: PdpProps) {
                 full
                 size="lg"
                 icon="bargain"
-                onClick={() => setBargain(true)}
+                onClick={() => {
+                  if (!authed) {
+                    promptLogin("Please sign in to make an offer.");
+                    return;
+                  }
+                  setBargain(true);
+                }}
               >
                 Make an offer
               </Button>

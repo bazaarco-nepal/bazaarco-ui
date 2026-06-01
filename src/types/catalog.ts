@@ -1,37 +1,9 @@
-export type Tint =
-  | "red"
-  | "blue"
-  | "saffron"
-  | "purple"
-  | "slate"
-  | "green"
-  | "gold"
-  | "teal";
+export type Tint = "red" | "blue" | "saffron" | "purple" | "slate" | "green" | "gold" | "teal";
 
-export interface Category {
-  id: string;
-  en: string;
-  ne: string;
-  icon: string;
-  tint: Tint;
-  img: string;
-}
+export type CategoryAttributeType = "select" | "multi" | "text" | "num" | "toggle" | "date";
 
-export interface AttrCategory {
-  id: string;
-  en: string;
-  ne: string;
-  icon: string;
-}
-
-export type CategoryAttributeType =
-  | "select"
-  | "multi"
-  | "text"
-  | "num"
-  | "toggle"
-  | "date";
-
+// A single metadata attribute a seller fills when listing a product in a
+// category. Carried on `Category.fields` and drives the Add Product form.
 export interface CategoryAttributeField {
   k: string;
   en: string;
@@ -41,6 +13,16 @@ export interface CategoryAttributeField {
   o?: string[];
   u?: string;
   help?: string;
+}
+
+export interface Category {
+  id: string;
+  en: string;
+  ne: string;
+  icon: string;
+  tint: Tint;
+  img: string;
+  fields: CategoryAttributeField[];
 }
 
 export interface Seller {
@@ -58,6 +40,8 @@ export interface Product {
   id: string;
   name: string;
   ne?: string;
+  description?: string;
+  metadata?: Record<string, unknown>;
   price: number;
   original?: number;
   cat: string;
@@ -90,6 +74,19 @@ export interface ProductReview {
   photoUrls: string[];
   avatar: string;
   tint: Tint;
+}
+
+export interface SellerReview {
+  id: string;
+  sellerId: string;
+  buyer: string;
+  stars: number;
+  product: string;
+  text: string;
+  time: string;
+  replied: boolean;
+  reply: string | null;
+  low: boolean;
 }
 
 export interface RatingDistribution {

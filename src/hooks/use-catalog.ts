@@ -1,7 +1,11 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { catalogApi, type ProductListParams } from "@/services/api/catalog";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  catalogApi,
+  type CreateSellerReviewPayload,
+  type ProductListParams,
+} from "@/services/api/catalog";
 import { queryKeys } from "@/services/api/query-keys";
 import type { CategoryAttributeField, Product, Seller } from "@/types";
 
@@ -11,22 +15,6 @@ export function useCategories() {
   return useQuery({
     queryKey: queryKeys.catalog.categories,
     queryFn: () => catalogApi.getCategories(),
-    staleTime: STALE_TIME,
-  });
-}
-
-export function useAttrCategories() {
-  return useQuery({
-    queryKey: queryKeys.catalog.attrCategories,
-    queryFn: () => catalogApi.getAttrCategories(),
-    staleTime: STALE_TIME,
-  });
-}
-
-export function useCategoryAttributes() {
-  return useQuery({
-    queryKey: queryKeys.catalog.categoryAttributes,
-    queryFn: () => catalogApi.getCategoryAttributesMap(),
     staleTime: STALE_TIME,
   });
 }
@@ -45,6 +33,42 @@ export function useSeller(id: string | null) {
     queryFn: () => catalogApi.getSeller(id!),
     enabled: Boolean(id),
     staleTime: STALE_TIME,
+  });
+}
+
+export function useSellerReviews(id: string | null) {
+  return useQuery({
+    queryKey: queryKeys.catalog.sellerReviews(id ?? ""),
+    queryFn: () => catalogApi.getSellerReviews(id!),
+    enabled: Boolean(id),
+    staleTime: STALE_TIME,
+  });
+}
+
+export function useSellerProducts(id: string | null) {
+  return useQuery({
+    queryKey: queryKeys.catalog.sellerProducts(id ?? ""),
+    queryFn: () => catalogApi.getSellerProducts(id!),
+    enabled: Boolean(id),
+    staleTime: STALE_TIME,
+  });
+}
+
+export function useCreateSellerReview(sellerId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateSellerReviewPayload) =>
+      catalogApi.createSellerReview(sellerId!, payload),
+    onSuccess: async () => {
+      if (!sellerId) return;
+      // Refresh the store's reviews + its denormalized rating, and the seller
+      // lists/cards that surface that rating elsewhere.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.catalog.sellerReviews(sellerId) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.catalog.seller(sellerId) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.catalog.sellers }),
+      ]);
+    },
   });
 }
 
@@ -115,41 +139,38 @@ export function useCatalog(): CatalogHelpers {
   const productsQuery = useAllProducts();
   const categoriesQuery = useCategories();
   const sellersQuery = useSellers();
-  const attributesQuery = useCategoryAttributes();
 
   const products = productsQuery.data?.items ?? [];
   const sellersList = sellersQuery.data ?? [];
   const sellers = Object.fromEntries(sellersList.map((s) => [s.id, s]));
+  // The metadata field schema now travels on each category.
+  const categoryAttributes = Object.fromEntries(
+    (categoriesQuery.data ?? []).map((c) => [c.id, c.fields ?? []]),
+  );
 
   const byId = (id: string) => products.find((p) => p.id === id);
-  const sellerOf = (product: Product) => sellers[product.seller];
+  const sellerOf = (product: Product) => {
+    const key = product.seller ?? (product as Product & { sellerId?: string }).sellerId;
+    if (!key) return undefined;
+    return sellers[key] ?? sellersList.find((s) => s.id === key);
+  };
   const inCat = (categoryId: string) => products.filter((p) => p.cat === categoryId);
   const videoProducts = () => products.filter((p) => p.hasVideo);
   const flashProducts = () => products.filter((p) => p.original);
 
-  const isLoading =
-    productsQuery.isLoading ||
-    categoriesQuery.isLoading ||
-    sellersQuery.isLoading ||
-    attributesQuery.isLoading;
+  const isLoading = productsQuery.isLoading || categoriesQuery.isLoading || sellersQuery.isLoading;
 
-  const isError =
-    productsQuery.isError ||
-    categoriesQuery.isError ||
-    sellersQuery.isError ||
-    attributesQuery.isError;
+  const isError = productsQuery.isError || categoriesQuery.isError || sellersQuery.isError;
 
-  const error =
-    (productsQuery.error ??
-      categoriesQuery.error ??
-      sellersQuery.error ??
-      attributesQuery.error) as Error | null;
+  const error = (productsQuery.error ??
+    categoriesQuery.error ??
+    sellersQuery.error) as Error | null;
 
   return {
     products,
     categories: categoriesQuery.data,
     sellers,
-    categoryAttributes: attributesQuery.data ?? {},
+    categoryAttributes,
     isLoading,
     isError,
     error,

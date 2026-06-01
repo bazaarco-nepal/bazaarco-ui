@@ -29,10 +29,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={`${plusJakarta.variable} ${inter.variable} ${mukta.variable}`}
-    >
+    <html lang="en" className={`${plusJakarta.variable} ${inter.variable} ${mukta.variable}`}>
       <body>
         <AppProviders>{children}</AppProviders>
       </body>

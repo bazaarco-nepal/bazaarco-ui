@@ -20,7 +20,6 @@ import {
   Toast,
   SectionHead,
   TINTS,
-  HelpLifeline,
   AllInPriceCard,
   OTPInput,
   MenuRow,
@@ -28,6 +27,7 @@ import {
   MobileBuyBar,
   BottomNav,
   LandmarkAddress,
+  DeliverToModal,
   VoiceMicButton,
   usePaged,
   usePages,
@@ -39,6 +39,7 @@ import { useCatalog } from "@/hooks/use-catalog";
 import { useLogout } from "@/hooks/use-auth";
 import { displayName, userInitial } from "@/lib/display";
 import { useBazaarStore } from "@/store/bazaar-store";
+import { formatDeliverToLabel } from "@/lib/delivery-location";
 import { ASSETS } from "@/config/assets";
 
 import type { BazaarContextValue } from "@/types/bazaar";
@@ -113,7 +114,14 @@ export function KathmanduSkyline({
 }
 
 /* ---------- Seller row (PDP, cards) ---------- */
-export function SellerRow({ seller, sellerId, saved = false, onToggleSave, compact = false }) {
+export function SellerRow({
+  seller,
+  sellerId,
+  saved = false,
+  onToggleSave,
+  onVisit,
+  compact = false,
+}) {
   if (!seller) {
     return (
       <div
@@ -199,6 +207,20 @@ export function SellerRow({ seller, sellerId, saved = false, onToggleSave, compa
           )}
         </div>
       </div>
+      {onVisit && sellerId && (
+        <Button
+          variant="secondary"
+          size="sm"
+          icon="store"
+          style={{ flexShrink: 0 }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onVisit(sellerId);
+          }}
+        >
+          Visit store
+        </Button>
+      )}
       {onToggleSave && sellerId && (
         <button
           type="button"
@@ -229,7 +251,7 @@ export function SellerRow({ seller, sellerId, saved = false, onToggleSave, compa
 }
 
 /* ---------- Product card ---------- */
-export function ProductCard({ p, onClick }) {
+export function ProductCard({ p, onClick, sale = false }) {
   const { toggleWish, wish } = useBz();
   const { sellerOf } = useCatalog();
   const [hov, setHov] = useState(false);
@@ -238,7 +260,7 @@ export function ProductCard({ p, onClick }) {
   const wished = wish.includes(p.id);
   const deliveryFee = 80;
   const allIn = p.price + deliveryFee;
-  // Sold count as social proof — derived from reviews × deterministic factor
+  // Sold count as social proof — sale cards only; derived from reviews × deterministic factor
   const soldCount = Math.max(p.reviews * 3, 12);
   const soldLabel =
     soldCount >= 1000
@@ -370,75 +392,36 @@ export function ProductCard({ p, onClick }) {
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
           <RatingStars value={p.rating} size={13} showVal />
           <span style={{ fontSize: ".75rem", color: "var(--ink-400)" }}>({p.reviews})</span>
-          <span style={{ fontSize: ".75rem", color: "var(--ink-400)" }}>· {soldLabel}</span>
+          {sale && (
+            <span style={{ fontSize: ".75rem", color: "var(--ink-400)" }}>· {soldLabel}</span>
+          )}
           {s?.verified && (
             <Icon name="badgeCheck" size={14} color="var(--gold)" title="Verified seller" />
           )}
         </div>
         {/* Single price line: all-in price + strikethrough original — via Price primitive */}
+        {/* Trust row (cash on delivery / 7-day return) and delivery ETA live on the PDP only, not on cards. */}
         <Price value={allIn} original={p.original} size="md" />
-        {/* Trust row — max 2 chips, Nepal-relevant: pay on delivery + return */}
-        <div
-          style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: 2 }}
-        >
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
-              padding: "2px 7px",
-              borderRadius: "var(--r-sm)",
-              background: "#e8f5e9",
-              color: "#1e6a31",
-              fontSize: ".6875rem",
-              fontWeight: 700,
-            }}
-          >
-            Cash on delivery
-          </span>
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
-              padding: "2px 7px",
-              borderRadius: "var(--r-sm)",
-              background: "var(--tint-blue-50)",
-              color: "var(--blue)",
-              fontSize: ".6875rem",
-              fontWeight: 700,
-            }}
-          >
-            7-day return
-          </span>
-        </div>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 5,
-            color: "var(--ink-500)",
-            fontSize: ".75rem",
-            marginTop: "auto",
-            paddingTop: 4,
-          }}
-        >
-          <Icon name="truck" size={14} color="var(--ink-500)" /> By {p.eta}
-        </div>
       </div>
     </div>
   );
 }
 
+/* ---------- Sale product card ---------- */
+/* Inherits ProductCard; adds sold-count social proof. */
+export function SaleProductCard(props) {
+  return <ProductCard {...props} sale />;
+}
+
 /* ---------- Horizontal rail of cards ---------- */
-export function ProductRail({ items, onOpen, cols }) {
+export function ProductRail({ items, onOpen, cols, sale = false }) {
   return (
     <div
       className="bz-grid-cards"
       style={{ display: "grid", gridTemplateColumns: `repeat(${cols || 5}, 1fr)`, gap: 18 }}
     >
       {items.map((p) => (
-        <ProductCard key={p.id} p={p} onClick={onOpen} />
+        <ProductCard key={p.id} p={p} onClick={onOpen} sale={sale} />
       ))}
     </div>
   );
@@ -603,7 +586,12 @@ export function Navbar() {
   const navLabel = displayName(user, "Account");
   const navInitial = userInitial(user);
   const [hint, setHint] = useState(0);
+  const [searchFocused, setSearchFocused] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [deliverOpen, setDeliverOpen] = useState(false);
+  const deliveryLocation = useBazaarStore((s) => s.deliveryLocation);
+  const setDeliveryLocation = useBazaarStore((s) => s.setDeliveryLocation);
+  const deliverLabel = formatDeliverToLabel(deliveryLocation);
   const menuRef = useRef(null);
   useEffect(() => {
     const id = setInterval(() => setHint((h) => (h + 1) % SEARCH_HINTS.length), 2800);
@@ -695,6 +683,7 @@ export function Navbar() {
       >
         <button
           onClick={() => nav("home")}
+          aria-label="BazaarCo home"
           style={{
             background: "none",
             border: "none",
@@ -703,10 +692,19 @@ export function Navbar() {
             flexShrink: 0,
           }}
         >
-          <Logo height={38} />
+          {/* Desktop: full-size logo. Mobile: smaller logo so search owns the bar. */}
+          <span className="bz-hide-mobile">
+            <Logo height={38} />
+          </span>
+          <span className="bz-show-mobile">
+            <Logo height={26} />
+          </span>
         </button>
         <button
-          onClick={() => toast?.("Pick your delivery area")}
+          type="button"
+          onClick={() => setDeliverOpen(true)}
+          aria-haspopup="dialog"
+          aria-expanded={deliverOpen}
           className="bz-hide-mobile"
           style={{
             display: "inline-flex",
@@ -737,10 +735,20 @@ export function Navbar() {
             >
               Deliver to
             </div>
-            <div>Kathmandu 44600</div>
+            <div>{deliverLabel}</div>
           </div>
           <Icon name="chevronDown" size={14} color="var(--ink-500)" />
         </button>
+        <DeliverToModal
+          open={deliverOpen}
+          value={deliveryLocation}
+          onClose={() => setDeliverOpen(false)}
+          onSave={(loc) => {
+            setDeliveryLocation(loc);
+            setDeliverOpen(false);
+            toast(`Delivering to ${formatDeliverToLabel(loc)}`);
+          }}
+        />
         <div style={{ flex: 1, position: "relative" }}>
           <button
             type="button"
@@ -771,17 +779,20 @@ export function Navbar() {
             onKeyDown={(e) => {
               if (e.key === "Enter") submitSearch();
             }}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
             placeholder={SEARCH_HINTS[hint]}
             style={{
               width: "100%",
               height: 48,
-              border: "1.5px solid var(--line-200)",
+              border: `1.5px solid ${searchFocused ? "var(--red)" : "var(--line-200)"}`,
               borderRadius: "var(--r-full)",
               padding: "0 58px 0 48px",
               fontSize: ".9375rem",
               fontFamily: "var(--font-sans)",
               background: "#fff",
               outline: "none",
+              transition: "border-color var(--dur-standard) var(--ease)",
             }}
           />
           <span
@@ -818,11 +829,13 @@ export function Navbar() {
               onClick={() => nav("wishlist")}
             />
           </span>
-          {/* Bargain — BazaarCo's core differentiator. Always visible. */}
+          {/* Bargain — BazaarCo's core differentiator. Desktop topbar only; on mobile
+              search owns the bar and bargain lives in the search flow. */}
           <button
             onClick={() => nav("bargains")}
             aria-label="Bargain"
             title="Bargain · मोलतोल"
+            className="bz-hide-mobile"
             style={{
               width: 40,
               height: 40,
@@ -838,7 +851,10 @@ export function Navbar() {
           >
             <Icon name="bargain" size={20} color="#fff" />
           </button>
-          <IconButton name="cart" label="Cart" badge={cartCount} onClick={() => nav("cart")} />
+          {/* Cart — desktop topbar only; mobile reaches it via bottom nav. */}
+          <span className="bz-hide-mobile">
+            <IconButton name="cart" label="Cart" badge={cartCount} onClick={() => nav("cart")} />
+          </span>
           <div ref={menuRef} className="bz-hide-mobile" style={{ position: "relative" }}>
             <button
               onClick={() => setMenuOpen((o) => !o)}

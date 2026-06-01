@@ -7,6 +7,7 @@ import { pathFromScreen, screenFromPath } from "@/config/routes";
 import {
   defaultScreenForUser,
   isBuyerScreen,
+  isGuestAllowedScreen,
   isPublicScreen,
   isSellerScreen,
   isSellerUser,
@@ -14,18 +15,32 @@ import {
 import { useBazaarStore } from "@/store/bazaar-store";
 
 /**
- * Redirects signed-in users away from routes that don't match their role (buyer vs seller).
+ * Route access guard:
+ * - Unauthenticated visitors may only browse guest-allowed screens; any account
+ *   route bounces them to sign-in with a return-to so they land back after login.
+ * - Signed-in users are kept on routes that match their role (buyer vs seller).
  */
 export function AuthRoleGuard() {
   const pathname = usePathname();
   const router = useRouter();
+  const authReady = useBazaarStore((s) => s.authReady);
   const authed = useBazaarStore((s) => s.authed);
   const user = useBazaarStore((s) => s.user);
 
   useEffect(() => {
-    if (!authed || !user) return;
+    // Wait for the session probe to settle so a logged-in user refreshing on a
+    // protected page isn't bounced before their session is known.
+    if (!authReady) return;
 
     const screen = screenFromPath(pathname);
+
+    if (!authed || !user) {
+      if (!isGuestAllowedScreen(screen)) {
+        router.replace(`/auth?next=${encodeURIComponent(pathname)}`);
+      }
+      return;
+    }
+
     if (isPublicScreen(screen)) return;
 
     const seller = isSellerUser(user);
@@ -38,7 +53,7 @@ export function AuthRoleGuard() {
     if (!seller && isSellerScreen(screen)) {
       router.replace(pathFromScreen("home"));
     }
-  }, [authed, user, pathname, router]);
+  }, [authReady, authed, user, pathname, router]);
 
   return null;
 }

@@ -13,6 +13,8 @@ export interface MediaUploadResult {
   thumbnailUrl?: string;
 }
 
+export type SellerVideoStatus = "draft" | "published";
+
 export interface CreateSellerVideoPayload {
   title: string;
   product: string;
@@ -22,6 +24,27 @@ export interface CreateSellerVideoPayload {
   productId?: string;
   tint?: string;
   icon?: string;
+  hashtags?: string[];
+  status?: SellerVideoStatus;
+}
+
+export interface SellerVideoAnalytics {
+  totals: {
+    views: number;
+    likes: number;
+    videos: number;
+    published: number;
+    drafts: number;
+    engagementRate: number;
+  };
+  viewsByDay: Array<{ label: string; value: number }>;
+  topVideos: Array<{ id: string; title: string; views: number; likes: number; status: string }>;
+  statusBreakdown: Array<{ label: string; value: number; color: string }>;
+}
+
+export interface SellerVideosResponse {
+  items: SellerVideoItem[];
+  analytics: SellerVideoAnalytics;
 }
 
 export interface SellerVideoItem {
@@ -35,6 +58,9 @@ export interface SellerVideoItem {
   tint: string;
   icon: string;
   productId?: string | null;
+  hashtags?: string[];
+  status?: SellerVideoStatus;
+  createdAt?: string;
 }
 
 export const mediaApi = {
@@ -76,6 +102,24 @@ export const mediaApi = {
     const { data } = await apiClient.post<ApiSuccessResponse<SellerVideoItem>>(
       "/seller/videos",
       payload,
+    );
+    return data.data;
+  },
+
+  async updateSellerVideo(
+    videoId: string,
+    payload: Partial<Pick<CreateSellerVideoPayload, "title" | "product" | "hashtags" | "status">>,
+  ): Promise<SellerVideoItem> {
+    const { data } = await apiClient.patch<ApiSuccessResponse<SellerVideoItem>>(
+      `/seller/videos/${videoId}`,
+      payload,
+    );
+    return data.data;
+  },
+
+  async deleteSellerVideo(videoId: string): Promise<{ id: string; deleted: boolean }> {
+    const { data } = await apiClient.delete<ApiSuccessResponse<{ id: string; deleted: boolean }>>(
+      `/seller/videos/${videoId}`,
     );
     return data.data;
   },

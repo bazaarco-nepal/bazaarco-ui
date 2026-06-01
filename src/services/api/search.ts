@@ -30,10 +30,7 @@ export interface SearchResponse {
 
 export const searchApi = {
   async search(params: SearchParams): Promise<SearchResponse> {
-    const { data } = await apiClient.post<ApiSuccessResponse<SearchResponse>>(
-      "/search",
-      params,
-    );
+    const { data } = await apiClient.post<ApiSuccessResponse<SearchResponse>>("/search", params);
     return data.data;
   },
 };

@@ -3,6 +3,9 @@ import type { AuthIntent, AuthUser } from "@/types/auth";
 
 const PUBLIC_SCREENS = new Set(["splash", "auth", "auth-callback"]);
 
+/** Buyer screens an unauthenticated visitor may browse read-only. */
+const GUEST_BROWSE_SCREENS = new Set(["home", "browse", "pdp", "video"]);
+
 export function isSellerUser(user?: AuthUser | null): boolean {
   return user?.intent === "seller";
 }
@@ -26,6 +29,11 @@ export function isBuyerScreen(screen: string): boolean {
 
 export function isPublicScreen(screen: string): boolean {
   return PUBLIC_SCREENS.has(screen);
+}
+
+/** Whether an unauthenticated visitor is allowed on this screen at all. */
+export function isGuestAllowedScreen(screen: string): boolean {
+  return PUBLIC_SCREENS.has(screen) || GUEST_BROWSE_SCREENS.has(screen);
 }
 
 /** Whether this screen is allowed for the signed-in user's role. */

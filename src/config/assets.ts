@@ -29,6 +29,7 @@ export const ASSETS = {
     promo7873: "/assets/promotions/promo-7873.png",
     joinNowSeller: "/assets/promotions/join-now-seller.png",
     subomTodoList: "/assets/promotions/subom-todo-list.png",
+    sponsoredS26Ultra: "/assets/promotions/sponsored-galaxy-s26-ultra.jpg",
   },
   howBazaarco: {
     step1: "/assets/how-bazaarco/step-1.png",

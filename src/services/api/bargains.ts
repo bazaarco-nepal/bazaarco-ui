@@ -1,5 +1,5 @@
 import type { Product } from "@/types";
-import { getData } from "./http";
+import { getData, postData } from "./http";
 
 export interface BargainOffer {
   id: string;
@@ -13,8 +13,16 @@ export interface BargainOffer {
   p: Product;
 }
 
+export interface CreateBargainOfferPayload {
+  productId: string;
+  yourOffer: number;
+}
+
 export const bargainsApi = {
   list(): Promise<BargainOffer[]> {
     return getData<BargainOffer[]>("/bargains");
+  },
+  create(payload: CreateBargainOfferPayload): Promise<BargainOffer> {
+    return postData<BargainOffer>("/bargains", payload);
   },
 };

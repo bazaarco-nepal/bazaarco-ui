@@ -1,10 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Icon, Logo, Button } from "@/components/ui";
 import { useBz } from "@/components/common";
 import { ASSETS } from "@/config/assets";
-import { defaultScreenForUser } from "@/lib/auth-rbac";
+import { resolvePostAuthScreen } from "@/lib/auth-rbac";
+import { screenFromPath } from "@/config/routes";
+import { hasOnboarded, markOnboarded } from "@/lib/onboarding";
 import { useLogin, useRegister } from "@/hooks/use-auth";
 import { getGoogleLoginUrl } from "@/services/api/auth";
 import { ApiRequestError } from "@/services/api/http";
@@ -25,38 +28,54 @@ const inputStyle: React.CSSProperties = {
 
 export function Splash() {
   const { nav } = useBz();
-  const goAuth = () => nav("auth");
+
+  // Returning visitors skip the splash and land on the homepage.
+  useEffect(() => {
+    if (hasOnboarded()) {
+      nav("home");
+    }
+  }, [nav]);
+
+  const goAuth = () => {
+    markOnboarded();
+    nav("auth");
+  };
+  const goGuest = () => {
+    markOnboarded();
+    nav("home");
+  };
+
+  const heroButtonStyle: React.CSSProperties = {
+    flex: 1,
+    width: "100%",
+    maxWidth: 480,
+    margin: "0 auto",
+    padding: "48px 28px 0",
+    textAlign: "center",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    fontFamily: "inherit",
+    color: "inherit",
+  };
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={goAuth}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          goAuth();
-        }
-      }}
       style={{
         minHeight: "calc(100vh - 110px)",
         background: "var(--page)",
         display: "flex",
         flexDirection: "column",
-        cursor: "pointer",
       }}
     >
-      <div
-        style={{
-          flex: 1,
-          maxWidth: 480,
-          margin: "0 auto",
-          padding: "48px 28px 0",
-          textAlign: "center",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-        }}
+      <button
+        type="button"
+        onClick={goAuth}
+        style={heroButtonStyle}
+        aria-label="Continue to sign in"
       >
         <img
           src={ASSETS.mascot}
@@ -87,21 +106,13 @@ export function Splash() {
         >
           Low fees. Real product videos. Fast delivery across Nepal.
         </p>
-      </div>
+      </button>
 
       <div style={{ padding: "24px 28px 40px", maxWidth: 480, margin: "0 auto", width: "100%" }}>
         <Button variant="primary" size="lg" full iconRight="arrowRight" onClick={goAuth}>
           Get started · सुरु गर्नुहोस्
         </Button>
-        <Button
-          variant="ghost"
-          full
-          onClick={(e) => {
-            e.stopPropagation();
-            nav("home");
-          }}
-          style={{ marginTop: 10 }}
-        >
+        <Button variant="ghost" full onClick={goGuest} style={{ marginTop: 10 }}>
           Skip — browse as guest · पछि गर्ने
         </Button>
         <p
@@ -112,7 +123,7 @@ export function Splash() {
             marginTop: 14,
           }}
         >
-          Tap anywhere to continue
+          Tap the hero or Get started to continue
         </p>
       </div>
     </div>
@@ -140,6 +151,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 export function Auth() {
   const { nav, toast } = useBz();
+  const searchParams = useSearchParams();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [intent, setIntent] = useState<"buyer" | "seller">("buyer");
   const [email, setEmail] = useState("");
@@ -162,7 +174,9 @@ export function Auth() {
   };
 
   const afterAuth = (user: AuthUser) => {
-    nav(defaultScreenForUser(user));
+    const next = searchParams.get("next");
+    const requestedScreen = next ? screenFromPath(next) : null;
+    nav(resolvePostAuthScreen(user, requestedScreen));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

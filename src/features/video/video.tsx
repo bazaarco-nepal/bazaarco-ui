@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   Icon,
   Logo,
@@ -20,7 +21,6 @@ import {
   Toast,
   SectionHead,
   TINTS,
-  HelpLifeline,
   AllInPriceCard,
   OTPInput,
   MenuRow,
@@ -37,6 +37,7 @@ import {
   ApiState,
 } from "@/components/ui";
 import { useVideoFeed } from "@/hooks/use-video-feed";
+import { useVideoLike } from "@/hooks/use-video-like";
 import type { VideoFeedItem, VideoFeedTab } from "@/types/video";
 import {
   BazaarCtx,
@@ -76,12 +77,11 @@ function fmtCount(n) {
   return String(v);
 }
 
-const REEL_TABS: { id: VideoFeedTab; en: string; live?: boolean }[] = [
+const REEL_TABS: { id: VideoFeedTab; en: string }[] = [
   { id: "foryou", en: "For You" },
   { id: "following", en: "Following" },
   { id: "nepal", en: "Made in Nepal" },
   { id: "flash", en: "Flash Deals" },
-  { id: "live", en: "Live", live: true },
 ];
 
 const TAB_EMPTY: Partial<Record<VideoFeedTab, { title: string; message: string }>> = {
@@ -89,7 +89,6 @@ const TAB_EMPTY: Partial<Record<VideoFeedTab, { title: string; message: string }
     title: "No followed sellers yet",
     message: "Follow shops from product pages — their videos will show here.",
   },
-  live: { title: "No live streams right now", message: "Check back later or browse For You." },
   nepal: { title: "No Made in Nepal videos", message: "Try For You to see all product clips." },
   flash: {
     title: "No flash-deal videos",
@@ -272,6 +271,8 @@ function ReelItem({
   isActive,
   follows,
   onToggleFollow,
+  liked,
+  onToggleLike,
   muted,
   radius,
   hideMuteBadge,
@@ -303,7 +304,7 @@ function ReelItem({
       const rect = stageRef.current.getBoundingClientRect();
       const x = e.clientX - rect.left,
         y = e.clientY - rect.top;
-      if (!wished) toggleWish(p.id);
+      if (!liked) onToggleLike(p.id);
       spawnBurst(x, y);
       lastTap.current = 0;
     } else {
@@ -671,12 +672,12 @@ function ReelItem({
         <ReelAction
           icon="heart"
           label="Like"
-          count={metrics.likes + (wished ? 1 : 0)}
-          active={wished}
+          count={metrics.likes + (liked ? 1 : 0)}
+          active={liked}
           danger
           inside={isMobile}
           onClick={() => {
-            toggleWish(p.id);
+            onToggleLike(p.id);
             spawnBurst(160, 240);
           }}
         />
@@ -701,8 +702,9 @@ function ReelItem({
           icon="tag"
           label="Save"
           count={metrics.saves}
+          active={wished}
           inside={isMobile}
-          onClick={() => toast("Saved to your collection")}
+          onClick={() => toggleWish(p.id)}
         />
       </div>
 
@@ -734,12 +736,53 @@ function ReelItem({
    VideoTheater — orchestrator + snap scroll container
    ============================================================ */
 export function VideoTheater() {
-  const { openProduct, addToCart, toggleWish, wish, toast, nav } = useBz();
+  const { openProduct, addToCart, toggleWish, wish, toast, nav, authed, promptLogin } = useBz();
+  const router = useRouter();
+  const likeMutation = useVideoLike();
+  const goBack = useCallback(() => {
+    if (typeof window !== "undefined" && window.history.length > 1) router.back();
+    else nav("home");
+  }, [router, nav]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [tab, setTab] = useState<VideoFeedTab>("foryou");
   const { data: feed, isLoading, isError, error } = useVideoFeed(tab);
   const vids: VideoFeedItem[] = feed?.items ?? [];
   const [follows, setFollows] = useState(() => new Set());
+  const [liked, setLiked] = useState<Set<string>>(() => new Set());
+
+  // Seed liked state from the server feed (reflects the signed-in user's likes).
+  useEffect(() => {
+    setLiked(new Set((feed?.items ?? []).filter((v) => v.liked).map((v) => v.id)));
+  }, [feed]);
+
+  const toggleLike = useCallback(
+    (videoId: string) => {
+      if (!authed) {
+        promptLogin("Please sign in to like videos.");
+        return;
+      }
+      const wasLiked = liked.has(videoId);
+      setLiked((prev) => {
+        const n = new Set(prev);
+        wasLiked ? n.delete(videoId) : n.add(videoId);
+        return n;
+      });
+      likeMutation.mutate(
+        { videoId, like: !wasLiked },
+        {
+          onError: () => {
+            setLiked((prev) => {
+              const n = new Set(prev);
+              wasLiked ? n.add(videoId) : n.delete(videoId);
+              return n;
+            });
+            toast("Could not update like");
+          },
+        },
+      );
+    },
+    [authed, liked, likeMutation, promptLogin, toast],
+  );
   const [muted, setMuted] = useState(true);
   const isMobile = useIsMobile();
   const scrollRef = useRef(null);
@@ -763,6 +806,10 @@ export function VideoTheater() {
   }, [vids.length, activeIndex]);
 
   const toggleFollow = (sellerId) => {
+    if (!authed) {
+      promptLogin("Please sign in to follow sellers.");
+      return;
+    }
     setFollows((set) => {
       const n = new Set(set);
       const has = n.has(sellerId);
@@ -838,12 +885,12 @@ export function VideoTheater() {
         scrollToIndex(activeIndex - 1);
       } else if (e.key.toLowerCase() === "m") setMuted((m) => !m);
       else if (e.key.toLowerCase() === "l" && activeProductId) {
-        if (!wish.includes(activeProductId)) toggleWish(activeProductId);
+        toggleLike(activeProductId);
       }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [activeIndex, scrollToIndex, activeProductId, wish, toggleWish]);
+  }, [activeIndex, scrollToIndex, activeProductId, toggleLike]);
 
   /* ---- top filter chip row ---- */
   const tabsRow = (
@@ -880,17 +927,6 @@ export function VideoTheater() {
               transition: "background var(--dur-standard) var(--ease)",
             }}
           >
-            {tb.live && (
-              <span
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: "50%",
-                  background: "var(--red)",
-                  boxShadow: "0 0 0 2px rgba(230,57,70,.35)",
-                }}
-              />
-            )}
             {tb.en}
           </button>
         );
@@ -933,6 +969,8 @@ export function VideoTheater() {
             isActive={idx === activeIndex}
             follows={follows}
             onToggleFollow={toggleFollow}
+            liked={liked.has(v.id)}
+            onToggleLike={toggleLike}
             muted={muted}
             radius={radius || 0}
             hideMuteBadge={!isMobile}
@@ -1245,7 +1283,28 @@ export function VideoTheater() {
     return (
       <div className="bz-video-theater" style={{ padding: "28px" }}>
         <div style={{ maxWidth: "var(--container)", margin: "0 auto" }}>
-          <div style={{ marginBottom: 20 }}>{tabsRow}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+            <button
+              onClick={goBack}
+              aria-label="Back"
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                border: "none",
+                background: "rgba(255,255,255,.12)",
+                color: "#fff",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <Icon name="chevronLeft" size={22} />
+            </button>
+            <div style={{ flex: 1, minWidth: 0 }}>{tabsRow}</div>
+          </div>
           <EmptyState
             title={emptyCopy?.title ?? "No videos yet"}
             message={emptyCopy?.message ?? "When sellers add product videos, they appear here."}
@@ -1281,7 +1340,7 @@ export function VideoTheater() {
           }}
         >
           <button
-            onClick={() => nav("home")}
+            onClick={goBack}
             aria-label="Back"
             style={{
               marginLeft: 12,
@@ -1336,24 +1395,45 @@ export function VideoTheater() {
             flexWrap: "wrap",
           }}
         >
-          <div>
-            <div
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <button
+              onClick={goBack}
+              aria-label="Back"
               style={{
-                display: "inline-flex",
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                border: "none",
+                background: "rgba(255,255,255,.12)",
+                color: "#fff",
+                cursor: "pointer",
+                display: "flex",
                 alignItems: "center",
-                gap: 8,
-                color: "#ff6b75",
-                fontWeight: 700,
-                fontSize: ".8125rem",
-                letterSpacing: ".08em",
-                textTransform: "uppercase",
+                justifyContent: "center",
+                flexShrink: 0,
               }}
             >
-              <Icon name="video" size={16} color="#ff6b75" /> Watch
+              <Icon name="chevronLeft" size={22} />
+            </button>
+            <div>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  color: "#ff6b75",
+                  fontWeight: 700,
+                  fontSize: ".8125rem",
+                  letterSpacing: ".08em",
+                  textTransform: "uppercase",
+                }}
+              >
+                <Icon name="video" size={16} color="#ff6b75" /> Watch
+              </div>
+              <h1 style={{ margin: "4px 0 0", color: "#fff", fontSize: "1.5rem", fontWeight: 800 }}>
+                Watch, bargain, <span style={{ color: "#ff6b75" }}>buy</span>
+              </h1>
             </div>
-            <h1 style={{ margin: "4px 0 0", color: "#fff", fontSize: "1.5rem", fontWeight: 800 }}>
-              Watch, bargain, <span style={{ color: "#ff6b75" }}>buy</span>
-            </h1>
           </div>
           <div style={{ flex: 1, minWidth: 280, maxWidth: 560 }}>{tabsRow}</div>
           <div

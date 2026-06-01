@@ -49,6 +49,8 @@ export interface ToastProps {
 export interface ProductCardProps {
   p: Product;
   onClick: (product: Product) => void;
+  /** Sale card variant — shows sold-count social proof. Omit for regular cards. */
+  sale?: boolean;
 }
 
 export interface PdpProps {

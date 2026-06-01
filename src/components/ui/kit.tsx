@@ -3,6 +3,9 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { ASSETS } from "@/config/assets";
+import { postalForCity } from "@/lib/delivery-location";
+import { reverseGeocode } from "@/lib/reverse-geocode";
+import { MapPinPicker } from "@/components/ui/map-pin-picker";
 
 /* ============================================================
    BazaarCo — Component Kit
@@ -205,6 +208,13 @@ export const ICON_PATHS = {
       <rect x="3" y="6" width="18" height="14" rx="2" />
       <path d="M3 10h18" />
       <circle cx="17" cy="14" r="1.3" fill="currentColor" stroke="none" />
+    </>
+  ),
+  logout: (
+    <>
+      <path d="M14 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8" />
+      <polyline points="16 16 20 12 16 8" />
+      <line x1="20" y1="12" x2="9" y2="12" />
     </>
   ),
   share: (
@@ -1629,100 +1639,6 @@ export function BackToTop({ threshold = 1200 }) {
   );
 }
 
-/* ---------- Help Lifeline (persistent FAB, guide §2.3) ---------- */
-export function HelpLifeline({ hide }: { hide?: boolean }) {
-  const [open, setOpen] = useState(false);
-  if (hide) return null;
-  return (
-    <>
-      <button
-        className="bz-help-fab"
-        onClick={() => setOpen(true)}
-        aria-label="Help · सहायता"
-        title="Help · सहायता"
-      >
-        <Icon name="headphones" size={26} color="#fff" />
-      </button>
-      {open && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 700,
-            background: "rgba(11,18,32,.5)",
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "center",
-          }}
-          onClick={() => setOpen(false)}
-        >
-          <div
-            className="fade-up"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "#fff",
-              borderRadius: "var(--r-xl) var(--r-xl) 0 0",
-              width: "100%",
-              maxWidth: 480,
-              padding: "24px 22px 32px",
-            }}
-          >
-            <div
-              style={{
-                width: 40,
-                height: 4,
-                background: "var(--line-200)",
-                borderRadius: 2,
-                margin: "0 auto 18px",
-              }}
-            />
-            <h3
-              style={{
-                margin: "0 0 6px",
-                fontSize: "1.125rem",
-                fontWeight: 800,
-                color: "var(--ink-900)",
-              }}
-            >
-              Need help?{" "}
-              <span className="ne" style={{ color: "var(--ink-500)", fontWeight: 600 }}>
-                · सहायता चाहियो?
-              </span>
-            </h3>
-            <p style={{ margin: "0 0 18px", color: "var(--ink-500)", fontSize: ".875rem" }}>
-              One tap and a Nepali-speaking agent will help you finish your order.
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <button
-                className="bz-menu-row"
-                style={{
-                  background: "var(--success)",
-                  borderColor: "var(--success)",
-                  color: "#fff",
-                }}
-              >
-                <Icon name="phone" size={20} color="#fff" />
-                <span style={{ flex: 1, fontWeight: 700 }}>Call us · फोन गर्नुहोस्</span>
-                <Icon name="arrowRight" size={18} color="#fff" />
-              </button>
-              <button className="bz-menu-row">
-                <Icon name="headphones" size={20} color="#25D366" />
-                <span style={{ flex: 1, fontWeight: 700 }}>WhatsApp</span>
-                <Icon name="arrowRight" size={18} color="var(--ink-400)" />
-              </button>
-              <button className="bz-menu-row">
-                <Icon name="headphones" size={20} color="#7360F2" />
-                <span style={{ flex: 1, fontWeight: 700 }}>Viber</span>
-                <Icon name="arrowRight" size={18} color="var(--ink-400)" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-
 /* ---------- All-in price card (guide §3.6) ---------- */
 export function AllInPriceCard({ price, delivery = 60, area = "Chabahil", onEditArea }) {
   const total = price + delivery;
@@ -1871,6 +1787,7 @@ export function ChipGroup({ options, value, onChange }) {
 export function MobileBuyBar({ onAdd, onBuy }) {
   return (
     <div
+      className="bz-mobile-only"
       style={{
         position: "fixed",
         left: 0,
@@ -1883,7 +1800,6 @@ export function MobileBuyBar({ onAdd, onBuy }) {
         gap: 10,
         boxShadow: "0 -2px 12px rgba(15,23,42,.08)",
       }}
-      className="bz-mobile-only"
     >
       <Button variant="secondary" size="lg" full icon="cart" onClick={onAdd}>
         Add to Cart
@@ -1956,7 +1872,74 @@ export function BottomNav({
 
 /* ---------- Landmark address picker ---------- */
 export function LandmarkAddress({ value, onChange }) {
-  const v = value || { city: "", area: "", landmark: "" };
+  const v = value || { city: "", area: "", landmark: "", lat: null, lng: null };
+  const [mapOpen, setMapOpen] = useState(false);
+  const [geoError, setGeoError] = useState(null);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const geoWatchRef = useRef(null);
+  const geocodeTimerRef = useRef(null);
+  const hasPin = typeof v.lat === "number" && typeof v.lng === "number";
+
+  useEffect(() => {
+    return () => {
+      if (geoWatchRef.current != null) {
+        navigator.geolocation.clearWatch(geoWatchRef.current);
+        geoWatchRef.current = null;
+      }
+      if (geocodeTimerRef.current) {
+        clearTimeout(geocodeTimerRef.current);
+      }
+    };
+  }, []);
+
+  const vRef = useRef(v);
+  vRef.current = v;
+
+  const applyCoords = (lat, lng) => {
+    const next = { ...vRef.current, lat, lng };
+    vRef.current = next;
+    onChange(next);
+    if (geocodeTimerRef.current) clearTimeout(geocodeTimerRef.current);
+    geocodeTimerRef.current = setTimeout(async () => {
+      const place = await reverseGeocode(lat, lng);
+      if (!place) return;
+      const base = vRef.current;
+      const merged = {
+        ...base,
+        lat,
+        lng,
+        city: place.city || base.city,
+        area: place.area || base.area,
+        landmark: base.landmark?.trim() ? base.landmark : place.landmark || base.landmark,
+      };
+      vRef.current = merged;
+      onChange(merged);
+    }, 400);
+  };
+
+  const useMyLocation = () => {
+    if (!navigator.geolocation) {
+      setGeoError("Your browser does not support location.");
+      return;
+    }
+    setGeoError(null);
+    setGeoLoading(true);
+    setMapOpen(true);
+    if (geoWatchRef.current != null) {
+      navigator.geolocation.clearWatch(geoWatchRef.current);
+    }
+    geoWatchRef.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        setGeoLoading(false);
+        applyCoords(pos.coords.latitude, pos.coords.longitude);
+      },
+      () => {
+        setGeoLoading(false);
+        setGeoError("Could not get your location. Allow location access or drop a pin manually.");
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 },
+    );
+  };
   const cities = [
     "Kathmandu",
     "Lalitpur",
@@ -1968,7 +1951,16 @@ export function LandmarkAddress({ value, onChange }) {
     "Nepalgunj",
   ];
   const areas = {
-    Kathmandu: ["Chabahil", "Baneshwor", "Maharajgunj", "Koteshwor", "Kalanki", "Sanepa"],
+    Kathmandu: [
+      "Chabahil",
+      "Baneshwor",
+      "Maharajgunj",
+      "Mahalaxmi",
+      "Koteshwor",
+      "Kalanki",
+      "Sanepa",
+      "Thamel",
+    ],
     Lalitpur: ["Patan", "Jawalakhel", "Pulchowk", "Satdobato"],
     Bhaktapur: ["Suryabinayak", "Thimi", "Durbar Square area"],
     Pokhara: ["Lakeside", "Mahendrapool", "Chipledhunga", "Bagar"],
@@ -1993,7 +1985,10 @@ export function LandmarkAddress({ value, onChange }) {
         </label>
         <select
           value={v.city}
-          onChange={(e) => onChange({ ...v, city: e.target.value, area: "" })}
+          onChange={(e) => {
+            setMapOpen(false);
+            onChange({ ...v, city: e.target.value, area: "", lat: undefined, lng: undefined });
+          }}
           style={{
             width: "100%",
             height: 48,
@@ -2023,10 +2018,12 @@ export function LandmarkAddress({ value, onChange }) {
         >
           Area / Ward · क्षेत्र
         </label>
-        <select
+        <input
+          list={v.city ? `bz-areas-${v.city}` : undefined}
           value={v.area}
           onChange={(e) => onChange({ ...v, area: e.target.value })}
           disabled={!v.city}
+          placeholder={v.city ? "e.g. Mahalaxmi, Chabahil — or pick below" : "Select city first"}
           style={{
             width: "100%",
             height: 48,
@@ -2037,12 +2034,14 @@ export function LandmarkAddress({ value, onChange }) {
             fontFamily: "var(--font-sans)",
             background: v.city ? "#fff" : "var(--line-100)",
           }}
-        >
-          <option value="">Select area…</option>
-          {(areas[v.city] || []).map((a) => (
-            <option key={a}>{a}</option>
-          ))}
-        </select>
+        />
+        {v.city && (
+          <datalist id={`bz-areas-${v.city}`}>
+            {(areas[v.city] || []).map((a) => (
+              <option key={a} value={a} />
+            ))}
+          </datalist>
+        )}
       </div>
       <div>
         <label
@@ -2072,24 +2071,75 @@ export function LandmarkAddress({ value, onChange }) {
           }}
         />
       </div>
-      <button
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 7,
-          background: "var(--tint-blue-50)",
-          border: "1.5px dashed var(--blue)",
-          color: "var(--blue)",
-          padding: "12px 16px",
-          borderRadius: "var(--r-md)",
-          cursor: "pointer",
-          fontWeight: 700,
-          fontSize: ".875rem",
-          alignSelf: "flex-start",
-        }}
-      >
-        <Icon name="mapPin" size={18} /> Drop a pin on the map (optional)
-      </button>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+        <button
+          type="button"
+          disabled={!v.city}
+          onClick={() => {
+            setGeoError(null);
+            setMapOpen((open) => !open);
+          }}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 7,
+            background: mapOpen || hasPin ? "var(--tint-blue-50)" : "var(--tint-blue-50)",
+            border: `1.5px dashed ${mapOpen || hasPin ? "var(--blue)" : "var(--blue)"}`,
+            color: "var(--blue)",
+            padding: "12px 16px",
+            borderRadius: "var(--r-md)",
+            cursor: v.city ? "pointer" : "not-allowed",
+            fontWeight: 700,
+            fontSize: ".875rem",
+            opacity: v.city ? 1 : 0.55,
+          }}
+        >
+          <Icon name="mapPin" size={18} />
+          {mapOpen ? "Hide map" : hasPin ? "Edit pin on map" : "Drop a pin on the map (optional)"}
+        </button>
+        <button
+          type="button"
+          onClick={useMyLocation}
+          style={{
+            background: "none",
+            border: "none",
+            color: "var(--blue)",
+            fontWeight: 700,
+            fontSize: ".8125rem",
+            cursor: "pointer",
+            padding: "8px 4px",
+          }}
+        >
+          {geoLoading ? "Locating…" : "Use my location"}
+        </button>
+      </div>
+      {!v.city && (
+        <p style={{ margin: 0, fontSize: ".75rem", color: "var(--ink-400)" }}>
+          Select a city first to open the map.
+        </p>
+      )}
+      {geoError && (
+        <p style={{ margin: 0, fontSize: ".75rem", color: "var(--danger)" }}>{geoError}</p>
+      )}
+      {hasPin && !mapOpen && (
+        <p style={{ margin: 0, fontSize: ".75rem", color: "var(--success)", fontWeight: 600 }}>
+          <Icon
+            name="check"
+            size={14}
+            color="var(--success)"
+            style={{ verticalAlign: "middle", marginRight: 4 }}
+          />
+          Pin saved ({v.lat.toFixed(5)}, {v.lng.toFixed(5)})
+        </p>
+      )}
+      {mapOpen && v.city && (
+        <MapPinPicker
+          city={v.city}
+          lat={v.lat}
+          lng={v.lng}
+          onPick={(lat, lng) => applyCoords(lat, lng)}
+        />
+      )}
       <div
         style={{
           display: "flex",
@@ -2103,6 +2153,174 @@ export function LandmarkAddress({ value, onChange }) {
       >
         <Icon name="shieldCheck" size={18} color="var(--blue-deep)" style={{ flexShrink: 0 }} />
         <span>Don't worry — our rider will call before arriving to find your exact gate.</span>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Deliver-to modal (navbar) ---------- */
+export function DeliverToModal({ open, value, onClose, onSave }) {
+  const [draft, setDraft] = useState(value);
+
+  useEffect(() => {
+    if (open) setDraft(value);
+  }, [open, value]);
+
+  if (!open) return null;
+
+  const hasPin = typeof draft.lat === "number" && typeof draft.lng === "number";
+  const canSave = !!(
+    draft?.city?.trim() &&
+    (draft?.area?.trim() || draft?.landmark?.trim() || hasPin)
+  );
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="deliver-to-title"
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 700,
+        background: "rgba(11,18,32,.5)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+      }}
+      onClick={onClose}
+    >
+      <div
+        className="fade-up"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "#fff",
+          borderRadius: "var(--r-xl)",
+          width: "min(440px, 100%)",
+          maxHeight: "min(90vh, 640px)",
+          overflow: "auto",
+          padding: "22px 24px 24px",
+          boxShadow: "var(--sh-3)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 16 }}>
+          <span
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: "var(--r-md)",
+              background: "var(--tint-red-50)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <Icon name="mapPin" size={20} color="var(--red)" />
+          </span>
+          <div style={{ flex: 1 }}>
+            <h2
+              id="deliver-to-title"
+              style={{
+                margin: 0,
+                fontSize: "1.125rem",
+                fontWeight: 800,
+                color: "var(--blue-deep)",
+              }}
+            >
+              Deliver to
+            </h2>
+            <p
+              style={{
+                margin: "4px 0 0",
+                fontSize: ".875rem",
+                color: "var(--ink-500)",
+                lineHeight: 1.45,
+              }}
+            >
+              We use this for delivery fees and estimated arrival on product pages.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            style={{
+              background: "var(--line-100)",
+              border: "none",
+              borderRadius: "var(--r-full)",
+              width: 36,
+              height: 36,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Icon name="x" size={18} color="var(--ink-500)" />
+          </button>
+        </div>
+
+        <LandmarkAddress
+          value={{
+            city: draft.city,
+            area: draft.area,
+            landmark: draft.landmark ?? "",
+            lat: draft.lat ?? null,
+            lng: draft.lng ?? null,
+          }}
+          onChange={(addr) => {
+            const postal = postalForCity(addr.city) || draft.postal;
+            setDraft({ ...draft, ...addr, postal });
+          }}
+        />
+
+        <div style={{ marginTop: 14 }}>
+          <label
+            style={{
+              fontSize: ".8125rem",
+              fontWeight: 600,
+              color: "var(--ink-700)",
+              display: "block",
+              marginBottom: 6,
+            }}
+          >
+            Postal code
+          </label>
+          <input
+            value={draft.postal ?? ""}
+            onChange={(e) =>
+              setDraft({ ...draft, postal: e.target.value.replace(/\D/g, "").slice(0, 5) })
+            }
+            placeholder="44600"
+            inputMode="numeric"
+            style={{
+              width: "100%",
+              height: 48,
+              border: "1px solid var(--line-200)",
+              borderRadius: "var(--r-md)",
+              padding: "0 14px",
+              fontSize: ".9375rem",
+              fontFamily: "var(--font-sans)",
+              background: "#fff",
+            }}
+          />
+        </div>
+
+        <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+          <Button variant="ghost" full onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            full
+            disabled={!canSave}
+            onClick={() => canSave && onSave(draft)}
+          >
+            Save location
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -5,10 +5,10 @@ export const queryKeys = {
   search: (params: Record<string, unknown>) => ["search", params] as const,
   catalog: {
     categories: ["catalog", "categories"] as const,
-    attrCategories: ["catalog", "attr-categories"] as const,
-    categoryAttributes: ["catalog", "category-attributes"] as const,
     sellers: ["catalog", "sellers"] as const,
     seller: (id: string) => ["catalog", "seller", id] as const,
+    sellerReviews: (id: string) => ["catalog", "seller", id, "reviews"] as const,
+    sellerProducts: (id: string) => ["catalog", "seller", id, "products"] as const,
     products: (params?: Record<string, unknown>) => ["catalog", "products", params ?? {}] as const,
     product: (id: string) => ["catalog", "product", id] as const,
     productReviews: (id: string) => ["catalog", "product", id, "reviews"] as const,
@@ -31,7 +31,12 @@ export const queryKeys = {
   videos: {
     feed: (tab: string) => ["videos", "feed", tab] as const,
   },
+  chat: {
+    inbox: ["chat", "inbox"] as const,
+    messages: (conversationId: string) => ["chat", "messages", conversationId] as const,
+  },
   seller: {
+    organization: ["seller", "organization"] as const,
     dashboard: ["seller", "dashboard"] as const,
     inbox: ["seller", "inbox"] as const,
     inventory: ["seller", "inventory"] as const,
@@ -45,5 +50,6 @@ export const queryKeys = {
     notifications: ["seller", "notifications"] as const,
     storefront: ["seller", "storefront"] as const,
     ledger: ["seller", "ledger"] as const,
+    settings: ["seller", "settings"] as const,
   },
 };

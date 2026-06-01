@@ -1,8 +1,14 @@
 import { create } from "zustand";
+import {
+  DEFAULT_DELIVERY,
+  readDeliveryFromStorage,
+  writeDeliveryToStorage,
+} from "@/lib/delivery-location";
 import type { BazaarStoreState } from "@/types/store";
 
 export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
   authed: false,
+  authReady: false,
   user: null,
   cart: [],
   wish: [],
@@ -11,7 +17,18 @@ export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
   orderTotal: 0,
   lastOrderId: null,
   activeProduct: null,
+  deliveryLocation: DEFAULT_DELIVERY,
+  deliveryHydrated: false,
   setAuthed: (authed) => set({ authed }),
+  setAuthReady: (authReady) => set({ authReady }),
+  hydrateDelivery: () => {
+    if (get().deliveryHydrated) return;
+    set({ deliveryLocation: readDeliveryFromStorage(), deliveryHydrated: true });
+  },
+  setDeliveryLocation: (deliveryLocation) => {
+    writeDeliveryToStorage(deliveryLocation);
+    set({ deliveryLocation, deliveryHydrated: true });
+  },
   setUser: (user) => set({ user }),
   setCart: (cart) =>
     set((state) => ({

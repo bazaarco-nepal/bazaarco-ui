@@ -171,14 +171,14 @@ a {
   background: var(--tint-red-50);
 }
 .bz-mobile-only {
-  display: none;
+  display: none !important;
 }
 .bz-mobile-show {
   display: none;
 }
 @media (max-width: 768px) {
   .bz-mobile-only {
-    display: flex;
+    display: flex !important;
   }
   .bz-mobile-show {
     display: inline-flex !important;

@@ -6,8 +6,10 @@ export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
   user: null,
   cart: [],
   wish: [],
+  wishSellers: [],
   query: "",
   orderTotal: 0,
+  lastOrderId: null,
   activeProduct: null,
   setAuthed: (authed) => set({ authed }),
   setUser: (user) => set({ user }),
@@ -19,26 +21,12 @@ export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
     set((state) => ({
       wish: typeof wish === "function" ? wish(state.wish) : wish,
     })),
+  setWishSellers: (wishSellers) =>
+    set((state) => ({
+      wishSellers: typeof wishSellers === "function" ? wishSellers(state.wishSellers) : wishSellers,
+    })),
   setQuery: (query) => set({ query }),
   setOrderTotal: (orderTotal) => set({ orderTotal }),
+  setLastOrderId: (lastOrderId) => set({ lastOrderId }),
   setActiveProduct: (activeProduct) => set({ activeProduct }),
-  addToCart: (product, qty = 1) => {
-    set((state) => {
-      const existing = state.cart.find((item) => item.id === product.id);
-      if (existing) {
-        return {
-          cart: state.cart.map((item) =>
-            item.id === product.id ? { ...item, qty: item.qty + qty, price: product.price } : item,
-          ),
-        };
-      }
-      return { cart: [...state.cart, { ...product, qty }] };
-    });
-  },
-  toggleWish: (id) => {
-    const { wish } = get();
-    set({
-      wish: wish.includes(id) ? wish.filter((item) => item !== id) : [...wish, id],
-    });
-  },
 }));

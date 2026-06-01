@@ -31,6 +31,33 @@ export async function getData<T>(url: string, params?: Record<string, unknown>):
   }
 }
 
+export async function postData<T>(url: string, body?: unknown): Promise<T> {
+  try {
+    const { data } = await apiClient.post<ApiSuccessResponse<T>>(url, body);
+    return data.data;
+  } catch (error) {
+    throw mapApiError(error);
+  }
+}
+
+export async function patchData<T>(url: string, body?: unknown): Promise<T> {
+  try {
+    const { data } = await apiClient.patch<ApiSuccessResponse<T>>(url, body);
+    return data.data;
+  } catch (error) {
+    throw mapApiError(error);
+  }
+}
+
+export async function deleteData<T>(url: string): Promise<T> {
+  try {
+    const { data } = await apiClient.delete<ApiSuccessResponse<T>>(url);
+    return data.data;
+  } catch (error) {
+    throw mapApiError(error);
+  }
+}
+
 function mapApiError(error: unknown): ApiRequestError {
   if (axios.isAxiosError(error)) {
     const axiosError = error as AxiosError<ApiErrorResponse>;

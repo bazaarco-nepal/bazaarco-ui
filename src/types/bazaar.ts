@@ -10,6 +10,7 @@ export interface BazaarContextValue {
   screen: string;
   nav: (screen: string) => void;
   openProduct: (product: Product) => void;
+  openStore: (sellerId: string) => void;
   cart: CartLine[];
   cartLoading: boolean;
   addToCart: (product: Product, qty?: number, successMessage?: string) => Promise<void>;

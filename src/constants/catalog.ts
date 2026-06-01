@@ -214,13 +214,6 @@ export const CATEGORY_ATTRIBUTES = {
       ],
     },
     {
-      k: "sizeFormat",
-      en: "Size standard",
-      ne: "साइज मानक",
-      t: "select",
-      o: ["UK", "US", "EU", "CM"],
-    },
-    {
       k: "color",
       en: "Colour",
       ne: "रङ",

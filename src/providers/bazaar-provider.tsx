@@ -32,7 +32,13 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   const [toastMsg, setToastMsg] = useState<ToastState | null>(null);
   const [authPrompt, setAuthPrompt] = useState<string | null>(null);
 
-  useCurrentUser(true);
+  const meQuery = useCurrentUser(true);
+  const setAuthReady = useBazaarStore((s) => s.setAuthReady);
+  useEffect(() => {
+    if (meQuery.isFetched) {
+      setAuthReady(true);
+    }
+  }, [meQuery.isFetched, setAuthReady]);
 
   const pathnameSearch = searchQueryFromPath(pathname);
   const setQuery = useBazaarStore((s) => s.setQuery);
@@ -179,6 +185,14 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
     [router, scrollTop, setActiveProduct],
   );
 
+  const openStore = useCallback(
+    (sellerId: string) => {
+      router.push(`/store/${sellerId}`);
+      setTimeout(scrollTop, 0);
+    },
+    [router, scrollTop],
+  );
+
   const addToCart = useCallback(
     async (product: Product, qty = 1, successMessage?: string) => {
       if (!ensureAuthed("Please sign in to add items to your cart.")) return;
@@ -274,6 +288,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       screen,
       nav,
       openProduct,
+      openStore,
       cart,
       cartLoading: cartLoading || cartFetching,
       addToCart,
@@ -300,6 +315,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       screen,
       nav,
       openProduct,
+      openStore,
       cart,
       cartLoading,
       cartFetching,

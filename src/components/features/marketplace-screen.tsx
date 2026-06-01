@@ -10,6 +10,7 @@ import {
   Home,
   Browse,
   PDP,
+  Store,
   VideoTheater,
   Cart,
   Checkout,
@@ -63,6 +64,7 @@ export function MarketplaceScreen() {
   if (screen === "home") return <Home />;
   if (screen === "browse") return <Browse />;
   if (screen === "pdp" && product) return <PDP p={product} />;
+  if (screen === "store") return <Store />;
   if (screen === "video") return <VideoTheater />;
   if (screen === "cart") return <Cart />;
   if (screen === "checkout") return <Checkout />;

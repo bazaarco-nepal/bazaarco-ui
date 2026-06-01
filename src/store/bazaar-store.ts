@@ -8,6 +8,7 @@ import type { BazaarStoreState } from "@/types/store";
 
 export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
   authed: false,
+  authReady: false,
   user: null,
   cart: [],
   wish: [],
@@ -19,6 +20,7 @@ export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
   deliveryLocation: DEFAULT_DELIVERY,
   deliveryHydrated: false,
   setAuthed: (authed) => set({ authed }),
+  setAuthReady: (authReady) => set({ authReady }),
   hydrateDelivery: () => {
     if (get().deliveryHydrated) return;
     set({ deliveryLocation: readDeliveryFromStorage(), deliveryHydrated: true });

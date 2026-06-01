@@ -9,7 +9,7 @@ export type ProductPhoto = {
   file: File;
 };
 
-const MAX_PHOTOS = 3;
+const MAX_PHOTOS = 5;
 const CROP_VIEW = 300;
 const OUTPUT_SIZE = 1200;
 const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif";
@@ -341,6 +341,7 @@ export function ProductPhotoPicker({
   photosRef.current = photos;
   const [cropDraft, setCropDraft] = useState<CropDraft | null>(null);
   const [pickIndex, setPickIndex] = useState<number | null>(null);
+  const [hover, setHover] = useState<number | null>(null);
 
   const revoke = (url: string) => {
     try {
@@ -398,7 +399,7 @@ export function ProductPhotoPicker({
     };
   }, []);
 
-  const slots = Array.from({ length: max }, (_, i) => photos[i] ?? null);
+  const canAddMore = photos.length < max;
 
   return (
     <>
@@ -411,143 +412,134 @@ export function ProductPhotoPicker({
       />
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-        {slots.map((photo, i) =>
-          photo ? (
-            <div
-              key={photo.id}
+        {photos.map((photo, i) => (
+          <div
+            key={photo.id}
+            onMouseEnter={() => setHover(i)}
+            onMouseLeave={() => setHover((h) => (h === i ? null : h))}
+            style={{
+              position: "relative",
+              aspectRatio: "1",
+              borderRadius: "var(--r-md)",
+              overflow: "hidden",
+              border: "1.5px solid var(--line-200)",
+            }}
+          >
+            <img
+              src={photo.previewUrl}
+              alt={`Product photo ${i + 1}`}
+              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            />
+
+            {/* Tap / hover the photo to replace it. The dim + change icon only
+                show on hover so the grid stays clean. */}
+            <button
+              type="button"
+              onClick={() => openFilePicker(i)}
+              aria-label={`Replace photo ${i + 1}`}
+              title="Replace"
               style={{
-                position: "relative",
-                aspectRatio: "1",
-                borderRadius: "var(--r-md)",
-                overflow: "hidden",
-                border: "1.5px solid var(--line-200)",
+                position: "absolute",
+                inset: 0,
+                border: "none",
+                cursor: "pointer",
+                padding: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: hover === i ? "rgba(11,18,32,.32)" : "transparent",
+                opacity: hover === i ? 1 : 0,
+                transition: "opacity var(--dur-standard) var(--ease)",
               }}
             >
-              <img
-                src={photo.previewUrl}
-                alt={`Product photo ${i + 1}`}
-                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "flex-end",
-                  gap: 4,
-                  padding: 6,
-                  background: "linear-gradient(transparent 40%, rgba(0,0,0,.55))",
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => openFilePicker(i)}
-                  style={{
-                    padding: "4px 8px",
-                    fontSize: ".65rem",
-                    fontWeight: 700,
-                    border: "none",
-                    borderRadius: 6,
-                    background: "rgba(255,255,255,.92)",
-                    cursor: "pointer",
-                  }}
-                >
-                  Replace
-                </button>
-                <button
-                  type="button"
-                  onClick={() => removePhoto(i)}
-                  style={{
-                    padding: "4px 8px",
-                    fontSize: ".65rem",
-                    fontWeight: 700,
-                    border: "none",
-                    borderRadius: 6,
-                    background: "rgba(220,38,38,.9)",
-                    color: "#fff",
-                    cursor: "pointer",
-                  }}
-                >
-                  Remove
-                </button>
-              </div>
               <span
                 style={{
-                  position: "absolute",
-                  top: 6,
-                  left: 6,
-                  width: 22,
-                  height: 22,
+                  width: 40,
+                  height: 40,
                   borderRadius: "50%",
-                  background: "var(--blue-deep)",
-                  color: "#fff",
-                  fontSize: ".7rem",
-                  fontWeight: 800,
+                  background: "rgba(255,255,255,.95)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                {i + 1}
+                <Icon name="refresh" size={18} color="var(--ink-700)" />
               </span>
-            </div>
-          ) : (
+            </button>
+
+            {/* Remove — plain X, top-right, always available. */}
             <button
-              key={`empty-${i}`}
               type="button"
-              onClick={() => openFilePicker(null)}
+              onClick={() => removePhoto(i)}
+              aria-label={`Remove photo ${i + 1}`}
+              title="Remove"
               style={{
-                aspectRatio: "1",
-                borderRadius: "var(--r-md)",
-                border: "1.5px dashed var(--saffron)",
-                background: "rgba(247,127,0,.06)",
-                color: "var(--saffron)",
-                fontWeight: 800,
-                fontSize: ".75rem",
+                position: "absolute",
+                top: 6,
+                right: 6,
+                width: 24,
+                height: 24,
+                borderRadius: "50%",
+                border: "none",
+                padding: 0,
                 cursor: "pointer",
+                background: "rgba(11,18,32,.55)",
+                color: "#fff",
                 display: "flex",
-                flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: 6,
-                padding: 8,
               }}
             >
-              <Icon name="image" size={22} color="var(--saffron)" />
-              Add photo
+              <Icon name="x" size={14} color="#fff" />
             </button>
-          ),
+
+            <span
+              style={{
+                position: "absolute",
+                top: 6,
+                left: 6,
+                width: 22,
+                height: 22,
+                borderRadius: "50%",
+                background: "var(--blue-deep)",
+                color: "#fff",
+                fontSize: ".7rem",
+                fontWeight: 800,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {i + 1}
+            </span>
+          </div>
+        ))}
+        {canAddMore && (
+          <button
+            type="button"
+            onClick={() => openFilePicker(null)}
+            style={{
+              aspectRatio: "1",
+              borderRadius: "var(--r-md)",
+              border: "1.5px dashed var(--saffron)",
+              background: "rgba(247,127,0,.06)",
+              color: "var(--saffron)",
+              fontWeight: 800,
+              fontSize: ".75rem",
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              padding: 8,
+            }}
+          >
+            <Icon name="image" size={22} color="var(--saffron)" />
+            {photos.length === 0 ? "Add photo" : "Add more"}
+          </button>
         )}
       </div>
-
-      {photos.length < max && (
-        <button
-          type="button"
-          onClick={() => openFilePicker(null)}
-          style={{
-            width: "100%",
-            marginTop: 12,
-            padding: 14,
-            background: "rgba(247,127,0,.08)",
-            border: "1.5px dashed var(--saffron)",
-            borderRadius: "var(--r-md)",
-            color: "var(--saffron)",
-            fontWeight: 800,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 10,
-            fontSize: ".9375rem",
-          }}
-        >
-          <Icon name="image" size={22} color="var(--saffron)" />
-          {photos.length === 0
-            ? "Choose from gallery or camera · ग्यालरीबाट छान्नुहोस्"
-            : `Add photo ${photos.length + 1} of ${max}`}
-        </button>
-      )}
 
       {photos.length > 0 && (
         <p

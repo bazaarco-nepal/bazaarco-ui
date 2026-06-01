@@ -21,7 +21,6 @@ import {
   Toast,
   SectionHead,
   TINTS,
-  HelpLifeline,
   AllInPriceCard,
   OTPInput,
   MenuRow,
@@ -41,6 +40,7 @@ import { useCatalog } from "@/hooks/use-catalog";
 import { useLogout } from "@/hooks/use-auth";
 import { useBargains } from "@/hooks/use-bargains";
 import { useOrders } from "@/hooks/use-orders";
+import { useChatInbox } from "@/hooks/use-chat";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { displayName, maskEmail, userInitial } from "@/lib/display";
 import {
@@ -252,11 +252,12 @@ export function Orders() {
 }
 
 export function Profile() {
-  const { nav, cartCount, wish, toast } = useBz();
+  const { nav, toast } = useBz();
   const logoutMutation = useLogout();
   const user = useBazaarStore((s) => s.user);
-  const { data: ordersData = [] } = useOrders();
   const { data: bargains = [] } = useBargains();
+  const { data: chatInbox } = useChatInbox();
+  const unreadMessages = (chatInbox?.threads ?? []).reduce((sum, t) => sum + (t.unread || 0), 0);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteText, setDeleteText] = useState("");
   const canDelete = deleteText.trim().toUpperCase() === "DELETE";
@@ -291,7 +292,7 @@ export function Profile() {
           gap: 22px;
           max-width: var(--container);
           margin: 0 auto;
-          padding: 24px 28px 80px;
+          padding: 24px 28px 32px;
           align-items: start;
         }
         @media (min-width: 900px) {
@@ -300,146 +301,169 @@ export function Profile() {
         .bz-profile__rail { display: flex; flex-direction: column; gap: 14px; }
         .bz-profile__main { display: flex; flex-direction: column; gap: 10px; }
         @media (min-width: 900px) {
-          .bz-profile__main { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+          .bz-profile__main { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; align-content: start; }
           .bz-profile__main > .bz-profile__full { grid-column: 1 / -1; }
         }
-        .bz-account-danger {
-          margin-top: 22px;
-          border-top: 1px solid var(--line-200);
-          padding-top: 18px;
+        .bz-profile__card {
+          background: #fff;
+          border: 1px solid var(--line-200);
+          border-radius: var(--r-lg);
+          padding: 18px;
           display: flex;
           flex-direction: column;
-          gap: 10px;
+          gap: 14px;
         }
-        @media (min-width: 900px) {
-          .bz-profile__main > .bz-account-danger { grid-column: 1 / -1; }
+        .bz-profile__divider {
+          height: 1px;
+          background: var(--line-200);
+          margin: 2px 0;
         }
+        .bz-logout-btn {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 11px 14px;
+          border: 1px solid var(--line-200);
+          border-radius: var(--r-md);
+          background: #fff;
+          color: var(--danger);
+          font-family: inherit;
+          font-weight: 700;
+          font-size: .9375rem;
+          line-height: 1;
+          cursor: pointer;
+          transition: background .15s, border-color .15s;
+        }
+        .bz-logout-btn:hover { background: var(--tint-red-50); border-color: var(--danger); }
+        .bz-delete-link {
+          align-self: flex-end;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          background: none;
+          border: none;
+          padding: 4px 2px;
+          cursor: pointer;
+          font-family: inherit;
+          font-weight: 600;
+          font-size: .8125rem;
+          color: var(--danger);
+          opacity: .6;
+          transition: opacity .15s;
+        }
+        .bz-delete-link:hover { opacity: 1; }
       `}</style>
 
-      {/* LEFT RAIL — identity + stats + language */}
+      {/* LEFT RAIL — single cohesive card: identity + language + account actions */}
       <aside className="bz-profile__rail">
-        <div
-          style={{
-            background: "#fff",
-            border: "1px solid var(--line-200)",
-            borderRadius: "var(--r-lg)",
-            padding: 22,
-            display: "flex",
-            alignItems: "center",
-            gap: 16,
-          }}
-        >
-          <span
-            style={{
-              width: 64,
-              height: 64,
-              borderRadius: "50%",
-              background: "var(--blue-deep)",
-              color: "#fff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: 800,
-              fontSize: "1.5rem",
-              flexShrink: 0,
-            }}
-          >
-            {userInitial(user)}
-          </span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: "1.125rem", fontWeight: 800 }}>
-              {displayName(user, "Guest")}
-            </div>
-            <div className="tnum" style={{ fontSize: ".875rem", color: "var(--ink-500)" }}>
-              {maskEmail(user?.email)}
-            </div>
-          </div>
-          <Button variant="ghost" onClick={() => nav("profile-edit")}>
-            Edit
-          </Button>
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-          {[
-            { label: "Orders", value: ordersData.length, onClick: () => nav("orders") },
-            { label: "Wishlist", value: wish.length, onClick: () => nav("wishlist") },
-            { label: "Cart", value: cartCount, onClick: () => nav("cart") },
-          ].map((s) => (
-            <button
-              key={s.label}
-              onClick={s.onClick}
+        <div className="bz-profile__card">
+          {/* Identity */}
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <span
               style={{
-                background: "#fff",
-                border: "1px solid var(--line-200)",
-                borderRadius: "var(--r-md)",
-                padding: "16px 10px",
-                cursor: "pointer",
-                textAlign: "center",
+                width: 64,
+                height: 64,
+                borderRadius: "50%",
+                background: "var(--blue-deep)",
+                color: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: 800,
+                fontSize: "1.5rem",
+                flexShrink: 0,
               }}
             >
-              <div
-                className="tnum"
-                style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}
+              {userInitial(user)}
+            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: "1.125rem", fontWeight: 800 }}>
+                {displayName(user, "Guest")}
+              </div>
+              <div className="tnum" style={{ fontSize: ".875rem", color: "var(--ink-500)" }}>
+                {maskEmail(user?.email)}
+              </div>
+            </div>
+            <Button variant="ghost" onClick={() => nav("profile-edit")}>
+              Edit
+            </Button>
+          </div>
+
+          <div className="bz-profile__divider" />
+
+          {/* Language */}
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <Icon name="palette" size={20} color="var(--ink-700)" />
+            <span style={{ flex: 1, fontWeight: 600 }}>Language</span>
+            <div
+              style={{
+                display: "inline-flex",
+                border: "1.5px solid var(--line-200)",
+                borderRadius: "var(--r-full)",
+                overflow: "hidden",
+              }}
+            >
+              <button
+                aria-pressed="true"
+                style={{
+                  padding: "6px 14px",
+                  border: "none",
+                  cursor: "pointer",
+                  background: "var(--tint-blue-50)",
+                  color: "var(--blue)",
+                  fontWeight: 700,
+                  fontSize: ".8125rem",
+                }}
               >
-                {s.value}
-              </div>
-              <div style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 2 }}>
-                {s.label}
-              </div>
-            </button>
-          ))}
-        </div>
-
-        <div className="bz-menu-row" style={{ cursor: "default" }}>
-          <Icon name="palette" size={20} color="var(--ink-700)" />
-          <span style={{ flex: 1, fontWeight: 600 }}>Language</span>
-          <div
-            style={{
-              display: "inline-flex",
-              border: "1.5px solid var(--line-200)",
-              borderRadius: "var(--r-full)",
-              overflow: "hidden",
-            }}
-          >
-            <button
-              aria-pressed="true"
-              style={{
-                padding: "6px 14px",
-                border: "none",
-                cursor: "pointer",
-                background: "var(--tint-blue-50)",
-                color: "var(--blue)",
-                fontWeight: 700,
-                fontSize: ".8125rem",
-              }}
-            >
-              English
-            </button>
-            <button
-              style={{
-                padding: "6px 14px",
-                border: "none",
-                cursor: "pointer",
-                background: "#fff",
-                color: "var(--ink-500)",
-                fontWeight: 700,
-                fontSize: ".8125rem",
-                fontFamily: "var(--font-ne)",
-              }}
-            >
-              नेपाली
-            </button>
+                English
+              </button>
+              <button
+                style={{
+                  padding: "6px 14px",
+                  border: "none",
+                  cursor: "pointer",
+                  background: "#fff",
+                  color: "var(--ink-500)",
+                  fontWeight: 700,
+                  fontSize: ".8125rem",
+                  fontFamily: "var(--font-ne)",
+                }}
+              >
+                नेपाली
+              </button>
+            </div>
           </div>
+
+          <div className="bz-profile__divider" />
+
+          {/* Account actions */}
+          <button className="bz-logout-btn" onClick={handleLogout}>
+            <Icon name="logout" size={18} color="var(--danger)" />
+            Log out
+          </button>
+          <button className="bz-delete-link" onClick={() => setConfirmDelete(true)}>
+            <Icon name="trash" size={14} color="var(--danger)" />
+            Delete my account
+          </button>
         </div>
       </aside>
 
-      {/* RIGHT MAIN — action grid + account actions at bottom */}
+      {/* RIGHT MAIN — action grid */}
       <div className="bz-profile__main">
         <MenuRow
           icon="package"
           label="My orders"
           sub="Track, return, re-order"
           onClick={() => nav("orders")}
+        />
+        <MenuRow
+          icon="messageDots"
+          label="My messages"
+          sub={unreadMessages ? `${unreadMessages} unread` : "Chats with sellers"}
+          onClick={() => nav("messages")}
+          badge={unreadMessages > 0 ? String(unreadMessages) : undefined}
         />
         <MenuRow
           icon="bargain"
@@ -455,18 +479,6 @@ export function Profile() {
           onClick={() => nav("orders")}
         />
         <MenuRow
-          icon="wallet"
-          label="Wallet & refunds"
-          sub="Rs. 0 balance"
-          onClick={() => nav("orders")}
-        />
-        <MenuRow
-          icon="gift"
-          label="Refer & earn"
-          sub="Rs. 0 earned"
-          onClick={() => nav("orders")}
-        />
-        <MenuRow
           icon="headphones"
           label="Help & support"
           sub="Chat, call, FAQs"
@@ -478,33 +490,6 @@ export function Profile() {
           sub="How we handle your data"
           onClick={() => nav("orders")}
         />
-
-        {/* Account actions — bottom, visually separated */}
-        <div className="bz-account-danger">
-          <Button variant="secondary" full onClick={handleLogout}>
-            Log out
-          </Button>
-          <button
-            onClick={() => setConfirmDelete(true)}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "10px 0",
-              color: "var(--danger)",
-              fontWeight: 700,
-              fontSize: ".875rem",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-              fontFamily: "inherit",
-            }}
-          >
-            <Icon name="trash" size={16} color="var(--danger)" />
-            Delete my account
-          </button>
-        </div>
       </div>
 
       {/* Account deletion confirmation modal */}
@@ -588,7 +573,6 @@ export function Profile() {
             >
               <li>Order history and tracking</li>
               <li>Saved addresses and wishlist</li>
-              <li>Wallet balance and cashback</li>
               <li>Reviews and ratings you've posted</li>
             </ul>
             <p

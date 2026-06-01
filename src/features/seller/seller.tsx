@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Fragment, useRef } from "react";
+import React, { useState, useEffect, Fragment, useRef, useCallback } from "react";
 import {
   Icon,
   Logo,
@@ -20,7 +20,6 @@ import {
   Toast,
   SectionHead,
   TINTS,
-  HelpLifeline,
   AllInPriceCard,
   OTPInput,
   MenuRow,
@@ -45,8 +44,10 @@ import { useCompleteOnboarding, useLogout, useCurrentUser } from "@/hooks/use-au
 import { usePendingSellerVerifications, useReviewSellerVerification } from "@/hooks/use-admin";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { displayName, userInitial } from "@/lib/display";
-import { useAttrCategories, useCategoryAttributes } from "@/hooks/use-catalog";
+import { useCategories } from "@/hooks/use-catalog";
+import { useUploadImage } from "@/hooks/use-media-upload";
 import {
+  useCreateProduct,
   useSellerDashboard,
   useSellerInbox,
   useSellerInventory,
@@ -491,164 +492,10 @@ export function AdminSellerVerifications() {
 
 /* ---------- Shared seller chrome ---------- */
 
-export function SellerHelpBar({ tutorial, onTutorial }) {
-  const [open, setOpen] = useState(false);
-  const [lang, setLang] = useState("EN");
-  const [big, setBig] = useState(false);
-
-  useEffect(() => {
-    document.documentElement.style.fontSize = big ? "18px" : "";
-    return () => {
-      document.documentElement.style.fontSize = "";
-    };
-  }, [big]);
-
-  const row = {
-    display: "flex",
-    alignItems: "center",
-    gap: 14,
-    width: "100%",
-    background: "#fff",
-    border: "1.5px solid var(--line-200)",
-    borderRadius: "var(--r-md)",
-    padding: "16px 18px",
-    cursor: "pointer",
-    textAlign: "left",
-    fontWeight: 700,
-    fontSize: "1rem",
-    color: "var(--ink-900)",
-  };
-
-  return (
-    <>
-      {/* Floating help FAB — bottom-right, thumb-zone, persistent on every seller screen.
-          Lifts above mobile bottom-nav (56px) via bottom: 84px on small screens. */}
-      <button
-        onClick={() => setOpen(true)}
-        aria-label="Help · सहयोग"
-        title="Help · सहयोग"
-        className="bz-help-fab"
-        style={{ background: "#16a34a", width: 64, height: 64, bottom: 90, right: 22 }}
-      >
-        <Icon name="phone" size={28} color="#fff" />
-      </button>
-
-      {open && (
-        <div
-          onClick={() => setOpen(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 700,
-            background: "rgba(11,18,32,.55)",
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "center",
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="fade-up"
-            style={{
-              background: "#fff",
-              borderRadius: "var(--r-xl) var(--r-xl) 0 0",
-              width: "100%",
-              maxWidth: 480,
-              padding: "22px 22px 28px",
-            }}
-          >
-            <div
-              style={{
-                width: 40,
-                height: 4,
-                background: "var(--line-200)",
-                borderRadius: 2,
-                margin: "0 auto 16px",
-              }}
-            />
-            <h3
-              style={{
-                margin: "0 0 4px",
-                fontSize: "1.25rem",
-                fontWeight: 800,
-                color: "var(--ink-900)",
-              }}
-            >
-              Need help?{" "}
-              <span className="ne" style={{ color: "var(--ink-500)", fontWeight: 600 }}>
-                · सहयोग चाहियो?
-              </span>
-            </h3>
-            <p style={{ margin: "0 0 18px", color: "var(--ink-500)", fontSize: ".875rem" }}>
-              Nepali-speaking agent. Free call.
-            </p>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <a
-                href="tel:16600121234"
-                style={{
-                  ...row,
-                  background: "#16a34a",
-                  borderColor: "#16a34a",
-                  color: "#fff",
-                  textDecoration: "none",
-                }}
-              >
-                <Icon name="phone" size={22} color="#fff" />
-                <span style={{ flex: 1 }}>Call us · फोन गर्नुहोस्</span>
-                <span style={{ fontWeight: 800, fontSize: ".875rem" }}>16600-12-12-34</span>
-              </a>
-
-              <button
-                style={row}
-                onClick={() => {
-                  alert("Opens WhatsApp chat with BazaarCo support");
-                  setOpen(false);
-                }}
-              >
-                <Icon name="headphones" size={22} color="#25D366" />
-                <span style={{ flex: 1 }}>WhatsApp chat · च्याट</span>
-                <Icon name="chevronRight" size={20} color="var(--ink-400)" />
-              </button>
-
-              {tutorial && (
-                <button
-                  style={row}
-                  onClick={() => {
-                    setOpen(false);
-                    onTutorial?.();
-                  }}
-                >
-                  <Icon name="play" size={22} color="var(--blue)" />
-                  <span style={{ flex: 1 }}>Replay guide · सिक्नुहोस्</span>
-                  <Icon name="chevronRight" size={20} color="var(--ink-400)" />
-                </button>
-              )}
-
-              <div
-                style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 4 }}
-              >
-                <button
-                  style={{ ...row, justifyContent: "center", padding: "14px 12px" }}
-                  onClick={() => setLang((l) => (l === "EN" ? "NE" : "EN"))}
-                >
-                  <Icon name="badgeCheck" size={20} color="var(--ink-700)" />
-                  <span>{lang === "EN" ? "English" : "नेपाली"}</span>
-                </button>
-                <button
-                  style={{ ...row, justifyContent: "center", padding: "14px 12px" }}
-                  onClick={() => setBig((b) => !b)}
-                >
-                  <span style={{ fontWeight: 800, fontSize: "1.125rem" }}>Aa{big ? "−" : "+"}</span>
-                  <span>{big ? "Normal" : "Bigger"}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
+// Help lifeline removed — no floating help FAB on seller screens. Kept as a
+// no-op so existing render sites stay valid.
+export function SellerHelpBar() {
+  return null;
 }
 
 export function SellerCoachmark({ steps, onDone }) {
@@ -3553,6 +3400,8 @@ export function SellerOrderDetail() {
                 borderRadius: 6,
                 padding: "2px 6px",
                 fontFamily: "var(--font-sans)",
+                color: "var(--ink-900)",
+                fontWeight: 600,
               }}
             >
               <option value="pathao">Pathao</option>
@@ -3589,8 +3438,9 @@ export function SellerOrderDetail() {
 
 /* ---------- 4.4a Category-specific attribute fields ---------- */
 export function CategoryAttrFields({ category, values, onChange }) {
-  const { data: categoryAttributes = {} } = useCategoryAttributes();
-  const fields = categoryAttributes[category] || [];
+  const { data: categories = [] } = useCategories();
+  const [otherText, setOtherText] = useState<Record<string, string>>({});
+  const fields = categories.find((c) => c.id === category)?.fields || [];
   if (!fields.length) return null;
   const inputStyle = {
     width: "100%",
@@ -3602,11 +3452,19 @@ export function CategoryAttrFields({ category, values, onChange }) {
     outline: "none",
     background: "#fff",
     fontFamily: "var(--font-sans)",
+    color: "var(--ink-900)",
   };
   const set = (k, v) => onChange({ ...values, [k]: v });
   const toggleMulti = (k, opt) => {
     const cur = Array.isArray(values[k]) ? values[k] : [];
     set(k, cur.includes(opt) ? cur.filter((x) => x !== opt) : [...cur, opt]);
+  };
+  const addOther = (k) => {
+    const raw = (otherText[k] || "").trim();
+    if (!raw) return;
+    const cur = Array.isArray(values[k]) ? values[k] : [];
+    if (!cur.some((x) => x.toLowerCase() === raw.toLowerCase())) set(k, [...cur, raw]);
+    setOtherText((t) => ({ ...t, [k]: "" }));
   };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -3644,7 +3502,11 @@ export function CategoryAttrFields({ category, values, onChange }) {
             <select
               value={values[f.k] || ""}
               onChange={(e) => set(f.k, e.target.value)}
-              style={inputStyle}
+              style={{
+                ...inputStyle,
+                color: values[f.k] ? "var(--ink-900)" : "var(--ink-400)",
+                fontWeight: values[f.k] ? 600 : 400,
+              }}
             >
               <option value="">Choose…</option>
               {f.o.map((o) => (
@@ -3657,7 +3519,7 @@ export function CategoryAttrFields({ category, values, onChange }) {
 
           {f.t === "multi" && (
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {f.o.map((o) => {
+              {[...f.o, ...(values[f.k] || []).filter((v) => !f.o.includes(v))].map((o) => {
                 const on = (values[f.k] || []).includes(o);
                 return (
                   <button
@@ -3682,6 +3544,51 @@ export function CategoryAttrFields({ category, values, onChange }) {
                   </button>
                 );
               })}
+              {f.allowOther && (
+                <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+                  <input
+                    value={otherText[f.k] || ""}
+                    onChange={(e) => setOtherText((t) => ({ ...t, [f.k]: e.target.value }))}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addOther(f.k);
+                      }
+                    }}
+                    placeholder="Other…"
+                    style={{
+                      width: 120,
+                      minHeight: 44,
+                      padding: "0 12px",
+                      borderRadius: "var(--r-full)",
+                      border: "1.5px dashed var(--line-200)",
+                      outline: "none",
+                      fontFamily: "var(--font-sans)",
+                      fontSize: ".8125rem",
+                      color: "var(--ink-900)",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => addOther(f.k)}
+                    disabled={!(otherText[f.k] || "").trim()}
+                    style={{
+                      minHeight: 44,
+                      padding: "0 14px",
+                      borderRadius: "var(--r-full)",
+                      border: "1.5px solid var(--blue)",
+                      background: "#fff",
+                      color: "var(--blue)",
+                      fontWeight: 700,
+                      fontSize: ".8125rem",
+                      cursor: (otherText[f.k] || "").trim() ? "pointer" : "default",
+                      opacity: (otherText[f.k] || "").trim() ? 1 : 0.4,
+                    }}
+                  >
+                    + Add
+                  </button>
+                </span>
+              )}
             </div>
           )}
 
@@ -3751,10 +3658,12 @@ export function SellerAddProduct() {
   const { nav, toast } = useBz();
   const { data: organization } = useSellerOrganization();
   const canSell = organization?.verification?.canSell === true;
-  const { data: attrCategories = [] } = useAttrCategories();
-  const { data: categoryAttributes = {} } = useCategoryAttributes();
+  const { data: categories = [] } = useCategories();
+  const uploadImage = useUploadImage();
+  const createProduct = useCreateProduct();
   const [productPhotos, setProductPhotos] = useState<ProductPhoto[]>([]);
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("");
@@ -3774,37 +3683,16 @@ export function SellerAddProduct() {
     setAttrs({});
   };
 
-  const attrFields = categoryAttributes[category] || [];
-  const reqFields = attrFields.filter((f) => f.req);
-  const missingReq = reqFields.filter((f) => !attrFilled(f, attrs[f.k]));
-  const filledCount = attrFields.filter((f) => attrFilled(f, attrs[f.k])).length;
-  const quality =
-    attrFields.length === 0
-      ? null
-      : missingReq.length === 0 && filledCount >= Math.ceil(attrFields.length * 0.7)
-        ? { label: "Excellent listing", ne: "उत्कृष्ट", pct: 100, color: "var(--success)" }
-        : missingReq.length === 0
-          ? { label: "Good listing", ne: "राम्रो", pct: 70, color: "var(--blue)" }
-          : { label: "Basic listing", ne: "साधारण", pct: 35, color: "var(--saffron)" };
-
-  // Demo AI auto-tag: fill empty attributes from "photos" (prototype — picks sensible defaults).
-  const aiFill = () => {
-    const next = { ...attrs };
-    attrFields.forEach((f) => {
-      if (attrFilled(f, next[f.k])) return;
-      if (f.t === "select" && f.o) next[f.k] = f.o[0];
-      else if (f.t === "multi" && f.o) next[f.k] = [f.o[0]];
-      else if (f.t === "toggle") next[f.k] = true;
-    });
-    setAttrs(next);
-    toast("Details filled from your photos — please check · जाँच गर्नुहोस्");
-  };
+  const attrFields = categories.find((c) => c.id === category)?.fields || [];
 
   const titleOk = title.trim().length >= 3;
   const variantsOk = !hasVariants || variants.every((v) => v.price && v.stock);
   const canPublish =
-    productPhotos.length > 0 && titleOk && (hasVariants ? variantsOk : price && stock);
-  const categoryMeta = attrCategories.find((c) => c.id === category);
+    productPhotos.length > 0 &&
+    titleOk &&
+    Boolean(category) &&
+    (hasVariants ? variantsOk : price && stock);
+  const categoryMeta = categories.find((c) => c.id === category);
   const displayPrice = hasVariants ? variants.find((v) => v.price)?.price : price;
   const displayStock = hasVariants
     ? variants.reduce((sum, v) => sum + (parseInt(v.stock, 10) || 0), 0)
@@ -3815,6 +3703,28 @@ export function SellerAddProduct() {
   const addVariant = () =>
     setVariants((arr) => [...arr, { id: Date.now(), name: "", price: "", stock: "" }]);
   const removeVariant = (id) => setVariants((arr) => arr.filter((v) => v.id !== id));
+
+  // Publish: upload the first photo, then create the product. Postgres is the
+  // source of truth; the server indexes it into search in the background.
+  const publishing = uploadImage.isPending || createProduct.isPending;
+  const handlePublish = async () => {
+    if (!canPublish || publishing) return;
+    try {
+      const uploaded = await uploadImage.mutateAsync({ file: productPhotos[0].file });
+      await createProduct.mutateAsync({
+        name: title.trim(),
+        description: description.trim() || undefined,
+        price: Number(price || displayPrice || 0),
+        categoryId: category,
+        img: uploaded.url,
+        metadata: attrs,
+      });
+      toast("Product published! · प्रकाशित भयो");
+      nav("s-products");
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Could not publish. Please try again.");
+    }
+  };
 
   if (!canSell) {
     return (
@@ -3903,13 +3813,18 @@ export function SellerAddProduct() {
                 {productPhotos.length > 0 ? <Icon name="check" size={18} color="#fff" /> : 1}
               </span>
               <div>
-                <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>Add 3 photos</h3>
+                <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>
+                  Add a photo{" "}
+                  <span style={{ fontSize: ".75rem", color: "var(--ink-400)", fontWeight: 600 }}>
+                    1 required · up to 5
+                  </span>
+                </h3>
                 <div className="ne" style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
-                  ३ फोटो छान्नुहोस् — crop गर्न सकिन्छ
+                  १ फोटो अनिवार्य · ५ सम्म थप्न सकिन्छ
                 </div>
               </div>
             </div>
-            <ProductPhotoPicker photos={productPhotos} onChange={setProductPhotos} max={3} />
+            <ProductPhotoPicker photos={productPhotos} onChange={setProductPhotos} max={5} />
           </div>
 
           {/* Step 2 — Describe */}
@@ -3985,6 +3900,36 @@ export function SellerAddProduct() {
                 marginBottom: 6,
               }}
             >
+              Description · विवरण{" "}
+              <span style={{ fontWeight: 600, color: "var(--ink-400)" }}>· optional</span>
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Tell buyers what makes it special — material, size, what's included…"
+              rows={3}
+              style={{
+                width: "100%",
+                fontSize: "1rem",
+                border: "1.5px solid var(--line-200)",
+                borderRadius: "var(--r-md)",
+                padding: "12px 16px",
+                outline: "none",
+                fontFamily: "var(--font-sans)",
+                resize: "vertical",
+                marginBottom: 12,
+              }}
+            />
+
+            <label
+              style={{
+                fontSize: ".8125rem",
+                fontWeight: 700,
+                color: "var(--ink-700)",
+                display: "block",
+                marginBottom: 6,
+              }}
+            >
               Category · वर्ग
             </label>
             <select
@@ -4000,10 +3945,12 @@ export function SellerAddProduct() {
                 outline: "none",
                 background: "#fff",
                 fontFamily: "var(--font-sans)",
+                color: category ? "var(--ink-900)" : "var(--ink-400)",
+                fontWeight: category ? 600 : 400,
               }}
             >
               <option value="">Pick a category</option>
-              {attrCategories.map((c) => (
+              {categories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.en} · {c.ne}
                 </option>
@@ -4057,98 +4004,7 @@ export function SellerAddProduct() {
                 <span style={{ color: "var(--red)", fontWeight: 800 }}>*</span> = important.
               </p>
 
-              {/* AI auto-fill from photos */}
-              <button
-                type="button"
-                onClick={productPhotos.length > 0 ? aiFill : undefined}
-                disabled={productPhotos.length === 0}
-                style={{
-                  width: "100%",
-                  padding: "12px 14px",
-                  marginBottom: 16,
-                  borderRadius: "var(--r-md)",
-                  cursor: productPhotos.length > 0 ? "pointer" : "default",
-                  border: "1.5px solid var(--blue)",
-                  background: productPhotos.length > 0 ? "var(--tint-blue-50)" : "var(--line-100)",
-                  color: productPhotos.length > 0 ? "var(--blue)" : "var(--ink-400)",
-                  fontWeight: 700,
-                  fontSize: ".875rem",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                }}
-              >
-                <Icon
-                  name="sparkles"
-                  size={16}
-                  color={productPhotos.length > 0 ? "var(--blue)" : "var(--ink-400)"}
-                />
-                {productPhotos.length > 0
-                  ? "Auto-fill from my photos · फोटोबाट भर्नुहोस्"
-                  : "Add photos first to auto-fill"}
-              </button>
-
               <CategoryAttrFields category={category} values={attrs} onChange={setAttrs} />
-
-              {/* Listing quality + missing warning */}
-              {quality && (
-                <div
-                  style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--line-200)" }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: 6,
-                    }}
-                  >
-                    <span
-                      style={{ fontSize: ".8125rem", fontWeight: 700, color: "var(--ink-700)" }}
-                    >
-                      Listing quality · स्तर
-                    </span>
-                    <span style={{ fontSize: ".8125rem", fontWeight: 800, color: quality.color }}>
-                      {quality.label} · {quality.ne}
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      height: 8,
-                      borderRadius: 999,
-                      background: "var(--line-200)",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: `${quality.pct}%`,
-                        height: "100%",
-                        background: quality.color,
-                        borderRadius: 999,
-                      }}
-                    />
-                  </div>
-                  {missingReq.length > 0 && (
-                    <div
-                      style={{
-                        margin: "12px 0 0",
-                        padding: "10px 12px",
-                        borderRadius: "var(--r-md)",
-                        background: "rgba(247,127,0,.08)",
-                        borderLeft: "3px solid var(--saffron)",
-                        fontSize: ".8125rem",
-                        color: "var(--ink-700)",
-                      }}
-                    >
-                      You can still publish now, but adding{" "}
-                      <b>{missingReq.map((f) => f.en).join(", ")}</b> helps buyers trust and find
-                      this product.
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           )}
 
@@ -4297,6 +4153,8 @@ export function SellerAddProduct() {
                         onChange={(e) => updateVariant(v.id, "name", e.target.value)}
                         placeholder="Variant (e.g. Large, Red)"
                         style={{
+                          width: "100%",
+                          minWidth: 0,
                           height: 48,
                           padding: "0 12px",
                           border: "1.5px solid var(--line-200)",
@@ -4314,6 +4172,8 @@ export function SellerAddProduct() {
                         placeholder="Price"
                         className="tnum"
                         style={{
+                          width: "100%",
+                          minWidth: 0,
                           height: 48,
                           padding: "0 12px",
                           border: "1.5px solid var(--line-200)",
@@ -4332,6 +4192,8 @@ export function SellerAddProduct() {
                         placeholder="Stock"
                         className="tnum"
                         style={{
+                          width: "100%",
+                          minWidth: 0,
                           height: 48,
                           padding: "0 12px",
                           border: "1.5px solid var(--line-200)",
@@ -4456,15 +4318,13 @@ export function SellerAddProduct() {
             variant="primary"
             size="lg"
             full
-            disabled={!canPublish}
-            onClick={() => {
-              toast("Product published! · प्रकाशित भयो");
-              nav("s-products");
-            }}
+            disabled={!canPublish || publishing}
+            loading={publishing}
+            onClick={handlePublish}
           >
-            Publish · प्रकाशित गर्नुहोस्
+            {publishing ? "Publishing…" : "Publish · प्रकाशित गर्नुहोस्"}
           </Button>
-          {!canPublish && (
+          {!canPublish && !publishing && (
             <p
               style={{
                 fontSize: ".75rem",
@@ -4473,7 +4333,7 @@ export function SellerAddProduct() {
                 textAlign: "center",
               }}
             >
-              Complete all 3 steps to publish
+              Add a photo, title, category and price to publish
             </p>
           )}
         </div>
@@ -4567,24 +4427,6 @@ export function SellerAddProduct() {
                 {hasVariants ? " (all sizes)" : ""}
               </p>
             ) : null}
-            {quality && (
-              <div
-                style={{
-                  marginTop: 14,
-                  padding: "10px 12px",
-                  borderRadius: "var(--r-md)",
-                  background: "var(--line-100)",
-                  border: `1px solid ${quality.color}`,
-                }}
-              >
-                <div style={{ fontWeight: 800, fontSize: ".875rem", color: quality.color }}>
-                  {quality.label}
-                </div>
-                <div className="ne" style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
-                  {quality.ne}
-                </div>
-              </div>
-            )}
             <ul
               style={{
                 margin: "16px 0 0",
@@ -4919,7 +4761,7 @@ export function SellerInventory() {
               borderRadius: "var(--r-md)",
               fontSize: ".8125rem",
               background: "#fff",
-              color: "var(--ink-700)",
+              color: "var(--ink-900)",
               fontWeight: 700,
               cursor: "pointer",
             }}
@@ -7819,6 +7661,8 @@ export function SellerSettings() {
                   borderRadius: "var(--r-md)",
                   fontFamily: "var(--font-sans)",
                   marginBottom: 10,
+                  color: "var(--ink-900)",
+                  fontWeight: 600,
                 }}
               >
                 <option value="0">No returns</option>
@@ -8100,6 +7944,8 @@ export function SellerSettings() {
                         border: "1.5px solid var(--line-200)",
                         borderRadius: "var(--r-md)",
                         fontFamily: "var(--font-sans)",
+                        color: "var(--ink-900)",
+                        fontWeight: 600,
                       }}
                     >
                       <option value="both">English + नेपाली</option>

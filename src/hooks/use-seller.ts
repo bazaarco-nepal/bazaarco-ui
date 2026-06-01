@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { sellerApi } from "@/services/api/seller";
+import { sellerApi, type CreateProductPayload } from "@/services/api/seller";
 import {
   sellerOrganizationApi,
   type SetupSellerOrganizationPayload,
@@ -36,6 +36,19 @@ export function useSetupSellerOrganization() {
       qc.setQueryData(queryKeys.seller.organization, data);
       void qc.invalidateQueries({ queryKey: queryKeys.seller.storefront });
       void qc.invalidateQueries({ queryKey: queryKeys.seller.settings });
+    },
+  });
+}
+
+export function useCreateProduct() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateProductPayload) => sellerApi.createProduct(payload),
+    onSuccess: () => {
+      // Refresh the seller's inventory plus the public catalog lists that
+      // surface the new product.
+      void qc.invalidateQueries({ queryKey: queryKeys.seller.inventory });
+      void qc.invalidateQueries({ queryKey: queryKeys.catalog.products() });
     },
   });
 }

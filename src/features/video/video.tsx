@@ -21,7 +21,6 @@ import {
   Toast,
   SectionHead,
   TINTS,
-  HelpLifeline,
   AllInPriceCard,
   OTPInput,
   MenuRow,
@@ -38,6 +37,7 @@ import {
   ApiState,
 } from "@/components/ui";
 import { useVideoFeed } from "@/hooks/use-video-feed";
+import { useVideoLike } from "@/hooks/use-video-like";
 import type { VideoFeedItem, VideoFeedTab } from "@/types/video";
 import {
   BazaarCtx,
@@ -271,6 +271,8 @@ function ReelItem({
   isActive,
   follows,
   onToggleFollow,
+  liked,
+  onToggleLike,
   muted,
   radius,
   hideMuteBadge,
@@ -302,7 +304,7 @@ function ReelItem({
       const rect = stageRef.current.getBoundingClientRect();
       const x = e.clientX - rect.left,
         y = e.clientY - rect.top;
-      if (!wished) toggleWish(p.id);
+      if (!liked) onToggleLike(p.id);
       spawnBurst(x, y);
       lastTap.current = 0;
     } else {
@@ -670,12 +672,12 @@ function ReelItem({
         <ReelAction
           icon="heart"
           label="Like"
-          count={metrics.likes + (wished ? 1 : 0)}
-          active={wished}
+          count={metrics.likes + (liked ? 1 : 0)}
+          active={liked}
           danger
           inside={isMobile}
           onClick={() => {
-            toggleWish(p.id);
+            onToggleLike(p.id);
             spawnBurst(160, 240);
           }}
         />
@@ -700,8 +702,9 @@ function ReelItem({
           icon="tag"
           label="Save"
           count={metrics.saves}
+          active={wished}
           inside={isMobile}
-          onClick={() => toast("Saved to your collection")}
+          onClick={() => toggleWish(p.id)}
         />
       </div>
 
@@ -733,8 +736,9 @@ function ReelItem({
    VideoTheater — orchestrator + snap scroll container
    ============================================================ */
 export function VideoTheater() {
-  const { openProduct, addToCart, toggleWish, wish, toast, nav } = useBz();
+  const { openProduct, addToCart, toggleWish, wish, toast, nav, authed, promptLogin } = useBz();
   const router = useRouter();
+  const likeMutation = useVideoLike();
   const goBack = useCallback(() => {
     if (typeof window !== "undefined" && window.history.length > 1) router.back();
     else nav("home");
@@ -744,6 +748,41 @@ export function VideoTheater() {
   const { data: feed, isLoading, isError, error } = useVideoFeed(tab);
   const vids: VideoFeedItem[] = feed?.items ?? [];
   const [follows, setFollows] = useState(() => new Set());
+  const [liked, setLiked] = useState<Set<string>>(() => new Set());
+
+  // Seed liked state from the server feed (reflects the signed-in user's likes).
+  useEffect(() => {
+    setLiked(new Set((feed?.items ?? []).filter((v) => v.liked).map((v) => v.id)));
+  }, [feed]);
+
+  const toggleLike = useCallback(
+    (videoId: string) => {
+      if (!authed) {
+        promptLogin("Please sign in to like videos.");
+        return;
+      }
+      const wasLiked = liked.has(videoId);
+      setLiked((prev) => {
+        const n = new Set(prev);
+        wasLiked ? n.delete(videoId) : n.add(videoId);
+        return n;
+      });
+      likeMutation.mutate(
+        { videoId, like: !wasLiked },
+        {
+          onError: () => {
+            setLiked((prev) => {
+              const n = new Set(prev);
+              wasLiked ? n.add(videoId) : n.delete(videoId);
+              return n;
+            });
+            toast("Could not update like");
+          },
+        },
+      );
+    },
+    [authed, liked, likeMutation, promptLogin, toast],
+  );
   const [muted, setMuted] = useState(true);
   const isMobile = useIsMobile();
   const scrollRef = useRef(null);
@@ -767,6 +806,10 @@ export function VideoTheater() {
   }, [vids.length, activeIndex]);
 
   const toggleFollow = (sellerId) => {
+    if (!authed) {
+      promptLogin("Please sign in to follow sellers.");
+      return;
+    }
     setFollows((set) => {
       const n = new Set(set);
       const has = n.has(sellerId);
@@ -842,12 +885,12 @@ export function VideoTheater() {
         scrollToIndex(activeIndex - 1);
       } else if (e.key.toLowerCase() === "m") setMuted((m) => !m);
       else if (e.key.toLowerCase() === "l" && activeProductId) {
-        if (!wish.includes(activeProductId)) toggleWish(activeProductId);
+        toggleLike(activeProductId);
       }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [activeIndex, scrollToIndex, activeProductId, wish, toggleWish]);
+  }, [activeIndex, scrollToIndex, activeProductId, toggleLike]);
 
   /* ---- top filter chip row ---- */
   const tabsRow = (
@@ -926,6 +969,8 @@ export function VideoTheater() {
             isActive={idx === activeIndex}
             follows={follows}
             onToggleFollow={toggleFollow}
+            liked={liked.has(v.id)}
+            onToggleLike={toggleLike}
             muted={muted}
             radius={radius || 0}
             hideMuteBadge={!isMobile}

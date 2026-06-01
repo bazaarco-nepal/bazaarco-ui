@@ -173,29 +173,6 @@ body {
   }
 }
 
-/* Help-lifeline FAB */
-.bz-help-fab {
-  position: fixed;
-  right: 22px;
-  bottom: 22px;
-  z-index: 200;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: #25d366;
-  color: #fff;
-  border: 3px solid #fff;
-  box-shadow: 0 6px 20px rgba(11, 18, 32, 0.22);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  animation: bz-pulse-ring 2.4s infinite;
-}
-.bz-help-fab:hover {
-  transform: scale(1.05);
-}
-
 /* Mobile bottom nav */
 .bz-bnav {
   position: fixed;

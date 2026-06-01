@@ -4,6 +4,7 @@ import type { DeliveryLocation } from "@/lib/delivery-location";
 
 export interface BazaarStoreState {
   authed: boolean;
+  authReady: boolean;
   user: AuthUser | null;
   cart: CartLine[];
   wish: string[];
@@ -15,6 +16,7 @@ export interface BazaarStoreState {
   deliveryLocation: DeliveryLocation;
   deliveryHydrated: boolean;
   setAuthed: (authed: boolean) => void;
+  setAuthReady: (authReady: boolean) => void;
   setUser: (user: AuthUser | null) => void;
   setCart: (cart: CartLine[] | ((prev: CartLine[]) => CartLine[])) => void;
   setWish: (wish: string[] | ((prev: string[]) => string[])) => void;

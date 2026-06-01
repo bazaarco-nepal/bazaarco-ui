@@ -1,14 +1,20 @@
 import type {
   Category,
-  CategoryAttributeField,
   Product,
   ProductProfile,
   ProductReview,
   RatingDistribution,
   Seller,
+  SellerReview,
 } from "@/types";
 import type { PaginatedData } from "./types";
-import { getData } from "./http";
+import { getData, postData } from "./http";
+
+export interface CreateSellerReviewPayload {
+  stars: number;
+  text: string;
+  product?: string;
+}
 
 export interface ProductListParams {
   category?: string;
@@ -19,25 +25,9 @@ export interface ProductListParams {
   limit?: number;
 }
 
-export interface CategoryAttributeRow {
-  id: string;
-  fields: CategoryAttributeField[];
-}
-
 export const catalogApi = {
   getCategories(): Promise<Category[]> {
     return getData<Category[]>("/catalog/categories");
-  },
-
-  getAttrCategories() {
-    return getData<Array<{ id: string; en: string; ne: string; icon: string }>>(
-      "/catalog/attr-categories",
-    );
-  },
-
-  async getCategoryAttributesMap(): Promise<Record<string, CategoryAttributeField[]>> {
-    const rows = await getData<CategoryAttributeRow[]>("/catalog/category-attributes");
-    return Object.fromEntries(rows.map((row) => [row.id, row.fields]));
   },
 
   getSellers(): Promise<Seller[]> {
@@ -46,6 +36,18 @@ export const catalogApi = {
 
   getSeller(id: string): Promise<Seller> {
     return getData<Seller>(`/catalog/sellers/${id}`);
+  },
+
+  getSellerReviews(id: string): Promise<SellerReview[]> {
+    return getData<SellerReview[]>(`/catalog/sellers/${id}/reviews`);
+  },
+
+  getSellerProducts(id: string): Promise<Product[]> {
+    return getData<Product[]>(`/catalog/sellers/${id}/products`);
+  },
+
+  createSellerReview(id: string, payload: CreateSellerReviewPayload): Promise<SellerReview> {
+    return postData<SellerReview>(`/catalog/sellers/${id}/reviews`, payload);
   },
 
   getProducts(params?: ProductListParams): Promise<PaginatedData<Product>> {

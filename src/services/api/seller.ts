@@ -1,7 +1,25 @@
-import { getData } from "./http";
+import { getData, postData } from "./http";
 import type { StorefrontData } from "./storefront";
+import type { Product } from "@/types";
+
+// What the Add Product form sends. The owning seller is resolved from auth on
+// the server; icon/tint are inherited from the category.
+export interface CreateProductPayload {
+  name: string;
+  ne?: string;
+  description?: string;
+  price: number;
+  original?: number | null;
+  categoryId: string;
+  img: string;
+  metadata: Record<string, unknown>;
+}
 
 export const sellerApi = {
+  createProduct(payload: CreateProductPayload): Promise<Product> {
+    return postData<Product>("/seller/products", payload);
+  },
+
   getDashboard<T = unknown>(): Promise<T> {
     return getData<T>("/seller/dashboard");
   },

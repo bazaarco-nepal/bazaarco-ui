@@ -2,6 +2,7 @@ export const BUYER_SCREENS = new Set([
   "home",
   "browse",
   "pdp",
+  "store",
   "video",
   "cart",
   "checkout",
@@ -73,6 +74,7 @@ const SCREEN_PATH: Record<string, string> = {
   home: "/home",
   browse: "/browse",
   pdp: "/product",
+  store: "/store",
   video: "/video",
   cart: "/cart",
   checkout: "/checkout",
@@ -135,11 +137,19 @@ export function screenFromPath(pathname: string): string {
   if (pathname.startsWith("/product/")) {
     return "pdp";
   }
+  if (pathname.startsWith("/store/")) {
+    return "store";
+  }
   const base = pathname.split("?")[0] ?? pathname;
   return PATH_SCREEN[base] ?? "home";
 }
 
 export function productIdFromPath(pathname: string): string | null {
   const match = pathname.match(/^\/product\/([^/]+)/);
+  return match?.[1] ?? null;
+}
+
+export function storeIdFromPath(pathname: string): string | null {
+  const match = pathname.match(/^\/store\/([^/]+)/);
   return match?.[1] ?? null;
 }

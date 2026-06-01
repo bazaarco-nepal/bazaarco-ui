@@ -41,6 +41,7 @@ export interface VideoFeedItem {
   engagement: VideoFeedEngagement;
   caption: string;
   hashtags: string[];
+  liked: boolean;
 }
 
 export interface VideoFeedResponse {

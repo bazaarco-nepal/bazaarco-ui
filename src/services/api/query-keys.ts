@@ -5,10 +5,10 @@ export const queryKeys = {
   search: (params: Record<string, unknown>) => ["search", params] as const,
   catalog: {
     categories: ["catalog", "categories"] as const,
-    attrCategories: ["catalog", "attr-categories"] as const,
-    categoryAttributes: ["catalog", "category-attributes"] as const,
     sellers: ["catalog", "sellers"] as const,
     seller: (id: string) => ["catalog", "seller", id] as const,
+    sellerReviews: (id: string) => ["catalog", "seller", id, "reviews"] as const,
+    sellerProducts: (id: string) => ["catalog", "seller", id, "products"] as const,
     products: (params?: Record<string, unknown>) => ["catalog", "products", params ?? {}] as const,
     product: (id: string) => ["catalog", "product", id] as const,
     productReviews: (id: string) => ["catalog", "product", id, "reviews"] as const,

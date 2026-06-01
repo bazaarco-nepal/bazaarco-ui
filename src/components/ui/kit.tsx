@@ -209,6 +209,13 @@ export const ICON_PATHS = {
       <circle cx="17" cy="14" r="1.3" fill="currentColor" stroke="none" />
     </>
   ),
+  logout: (
+    <>
+      <path d="M14 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8" />
+      <polyline points="16 16 20 12 16 8" />
+      <line x1="20" y1="12" x2="9" y2="12" />
+    </>
+  ),
   share: (
     <>
       <circle cx="6" cy="12" r="2.5" />
@@ -1628,100 +1635,6 @@ export function BackToTop({ threshold = 1200 }) {
     >
       <Icon name="chevronUp" size={22} />
     </button>
-  );
-}
-
-/* ---------- Help Lifeline (persistent FAB, guide §2.3) ---------- */
-export function HelpLifeline({ hide }: { hide?: boolean }) {
-  const [open, setOpen] = useState(false);
-  if (hide) return null;
-  return (
-    <>
-      <button
-        className="bz-help-fab"
-        onClick={() => setOpen(true)}
-        aria-label="Help · सहायता"
-        title="Help · सहायता"
-      >
-        <Icon name="headphones" size={26} color="#fff" />
-      </button>
-      {open && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 700,
-            background: "rgba(11,18,32,.5)",
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "center",
-          }}
-          onClick={() => setOpen(false)}
-        >
-          <div
-            className="fade-up"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "#fff",
-              borderRadius: "var(--r-xl) var(--r-xl) 0 0",
-              width: "100%",
-              maxWidth: 480,
-              padding: "24px 22px 32px",
-            }}
-          >
-            <div
-              style={{
-                width: 40,
-                height: 4,
-                background: "var(--line-200)",
-                borderRadius: 2,
-                margin: "0 auto 18px",
-              }}
-            />
-            <h3
-              style={{
-                margin: "0 0 6px",
-                fontSize: "1.125rem",
-                fontWeight: 800,
-                color: "var(--ink-900)",
-              }}
-            >
-              Need help?{" "}
-              <span className="ne" style={{ color: "var(--ink-500)", fontWeight: 600 }}>
-                · सहायता चाहियो?
-              </span>
-            </h3>
-            <p style={{ margin: "0 0 18px", color: "var(--ink-500)", fontSize: ".875rem" }}>
-              One tap and a Nepali-speaking agent will help you finish your order.
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <button
-                className="bz-menu-row"
-                style={{
-                  background: "var(--success)",
-                  borderColor: "var(--success)",
-                  color: "#fff",
-                }}
-              >
-                <Icon name="phone" size={20} color="#fff" />
-                <span style={{ flex: 1, fontWeight: 700 }}>Call us · फोन गर्नुहोस्</span>
-                <Icon name="arrowRight" size={18} color="#fff" />
-              </button>
-              <button className="bz-menu-row">
-                <Icon name="headphones" size={20} color="#25D366" />
-                <span style={{ flex: 1, fontWeight: 700 }}>WhatsApp</span>
-                <Icon name="arrowRight" size={18} color="var(--ink-400)" />
-              </button>
-              <button className="bz-menu-row">
-                <Icon name="headphones" size={20} color="#7360F2" />
-                <span style={{ flex: 1, fontWeight: 700 }}>Viber</span>
-                <Icon name="arrowRight" size={18} color="var(--ink-400)" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
   );
 }
 

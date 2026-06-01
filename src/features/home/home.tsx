@@ -19,7 +19,6 @@ import {
   QtyStepper,
   Toast,
   SectionHead,
-  HelpLifeline,
   AllInPriceCard,
   OTPInput,
   MenuRow,
@@ -270,7 +269,7 @@ function VideoRailCard({ p, onOpen }) {
 }
 
 function FeaturedSellers({ sellers }) {
-  const { nav } = useBz();
+  const { openStore } = useBz();
   const list = Object.values(sellers ?? {})
     .filter((s) => s.verified)
     .slice(0, 5);
@@ -338,7 +337,7 @@ function FeaturedSellers({ sellers }) {
             <Icon name="mapPin" size={12} color="var(--ink-400)" /> {s.city}
           </div>
           <div style={{ marginTop: 14 }}>
-            <Button variant="secondary" size="sm" full onClick={() => nav("browse")}>
+            <Button variant="secondary" size="sm" full onClick={() => openStore(s.id)}>
               Visit Store
             </Button>
           </div>
@@ -465,33 +464,8 @@ export function Home() {
           </W>
         </div>
 
-        {/* categories */}
-        <W style={{ paddingTop: 24 }}>
-          <SectionHead
-            eyebrow="Browse"
-            title="Shop by category"
-            action="All categories"
-            onAction={() => nav("browse")}
-          />
-          <div
-            className="bz-cat-row no-scrollbar"
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 12,
-              overflowX: "auto",
-              scrollSnapType: "x mandatory",
-              WebkitOverflowScrolling: "touch",
-            }}
-          >
-            {(categories ?? []).map((c) => (
-              <CategoryTile key={c.id} c={c} onClick={() => nav("browse")} />
-            ))}
-          </div>
-        </W>
-
         {/* flash sale */}
-        <W style={{ paddingTop: 44 }}>
+        <W style={{ paddingTop: 24 }}>
           <div
             className="bz-flash-head"
             style={{
@@ -563,6 +537,31 @@ export function Home() {
           </div>
         </W>
 
+        {/* categories */}
+        <W style={{ paddingTop: 44 }}>
+          <SectionHead
+            eyebrow="Browse"
+            title="Shop by category"
+            action="All categories"
+            onAction={() => nav("browse")}
+          />
+          <div
+            className="bz-cat-row no-scrollbar"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 12,
+              overflowX: "auto",
+              scrollSnapType: "x mandatory",
+              WebkitOverflowScrolling: "touch",
+            }}
+          >
+            {(categories ?? []).map((c) => (
+              <CategoryTile key={c.id} c={c} onClick={() => nav("browse")} />
+            ))}
+          </div>
+        </W>
+
         {/* trending in Kathmandu — hyperlocal */}
         <W style={{ paddingTop: 52 }}>
           <SectionHead
@@ -587,7 +586,8 @@ export function Home() {
           <W style={{ paddingTop: 52 }}>
             <div
               style={{
-                background: "var(--blue-deep)",
+                background: "var(--tint-blue-50)",
+                border: "1px solid var(--line-200)",
                 borderRadius: "var(--r-xl)",
                 padding: "30px 32px",
                 position: "relative",
@@ -609,17 +609,24 @@ export function Home() {
                       fontWeight: 700,
                       letterSpacing: ".08em",
                       textTransform: "uppercase",
-                      color: "#ff6b75",
+                      color: "var(--red)",
                       marginBottom: 6,
                       display: "inline-flex",
                       alignItems: "center",
                       gap: 6,
                     }}
                   >
-                    <Icon name="video" size={15} color="#ff6b75" /> Watch
+                    <Icon name="video" size={15} color="var(--red)" /> Watch
                   </div>
-                  <h2 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "#fff" }}>
-                    See it in motion before you <span style={{ color: "#ff6b75" }}>buy</span>
+                  <h2
+                    style={{
+                      margin: 0,
+                      fontSize: "1.5rem",
+                      fontWeight: 800,
+                      color: "var(--ink-900)",
+                    }}
+                  >
+                    See it in motion before you <span style={{ color: "var(--red)" }}>buy</span>
                   </h2>
                 </div>
                 <Button variant="primary" onClick={() => nav("video")} iconRight="arrowRight">

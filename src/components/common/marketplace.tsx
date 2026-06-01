@@ -20,7 +20,6 @@ import {
   Toast,
   SectionHead,
   TINTS,
-  HelpLifeline,
   AllInPriceCard,
   OTPInput,
   MenuRow,
@@ -115,7 +114,14 @@ export function KathmanduSkyline({
 }
 
 /* ---------- Seller row (PDP, cards) ---------- */
-export function SellerRow({ seller, sellerId, saved = false, onToggleSave, compact = false }) {
+export function SellerRow({
+  seller,
+  sellerId,
+  saved = false,
+  onToggleSave,
+  onVisit,
+  compact = false,
+}) {
   if (!seller) {
     return (
       <div
@@ -201,6 +207,20 @@ export function SellerRow({ seller, sellerId, saved = false, onToggleSave, compa
           )}
         </div>
       </div>
+      {onVisit && sellerId && (
+        <Button
+          variant="secondary"
+          size="sm"
+          icon="store"
+          style={{ flexShrink: 0 }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onVisit(sellerId);
+          }}
+        >
+          Visit store
+        </Button>
+      )}
       {onToggleSave && sellerId && (
         <button
           type="button"
@@ -566,6 +586,7 @@ export function Navbar() {
   const navLabel = displayName(user, "Account");
   const navInitial = userInitial(user);
   const [hint, setHint] = useState(0);
+  const [searchFocused, setSearchFocused] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [deliverOpen, setDeliverOpen] = useState(false);
   const deliveryLocation = useBazaarStore((s) => s.deliveryLocation);
@@ -662,6 +683,7 @@ export function Navbar() {
       >
         <button
           onClick={() => nav("home")}
+          aria-label="BazaarCo home"
           style={{
             background: "none",
             border: "none",
@@ -670,7 +692,13 @@ export function Navbar() {
             flexShrink: 0,
           }}
         >
-          <Logo height={38} />
+          {/* Desktop: full-size logo. Mobile: smaller logo so search owns the bar. */}
+          <span className="bz-hide-mobile">
+            <Logo height={38} />
+          </span>
+          <span className="bz-show-mobile">
+            <Logo height={26} />
+          </span>
         </button>
         <button
           type="button"
@@ -751,17 +779,20 @@ export function Navbar() {
             onKeyDown={(e) => {
               if (e.key === "Enter") submitSearch();
             }}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
             placeholder={SEARCH_HINTS[hint]}
             style={{
               width: "100%",
               height: 48,
-              border: "1.5px solid var(--line-200)",
+              border: `1.5px solid ${searchFocused ? "var(--red)" : "var(--line-200)"}`,
               borderRadius: "var(--r-full)",
               padding: "0 58px 0 48px",
               fontSize: ".9375rem",
               fontFamily: "var(--font-sans)",
               background: "#fff",
               outline: "none",
+              transition: "border-color var(--dur-standard) var(--ease)",
             }}
           />
           <span
@@ -798,11 +829,13 @@ export function Navbar() {
               onClick={() => nav("wishlist")}
             />
           </span>
-          {/* Bargain — BazaarCo's core differentiator. Always visible. */}
+          {/* Bargain — BazaarCo's core differentiator. Desktop topbar only; on mobile
+              search owns the bar and bargain lives in the search flow. */}
           <button
             onClick={() => nav("bargains")}
             aria-label="Bargain"
             title="Bargain · मोलतोल"
+            className="bz-hide-mobile"
             style={{
               width: 40,
               height: 40,
@@ -818,7 +851,10 @@ export function Navbar() {
           >
             <Icon name="bargain" size={20} color="#fff" />
           </button>
-          <IconButton name="cart" label="Cart" badge={cartCount} onClick={() => nav("cart")} />
+          {/* Cart — desktop topbar only; mobile reaches it via bottom nav. */}
+          <span className="bz-hide-mobile">
+            <IconButton name="cart" label="Cart" badge={cartCount} onClick={() => nav("cart")} />
+          </span>
           <div ref={menuRef} className="bz-hide-mobile" style={{ position: "relative" }}>
             <button
               onClick={() => setMenuOpen((o) => !o)}

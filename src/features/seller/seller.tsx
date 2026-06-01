@@ -275,7 +275,8 @@ export function SellerShell({ screen, children }) {
       .length,
     chat: chatThreads.reduce((sum, t) => sum + (t.unread ?? 0), 0),
     bargain: bargains.filter(
-      (b: { accepted?: boolean; rejected?: boolean }) => !b.accepted && !b.rejected,
+      (b: { status?: string; accepted?: boolean; rejected?: boolean }) =>
+        bargainStatus(b) === "pending",
     ).length,
   };
   const [collapsed, setCollapsed] = useState(() => {
@@ -6296,6 +6297,21 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
   );
 }
 
+function fmtRs(value: unknown): string {
+  const n = Number(value);
+  return Number.isFinite(n) ? n.toLocaleString() : "0";
+}
+
+function bargainStatus(o: {
+  status?: string;
+  accepted?: boolean;
+  rejected?: boolean;
+}): "accepted" | "rejected" | "pending" {
+  if (o.status === "accepted" || o.accepted) return "accepted";
+  if (o.status === "rejected" || o.rejected) return "rejected";
+  return "pending";
+}
+
 /* ---------- 4.8 Bargaining ---------- */
 export function SellerBargain() {
   const { toast } = useBz();
@@ -6418,22 +6434,28 @@ export function SellerBargain() {
         >
           {(() => {
             const offers = BARGAIN_OFFERS as Array<{
+              status?: string;
               accepted?: boolean;
               rejected?: boolean;
               discount?: number;
               listed?: number;
               offered?: number;
+              yourOffer?: number;
             }>;
             const total = offers.length;
-            const accepted = offers.filter((o) => o.accepted).length;
+            const accepted = offers.filter((o) => bargainStatus(o) === "accepted").length;
             const acceptPct = total > 0 ? Math.round((accepted / total) * 100) : 0;
-            const discounts = offers.map((o) => o.discount ?? 0).filter((d) => d > 0);
+            const discounts = offers.map((o) => Number(o.discount) || 0).filter((d) => d > 0);
             const avgDisc = discounts.length
               ? Math.round(discounts.reduce((a, b) => a + b, 0) / discounts.length)
               : 0;
             const margin = offers
-              .filter((o) => o.accepted)
-              .reduce((sum, o) => sum + Math.max(0, (o.listed ?? 0) - (o.offered ?? 0)), 0);
+              .filter((o) => bargainStatus(o) === "accepted")
+              .reduce(
+                (sum, o) =>
+                  sum + Math.max(0, Number(o.listed) - Number(o.offered ?? o.yourOffer ?? 0)),
+                0,
+              );
             return [
               { v: String(total), k: "Offers this week", c: "var(--blue)" },
               { v: total > 0 ? `${acceptPct}%` : "0%", k: "You accepted", c: "var(--success)" },
@@ -6471,7 +6493,10 @@ export function SellerBargain() {
         </h2>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {BARGAIN_OFFERS.map((o) => {
-            const status = o.accepted ? "accepted" : o.rejected ? "rejected" : "pending";
+            const status = bargainStatus(o);
+            const listed = Number(o.listed) || 0;
+            const offered = Number(o.offered ?? o.yourOffer) || 0;
+            const discount = Number(o.discount) || 0;
             return (
               <div
                 key={o.id}
@@ -6534,22 +6559,22 @@ export function SellerBargain() {
                         className="tnum"
                         style={{ textDecoration: "line-through", color: "var(--ink-500)" }}
                       >
-                        Rs. {o.listed.toLocaleString()}
+                        Rs. {fmtRs(listed)}
                       </span>
                     </span>
                     <span>
                       Offer:{" "}
                       <span className="tnum" style={{ fontWeight: 800, color: "var(--blue-deep)" }}>
-                        Rs. {o.offered.toLocaleString()}
+                        Rs. {fmtRs(offered)}
                       </span>
                     </span>
                     <span
                       style={{
-                        color: o.discount > maxPct ? "var(--danger)" : "var(--success)",
+                        color: discount > maxPct ? "var(--danger)" : "var(--success)",
                         fontWeight: 700,
                       }}
                     >
-                      −{o.discount}%
+                      −{discount}%
                     </span>
                   </div>
                   {status === "pending" && (

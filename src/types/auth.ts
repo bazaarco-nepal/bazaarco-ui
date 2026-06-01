@@ -10,6 +10,8 @@ export interface AuthUser {
   avatarUrl: string | null;
   intent: AuthIntent;
   provider: AuthProvider;
+  /** True after seller dashboard guide is done — do not show coachmark again. */
+  onBoarding: boolean;
 }
 
 export interface RegisterPayload {

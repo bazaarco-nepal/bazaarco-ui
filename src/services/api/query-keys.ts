@@ -2,6 +2,7 @@ export const queryKeys = {
   auth: {
     me: ["auth", "me"] as const,
   },
+  search: (params: Record<string, unknown>) => ["search", params] as const,
   catalog: {
     categories: ["catalog", "categories"] as const,
     attrCategories: ["catalog", "attr-categories"] as const,
@@ -15,6 +16,12 @@ export const queryKeys = {
     ratingDistribution: (id: string) => ["catalog", "product", id, "rating-distribution"] as const,
   },
   home: ["home"] as const,
+  cart: {
+    all: ["cart"] as const,
+  },
+  wishlist: {
+    all: ["wishlist"] as const,
+  },
   orders: {
     list: ["orders"] as const,
     detail: (id: string) => ["orders", id] as const,

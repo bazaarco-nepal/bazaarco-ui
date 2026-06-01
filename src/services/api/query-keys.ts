@@ -16,6 +16,12 @@ export const queryKeys = {
     ratingDistribution: (id: string) => ["catalog", "product", id, "rating-distribution"] as const,
   },
   home: ["home"] as const,
+  cart: {
+    all: ["cart"] as const,
+  },
+  wishlist: {
+    all: ["wishlist"] as const,
+  },
   orders: {
     list: ["orders"] as const,
     detail: (id: string) => ["orders", id] as const,

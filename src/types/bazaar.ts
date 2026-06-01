@@ -1,4 +1,5 @@
 import type { CartLine, Product } from "@/types/catalog";
+import type { CheckoutPayload } from "@/services/api/orders";
 
 export interface BazaarToast {
   msg: string;
@@ -10,16 +11,22 @@ export interface BazaarContextValue {
   nav: (screen: string) => void;
   openProduct: (product: Product) => void;
   cart: CartLine[];
-  setCart: (cart: CartLine[] | ((prev: CartLine[]) => CartLine[])) => void;
-  addToCart: (product: Product, qty?: number) => void;
-  buyNow: (product: Product, qty?: number) => void;
+  cartLoading: boolean;
+  addToCart: (product: Product, qty?: number, successMessage?: string) => Promise<void>;
+  updateCartQty: (productId: string, qty: number) => Promise<void>;
+  removeFromCart: (productId: string) => Promise<void>;
+  buyNow: (product: Product, qty?: number) => Promise<void>;
   cartCount: number;
   wish: string[];
-  toggleWish: (id: string) => void;
+  wishSellers: string[];
+  toggleWish: (productId: string) => Promise<void>;
+  toggleSellerWish: (sellerId: string) => Promise<void>;
   toast: (msg: string) => void;
+  promptLogin: (message?: string) => void;
   query: string;
   setQuery: (query: string) => void;
-  placeOrder: (total: number) => void;
+  submitSearch: () => void;
+  placeOrder: (payload: CheckoutPayload) => Promise<void>;
   authed: boolean;
   setAuthed: (authed: boolean) => void;
   product: Product | null;

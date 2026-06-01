@@ -1103,10 +1103,7 @@ export function VideoTheater() {
           size="lg"
           full
           icon="cart"
-          onClick={() => {
-            addToCart(p, 1);
-            toast("Added from video");
-          }}
+          onClick={() => void addToCart(p, 1, "Added from video")}
         >
           Add to Cart
         </Button>
@@ -1224,10 +1221,7 @@ export function VideoTheater() {
         variant="primary"
         size="md"
         icon="cart"
-        onClick={() => {
-          addToCart(p, 1);
-          toast("Added from video");
-        }}
+        onClick={() => void addToCart(p, 1, "Added from video")}
       >
         Add
       </Button>

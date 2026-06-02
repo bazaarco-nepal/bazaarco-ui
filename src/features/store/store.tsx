@@ -12,6 +12,7 @@ import {
   ApiState,
   SkeletonCard,
   TINTS,
+  AppLink,
 } from "@/components/ui";
 import { ProductCard, useBz } from "@/components/common";
 import {
@@ -20,7 +21,7 @@ import {
   useSellerProducts,
   useCreateSellerReview,
 } from "@/hooks/use-catalog";
-import { storeIdFromPath } from "@/config/routes";
+import { storeIdFromPath, pathFromScreen } from "@/config/routes";
 import type { Seller } from "@/types";
 
 const RATING_LABELS = ["", "Bad", "Not great", "Okay", "Good", "Excellent"];
@@ -243,9 +244,9 @@ export function Store() {
               marginBottom: 18,
             }}
           >
-            <span className="bz-crumb" onClick={() => nav("home")}>
+            <AppLink href={pathFromScreen("home")} className="bz-crumb">
               Home
-            </span>
+            </AppLink>
             <Icon name="chevronRight" size={13} color="var(--ink-300)" />
             <span style={{ color: "var(--ink-700)" }}>{seller.name}</span>
           </div>

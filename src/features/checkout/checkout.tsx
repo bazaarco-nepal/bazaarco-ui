@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import {
   Icon,
   Logo,
+  AppLink,
   Button,
   Spinner,
   IconButton,
@@ -49,6 +50,7 @@ import {
   DevViewSwitcher,
 } from "@/components/common";
 import { useBazaarStore } from "@/store/bazaar-store";
+import { pathFromScreen } from "@/config/routes";
 
 export function priceBreakdown(cart) {
   const subtotal = cart.reduce((s, it) => s + it.price * it.qty, 0);
@@ -144,9 +146,9 @@ export function Cart() {
           title="Your cart is empty"
           message="Looks like you haven't added anything yet. Let's find something you'll love."
           cta="Browse products"
-          onCta={() => nav("browse")}
+          ctaHref={pathFromScreen("browse")}
           secondary="Watch"
-          onSecondary={() => nav("video")}
+          secondaryHref={pathFromScreen("video")}
         />
       </div>
     );
@@ -244,7 +246,11 @@ export function Cart() {
                   padding: 16,
                 }}
               >
-                <div onClick={() => openProduct(it)} style={{ cursor: "pointer", flexShrink: 0 }}>
+                <AppLink
+                  href={pathFromScreen("pdp", it.id)}
+                  onNavigate={() => openProduct(it)}
+                  style={{ cursor: "pointer", flexShrink: 0 }}
+                >
                   {it.img ? (
                     <img
                       src={it.img}
@@ -264,10 +270,14 @@ export function Cart() {
                       radius="var(--r-md)"
                     />
                   )}
-                </div>
+                </AppLink>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                    <div onClick={() => openProduct(it)} style={{ cursor: "pointer" }}>
+                    <AppLink
+                      href={pathFromScreen("pdp", it.id)}
+                      onNavigate={() => openProduct(it)}
+                      style={{ cursor: "pointer", textDecoration: "none" }}
+                    >
                       <div style={{ fontWeight: 600, fontSize: ".9375rem" }}>{it.name}</div>
                       <div
                         style={{
@@ -288,7 +298,7 @@ export function Cart() {
                           </Chip>
                         </div>
                       )}
-                    </div>
+                    </AppLink>
                     <Price value={it.price} size="sm" />
                   </div>
                   <div
@@ -321,8 +331,8 @@ export function Cart() {
               </div>
             );
           })}
-          <button
-            onClick={() => nav("browse")}
+          <AppLink
+            href={pathFromScreen("browse")}
             style={{
               alignSelf: "flex-start",
               background: "none",
@@ -335,10 +345,11 @@ export function Cart() {
               gap: 6,
               fontSize: ".9375rem",
               marginTop: 4,
+              textDecoration: "none",
             }}
           >
             <Icon name="chevronLeft" size={16} /> Continue shopping
-          </button>
+          </AppLink>
         </div>
 
         {/* summary */}
@@ -583,8 +594,8 @@ export function Checkout() {
 
   return (
     <div style={{ maxWidth: 760, margin: "0 auto", padding: "20px 28px 80px" }}>
-      <button
-        onClick={() => nav("cart")}
+      <AppLink
+        href={pathFromScreen("cart")}
         style={{
           background: "none",
           border: "none",
@@ -596,10 +607,11 @@ export function Checkout() {
           gap: 6,
           marginBottom: 14,
           fontSize: ".875rem",
+          textDecoration: "none",
         }}
       >
         <Icon name="chevronLeft" size={16} /> Back to cart
-      </button>
+      </AppLink>
 
       <h1
         style={{
@@ -1076,11 +1088,12 @@ export function OrderSuccess({ total }) {
             size="lg"
             icon="package"
             disabled={!orderId}
-            onClick={() => orderId && openTracking(orderId)}
+            href={pathFromScreen("tracking", undefined, undefined, orderId)}
+            onNavigate={() => orderId && openTracking(orderId)}
           >
             Track order
           </Button>
-          <Button variant="secondary" full size="lg" onClick={() => nav("home")}>
+          <Button variant="secondary" full size="lg" href={pathFromScreen("home")}>
             Continue shopping
           </Button>
         </div>

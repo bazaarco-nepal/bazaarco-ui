@@ -20,6 +20,7 @@ import {
   QtyStepper,
   Toast,
   SectionHead,
+  AppLink,
   TINTS,
   AllInPriceCard,
   OTPInput,
@@ -55,6 +56,7 @@ import {
   Footer,
   DevViewSwitcher,
 } from "@/components/common";
+import { pathFromScreen } from "@/config/routes";
 import type { WriteReviewProps } from "@/types";
 
 /* ============================================================
@@ -154,7 +156,7 @@ export function Orders() {
             title="No orders yet"
             message="When you order, it shows up here."
             cta="Start shopping"
-            onCta={() => nav("home")}
+            ctaHref={pathFromScreen("home")}
           />
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -256,7 +258,11 @@ export function Orders() {
                     >
                       {meta.action}
                     </Button>
-                    <Button variant="ghost" onClick={() => openTracking(o.id)}>
+                    <Button
+                      variant="ghost"
+                      href={pathFromScreen("tracking", undefined, undefined, o.id)}
+                      onNavigate={() => openTracking(o.id)}
+                    >
                       View details
                     </Button>
                   </div>
@@ -452,7 +458,7 @@ export function Profile() {
                 {maskEmail(user?.email)}
               </div>
             </div>
-            <Button variant="ghost" onClick={() => nav("profile-edit")}>
+            <Button variant="ghost" href={pathFromScreen("profile-edit")}>
               Edit
             </Button>
           </div>
@@ -510,12 +516,14 @@ export function Profile() {
           icon="package"
           label="My orders"
           sub="Track, return, re-order"
+          href={pathFromScreen("orders")}
           onClick={() => nav("orders")}
         />
         <MenuRow
           icon="messageDots"
           label="My messages"
           sub={unreadMessages ? `${unreadMessages} unread` : "Chats with sellers"}
+          href={pathFromScreen("messages")}
           onClick={() => nav("messages")}
           badge={unreadMessages > 0 ? String(unreadMessages) : undefined}
         />
@@ -523,6 +531,7 @@ export function Profile() {
           icon="bargain"
           label="My bargains"
           sub={bargains.length ? `${bargains.length} offer(s)` : "No active offers"}
+          href={pathFromScreen("bargains")}
           onClick={() => nav("bargains")}
           badge={bargains.length > 0 ? String(bargains.length) : undefined}
         />
@@ -530,18 +539,21 @@ export function Profile() {
           icon="mapPin"
           label="Saved addresses"
           sub="None saved yet"
+          href={pathFromScreen("orders")}
           onClick={() => nav("orders")}
         />
         <MenuRow
           icon="headphones"
           label="Help & support"
           sub="Chat, call, FAQs"
+          href={pathFromScreen("orders")}
           onClick={() => nav("orders")}
         />
         <MenuRow
           icon="lock"
           label="Privacy & terms"
           sub="How we handle your data"
+          href={pathFromScreen("orders")}
           onClick={() => nav("orders")}
         />
       </div>
@@ -742,8 +754,8 @@ export function WriteReview({ productId }: WriteReviewProps) {
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: "24px 28px 80px" }}>
-      <button
-        onClick={() => nav("orders")}
+      <AppLink
+        href={pathFromScreen("orders")}
         style={{
           background: "none",
           border: "none",
@@ -755,10 +767,11 @@ export function WriteReview({ productId }: WriteReviewProps) {
           gap: 6,
           marginBottom: 14,
           fontSize: ".875rem",
+          textDecoration: "none",
         }}
       >
         <Icon name="chevronLeft" size={16} /> Back
-      </button>
+      </AppLink>
 
       <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
         Rate your purchase
@@ -983,8 +996,8 @@ export function ProfileEdit() {
 
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "20px 22px 100px" }}>
-      <button
-        onClick={() => nav("profile")}
+      <AppLink
+        href={pathFromScreen("profile")}
         style={{
           background: "none",
           border: "none",
@@ -996,10 +1009,11 @@ export function ProfileEdit() {
           gap: 6,
           marginBottom: 14,
           fontSize: ".875rem",
+          textDecoration: "none",
         }}
       >
         <Icon name="chevronLeft" size={16} /> Back
-      </button>
+      </AppLink>
       <h1
         style={{
           margin: "0 0 4px",
@@ -1327,7 +1341,7 @@ export function ProfileEdit() {
           borderTop: "1px solid transparent",
         }}
       >
-        <Button variant="ghost" full onClick={() => nav("profile")}>
+        <Button variant="ghost" full href={pathFromScreen("profile")}>
           Cancel
         </Button>
         <Button variant="primary" full onClick={save}>

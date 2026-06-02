@@ -12,16 +12,21 @@ function ProductSection({
   title,
   query,
   seeAllHref,
+  hideWhenEmpty = false,
 }: {
   title: string;
   query: PicksQuery;
   seeAllHref: string;
+  hideWhenEmpty?: boolean;
 }) {
   const { openProduct } = useBz();
   const router = useRouter();
 
   const items: Product[] = (query.data?.pages ?? []).flatMap((p) => p.items);
   const isLoading = query.isLoading;
+
+  // Hide section entirely (no heading, no empty state) once load settles with no items.
+  if (hideWhenEmpty && !isLoading && items.length === 0) return null;
 
   return (
     <section
@@ -65,7 +70,12 @@ export function PicksSections() {
 
   return (
     <>
-      <ProductSection title="Top Picks" query={topPicks} seeAllHref="/browse?sort=popular" />
+      <ProductSection
+        title="Top Picks"
+        query={topPicks}
+        seeAllHref="/browse?sort=popular"
+        hideWhenEmpty
+      />
       <ProductSection title="New Arrivals" query={newArrivals} seeAllHref="/browse?sort=newest" />
     </>
   );

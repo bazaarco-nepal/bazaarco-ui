@@ -35,9 +35,10 @@ import {
   PageBar,
   BackToTop,
   ApiState,
+  AppLink,
 } from "@/components/ui";
 import { usePathname } from "next/navigation";
-import { orderIdFromPath } from "@/config/routes";
+import { orderIdFromPath, pathFromScreen } from "@/config/routes";
 import { useCatalog } from "@/hooks/use-catalog";
 import { useTracking } from "@/hooks/use-tracking";
 import { useBargains } from "@/hooks/use-bargains";
@@ -74,7 +75,7 @@ export function Tracking() {
           title="No order selected"
           message="Open tracking from My orders or right after checkout."
           cta="My orders"
-          onCta={() => nav("orders")}
+          ctaHref={pathFromScreen("orders")}
         />
       </div>
     );
@@ -100,8 +101,8 @@ export function Tracking() {
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
       <div style={{ maxWidth: 820, margin: "0 auto", padding: "24px 28px 0" }}>
-        <button
-          onClick={() => nav("orders")}
+        <AppLink
+          href={pathFromScreen("orders")}
           style={{
             background: "none",
             border: "none",
@@ -113,10 +114,11 @@ export function Tracking() {
             gap: 6,
             marginBottom: 16,
             fontSize: ".875rem",
+            textDecoration: "none",
           }}
         >
           <Icon name="chevronLeft" size={16} /> Back to orders
-        </button>
+        </AppLink>
         <div
           style={{
             display: "flex",
@@ -395,7 +397,7 @@ export function Wishlist() {
           title="Sign in to see your wishlist"
           message="Save products and sellers you love — they stay on your account."
           cta="Sign in"
-          onCta={() => nav("auth")}
+          ctaHref={pathFromScreen("auth")}
         />
       </div>
     );
@@ -416,9 +418,9 @@ export function Wishlist() {
           title="Your wishlist is empty"
           message="Tap the heart on any product or seller to save them here."
           cta="Start exploring"
-          onCta={() => nav("home")}
+          ctaHref={pathFromScreen("home")}
           secondary="Watch"
-          onSecondary={() => nav("video")}
+          secondaryHref={pathFromScreen("video")}
         />
       </div>
     );
@@ -575,7 +577,7 @@ export function Bargains() {
             title="No offers yet"
             message="Bargain on any product to see your offers here."
             cta="Browse products"
-            onCta={() => nav("browse")}
+            ctaHref={pathFromScreen("browse")}
           />
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -590,9 +592,10 @@ export function Bargains() {
                 }}
               >
                 <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-                  <div
-                    onClick={() => openProduct(o.p)}
-                    style={{ cursor: "pointer", flexShrink: 0 }}
+                  <AppLink
+                    href={pathFromScreen("pdp", o.p.id)}
+                    onNavigate={() => openProduct(o.p)}
+                    style={{ cursor: "pointer", flexShrink: 0, textDecoration: "none" }}
                   >
                     {o.p.img ? (
                       <img
@@ -613,7 +616,7 @@ export function Bargains() {
                         radius="var(--r-md)"
                       />
                     )}
-                  </div>
+                  </AppLink>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div
                       style={{
@@ -708,7 +711,12 @@ export function Bargains() {
                         >
                           Accept Rs. {o.sellerCounter.toLocaleString()}
                         </Button>
-                        <Button variant="secondary" size="sm" onClick={() => openProduct(o.p)}>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          href={pathFromScreen("pdp", o.p.id)}
+                          onNavigate={() => openProduct(o.p)}
+                        >
                           Counter back
                         </Button>
                       </>
@@ -719,7 +727,12 @@ export function Bargains() {
                       </Button>
                     )}
                     {o.status !== "accepted" && (
-                      <Button variant="ghost" size="sm" onClick={() => openProduct(o.p)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        href={pathFromScreen("pdp", o.p.id)}
+                        onNavigate={() => openProduct(o.p)}
+                      >
                         View product
                       </Button>
                     )}
@@ -732,7 +745,7 @@ export function Bargains() {
 
         {offers.length > 0 && (
           <div style={{ marginTop: 24 }}>
-            <Button variant="secondary" full icon="bargain" onClick={() => nav("browse")}>
+            <Button variant="secondary" full icon="bargain" href={pathFromScreen("browse")}>
               Find products to bargain on
             </Button>
           </div>

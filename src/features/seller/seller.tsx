@@ -34,6 +34,7 @@ import {
   PageBar,
   BackToTop,
   ApiState,
+  AppLink,
 } from "@/components/ui";
 import { ProductPhotoPicker, type ProductPhoto } from "@/components/seller/product-photo-picker";
 import { SellerVideoLibrary } from "@/components/seller/seller-video-library";
@@ -608,7 +609,7 @@ export function SellerOnboarding() {
               तपाईंको पसल प्रमाणित भयो — सामान र भिडियो थप्न सक्नुहुन्छ
             </p>
             <div style={{ marginTop: 24 }}>
-              <Button variant="primary" size="lg" full onClick={() => nav("s-dashboard")}>
+              <Button variant="primary" size="lg" full href={pathFromScreen("s-dashboard")}>
                 Open dashboard · ड्यासबोर्ड
               </Button>
             </div>
@@ -671,7 +672,7 @@ export function SellerOnboarding() {
               know.
             </div>
             <div style={{ marginTop: 24 }}>
-              <Button variant="primary" size="lg" full onClick={() => nav("s-dashboard")}>
+              <Button variant="primary" size="lg" full href={pathFromScreen("s-dashboard")}>
                 Open dashboard · ड्यासबोर्ड
               </Button>
             </div>
@@ -761,7 +762,7 @@ export function SellerOnboarding() {
               >
                 Register your shop · पसल दर्ता गर्नुहोस्
               </Button>
-              <Button variant="ghost" full onClick={() => nav("home")} style={{ marginTop: 10 }}>
+              <Button variant="ghost" full href={pathFromScreen("home")} style={{ marginTop: 10 }}>
                 I'll do this later · पछि गर्छु
               </Button>
             </div>
@@ -1252,10 +1253,10 @@ export function SellerOnboarding() {
               Adding products and videos unlocks after approval.
             </div>
             <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 10 }}>
-              <Button variant="primary" size="lg" full onClick={() => nav("s-dashboard")}>
+              <Button variant="primary" size="lg" full href={pathFromScreen("s-dashboard")}>
                 Open dashboard · ड्यासबोर्ड
               </Button>
-              <Button variant="ghost" full onClick={() => nav("s-onboarding")}>
+              <Button variant="ghost" full href={pathFromScreen("s-onboarding")}>
                 Re-upload document · कागजात फेरि पठाउनुहोस्
               </Button>
             </div>
@@ -1826,9 +1827,9 @@ export function SellerDashboard() {
                   }}
                 >
                   {k.couriers.map((c) => (
-                    <button
+                    <AppLink
                       key={c.name}
-                      onClick={() => nav(c.to)}
+                      href={pathFromScreen(c.to)}
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -1840,6 +1841,7 @@ export function SellerDashboard() {
                         cursor: "pointer",
                         textAlign: "left",
                         width: "100%",
+                        textDecoration: "none",
                       }}
                     >
                       <span
@@ -1861,7 +1863,7 @@ export function SellerDashboard() {
                       >
                         {c.amount}
                       </span>
-                    </button>
+                    </AppLink>
                   ))}
                 </div>
               )}
@@ -1995,13 +1997,8 @@ export function SellerDashboard() {
             {tasks.map((t) => (
               <div
                 key={t.label}
-                role="button"
-                tabIndex={0}
-                onClick={() => nav(t.to)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") nav(t.to);
-                }}
                 style={{
+                  position: "relative",
                   width: "100%",
                   display: "flex",
                   alignItems: "center",
@@ -2013,6 +2010,14 @@ export function SellerDashboard() {
                   textAlign: "left",
                 }}
               >
+                {/* Stretched link overlay → open-in-new-tab; nested action button
+                    sits above it via z-index. */}
+                <AppLink
+                  href={pathFromScreen(t.to)}
+                  onNavigate={() => nav(t.to)}
+                  ariaLabel={t.label}
+                  style={{ position: "absolute", inset: 0, zIndex: 1 }}
+                />
                 <span
                   style={{
                     width: 38,
@@ -2056,6 +2061,8 @@ export function SellerDashboard() {
                       t.action.onAct();
                     }}
                     style={{
+                      position: "relative",
+                      zIndex: 2,
                       flexShrink: 0,
                       height: 32,
                       padding: "0 12px",
@@ -2173,15 +2180,15 @@ export function SellerDashboard() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => nav("s-bargain")}
+                href={pathFromScreen("s-bargain")}
                 iconRight="chevronRight"
               >
                 Open
               </Button>
             </div>
             {bargainGlance.pending > 0 && (
-              <button
-                onClick={() => nav("s-bargain")}
+              <AppLink
+                href={pathFromScreen("s-bargain")}
                 style={{
                   width: "100%",
                   display: "flex",
@@ -2194,6 +2201,7 @@ export function SellerDashboard() {
                   cursor: "pointer",
                   marginBottom: 12,
                   textAlign: "left",
+                  textDecoration: "none",
                 }}
               >
                 <Icon name="bargain" size={22} color="var(--red)" />
@@ -2206,7 +2214,7 @@ export function SellerDashboard() {
                   </div>
                 </div>
                 <Icon name="chevronRight" size={18} color="var(--red)" />
-              </button>
+              </AppLink>
             )}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               <div
@@ -2539,7 +2547,7 @@ export function SellerDashboard() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => nav("s-products")}
+              href={pathFromScreen("s-products")}
               iconRight="chevronRight"
             >
               See all
@@ -2626,9 +2634,9 @@ export function SellerDashboard() {
             },
             { icon: "wallet", label: "Payouts", ne: "भुक्तानी", tint: "saffron", to: "s-ledger" },
           ].map((a) => (
-            <button
+            <AppLink
               key={a.label}
-              onClick={() => nav(a.to)}
+              href={pathFromScreen(a.to)}
               style={{
                 background: "#fff",
                 border: "1.5px solid var(--line-200)",
@@ -2639,6 +2647,7 @@ export function SellerDashboard() {
                 gap: 12,
                 cursor: "pointer",
                 position: "relative",
+                textDecoration: "none",
               }}
             >
               <span
@@ -2680,7 +2689,7 @@ export function SellerDashboard() {
                   {a.badge}
                 </span>
               )}
-            </button>
+            </AppLink>
           ))}
         </div>
 
@@ -3192,8 +3201,8 @@ export function SellerOrderDetail() {
       <div style={{ maxWidth: 620, margin: "0 auto" }}>
         <SellerHelpBar />
 
-        <button
-          onClick={() => nav("s-inbox")}
+        <AppLink
+          href={pathFromScreen("s-inbox")}
           style={{
             background: "none",
             border: "none",
@@ -3205,10 +3214,11 @@ export function SellerOrderDetail() {
             gap: 6,
             marginBottom: 14,
             fontSize: ".875rem",
+            textDecoration: "none",
           }}
         >
           <Icon name="chevronLeft" size={16} /> Back to orders
-        </button>
+        </AppLink>
 
         <div
           style={{
@@ -3860,8 +3870,8 @@ export function SellerAddProduct() {
         <div>
           <SellerHelpBar />
 
-          <button
-            onClick={() => nav("s-dashboard")}
+          <AppLink
+            href={pathFromScreen("s-dashboard")}
             style={{
               background: "none",
               border: "none",
@@ -3873,10 +3883,11 @@ export function SellerAddProduct() {
               gap: 6,
               marginBottom: 12,
               fontSize: ".875rem",
+              textDecoration: "none",
             }}
           >
             <Icon name="chevronLeft" size={16} /> Back to dashboard
-          </button>
+          </AppLink>
 
           <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
             Add a product
@@ -4703,7 +4714,7 @@ export function SellerInventory() {
               · मेरो सामान
             </span>
           </h1>
-          <Button variant="primary" icon="plus" onClick={() => nav("s-add")}>
+          <Button variant="primary" icon="plus" href={pathFromScreen("s-add")}>
             Add
           </Button>
         </div>
@@ -5149,7 +5160,7 @@ export function SellerLedger() {
               · भुक्तानी
             </span>
           </h1>
-          <Button variant="ghost" onClick={() => nav("s-dashboard")} icon="chevronLeft">
+          <Button variant="ghost" href={pathFromScreen("s-dashboard")} icon="chevronLeft">
             Back
           </Button>
         </div>
@@ -7001,7 +7012,7 @@ export function SellerSettings() {
         <p style={{ color: "var(--ink-600)" }}>
           Complete seller onboarding to configure shop rules and alerts.
         </p>
-        <Button variant="primary" onClick={() => nav("s-onboarding")}>
+        <Button variant="primary" href={pathFromScreen("s-onboarding")}>
           Go to onboarding
         </Button>
       </div>
@@ -8480,7 +8491,7 @@ export function SellerReports() {
                 </div>
               </div>
               <div style={{ marginTop: 14 }}>
-                <Button variant="primary" size="lg" full icon={c.icon} onClick={() => nav(c.to)}>
+                <Button variant="primary" size="lg" full icon={c.icon} href={pathFromScreen(c.to)}>
                   {c.action}
                 </Button>
               </div>

@@ -2,10 +2,10 @@
 
 import React, { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Icon, Logo, Button } from "@/components/ui";
+import { Icon, Logo, Button, AppLink } from "@/components/ui";
 import { useBz } from "@/components/common";
 import { resolvePostAuthScreen } from "@/lib/auth-rbac";
-import { screenFromPath } from "@/config/routes";
+import { screenFromPath, pathFromScreen } from "@/config/routes";
 import { useLogin, useRegister } from "@/hooks/use-auth";
 import { getGoogleLoginUrl } from "@/services/api/auth";
 import { ApiRequestError } from "@/services/api/http";
@@ -111,9 +111,8 @@ export function Auth() {
     <div
       style={{ minHeight: "calc(100vh - 110px)", background: "var(--page)", padding: "24px 28px" }}
     >
-      <button
-        type="button"
-        onClick={() => nav("home")}
+      <AppLink
+        href={pathFromScreen("home")}
         style={{
           background: "none",
           border: "none",
@@ -124,10 +123,11 @@ export function Auth() {
           alignItems: "center",
           gap: 6,
           fontSize: ".875rem",
+          textDecoration: "none",
         }}
       >
         <Icon name="chevronLeft" size={16} /> Back
-      </button>
+      </AppLink>
 
       <div style={{ maxWidth: 420, margin: "32px auto 0", textAlign: "center" }}>
         <div style={{ display: "flex", justifyContent: "center" }}>
@@ -335,7 +335,7 @@ export function Auth() {
           </div>
 
           <div style={{ marginTop: 10 }}>
-            <Button variant="ghost" full onClick={() => nav("home")}>
+            <Button variant="ghost" full href={pathFromScreen("home")}>
               Skip for now → शप गर्न जानुहोस्
             </Button>
           </div>

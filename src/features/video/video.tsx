@@ -35,7 +35,9 @@ import {
   PageBar,
   BackToTop,
   ApiState,
+  AppLink,
 } from "@/components/ui";
+import { pathFromScreen } from "@/config/routes";
 import { useVideoFeed } from "@/hooks/use-video-feed";
 import { useVideoLike } from "@/hooks/use-video-like";
 import type { VideoFeedItem } from "@/types/video";
@@ -458,9 +460,10 @@ function ReelItem({
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10, pointerEvents: "auto" }}>
-          <button
-            onClick={() => openProduct(p)}
-            aria-label={`Visit ${s.name}`}
+          <AppLink
+            href={pathFromScreen("pdp", p.id)}
+            onNavigate={() => openProduct(p)}
+            ariaLabel={`Visit ${s.name}`}
             style={{
               width: 38,
               height: 38,
@@ -477,6 +480,7 @@ function ReelItem({
               justifyContent: "center",
               flexShrink: 0,
               position: "relative",
+              textDecoration: "none",
             }}
           >
             {s.avatar ? (
@@ -508,7 +512,7 @@ function ReelItem({
                 <Icon name="plus" size={11} color="#fff" stroke={2.5} />
               </span>
             )}
-          </button>
+          </AppLink>
           <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span
@@ -1079,10 +1083,22 @@ export function VideoTheater() {
           Add to Cart
         </Button>
         <div style={{ display: "flex", gap: 10 }}>
-          <Button variant="secondary" full icon="bargain" onClick={() => openProduct(p)}>
+          <Button
+            variant="secondary"
+            full
+            icon="bargain"
+            href={pathFromScreen("pdp", p.id)}
+            onNavigate={() => openProduct(p)}
+          >
             Bargain
           </Button>
-          <Button variant="ghost" full iconRight="arrowRight" onClick={() => openProduct(p)}>
+          <Button
+            variant="ghost"
+            full
+            iconRight="arrowRight"
+            href={pathFromScreen("pdp", p.id)}
+            onNavigate={() => openProduct(p)}
+          >
             Full details
           </Button>
         </div>
@@ -1121,9 +1137,10 @@ export function VideoTheater() {
         gap: 10,
       }}
     >
-      <button
-        onClick={() => openProduct(p)}
-        aria-label="Open product details"
+      <AppLink
+        href={pathFromScreen("pdp", p.id)}
+        onNavigate={() => openProduct(p)}
+        ariaLabel="Open product details"
         style={{
           display: "flex",
           alignItems: "center",
@@ -1134,6 +1151,7 @@ export function VideoTheater() {
           cursor: "pointer",
           flex: 1,
           minWidth: 0,
+          textDecoration: "none",
         }}
       >
         <span
@@ -1187,7 +1205,7 @@ export function VideoTheater() {
             )}
           </span>
         </span>
-      </button>
+      </AppLink>
       <Button
         variant="primary"
         size="md"
@@ -1240,7 +1258,7 @@ export function VideoTheater() {
             title="No videos yet"
             message="When sellers add product videos, they appear here."
             cta="Browse products"
-            onCta={() => nav("browse")}
+            ctaHref={pathFromScreen("browse")}
           />
         </div>
       </div>

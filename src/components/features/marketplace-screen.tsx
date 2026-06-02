@@ -42,14 +42,49 @@ import {
   AdminSellerVerifications,
 } from "@/features";
 import { useBz } from "@/components/common";
+import { EmptyState, Spinner } from "@/components/ui";
 import { SELLER_SCREENS } from "@/config/routes";
+import { isBuyerScreen, isGuestViewableScreen } from "@/lib/auth-rbac";
 import { useBazaarStore } from "@/store/bazaar-store";
+
+/** Centered loader shown while the session probe settles on a gated screen. */
+function ScreenLoader() {
+  return (
+    <div style={{ display: "flex", justifyContent: "center", padding: "96px 24px" }}>
+      <Spinner />
+    </div>
+  );
+}
+
+/** Signed-out state for a gated buyer screen — guests land here, then opt in. */
+function SignedOutScreen({ onLogin }: { onLogin: () => void }) {
+  return (
+    <div style={{ padding: "28px 28px 96px" }}>
+      <EmptyState
+        title="Log in to continue"
+        message="Sign in to access your account, orders, bargains, messages, and more."
+        cta="Log in"
+        onCta={onLogin}
+      />
+    </div>
+  );
+}
 
 export function MarketplaceScreen() {
   const pathname = usePathname();
   const screen = screenFromPath(pathname);
-  const { product } = useBz();
+  const { product, nav } = useBz();
   const orderTotal = useBazaarStore((s) => s.orderTotal);
+  const authed = useBazaarStore((s) => s.authed);
+  const authReady = useBazaarStore((s) => s.authReady);
+
+  // Gate buyer screens that aren't publicly viewable. Guests stay on the page
+  // (no redirect) and see a sign-in CTA. Public/browse screens fall through and
+  // render normally; seller screens are bounced upstream by AuthRoleGuard.
+  if (isBuyerScreen(screen) && !isGuestViewableScreen(screen)) {
+    if (!authReady) return <ScreenLoader />;
+    if (!authed) return <SignedOutScreen onLogin={() => nav("auth")} />;
+  }
 
   if (screen === "auth") return <Auth />;
   if (screen === "auth-callback") {

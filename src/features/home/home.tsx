@@ -30,7 +30,9 @@ import {
   PageBar,
   BackToTop,
   ApiState,
+  AppLink,
 } from "@/components/ui";
+import { pathFromScreen } from "@/config/routes";
 import { ASSETS } from "@/config/assets";
 import { useCatalog } from "@/hooks/use-catalog";
 import { useHome } from "@/hooks/use-home";
@@ -240,10 +242,9 @@ export function Home() {
                   {buyerGreeting ?? "there"}
                 </div>
               </div>
-              <button
-                type="button"
-                aria-label="Notifications"
-                onClick={() => nav("orders")}
+              <AppLink
+                href={pathFromScreen("orders")}
+                ariaLabel="Notifications"
                 style={{
                   position: "relative",
                   width: 44,
@@ -256,6 +257,7 @@ export function Home() {
                   justifyContent: "center",
                   cursor: "pointer",
                   flexShrink: 0,
+                  textDecoration: "none",
                 }}
               >
                 <Icon name="bell" size={20} color="var(--ink-700)" />
@@ -272,7 +274,7 @@ export function Home() {
                     border: "2px solid #fff",
                   }}
                 />
-              </button>
+              </AppLink>
             </div>
 
             {/* Search — tapping opens the full search overlay (no inline typing on home) */}
@@ -338,8 +340,8 @@ export function Home() {
               </span>
               <Countdown />
             </div>
-            <button
-              onClick={() => nav("browse")}
+            <AppLink
+              href={pathFromScreen("browse")}
               style={{
                 background: "rgba(255,255,255,.2)",
                 border: "1px solid rgba(255,255,255,.4)",
@@ -353,10 +355,11 @@ export function Home() {
                 gap: 6,
                 flexShrink: 0,
                 whiteSpace: "nowrap",
+                textDecoration: "none",
               }}
             >
               View all <Icon name="arrowRight" size={16} />
-            </button>
+            </AppLink>
           </div>
           <div
             style={{
@@ -380,11 +383,17 @@ export function Home() {
           <SectionHead
             title="Shop by category"
             action="All categories"
-            onAction={() => nav("browse")}
+            actionHref={pathFromScreen("browse")}
           />
           <div className="bz-cat-row">
             {(categories ?? []).map((c) => (
-              <CategoryTile key={c.id} c={c} compact onClick={() => nav("browse")} />
+              <CategoryTile
+                key={c.id}
+                c={c}
+                compact
+                href={pathFromScreen("browse")}
+                onClick={() => nav("browse")}
+              />
             ))}
           </div>
         </W>
@@ -408,7 +417,7 @@ export function Home() {
             }
             title="What your city is buying right now"
             action="See more"
-            onAction={() => nav("browse")}
+            actionHref={pathFromScreen("browse")}
           />
           {loading ? (
             <SkeletonRail cols={5} />
@@ -465,7 +474,11 @@ export function Home() {
                     See it in motion before you <span style={{ color: "var(--red)" }}>buy</span>
                   </h2>
                 </div>
-                <Button variant="primary" onClick={() => nav("video")} iconRight="arrowRight">
+                <Button
+                  variant="primary"
+                  href={pathFromScreen("video")}
+                  iconRight="arrowRight"
+                >
                   Open video feed
                 </Button>
               </div>
@@ -487,7 +500,7 @@ export function Home() {
             eyebrow="Made in Nepal"
             title="Loved in Nepal"
             action="See more"
-            onAction={() => nav("browse")}
+            actionHref={pathFromScreen("browse")}
           />
           {loading ? (
             <SkeletonRail cols={5} />

@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { ASSETS } from "@/config/assets";
 import { postalForCity } from "@/lib/delivery-location";
 import { reverseGeocode } from "@/lib/reverse-geocode";
@@ -567,6 +568,69 @@ export function Logo({ height = 40, mono }) {
 }
 
 /* ---------- Button (5 variants from brief) ---------- */
+/* ---------- Navigation link ----------
+   Renders a real <a href> so the browser handles ⌘/Ctrl-click, middle-click,
+   and right-click → "Open in new tab" natively. Plain left-click is intercepted
+   for client-side SPA navigation. Pass `onNavigate` to run the app's own
+   navigation side-effects (e.g. setting the active product) on left-click;
+   otherwise it falls back to a router push. */
+function useSpaLinkClick(href, onNavigate, target) {
+  const router = useRouter();
+  return (e) => {
+    // Let the browser do its thing for new-tab / new-window intents.
+    if (
+      e.defaultPrevented ||
+      e.button !== 0 ||
+      e.metaKey ||
+      e.ctrlKey ||
+      e.shiftKey ||
+      e.altKey ||
+      target === "_blank"
+    ) {
+      return;
+    }
+    e.preventDefault();
+    if (onNavigate) {
+      onNavigate();
+    } else if (href) {
+      router.push(href);
+      if (typeof window !== "undefined") window.scrollTo({ top: 0 });
+    }
+  };
+}
+
+export function AppLink({
+  href,
+  onNavigate,
+  children,
+  className,
+  style,
+  ariaLabel,
+  title,
+  target,
+  rel,
+  tabIndex,
+  ...rest
+}) {
+  const onClick = useSpaLinkClick(href, onNavigate, target);
+  return (
+    <a
+      href={href}
+      onClick={onClick}
+      className={className}
+      style={style}
+      aria-label={ariaLabel}
+      title={title}
+      target={target}
+      rel={rel ?? (target === "_blank" ? "noopener noreferrer" : undefined)}
+      tabIndex={tabIndex}
+      {...rest}
+    >
+      {children}
+    </a>
+  );
+}
+
 export function Button({
   variant = "primary",
   size = "md",
@@ -580,6 +644,9 @@ export function Button({
   type = "button",
   style,
   className,
+  href,
+  onNavigate,
+  target,
 }: {
   variant?: string;
   size?: string;
@@ -593,6 +660,11 @@ export function Button({
   type?: "button" | "submit" | "reset";
   style?: React.CSSProperties;
   className?: string;
+  // When `href` is set, the button renders as a real <a> so the browser can
+  // open it in a new tab (⌘/Ctrl/middle/right-click). Left-click does SPA nav.
+  href?: string;
+  onNavigate?: () => void;
+  target?: string;
 }) {
   const h = size === "lg" ? 52 : size === "sm" ? 36 : 44;
   const fs = size === "lg" ? "1.125rem" : size === "sm" ? ".875rem" : "1rem";
@@ -637,6 +709,7 @@ export function Button({
     blue: "var(--blue-hover)",
   };
   const [hov, setHov] = useState(false);
+  const linkClick = useSpaLinkClick(href, onNavigate, target);
   let merged = { ...base, ...variants[variant] };
   if (hov && !disabled) {
     if (variant === "primary") merged.background = "var(--red-hover)";
@@ -652,6 +725,38 @@ export function Button({
       merged.color = "#fff";
     }
   }
+  const inner = loading ? (
+    <Spinner />
+  ) : (
+    <>
+      {icon && <Icon name={icon} size={size === "lg" ? 20 : 18} />}
+      {children}
+      {iconRight && <Icon name={iconRight} size={size === "lg" ? 20 : 18} />}
+    </>
+  );
+
+  // Real anchor when navigating — enables open-in-new-tab. Disabled/loading nav
+  // buttons fall back to a plain button so they stay inert.
+  if (href && !disabled && !loading) {
+    return (
+      <a
+        href={href}
+        className={className}
+        style={merged}
+        target={target}
+        rel={target === "_blank" ? "noopener noreferrer" : undefined}
+        onMouseEnter={() => setHov(true)}
+        onMouseLeave={() => setHov(false)}
+        onClick={(e) => {
+          onClick?.(e);
+          linkClick(e);
+        }}
+      >
+        {inner}
+      </a>
+    );
+  }
+
   return (
     <button
       type={type}
@@ -663,15 +768,7 @@ export function Button({
       onClick={onClick}
       aria-busy={loading || undefined}
     >
-      {loading ? (
-        <Spinner />
-      ) : (
-        <>
-          {icon && <Icon name={icon} size={size === "lg" ? 20 : 18} />}
-          {children}
-          {iconRight && <Icon name={iconRight} size={size === "lg" ? 20 : 18} />}
-        </>
-      )}
+      {inner}
     </button>
   );
 }
@@ -690,11 +787,34 @@ export function Spinner({ size = 18, color = "currentColor" }) {
     />
   );
 }
-export function IconButton({ name, onClick, active, badge, label, size = 40, title }) {
+export function IconButton({
+  name,
+  onClick,
+  active,
+  badge,
+  label,
+  size = 40,
+  title,
+  href,
+  onNavigate,
+  target,
+}) {
   const [hov, setHov] = useState(false);
+  const linkClick = useSpaLinkClick(href, onNavigate, target);
+  const Tag = href ? "a" : "button";
   return (
-    <button
-      onClick={onClick}
+    <Tag
+      href={href || undefined}
+      target={href ? target : undefined}
+      rel={href && target === "_blank" ? "noopener noreferrer" : undefined}
+      onClick={
+        href
+          ? (e) => {
+              onClick?.(e);
+              linkClick(e);
+            }
+          : onClick
+      }
       title={title || label}
       aria-label={label}
       style={{
@@ -740,7 +860,7 @@ export function IconButton({ name, onClick, active, badge, label, size = 40, tit
           {badge}
         </span>
       )}
-    </button>
+    </Tag>
   );
 }
 
@@ -1268,7 +1388,17 @@ export function SkeletonCard() {
 // Shared empty-state. `dark` flips text colors for dark surfaces (e.g. Watch).
 // Fixed spacing rhythm — image · 24 · title · 12 · message · 28 · button — so
 // every empty page (Bargains, Orders, Watch) reads as the same component.
-export function EmptyState({ title, message, cta, onCta, secondary, onSecondary, dark }) {
+export function EmptyState({
+  title,
+  message,
+  cta,
+  onCta,
+  ctaHref,
+  secondary,
+  onSecondary,
+  secondaryHref,
+  dark,
+}) {
   return (
     <div
       style={{
@@ -1310,12 +1440,12 @@ export function EmptyState({ title, message, cta, onCta, secondary, onSecondary,
       )}
       <div style={{ display: "flex", gap: 12, marginTop: 28 }}>
         {cta && (
-          <Button variant="primary" size="lg" onClick={onCta} iconRight="arrowRight">
+          <Button variant="primary" size="lg" onClick={onCta} href={ctaHref} iconRight="arrowRight">
             {cta}
           </Button>
         )}
         {secondary && (
-          <Button variant="secondary" size="lg" onClick={onSecondary}>
+          <Button variant="secondary" size="lg" onClick={onSecondary} href={secondaryHref}>
             {secondary}
           </Button>
         )}
@@ -1422,7 +1552,7 @@ export function Toast({ toast }) {
 }
 
 /* ---------- Section header with crimson stripe accent (brand pattern) ---------- */
-export function SectionHead({ eyebrow, title, accent, action, onAction }) {
+export function SectionHead({ eyebrow, title, accent, action, onAction, actionHref }) {
   return (
     <div
       className="bz-sec-head"
@@ -1463,26 +1593,45 @@ export function SectionHead({ eyebrow, title, accent, action, onAction }) {
           {title} {accent && <span style={{ color: "var(--red)" }}>{accent}</span>}
         </h2>
       </div>
-      {action && (
-        <button
-          onClick={onAction}
-          className="bz-sec-head__action"
-          style={{
-            background: "none",
-            border: "none",
-            color: "var(--blue)",
-            fontWeight: 700,
-            fontSize: ".9375rem",
-            cursor: "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 4,
-            whiteSpace: "nowrap",
-          }}
-        >
-          {action} <Icon name="arrowRight" size={16} />
-        </button>
-      )}
+      {action &&
+        (actionHref ? (
+          <AppLink
+            href={actionHref}
+            className="bz-sec-head__action"
+            style={{
+              color: "var(--blue)",
+              fontWeight: 700,
+              fontSize: ".9375rem",
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              whiteSpace: "nowrap",
+              textDecoration: "none",
+            }}
+          >
+            {action} <Icon name="arrowRight" size={16} />
+          </AppLink>
+        ) : (
+          <button
+            onClick={onAction}
+            className="bz-sec-head__action"
+            style={{
+              background: "none",
+              border: "none",
+              color: "var(--blue)",
+              fontWeight: 700,
+              fontSize: ".9375rem",
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {action} <Icon name="arrowRight" size={16} />
+          </button>
+        ))}
     </div>
   );
 }
@@ -1814,12 +1963,14 @@ export function OTPInput({ length = 4, onComplete }) {
 }
 
 /* ---------- Menu row (profile, dropdown lists) ---------- */
-export function MenuRow({ icon, label, sub, onClick, danger, badge, right }) {
+export function MenuRow({ icon, label, sub, onClick, danger, badge, right, href }) {
+  const Tag = href ? AppLink : "button";
+  const tagProps = href ? { href, onNavigate: onClick } : { onClick };
   return (
-    <button
+    <Tag
+      {...tagProps}
       className="bz-menu-row"
-      onClick={onClick}
-      style={{ color: danger ? "var(--danger)" : "var(--ink-900)" }}
+      style={{ color: danger ? "var(--danger)" : "var(--ink-900)", textDecoration: "none" }}
     >
       {icon && <Icon name={icon} size={20} color={danger ? "var(--danger)" : "var(--ink-700)"} />}
       <span style={{ flex: 1 }}>
@@ -1834,7 +1985,7 @@ export function MenuRow({ icon, label, sub, onClick, danger, badge, right }) {
         </Chip>
       )}
       {right || <Icon name="chevronRight" size={18} color="var(--ink-300)" />}
-    </button>
+    </Tag>
   );
 }
 

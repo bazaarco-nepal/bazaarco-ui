@@ -35,7 +35,9 @@ import {
   PageBar,
   BackToTop,
   ApiState,
+  AppLink,
 } from "@/components/ui";
+import { pathFromScreen } from "@/config/routes";
 import { useCatalog } from "@/hooks/use-catalog";
 import { useSearch } from "@/hooks/use-search";
 import type { SearchParams } from "@/services/api/search";
@@ -614,9 +616,9 @@ export function Browse() {
               marginBottom: 14,
             }}
           >
-            <span className="bz-crumb" onClick={() => nav("home")}>
+            <AppLink href={pathFromScreen("home")} className="bz-crumb">
               Home
-            </span>
+            </AppLink>
             <Icon name="chevronRight" size={13} color="var(--ink-300)" />
             <span style={{ color: "var(--ink-700)" }}>
               {query ? `Search: "${query}"` : "All products"}
@@ -1000,7 +1002,7 @@ export function Browse() {
                 <Button variant="secondary" onClick={clearAll}>
                   Clear all filters
                 </Button>
-                <Button variant="ghost" onClick={() => nav("home")}>
+                <Button variant="ghost" href={pathFromScreen("home")}>
                   Back to home
                 </Button>
               </div>

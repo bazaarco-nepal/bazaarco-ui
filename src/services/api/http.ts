@@ -1,5 +1,6 @@
 import axios, { type AxiosError } from "axios";
 import type { ApiErrorResponse, ApiSuccessResponse } from "./types";
+import { clearAccessToken, getAccessToken } from "@/lib/auth-token";
 import { useBazaarStore } from "@/store/bazaar-store";
 
 export class ApiRequestError extends Error {
@@ -23,6 +24,14 @@ export const apiClient = axios.create({
   },
 });
 
+apiClient.interceptors.request.use((config) => {
+  const token = getAccessToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 // An expired/invalid session surfaced mid-session (e.g. cookie expiry) should
 // drop the app back to guest state. AuthRoleGuard then bounces protected pages
 // to sign-in. The /auth/me probe uses a separate client, so guest loads stay quiet.
@@ -32,6 +41,7 @@ apiClient.interceptors.response.use(
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       const store = useBazaarStore.getState();
       if (store.authed) {
+        clearAccessToken();
         store.setAuthed(false);
         store.setUser(null);
         store.setCart([]);

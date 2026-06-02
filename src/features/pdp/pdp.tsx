@@ -1,5 +1,5 @@
-"use client";
 // @ts-nocheck — legacy design prototype; typed incrementally
+"use client";
 
 import React, { useState } from "react";
 import {
@@ -361,6 +361,8 @@ export function PDP({ p }: PdpProps) {
   const { variants = [], specs = [], desc = "" } = profile ?? {};
   const [tab, setTab] = useState(p.hasVideo ? "video" : "photos");
   const [photoIdx, setPhotoIdx] = useState(0);
+  // Gallery, cover first. Falls back to the single cover for older products.
+  const gallery = p.images?.length ? p.images : p.img ? [p.img] : [];
   const [qty, setQty] = useState(1);
   const [bargain, setBargain] = useState(false);
   const [descOpen, setDescOpen] = useState(false);
@@ -470,7 +472,7 @@ export function PDP({ p }: PdpProps) {
             )}
             {tab === "photos" && (
               <div>
-                {p.img ? (
+                {gallery.length > 0 ? (
                   <div
                     style={{
                       position: "relative",
@@ -481,7 +483,7 @@ export function PDP({ p }: PdpProps) {
                     }}
                   >
                     <img
-                      src={p.img}
+                      src={gallery[Math.min(photoIdx, gallery.length - 1)]}
                       alt={p.name}
                       style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />
@@ -489,39 +491,34 @@ export function PDP({ p }: PdpProps) {
                 ) : (
                   <Placeholder icon={p.icon} tint={p.tint} ratio="4 / 5" radius="var(--r-lg)" />
                 )}
-                <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-                  {[0, 1, 2, 3].map((i) => (
-                    <button
-                      key={i}
-                      onClick={() => setPhotoIdx(i)}
-                      style={{
-                        width: 72,
-                        height: 88,
-                        borderRadius: "var(--r-md)",
-                        overflow: "hidden",
-                        border: `2px solid ${photoIdx === i ? "var(--blue)" : "transparent"}`,
-                        cursor: "pointer",
-                        padding: 0,
-                        background: "none",
-                      }}
-                    >
-                      {p.img && i === 0 ? (
+                {gallery.length > 1 && (
+                  <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+                    {gallery.map((src, i) => (
+                      <button
+                        key={src + i}
+                        onClick={() => setPhotoIdx(i)}
+                        aria-label={`View photo ${i + 1}`}
+                        aria-pressed={photoIdx === i}
+                        style={{
+                          width: 72,
+                          height: 88,
+                          borderRadius: "var(--r-md)",
+                          overflow: "hidden",
+                          border: `2px solid ${photoIdx === i ? "var(--blue)" : "transparent"}`,
+                          cursor: "pointer",
+                          padding: 0,
+                          background: "none",
+                        }}
+                      >
                         <img
-                          src={p.img}
+                          src={src}
                           alt={`${p.name} view ${i + 1}`}
                           style={{ width: "100%", height: "100%", objectFit: "cover" }}
                         />
-                      ) : (
-                        <Placeholder
-                          icon={p.icon}
-                          tint={[p.tint, "slate", "gold", "blue"][i]}
-                          ratio="72 / 88"
-                          radius="0"
-                        />
-                      )}
-                    </button>
-                  ))}
-                </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

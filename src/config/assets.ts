@@ -6,7 +6,7 @@ export const ASSETS = {
   logo: "/assets/bazaarco-logo.png",
   logoBlue: "/assets/bazaarco-logo-blue.png",
   logoHighQuality: "/assets/logos/logo-high-quality.png",
-  mascot: "/assets/hiro.png",
+  mascot: "/Hiro%20Background%20Removed.png",
   skyline: "/assets/kathmandu-skyline.png",
   companySeal: "/assets/company-seal.png",
   companySealEssentials: "/assets/logos/company-seal-essentials.png",
@@ -24,7 +24,7 @@ export const ASSETS = {
     fluxHq: "/assets/logos/logo-flux-hq.jpeg",
   },
   promotions: {
-    hiro: "/assets/promotions/hiro-promo.png",
+    hiro: "/Hiro%20Background%20Removed.png",
     promo7870: "/assets/promotions/promo-7870.png",
     promo7873: "/assets/promotions/promo-7873.png",
     joinNowSeller: "/assets/promotions/join-now-seller.png",

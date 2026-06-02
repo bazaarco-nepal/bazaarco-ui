@@ -1,5 +1,5 @@
-"use client";
 // @ts-nocheck — legacy design prototype; typed incrementally
+"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import { ASSETS } from "@/config/assets";
@@ -183,6 +183,12 @@ export const ICON_PATHS = {
       <path d="M8 10V7a4 4 0 0 1 8 0v3" />
     </>
   ),
+  mail: (
+    <>
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="m2 7 10 6 10-6" />
+    </>
+  ),
   store: (
     <>
       <path d="M3 9 4.5 4h15L21 9" />
@@ -267,6 +273,56 @@ export const ICON_PATHS = {
     <>
       <path d="M12 3 13.6 8.4 19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6Z" />
       <path d="M19 15l.7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7Z" />
+    </>
+  ),
+  lipstick: (
+    <>
+      <path d="M9 9.5 8.2 4.2a1.5 1.5 0 0 1 .9-1.6l3-1.3a1 1 0 0 1 1.3.6l1.4 3.9a1.5 1.5 0 0 1-.5 1.7L11 9.5Z" />
+      <rect x="8.5" y="9.5" width="7" height="4" rx="1" />
+      <rect x="9.5" y="13.5" width="5" height="8" rx="1.2" />
+    </>
+  ),
+  temple: (
+    <>
+      <path d="M12 2 5 6h14Z" />
+      <path d="M6.5 6 4 10h16l-2.5-4" />
+      <path d="M8 10 6 14h12l-2-4" />
+      <path d="M7.5 14v7M16.5 14v7" />
+      <path d="M11 21v-4a1 1 0 0 1 2 0v4" />
+    </>
+  ),
+  sneaker: (
+    <>
+      <path d="M2 16.5V12c0-.6.4-1 1-1h2.6c.4 0 .8.2 1.1.5L9 14l4.5 1.2c1 .3 1.9.7 2.7 1.4l3.4 2.6c.6.4.9 1.1.9 1.8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1Z" />
+      <path d="M9 14l1.5-3" />
+      <path d="M2 19h18.5" />
+    </>
+  ),
+  sofa: (
+    <>
+      <path d="M4 11V8.5A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5V11" />
+      <path d="M3 12.5A1.5 1.5 0 0 1 4.5 11h0A1.5 1.5 0 0 1 6 12.5V14h12v-1.5a1.5 1.5 0 0 1 3 0V17a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z" />
+      <path d="M6 18v2M18 18v2" />
+    </>
+  ),
+  pacifier: (
+    <>
+      <circle cx="12" cy="15" r="3" />
+      <ellipse cx="12" cy="9" rx="5" ry="2.5" />
+      <circle cx="12" cy="4.5" r="2" />
+    </>
+  ),
+  handbag: (
+    <>
+      <path d="M4.5 8h15l1 12.5a1 1 0 0 1-1 1.1H4.5a1 1 0 0 1-1-1.1Z" />
+      <path d="M8.5 8V6.5a3.5 3.5 0 0 1 7 0V8" />
+    </>
+  ),
+  football: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7.5 15.8 10.3 14.3 14.8H9.7L8.2 10.3Z" />
+      <path d="M12 7.5V3M15.8 10.3 20 9M14.3 14.8 17 18.5M9.7 14.8 7 18.5M8.2 10.3 4 9" />
     </>
   ),
   phone: (
@@ -1209,7 +1265,10 @@ export function SkeletonCard() {
 }
 
 /* ---------- Empty state (mascot) ---------- */
-export function EmptyState({ title, message, cta, onCta, secondary, onSecondary }) {
+// Shared empty-state. `dark` flips text colors for dark surfaces (e.g. Watch).
+// Fixed spacing rhythm — image · 24 · title · 12 · message · 28 · button — so
+// every empty page (Bargains, Orders, Watch) reads as the same component.
+export function EmptyState({ title, message, cta, onCta, secondary, onSecondary, dark }) {
   return (
     <div
       style={{
@@ -1218,26 +1277,45 @@ export function EmptyState({ title, message, cta, onCta, secondary, onSecondary 
         alignItems: "center",
         textAlign: "center",
         padding: "48px 24px",
-        gap: 8,
       }}
     >
       <img
         src={ASSETS.mascot}
         alt=""
-        style={{ width: 180, height: 180, objectFit: "contain", marginBottom: 4 }}
+        style={{ width: 150, height: "auto", objectFit: "contain", marginBottom: 24 }}
       />
-      <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 700, color: "var(--ink-900)" }}>
+      <h3
+        style={{
+          margin: 0,
+          fontSize: "1.375rem",
+          lineHeight: 1.27,
+          fontWeight: 800,
+          color: dark ? "#fff" : "var(--ink-900)",
+        }}
+      >
         {title}
       </h3>
-      {message && <p style={{ margin: 0, color: "var(--ink-500)", maxWidth: 360 }}>{message}</p>}
-      <div style={{ display: "flex", gap: 12, marginTop: 12 }}>
+      {message && (
+        <p
+          style={{
+            margin: "12px 0 0",
+            fontSize: "1rem",
+            lineHeight: 1.5,
+            color: dark ? "rgba(255,255,255,.72)" : "var(--ink-500)",
+            maxWidth: 280,
+          }}
+        >
+          {message}
+        </p>
+      )}
+      <div style={{ display: "flex", gap: 12, marginTop: 28 }}>
         {cta && (
-          <Button variant="primary" onClick={onCta} iconRight="arrowRight">
+          <Button variant="primary" size="lg" onClick={onCta} iconRight="arrowRight">
             {cta}
           </Button>
         )}
         {secondary && (
-          <Button variant="secondary" onClick={onSecondary}>
+          <Button variant="secondary" size="lg" onClick={onSecondary}>
             {secondary}
           </Button>
         )}
@@ -1347,17 +1425,19 @@ export function Toast({ toast }) {
 export function SectionHead({ eyebrow, title, accent, action, onAction }) {
   return (
     <div
+      className="bz-sec-head"
       style={{
         display: "flex",
         alignItems: "flex-end",
         justifyContent: "space-between",
-        marginBottom: 20,
+        marginBottom: 16,
         gap: 16,
       }}
     >
       <div>
         {eyebrow && (
           <div
+            className="bz-sec-head__eyebrow"
             style={{
               fontSize: ".75rem",
               fontWeight: 700,
@@ -1371,6 +1451,7 @@ export function SectionHead({ eyebrow, title, accent, action, onAction }) {
           </div>
         )}
         <h2
+          className="bz-sec-head__title"
           style={{
             margin: 0,
             fontSize: "1.5rem",
@@ -1385,6 +1466,7 @@ export function SectionHead({ eyebrow, title, accent, action, onAction }) {
       {action && (
         <button
           onClick={onAction}
+          className="bz-sec-head__action"
           style={{
             background: "none",
             border: "none",
@@ -1462,11 +1544,12 @@ export function usePages(items, perPage = 10, resetKey) {
 export function LoadMore({
   paged,
   noun = "products",
-  nounNe = "उत्पादन",
+  nounNe = "सामानहरू",
   onTop,
   onClear,
   pageBar,
   style,
+  size = "lg",
 }) {
   if (!paged || paged.total === 0) return null;
   const { shown, total, hasMore, nextBatch, pageSize } = paged;
@@ -1488,10 +1571,10 @@ export function LoadMore({
         <>
           <Button
             variant="secondary"
-            size="lg"
+            size={size}
             onClick={paged.more}
             iconRight="chevronDown"
-            className="bz-loadmore"
+            className={size === "sm" ? undefined : "bz-loadmore"}
           >
             Show {nextBatch} more {noun}
           </Button>
@@ -1514,7 +1597,7 @@ export function LoadMore({
           >
             You've seen all {total} {noun}
             <span className="ne" style={{ color: "var(--ink-400)", fontWeight: 500 }}>
-              &nbsp;· सबै {nounNe} हेर्नुभयो
+              &nbsp;· सबै {nounNe} हेरिसक्नुभयो
             </span>
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
@@ -1765,11 +1848,12 @@ export function ChipGroup({ options, value, onChange }) {
           onClick={() => onChange(o.value)}
           aria-pressed={value === o.value}
           style={{
-            padding: "8px 14px",
+            height: 40,
+            padding: "0 18px",
             borderRadius: "var(--r-full)",
             cursor: "pointer",
             fontWeight: 700,
-            fontSize: ".8125rem",
+            fontSize: ".9375rem",
             border: `1.5px solid ${value === o.value ? "var(--blue)" : "var(--line-200)"}`,
             background: value === o.value ? "var(--tint-blue-50)" : "#fff",
             color: value === o.value ? "var(--blue)" : "var(--ink-500)",
@@ -1823,9 +1907,9 @@ export function BottomNav({
 }) {
   const buyerItems = [
     { id: "home", icon: "home", label: "Home" },
-    { id: "browse", icon: "grid", label: "Categories" },
-    { id: "video", icon: "video", label: "Watch" },
+    { id: "bargains", icon: "bargain", label: "Bargains" },
     { id: "orders", icon: "package", label: "Orders" },
+    { id: "video", icon: "video", label: "Watch" },
     { id: "profile", icon: "user", label: "Account" },
   ];
   const sellerItems = [
@@ -1998,6 +2082,7 @@ export function LandmarkAddress({ value, onChange }) {
             fontSize: ".9375rem",
             fontFamily: "var(--font-sans)",
             background: "#fff",
+            color: v.city ? "var(--ink-900)" : "var(--ink-400)",
           }}
         >
           <option value="">Select city…</option>
@@ -2071,7 +2156,7 @@ export function LandmarkAddress({ value, onChange }) {
           }}
         />
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+      <div style={{ display: "flex", gap: 10 }}>
         <button
           type="button"
           disabled={!v.city}
@@ -2080,36 +2165,47 @@ export function LandmarkAddress({ value, onChange }) {
             setMapOpen((open) => !open);
           }}
           style={{
+            flex: 1,
+            height: 48,
             display: "inline-flex",
             alignItems: "center",
-            gap: 7,
-            background: mapOpen || hasPin ? "var(--tint-blue-50)" : "var(--tint-blue-50)",
-            border: `1.5px dashed ${mapOpen || hasPin ? "var(--blue)" : "var(--blue)"}`,
+            justifyContent: "center",
+            gap: 8,
+            background: mapOpen || hasPin ? "var(--tint-blue-50)" : "#fff",
+            border: `1px solid ${mapOpen || hasPin ? "var(--blue)" : "var(--line-200)"}`,
             color: "var(--blue)",
-            padding: "12px 16px",
             borderRadius: "var(--r-md)",
             cursor: v.city ? "pointer" : "not-allowed",
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: ".875rem",
+            fontFamily: "var(--font-sans)",
             opacity: v.city ? 1 : 0.55,
           }}
         >
           <Icon name="mapPin" size={18} />
-          {mapOpen ? "Hide map" : hasPin ? "Edit pin on map" : "Drop a pin on the map (optional)"}
+          {mapOpen ? "Hide map" : hasPin ? "Edit pin" : "Drop a pin"}
         </button>
         <button
           type="button"
           onClick={useMyLocation}
           style={{
-            background: "none",
-            border: "none",
+            flex: 1,
+            height: 48,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            background: "#fff",
+            border: "1px solid var(--line-200)",
             color: "var(--blue)",
-            fontWeight: 700,
-            fontSize: ".8125rem",
+            borderRadius: "var(--r-md)",
             cursor: "pointer",
-            padding: "8px 4px",
+            fontWeight: 600,
+            fontSize: ".875rem",
+            fontFamily: "var(--font-sans)",
           }}
         >
+          <Icon name="mapPin" size={16} />
           {geoLoading ? "Locating…" : "Use my location"}
         </button>
       </div>

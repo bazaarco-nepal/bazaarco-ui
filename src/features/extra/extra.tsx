@@ -1,5 +1,5 @@
-"use client";
 // @ts-nocheck — legacy design prototype; typed incrementally
+"use client";
 
 import React from "react";
 import {
@@ -511,7 +511,7 @@ export function Bargains() {
     <ApiState isLoading={isLoading} isError={isError} error={error}>
       <div
         className="bz-container-pad"
-        style={{ maxWidth: 820, margin: "0 auto", padding: "20px 28px 100px" }}
+        style={{ maxWidth: 820, margin: "0 auto", padding: "28px 28px 96px" }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
           <div
@@ -553,10 +553,10 @@ export function Bargains() {
 
         <div
           style={{
-            background: "var(--tint-blue-50)",
-            border: "1px solid var(--blue)",
-            borderRadius: "var(--r-md)",
-            padding: "12px 14px",
+            background: "#f7faff",
+            border: "1px solid #dbe6ff",
+            borderRadius: "var(--r-lg)",
+            padding: "16px 18px",
             margin: "16px 0 20px",
             display: "flex",
             gap: 10,
@@ -564,7 +564,7 @@ export function Bargains() {
           }}
         >
           <Icon name="bargain" size={18} color="var(--blue)" />
-          <div style={{ fontSize: ".875rem", color: "var(--ink-700)", lineHeight: 1.45 }}>
+          <div style={{ fontSize: ".9375rem", color: "var(--ink-700)", lineHeight: 1.53 }}>
             <b>How it works:</b> open any product, tap <b>Make an offer</b>. Sellers usually reply
             within minutes. Accepted offers add to cart at the bargained price.
           </div>
@@ -730,11 +730,13 @@ export function Bargains() {
           </div>
         )}
 
-        <div style={{ marginTop: 24 }}>
-          <Button variant="secondary" full icon="bargain" onClick={() => nav("browse")}>
-            Find products to bargain on
-          </Button>
-        </div>
+        {offers.length > 0 && (
+          <div style={{ marginTop: 24 }}>
+            <Button variant="secondary" full icon="bargain" onClick={() => nav("browse")}>
+              Find products to bargain on
+            </Button>
+          </div>
+        )}
       </div>
     </ApiState>
   );

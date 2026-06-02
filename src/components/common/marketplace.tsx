@@ -7,7 +7,6 @@ import {
   Button,
   Spinner,
   IconButton,
-  RatingStars,
   Chip,
   VerifiedBadge,
   StatusPill,
@@ -28,7 +27,6 @@ import {
   BottomNav,
   LandmarkAddress,
   DeliverToModal,
-  VoiceMicButton,
   usePaged,
   usePages,
   LoadMore,
@@ -287,6 +285,7 @@ export function ProductCard({ p, onClick, sale = false }) {
       <div style={{ position: "relative" }}>
         {p.img ? (
           <div
+            className="bz-pcard__img"
             style={{
               position: "relative",
               width: "100%",
@@ -320,22 +319,35 @@ export function ProductCard({ p, onClick, sale = false }) {
           aria-label="Add to wishlist"
           style={{
             position: "absolute",
-            top: 8,
-            right: 8,
+            top: 2,
+            right: 2,
             width: 44,
             height: 44,
             borderRadius: "50%",
-            background: "rgba(255,255,255,.95)",
+            background: "transparent",
             border: "none",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            boxShadow: "var(--sh-1)",
             color: wished ? "var(--red)" : "var(--ink-500)",
           }}
         >
-          <Icon name="heart" size={20} fill={wished ? "currentColor" : "none"} />
+          {/* 44px tap target per WCAG; visible circle kept smaller (34px) to lighten the image */}
+          <span
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: "50%",
+              background: "rgba(255,255,255,.95)",
+              boxShadow: "var(--sh-1)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Icon name="heart" size={18} fill={wished ? "currentColor" : "none"} />
+          </span>
         </button>
         {/* Video — minimal icon-only chip, no label */}
         {p.hasVideo && (
@@ -366,6 +378,7 @@ export function ProductCard({ p, onClick, sale = false }) {
         )}
       </div>
       <div
+        className="bz-pcard__body"
         style={{
           padding: "12px 14px 14px",
           display: "flex",
@@ -375,6 +388,7 @@ export function ProductCard({ p, onClick, sale = false }) {
         }}
       >
         <div
+          className="bz-pcard__title"
           style={{
             fontSize: ".9375rem",
             fontWeight: 600,
@@ -384,24 +398,40 @@ export function ProductCard({ p, onClick, sale = false }) {
             WebkitLineClamp: 2,
             WebkitBoxOrient: "vertical",
             overflow: "hidden",
-            minHeight: "2.5em",
+            minHeight: "2.7em",
           }}
         >
           {p.name}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-          <RatingStars value={p.rating} size={13} showVal />
-          <span style={{ fontSize: ".75rem", color: "var(--ink-400)" }}>({p.reviews})</span>
-          {sale && (
-            <span style={{ fontSize: ".75rem", color: "var(--ink-400)" }}>· {soldLabel}</span>
-          )}
+        {/* Compact rating: one star + value + review count (no 5-star row) */}
+        <div
+          className="bz-pcard__rating"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
+            flexWrap: "wrap",
+            minHeight: "1.25rem",
+            fontSize: ".8125rem",
+            color: "var(--ink-500)",
+          }}
+        >
+          <Icon name="star" size={13} color="var(--gold)" fill="var(--gold)" />
+          <span className="tnum" style={{ fontWeight: 700, color: "var(--ink-700)" }}>
+            {(p.rating ?? 0).toFixed(1)}
+          </span>
+          <span style={{ color: "var(--ink-400)" }}>· {p.reviews} reviews</span>
+          {sale && <span style={{ color: "var(--ink-400)" }}>· {soldLabel}</span>}
           {s?.verified && (
-            <Icon name="badgeCheck" size={14} color="var(--gold)" title="Verified seller" />
+            <Icon name="badgeCheck" size={13} color="var(--gold)" title="Verified seller" />
           )}
         </div>
         {/* Single price line: all-in price + strikethrough original — via Price primitive */}
         {/* Trust row (cash on delivery / 7-day return) and delivery ETA live on the PDP only, not on cards. */}
-        <Price value={allIn} original={p.original} size="md" />
+        {/* marginTop:auto pins price to card bottom so price rows align across the grid */}
+        <div className="bz-pcard__price" style={{ marginTop: "auto" }}>
+          <Price value={allIn} original={p.original} size="md" />
+        </div>
       </div>
     </div>
   );
@@ -428,9 +458,45 @@ export function ProductRail({ items, onOpen, cols, sale = false }) {
 }
 
 /* ---------- Category tile ---------- */
-export function CategoryTile({ c, onClick }) {
+// Per-category pastel tint → soft circle bg + saturated line-icon color.
+// Harmonized with the BazaarCo brand palette (red primary, warm Nepali tones).
+const CAT_TINTS = {
+  red: { bg: "#fff1f2", fg: "#e63946" },
+  blue: { bg: "#eff6ff", fg: "#1d4ed8" },
+  saffron: { bg: "#fff4e5", fg: "#f77f00" },
+  purple: { bg: "#f4f0ff", fg: "#7c3aed" },
+  slate: { bg: "#f1f5f9", fg: "#475569" },
+  green: { bg: "#ecfdf5", fg: "#059669" },
+  gold: { bg: "#fdf5e1", fg: "#c08a00" },
+  teal: { bg: "#e9fbf7", fg: "#0d9488" },
+};
+
+// Canonical category icons, keyed by category id. Overrides whatever icon the
+// backend serves so the storefront stays correct without a re-seed. Keep in
+// sync with the backend taxonomy in
+// bazaarco-api/src/infrastructure/database/seeds/catalog-data.ts.
+const CATEGORY_ICON: Record<string, string> = {
+  clothing: "shirt",
+  footwear: "sneaker",
+  beauty: "lipstick",
+  electronics: "phone",
+  accessories: "handbag",
+  home: "home",
+  furniture: "sofa",
+  grocery: "basket",
+  books: "book",
+  sports: "football",
+  handicraft: "temple",
+  baby: "pacifier",
+};
+
+// `compact` (home grid) hides the Nepali subtitle and shortens the label to a
+// single word so 4 cols stay calm. Full label + Nepali live on the browse page.
+export function CategoryTile({ c, onClick, compact = false }) {
   const [hov, setHov] = useState(false);
-  const [imgOk, setImgOk] = useState(!!c.img);
+  const t = CAT_TINTS[c.tint] ?? CAT_TINTS.red;
+  const label = compact ? c.en.split(/\s*&\s*|\s+/)[0] : c.en;
+  const iconName = CATEGORY_ICON[c.id] ?? "tag";
   return (
     <button
       onClick={() => onClick(c)}
@@ -443,53 +509,43 @@ export function CategoryTile({ c, onClick }) {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: 10,
+        gap: 8,
         padding: 0,
+        width: "100%",
       }}
     >
       <div
+        className="bz-cat__circle"
         style={{
-          width: 104,
-          height: 104,
-          borderRadius: "var(--r-lg)",
-          overflow: "hidden",
-          position: "relative",
-          background: hov ? "var(--blue)" : "var(--tint-blue-50)",
-          border: `2px solid ${hov ? "var(--blue)" : "transparent"}`,
+          width: 64,
+          height: 64,
+          borderRadius: "50%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: hov ? t.fg : t.bg,
           boxShadow: hov ? "var(--sh-2)" : "var(--sh-1)",
+          transform: hov ? "translateY(-2px)" : "translateY(0)",
           transition: "all var(--dur-standard) var(--ease)",
         }}
       >
-        {imgOk ? (
-          <img
-            src={c.img}
-            alt=""
-            onError={() => setImgOk(false)}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              display: "block",
-              transform: hov ? "scale(1.06)" : "scale(1)",
-              transition: "transform var(--dur-standard) var(--ease)",
-            }}
-          />
-        ) : (
+        <Icon name={iconName} size={27} color={hov ? "#fff" : t.fg} stroke={1.8} />
+      </div>
+      <div style={{ textAlign: "center", lineHeight: 1.2 }}>
+        <div
+          className="bz-cat__en"
+          style={{ fontSize: ".8125rem", fontWeight: 600, color: "var(--ink-700)" }}
+        >
+          {label}
+        </div>
+        {!compact && c.ne && (
           <div
-            style={{
-              width: "100%",
-              height: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
+            className="ne bz-cat__ne"
+            style={{ fontSize: ".6875rem", fontWeight: 600, color: "var(--ink-400)", marginTop: 2 }}
           >
-            <Icon name={c.icon} size={40} color={hov ? "#fff" : "var(--blue)"} stroke={1.7} />
+            {c.ne}
           </div>
         )}
-      </div>
-      <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: ".875rem", fontWeight: 700, color: "var(--ink-900)" }}>{c.en}</div>
       </div>
     </button>
   );
@@ -616,9 +672,11 @@ export function Navbar() {
     setMenuOpen(false);
     nav(s);
   };
-  const onMic = () => toast?.("Listening… speak the product name");
   return (
     <header
+      // Home owns its own mobile header (greeting + search), so suppress the
+      // shared navbar on phones there; keep it on desktop and all other screens.
+      className={screen === "home" ? "bz-hide-mobile" : undefined}
       style={{
         position: "sticky",
         top: 0,
@@ -787,7 +845,7 @@ export function Navbar() {
               height: 48,
               border: `1.5px solid ${searchFocused ? "var(--red)" : "var(--line-200)"}`,
               borderRadius: "var(--r-full)",
-              padding: "0 58px 0 48px",
+              padding: "0 16px 0 48px",
               fontSize: ".9375rem",
               fontFamily: "var(--font-sans)",
               background: "#fff",
@@ -795,11 +853,6 @@ export function Navbar() {
               transition: "border-color var(--dur-standard) var(--ease)",
             }}
           />
-          <span
-            style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)" }}
-          >
-            <VoiceMicButton onClick={onMic} size={36} />
-          </span>
         </div>
         <nav style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
           <button

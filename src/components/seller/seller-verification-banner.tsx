@@ -1,6 +1,6 @@
 "use client";
 
-import { Icon } from "@/components/ui";
+import { Icon, Button } from "@/components/ui";
 import type { SellerVerificationStatus } from "@/services/api/seller-verification";
 
 export function SellerVerificationBanner({
@@ -73,7 +73,55 @@ export function SellerVerificationBanner({
   );
 }
 
-export function SellerVerificationBlocked({ actionLabel }: { actionLabel: string }) {
+/**
+ * Status-aware "you can't do this yet" block shown on gated pages (add product,
+ * upload video). It reflects the saved verification state so a seller who has
+ * already submitted sees a calm "in review" message — not a prompt to start
+ * the KYC flow over again.
+ *
+ * - none     → "Verification required" + Complete-verification action
+ * - pending  → "Verification in review" + NO action (resubmitting is blocked
+ *              until the admin reviews it)
+ * - rejected → "Verification not approved" + note + Re-upload action
+ *
+ * `onAction` is the entry into the KYC flow; the parent passes it only when an
+ * action makes sense (it is ignored for the pending state).
+ */
+export function SellerVerificationBlocked({
+  actionLabel,
+  status,
+  note,
+  onAction,
+}: {
+  actionLabel: string;
+  status: SellerVerificationStatus;
+  note?: string | null;
+  onAction?: () => void;
+}) {
+  const isPending = status === "pending";
+  const isRejected = status === "rejected";
+
+  const title = isPending
+    ? "Verification in review"
+    : isRejected
+      ? "Verification not approved"
+      : "Verification required";
+
+  const body = isPending
+    ? `Your NID or PAN is submitted. You'll be able to ${actionLabel} once BazaarCo admin approves it.`
+    : isRejected
+      ? (note ?? "Your NID or PAN could not be verified. Upload a clearer document to try again.")
+      : `You cannot ${actionLabel} until BazaarCo admin approves your NID or PAN. Check the warning banner above for status.`;
+
+  const subNe = isPending
+    ? "प्रमाणीकरण पर्खिरहेको छ — एडमिनले जाँच गर्नेछ"
+    : isRejected
+      ? "प्रमाणीकरण अस्वीकृत — कागजात पुन: अपलोड गर्नुहोस्"
+      : "कागजात अपलोड गर्नुहोस्";
+
+  // Pending sellers have nothing to do but wait — hide the action entirely.
+  const showAction = !isPending && !!onAction;
+
   return (
     <div
       style={{
@@ -85,7 +133,11 @@ export function SellerVerificationBlocked({ actionLabel }: { actionLabel: string
         marginBottom: 18,
       }}
     >
-      <Icon name="shieldCheck" size={36} color="var(--saffron)" />
+      <Icon
+        name={isRejected ? "bell" : "shieldCheck"}
+        size={36}
+        color={isRejected ? "var(--red)" : "var(--saffron)"}
+      />
       <h2
         style={{
           margin: "12px 0 6px",
@@ -94,7 +146,7 @@ export function SellerVerificationBlocked({ actionLabel }: { actionLabel: string
           color: "var(--blue-deep)",
         }}
       >
-        Verification required
+        {title}
       </h2>
       <p
         style={{
@@ -105,9 +157,20 @@ export function SellerVerificationBlocked({ actionLabel }: { actionLabel: string
           marginInline: "auto",
         }}
       >
-        You cannot {actionLabel} until BazaarCo admin approves your NID or PAN. Check the warning
-        banner above for status.
+        {body}
       </p>
+      <p className="ne" style={{ margin: "8px 0 0", fontSize: ".75rem", color: "var(--ink-500)" }}>
+        {subNe}
+      </p>
+      {showAction && (
+        <div style={{ marginTop: 16 }}>
+          <Button variant="secondary" onClick={onAction}>
+            {isRejected
+              ? "Re-upload document · कागजात फेरि पठाउनुहोस्"
+              : "Complete verification · प्रमाणीकरण"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

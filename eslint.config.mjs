@@ -23,6 +23,13 @@ const eslintConfig = [
       "react/no-unescaped-entities": "off",
       "@next/next/no-img-element": "off",
       "prefer-const": "off",
+      "@typescript-eslint/ban-ts-comment": [
+        "error",
+        {
+          "ts-nocheck": "allow-with-description",
+          minimumDescriptionLength: 3,
+        },
+      ],
     },
   },
 ];

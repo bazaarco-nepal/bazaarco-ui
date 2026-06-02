@@ -14,8 +14,8 @@ function BottomNavBridge() {
   const isSeller = SELLER_SCREENS.has(screen);
 
   const bottomNavActive = (() => {
-    if (screen === "home") return "home";
-    if (screen === "browse") return "browse";
+    if (screen === "home" || screen === "browse") return "home";
+    if (screen === "bargains") return "bargains";
     if (screen === "video") return "video";
     if (screen === "orders" || screen === "tracking") return "orders";
     if (screen === "profile" || screen === "profile-edit" || screen === "wishlist") {

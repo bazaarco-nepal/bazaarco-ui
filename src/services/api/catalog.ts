@@ -25,6 +25,17 @@ export interface ProductListParams {
   limit?: number;
 }
 
+export interface TopPicksParams {
+  days?: number;
+  page?: number;
+  limit?: number;
+}
+
+export interface PagedParams {
+  page?: number;
+  limit?: number;
+}
+
 export const catalogApi = {
   getCategories(): Promise<Category[]> {
     return getData<Category[]>("/catalog/categories");
@@ -52,6 +63,14 @@ export const catalogApi = {
 
   getProducts(params?: ProductListParams): Promise<PaginatedData<Product>> {
     return getData<PaginatedData<Product>>("/catalog/products", params);
+  },
+
+  getTopPicks(params?: TopPicksParams): Promise<PaginatedData<Product>> {
+    return getData<PaginatedData<Product>>("/catalog/products/top-picks", params);
+  },
+
+  getNewArrivals(params?: PagedParams): Promise<PaginatedData<Product>> {
+    return getData<PaginatedData<Product>>("/catalog/products/new-arrivals", params);
   },
 
   getProduct(id: string): Promise<Product> {

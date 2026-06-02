@@ -6,6 +6,9 @@ export interface SellerOrganization {
   linked: boolean;
   sellerId: string | null;
   shopName: string | null;
+  // Person behind the shop. Seller-facing only — never rendered to buyers,
+  // who only ever see `shopName`.
+  ownerName: string | null;
   city: string | null;
   logoUrl: string | null;
   bannerUrl: string | null;

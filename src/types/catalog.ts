@@ -19,7 +19,8 @@ export interface Category {
   id: string;
   en: string;
   ne: string;
-  icon: string;
+  // Icon is resolved from a code map by id (see CATEGORY_ICON in
+  // components/common/marketplace.tsx), not served by the API.
   tint: Tint;
   img: string;
   fields: CategoryAttributeField[];
@@ -56,8 +57,11 @@ export interface Product {
   eta: string;
   tag?: string;
   img?: string;
+  // Gallery, cover first. Sellers list with 3–5 images; `img` mirrors images[0].
+  images?: string[];
   lowStock?: number;
   outOfStock?: boolean;
+  createdAt?: string;
 }
 
 export interface CartLine extends Product {

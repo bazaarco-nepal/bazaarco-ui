@@ -1,5 +1,5 @@
-"use client";
 // @ts-nocheck — legacy design prototype; typed incrementally
+"use client";
 
 import React, { useState } from "react";
 import {

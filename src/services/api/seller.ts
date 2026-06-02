@@ -18,7 +18,10 @@ export interface CreateProductPayload {
   price: number;
   original?: number | null;
   categoryId: string;
-  img: string;
+  // 3–5 gallery images, cover first (enforced server-side). `img` is optional
+  // and defaults to images[0] on the server.
+  images: string[];
+  img?: string;
   metadata: Record<string, unknown>;
   stock?: number;
   variants?: CreateProductVariantPayload[];

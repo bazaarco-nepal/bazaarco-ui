@@ -5,7 +5,6 @@ export type AuthProvider = "google" | "local";
 export interface AuthUser {
   id: string;
   email: string;
-  username: string;
   name: string;
   avatarUrl: string | null;
   intent: AuthIntent;
@@ -16,14 +15,18 @@ export interface AuthUser {
 
 export interface RegisterPayload {
   email: string;
-  username: string;
+  name: string;
   password: string;
   intent: AuthIntent;
 }
 
 export interface LoginPayload {
-  login: string;
+  email: string;
   password: string;
+}
+
+export interface UpdateProfilePayload {
+  name: string;
 }
 
 export interface AuthSessionResponse {

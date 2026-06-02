@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Icon,
   Logo,
@@ -54,6 +55,7 @@ import { ASSETS } from "@/config/assets";
 
 const PLP_SORT_OPTIONS = [
   { value: "popular", label: "Popular" },
+  { value: "newest", label: "Newest" },
   { value: "low", label: "Price: low to high" },
   { value: "high", label: "Price: high to low" },
   { value: "rating", label: "Rating" },
@@ -188,7 +190,12 @@ export function Browse() {
   const [priceBand, setPriceBand] = useState(null); // band id or null
   const [priceMin, setPriceMin] = useState(""); // custom min — overrides band when set
   const [priceMax, setPriceMax] = useState(""); // custom max — overrides band when set
-  const [sort, setSort] = useState("popular");
+  const urlParams = useSearchParams();
+  const initialSort = (() => {
+    const fromUrl = urlParams?.get("sort");
+    return fromUrl && PLP_SORT_OPTIONS.some((o) => o.value === fromUrl) ? fromUrl : "popular";
+  })();
+  const [sort, setSort] = useState(initialSort);
   const [sheet, setSheet] = useState(false);
 
   const correctedQuery = (query && PHONETIC[query.toLowerCase().trim()]) || query;
@@ -265,6 +272,12 @@ export function Browse() {
     if (sort === "low") matches.sort((a, b) => a.price - b.price);
     else if (sort === "high") matches.sort((a, b) => b.price - a.price);
     else if (sort === "rating") matches.sort((a, b) => b.rating - a.rating);
+    else if (sort === "newest")
+      matches.sort(
+        (a, b) =>
+          (b.createdAt ? new Date(b.createdAt).getTime() : 0) -
+          (a.createdAt ? new Date(a.createdAt).getTime() : 0),
+      );
   }
 
   const strict = matches.filter((p) => !isAccessory(p, effectiveQuery) && !p.outOfStock);
@@ -320,84 +333,88 @@ export function Browse() {
         <BackToTop />
         {/* Mobile browse — sticky filter bar + product list when filtered, category grid otherwise */}
         <div className="bz-show-mobile">
-          {/* Sticky horizontal chip bar — research-aligned 5 universal filters + More */}
-          <div
-            style={{
-              display: "flex",
-              gap: 8,
-              overflowX: "auto",
-              padding: "4px 0 12px",
-              margin: "0 -8px",
-              scrollbarWidth: "none",
-              WebkitOverflowScrolling: "touch",
-            }}
-          >
-            <button
-              onClick={() => setSheet(true)}
+          {/* Sticky horizontal chip bar — research-aligned 5 universal filters + More.
+              Only in results mode (a query or active filter). On the category-grid
+              landing it's noise: filters act on product results, not category picking. */}
+          {(hasActive || query) && (
+            <div
               style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "10px 14px",
-                minHeight: 44,
-                flexShrink: 0,
-                borderRadius: "var(--r-full)",
-                cursor: "pointer",
-                fontWeight: 700,
-                fontSize: ".8125rem",
-                border: "1.5px solid var(--ink-900)",
-                background: "var(--ink-900)",
-                color: "#fff",
-                marginLeft: 8,
+                display: "flex",
+                gap: 8,
+                overflowX: "auto",
+                padding: "4px 0 12px",
+                margin: "0 -8px",
+                scrollbarWidth: "none",
+                WebkitOverflowScrolling: "touch",
               }}
             >
-              <Icon name="sliders" size={16} color="#fff" /> Filter
-              {hasActive && (
-                <span
-                  style={{
-                    background: "var(--red)",
-                    color: "#fff",
-                    borderRadius: "var(--r-full)",
-                    padding: "1px 7px",
-                    fontSize: ".7rem",
-                    fontWeight: 800,
-                  }}
-                >
-                  {activeChips.length}
-                </span>
-              )}
-            </button>
-            {PLP_QUICK_FILTERS.map((f) => {
-              const on = quick.includes(f.id);
-              return (
-                <button
-                  key={f.id}
-                  onClick={() => toggleQuick(f.id)}
-                  aria-pressed={on}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                    padding: "10px 14px",
-                    minHeight: 44,
-                    flexShrink: 0,
-                    borderRadius: "var(--r-full)",
-                    cursor: "pointer",
-                    fontWeight: 700,
-                    fontSize: ".8125rem",
-                    whiteSpace: "nowrap",
-                    border: `1.5px solid ${on ? "var(--blue)" : "var(--line-200)"}`,
-                    background: on ? "var(--tint-blue-50)" : "#fff",
-                    color: on ? "var(--blue)" : "var(--ink-700)",
-                  }}
-                >
-                  <Icon name={f.icon} size={14} color={on ? "var(--blue)" : "var(--ink-500)"} />
-                  {f.label}
-                </button>
-              );
-            })}
-            <div style={{ width: 8, flexShrink: 0 }} />
-          </div>
+              <button
+                onClick={() => setSheet(true)}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "10px 14px",
+                  minHeight: 44,
+                  flexShrink: 0,
+                  borderRadius: "var(--r-full)",
+                  cursor: "pointer",
+                  fontWeight: 700,
+                  fontSize: ".8125rem",
+                  border: "1.5px solid var(--ink-900)",
+                  background: "var(--ink-900)",
+                  color: "#fff",
+                  marginLeft: 8,
+                }}
+              >
+                <Icon name="sliders" size={16} color="#fff" /> Filter
+                {hasActive && (
+                  <span
+                    style={{
+                      background: "var(--red)",
+                      color: "#fff",
+                      borderRadius: "var(--r-full)",
+                      padding: "1px 7px",
+                      fontSize: ".7rem",
+                      fontWeight: 800,
+                    }}
+                  >
+                    {activeChips.length}
+                  </span>
+                )}
+              </button>
+              {PLP_QUICK_FILTERS.map((f) => {
+                const on = quick.includes(f.id);
+                return (
+                  <button
+                    key={f.id}
+                    onClick={() => toggleQuick(f.id)}
+                    aria-pressed={on}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "10px 14px",
+                      minHeight: 44,
+                      flexShrink: 0,
+                      borderRadius: "var(--r-full)",
+                      cursor: "pointer",
+                      fontWeight: 700,
+                      fontSize: ".8125rem",
+                      whiteSpace: "nowrap",
+                      border: `1.5px solid ${on ? "var(--blue)" : "var(--line-200)"}`,
+                      background: on ? "var(--tint-blue-50)" : "#fff",
+                      color: on ? "var(--blue)" : "var(--ink-700)",
+                    }}
+                  >
+                    <Icon name={f.icon} size={14} color={on ? "var(--blue)" : "var(--ink-500)"} />
+                    {f.label}
+                  </button>
+                );
+              })}
+              <div style={{ width: 8, flexShrink: 0 }} />
+            </div>
+          )}
 
           {/* Active filter chips with × */}
           {hasActive && (
@@ -485,62 +502,13 @@ export function Browse() {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(3, 1fr)",
-                  gap: 12,
+                  gridTemplateColumns: "repeat(4, 1fr)",
+                  gap: "20px 8px",
                   paddingBottom: 24,
                 }}
               >
                 {(CATEGORIES ?? []).map((c) => (
-                  <button
-                    key={c.id}
-                    onClick={() => toggleCat(c.id)}
-                    style={{
-                      background: "#fff",
-                      border: "1px solid var(--line-200)",
-                      borderRadius: "var(--r-lg)",
-                      padding: "14px 8px",
-                      cursor: "pointer",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: 8,
-                      minHeight: 100,
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 56,
-                        height: 56,
-                        borderRadius: "var(--r-md)",
-                        background: "var(--tint-blue-50)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {c.img ? (
-                        <img
-                          src={c.img}
-                          alt=""
-                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                        />
-                      ) : (
-                        <Icon name={c.icon} size={28} color="var(--blue)" stroke={1.7} />
-                      )}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: ".75rem",
-                        fontWeight: 700,
-                        color: "var(--ink-900)",
-                        textAlign: "center",
-                        lineHeight: 1.2,
-                      }}
-                    >
-                      {c.en}
-                    </div>
-                  </button>
+                  <CategoryTile key={c.id} c={c} onClick={() => toggleCat(c.id)} />
                 ))}
               </div>
             </>

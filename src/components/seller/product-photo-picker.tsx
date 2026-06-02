@@ -331,10 +331,12 @@ export function ProductPhotoPicker({
   photos,
   onChange,
   max = MAX_PHOTOS,
+  min = 1,
 }: {
   photos: ProductPhoto[];
   onChange: (photos: ProductPhoto[]) => void;
   max?: number;
+  min?: number;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const photosRef = useRef(photos);
@@ -541,14 +543,36 @@ export function ProductPhotoPicker({
         )}
       </div>
 
-      {photos.length > 0 && (
-        <p
-          style={{ fontSize: ".8125rem", color: "var(--success)", marginTop: 10, marginBottom: 0 }}
-        >
-          <Icon name="check" size={14} color="var(--success)" style={{ verticalAlign: "middle" }} />{" "}
-          {photos.length}/{max} photos ready
-        </p>
-      )}
+      {photos.length > 0 &&
+        (photos.length < min ? (
+          <p
+            style={{
+              fontSize: ".8125rem",
+              color: "var(--saffron)",
+              marginTop: 10,
+              marginBottom: 0,
+            }}
+          >
+            Add {min - photos.length} more — {min} photos required
+          </p>
+        ) : (
+          <p
+            style={{
+              fontSize: ".8125rem",
+              color: "var(--success)",
+              marginTop: 10,
+              marginBottom: 0,
+            }}
+          >
+            <Icon
+              name="check"
+              size={14}
+              color="var(--success)"
+              style={{ verticalAlign: "middle" }}
+            />{" "}
+            {photos.length}/{max} photos ready
+          </p>
+        ))}
 
       {cropDraft && (
         <ImageCropModal

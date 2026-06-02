@@ -2,8 +2,16 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { completeOnboarding, fetchCurrentUser, login, logout, register } from "@/services/api/auth";
-import type { LoginPayload, RegisterPayload } from "@/types/auth";
+import {
+  completeOnboarding,
+  deleteAccount,
+  fetchCurrentUser,
+  login,
+  logout,
+  register,
+  updateProfile,
+} from "@/services/api/auth";
+import type { LoginPayload, RegisterPayload, UpdateProfilePayload } from "@/types/auth";
 import { queryKeys } from "@/services/api/query-keys";
 import { useBazaarStore } from "@/store/bazaar-store";
 
@@ -55,6 +63,20 @@ export function useRegister() {
   });
 }
 
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: UpdateProfilePayload) => updateProfile(payload),
+    onSuccess: async (user) => {
+      applySession(user);
+      await queryClient.setQueryData(queryKeys.auth.me, user);
+      // Owner name drives the seller org payload too.
+      await queryClient.invalidateQueries({ queryKey: queryKeys.seller.organization });
+    },
+  });
+}
+
 export function useCompleteOnboarding() {
   const queryClient = useQueryClient();
 
@@ -67,20 +89,37 @@ export function useCompleteOnboarding() {
   });
 }
 
+function clearSessionState(queryClient: ReturnType<typeof useQueryClient>) {
+  useBazaarStore.getState().setAuthed(false);
+  useBazaarStore.getState().setUser(null);
+  useBazaarStore.getState().setCart([]);
+  useBazaarStore.getState().setWish([]);
+  useBazaarStore.getState().setWishSellers([]);
+  return Promise.all([
+    queryClient.removeQueries({ queryKey: queryKeys.auth.me }),
+    queryClient.removeQueries({ queryKey: queryKeys.cart.all }),
+    queryClient.removeQueries({ queryKey: queryKeys.wishlist.all }),
+  ]);
+}
+
 export function useLogout() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: logout,
     onSuccess: async () => {
-      useBazaarStore.getState().setAuthed(false);
-      useBazaarStore.getState().setUser(null);
-      useBazaarStore.getState().setCart([]);
-      useBazaarStore.getState().setWish([]);
-      useBazaarStore.getState().setWishSellers([]);
-      await queryClient.removeQueries({ queryKey: queryKeys.auth.me });
-      await queryClient.removeQueries({ queryKey: queryKeys.cart.all });
-      await queryClient.removeQueries({ queryKey: queryKeys.wishlist.all });
+      await clearSessionState(queryClient);
+    },
+  });
+}
+
+export function useDeleteAccount() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload?: { password?: string }) => deleteAccount(payload),
+    onSuccess: async () => {
+      await clearSessionState(queryClient);
     },
   });
 }

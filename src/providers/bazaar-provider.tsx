@@ -121,42 +121,41 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   const toggleWish = useCallback(
     async (productId: string) => {
       if (!ensureAuthed("Please sign in to save products to your wishlist.")) return;
-      const isSaved = useBazaarStore.getState().wish.includes(productId);
+      const prev = useBazaarStore.getState().wish;
+      const isSaved = prev.includes(productId);
+      setWish(isSaved ? prev.filter((id) => id !== productId) : [...prev, productId]);
+      toast(isSaved ? "Removed from wishlist" : "Saved to wishlist");
       try {
         if (isSaved) {
           await removeWishProduct.mutateAsync(productId);
-          toast("Removed from wishlist");
         } else {
           await addWishProduct.mutateAsync(productId);
-          toast("Saved to wishlist");
         }
-      } catch (error) {
-        const msg = error instanceof ApiRequestError ? error.message : "Could not update wishlist";
-        toast(msg);
+      } catch {
+        setWish(prev);
       }
     },
-    [addWishProduct, ensureAuthed, removeWishProduct, toast],
+    [addWishProduct, ensureAuthed, removeWishProduct, setWish, toast],
   );
 
   const toggleSellerWish = useCallback(
     async (sellerId: string) => {
       if (!ensureAuthed("Please sign in to save sellers to your wishlist.")) return;
-      const isSaved = useBazaarStore.getState().wishSellers.includes(sellerId);
+      const prev = useBazaarStore.getState().wishSellers;
+      const isSaved = prev.includes(sellerId);
+      setWishSellers(isSaved ? prev.filter((id) => id !== sellerId) : [...prev, sellerId]);
+      toast(isSaved ? "Unfollowed seller" : "Seller saved");
       try {
         if (isSaved) {
           await removeWishSeller.mutateAsync(sellerId);
-          toast("Unfollowed seller");
         } else {
           await addWishSeller.mutateAsync(sellerId);
-          toast("Seller saved");
         }
-      } catch (error) {
-        const msg =
-          error instanceof ApiRequestError ? error.message : "Could not update saved sellers";
-        toast(msg);
+      } catch {
+        setWishSellers(prev);
       }
     },
-    [addWishSeller, ensureAuthed, removeWishSeller, toast],
+    [addWishSeller, ensureAuthed, removeWishSeller, setWishSellers, toast],
   );
 
   const nav = useCallback(

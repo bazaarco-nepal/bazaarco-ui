@@ -74,6 +74,25 @@
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   --container: 1440px;
+
+  /* Spacing — modular scale (8px base). Use these for vertical rhythm so every
+     section steps in a uniform, predictable cadence. */
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  --space-4xl: 72px;
+  --space-5xl: 88px;
+  --space-6xl: 96px;
+
+  /* Homepage desktop rhythm (derived from the scale above).
+     navbar → hero ~44px; between major sections ~36px. */
+  --home-hero-top: 44px;
+  --home-section-gap: 36px;
 }
 
 * {
@@ -757,11 +776,20 @@ body {
     grid-template-columns: 1fr !important;
     gap: 16px !important;
   }
+  /* PDP detail tabs — more breathing room on mobile so the active tab and
+     content aren't cramped against each other. */
+  .bz-pdp-tabs {
+    padding: 16px 0 !important;
+    margin-top: 28px !important;
+  }
+  .bz-pdp-panel {
+    margin-top: 20px !important;
+  }
 }
 
 /* Product / card grids — auto-fit pattern that always fills row */
 .bz-grid-cards {
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
   gap: 24px !important;
 }
 .bz-grid-cards > * {
@@ -875,6 +903,26 @@ body {
   }
   .bz-flash-head > div:first-child {
     width: 100%;
+  }
+}
+
+/* Homepage vertical rhythm — desktop only. Inline paddingTop on each section
+   stays as the mobile baseline; here we override to a single modular cadence so
+   navbar → hero and every section-to-section gap line up. Mobile (<=768px) keeps
+   its own tighter inline spacing untouched. */
+@media (min-width: 769px) {
+  .bz-home-hero {
+    padding-top: var(--home-hero-top) !important;
+  }
+  .bz-home-section {
+    padding-top: var(--home-section-gap) !important;
+  }
+  /* The category card lives inside a .bz-home-section wrapper and adds its own
+     top/bottom margins — neutralize them so spacing isn't compounded. The
+     section paddingTop is the single source of the gap. */
+  .bz-home-section .bz-cat-card {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
   }
 }
 
@@ -1019,4 +1067,87 @@ body {
   outline: 2px solid var(--blue);
   outline-offset: 2px;
   border-radius: 2px;
+}
+
+/* PDP mobile hero — floating round buttons over image */
+.bz-pdp-m-fab {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(6px);
+  border: none;
+  color: var(--ink-700);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  z-index: 2;
+}
+.bz-pdp-m-fab:active {
+  transform: scale(0.96);
+}
+
+/* Tighten PDP container padding on mobile */
+@media (max-width: 768px) {
+  .bz-pdp-root {
+    padding: 12px 16px 0 !important;
+  }
+}
+
+/* PDP detail columns — vertical divider on desktop only */
+@media (min-width: 769px) {
+  .bz-pdp-details__col--right {
+    border-left: 1px solid var(--line-200);
+    padding-left: 32px;
+  }
+}
+
+/* PDP tabbed panes — tabs on desktop, stacked on mobile */
+@media (min-width: 769px) {
+  .bz-tab-pane--inactive {
+    display: none;
+  }
+  .bz-tab-pane__title {
+    display: none;
+  }
+  .bz-tab-pane {
+    margin-bottom: 0 !important;
+  }
+}
+@media (max-width: 768px) {
+  .bz-tab-bar {
+    display: none !important;
+  }
+}
+.bz-tab-btn {
+  background: none;
+  border: none;
+  padding: 10px 4px;
+  cursor: pointer;
+  color: var(--ink-500);
+  font-weight: 700;
+  font-size: 0.9375rem;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color var(--dur-standard) var(--ease);
+}
+.bz-tab-btn:hover {
+  color: var(--ink-700);
+}
+.bz-tab-btn--active {
+  color: var(--blue);
+  border-bottom-color: var(--blue);
+}
+
+/* Inline action link — underline on hover, color preserved */
+.bz-link-hover {
+  text-decoration: none;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+.bz-link-hover:hover {
+  text-decoration: underline;
 }

@@ -42,7 +42,7 @@ import { useBargains } from "@/hooks/use-bargains";
 import { useOrders } from "@/hooks/use-orders";
 import { useChatInbox } from "@/hooks/use-chat";
 import { useBazaarStore } from "@/store/bazaar-store";
-import { displayName, maskEmail, userInitial } from "@/lib/display";
+import { displayName, userInitial } from "@/lib/display";
 import {
   BazaarCtx,
   useBz,
@@ -427,7 +427,7 @@ export function Profile() {
         .bz-delete-link:hover { opacity: 1; }
       `}</style>
 
-      {/* LEFT RAIL — single cohesive card: identity + language + account actions */}
+      {/* LEFT RAIL — single cohesive card: identity + account actions */}
       <aside className="bz-profile__rail">
         <div className="bz-profile__card">
           {/* Identity */}
@@ -453,58 +453,20 @@ export function Profile() {
               <div style={{ fontSize: "1.125rem", fontWeight: 800 }}>
                 {displayName(user, "Guest")}
               </div>
-              <div className="tnum" style={{ fontSize: ".875rem", color: "var(--ink-500)" }}>
-                {maskEmail(user?.email)}
+              <div
+                className="tnum"
+                style={{
+                  fontSize: ".875rem",
+                  color: "var(--ink-500)",
+                  wordBreak: "break-all",
+                }}
+              >
+                {user?.email ?? ""}
               </div>
             </div>
             <Button variant="ghost" href={pathFromScreen("profile-edit")}>
               Edit
             </Button>
-          </div>
-
-          <div className="bz-profile__divider" />
-
-          {/* Language */}
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <Icon name="palette" size={20} color="var(--ink-700)" />
-            <span style={{ flex: 1, fontWeight: 600 }}>Language</span>
-            <div
-              style={{
-                display: "inline-flex",
-                border: "1.5px solid var(--line-200)",
-                borderRadius: "var(--r-full)",
-                overflow: "hidden",
-              }}
-            >
-              <button
-                aria-pressed="true"
-                style={{
-                  padding: "6px 14px",
-                  border: "none",
-                  cursor: "pointer",
-                  background: "var(--tint-blue-50)",
-                  color: "var(--blue)",
-                  fontWeight: 700,
-                  fontSize: ".8125rem",
-                }}
-              >
-                English
-              </button>
-              <button
-                style={{
-                  padding: "6px 14px",
-                  border: "none",
-                  cursor: "pointer",
-                  background: "#fff",
-                  color: "var(--ink-500)",
-                  fontWeight: 700,
-                  fontSize: ".8125rem",
-                  fontFamily: "var(--font-ne)",
-                }}
-              >
-                नेपाली
-              </button>
-            </div>
           </div>
         </div>
       </aside>
@@ -517,6 +479,13 @@ export function Profile() {
           sub="Track, return, re-order"
           href={pathFromScreen("orders")}
           onClick={() => nav("orders")}
+        />
+        <MenuRow
+          icon="heart"
+          label="Wishlist"
+          sub="Saved products"
+          href={pathFromScreen("wishlist")}
+          onClick={() => nav("wishlist")}
         />
         <MenuRow
           icon="messageDots"
@@ -938,7 +907,6 @@ function profileFormFromUser(user: { name?: string | null; email?: string | null
     email: user?.email ?? "",
     gender: "",
     dob: "",
-    language: "en",
     province: "",
     district: "",
     municipality: "",

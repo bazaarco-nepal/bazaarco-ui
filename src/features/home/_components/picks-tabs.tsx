@@ -25,8 +25,10 @@ function ProductSection({
   const items: Product[] = (query.data?.pages ?? []).flatMap((p) => p.items);
   const isLoading = query.isLoading;
 
-  // Hide section entirely (no heading, no empty state) once load settles with no items.
-  if (hideWhenEmpty && !isLoading && items.length === 0) return null;
+  // Hide section entirely whenever it has no items — including while loading, so a
+  // possibly-empty section never flashes a skeleton that then vanishes. It pops in
+  // only once items actually arrive; if none ever do, it stays invisible.
+  if (hideWhenEmpty && items.length === 0) return null;
 
   return (
     <section
@@ -70,13 +72,13 @@ export function PicksSections() {
 
   return (
     <>
+      <ProductSection title="New Arrivals" query={newArrivals} seeAllHref="/browse?sort=newest" />
       <ProductSection
         title="Top Picks"
         query={topPicks}
         seeAllHref="/browse?sort=popular"
         hideWhenEmpty
       />
-      <ProductSection title="New Arrivals" query={newArrivals} seeAllHref="/browse?sort=newest" />
     </>
   );
 }

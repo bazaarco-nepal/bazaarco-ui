@@ -60,8 +60,15 @@
 .bz-reel-chip-row::-webkit-scrollbar,
 .bz-reel-thumbs::-webkit-scrollbar,
 .bz-video-theater__thumbs::-webkit-scrollbar,
-.bz-video-panel::-webkit-scrollbar {
+.bz-video-panel::-webkit-scrollbar,
+.bz-hide-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* Hide scrollbar on horizontal rails (e.g. PDP "also bought" carousel). */
+.bz-hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 /* Immersive Watch page — fill viewport, no light page bleed */

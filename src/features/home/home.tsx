@@ -188,8 +188,12 @@ export function Home() {
       {children}
     </section>
   );
+  // The static shell (hero, mobile header, category frame, banners) needs no API
+  // data, so it paints immediately — no full-page spinner. Only the data-backed
+  // sections (categories, picks, feed) show their own skeletons while loading.
+  const catalogLoading = catalog.isLoading;
   return (
-    <ApiState isLoading={loading} isError={isError} error={error}>
+    <>
       <div style={{ paddingBottom: 8 }}>
         <BackToTop />
         {/* Desktop hero — hidden on phones */}
@@ -199,7 +203,7 @@ export function Home() {
           </W>
         </div>
 
-        {/* Mobile-only header — greeting + notification on top, search below.
+        {/* Mobile-only header — greeting + wishlist on top, search below.
             Sticky so the name row + search bar stay pinned while content scrolls. */}
         <div
           className="bz-show-mobile"
@@ -243,8 +247,8 @@ export function Home() {
                 </div>
               </div>
               <AppLink
-                href={pathFromScreen("orders")}
-                ariaLabel="Notifications"
+                href={pathFromScreen("wishlist")}
+                ariaLabel="Wishlist"
                 style={{
                   position: "relative",
                   width: 44,
@@ -260,20 +264,7 @@ export function Home() {
                   textDecoration: "none",
                 }}
               >
-                <Icon name="bell" size={20} color="var(--ink-700)" />
-                <span
-                  aria-hidden
-                  style={{
-                    position: "absolute",
-                    top: 8,
-                    right: 9,
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    background: "var(--red)",
-                    border: "2px solid #fff",
-                  }}
-                />
+                <Icon name="heart" size={20} color="var(--ink-700)" />
               </AppLink>
             </div>
 
@@ -388,15 +379,33 @@ export function Home() {
               actionHref={pathFromScreen("browse")}
             />
             <div className="bz-cat-row">
-              {(categories ?? []).map((c) => (
-                <CategoryTile
-                  key={c.id}
-                  c={c}
-                  compact
-                  href={pathFromScreen("browse")}
-                  onClick={() => nav("browse")}
-                />
-              ))}
+              {catalogLoading && !categories
+                ? Array.from({ length: 12 }).map((_, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 8,
+                      }}
+                    >
+                      <div
+                        className="skel"
+                        style={{ width: 64, height: 64, borderRadius: "50%" }}
+                      />
+                      <div className="skel" style={{ height: 10, width: 48, borderRadius: 4 }} />
+                    </div>
+                  ))
+                : (categories ?? []).map((c) => (
+                    <CategoryTile
+                      key={c.id}
+                      c={c}
+                      compact
+                      href={pathFromScreen("browse")}
+                      onClick={() => nav("browse")}
+                    />
+                  ))}
             </div>
           </div>
         </W>
@@ -515,15 +524,35 @@ export function Home() {
         {/* Endless product feed — shown on both web and mobile */}
         <W className="bz-home-section" style={{ paddingTop: 36 }}>
           <SectionHead title="More to explore" />
-          <div className="bz-picks-grid">
-            {feedPaged.visible.map((p) => (
-              <ProductCard key={p.id} p={p} onClick={openProduct} />
-            ))}
-          </div>
-          <LoadMore paged={feedPaged} noun="products" size="sm" style={{ paddingBottom: 12 }} />
+          {isError && !catalogLoading ? (
+            <EmptyState
+              title="Couldn't load products"
+              message="Something went wrong fetching the catalog. Please try again."
+              cta="Reload"
+              onCta={() => window.location.reload()}
+            />
+          ) : (
+            <>
+              <div className="bz-picks-grid">
+                {catalogLoading
+                  ? Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
+                  : feedPaged.visible.map((p) => (
+                      <ProductCard key={p.id} p={p} onClick={openProduct} />
+                    ))}
+              </div>
+              {!catalogLoading && (
+                <LoadMore
+                  paged={feedPaged}
+                  noun="products"
+                  size="sm"
+                  style={{ paddingBottom: 12 }}
+                />
+              )}
+            </>
+          )}
         </W>
       </div>
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
-    </ApiState>
+    </>
   );
 }

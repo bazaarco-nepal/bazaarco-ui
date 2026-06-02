@@ -42,6 +42,7 @@ export function MarketplaceShell({ children }: { children: React.ReactNode }) {
   const showNavbar = !NO_NAV_SCREENS.has(screen);
   const showFooter = !NO_FOOTER_SCREENS.has(screen);
   const isVideoScreen = screen === "video";
+  const hideNavbarOnMobile = screen === "pdp";
 
   const ctx = useBz();
 
@@ -49,7 +50,14 @@ export function MarketplaceShell({ children }: { children: React.ReactNode }) {
     <>
       <AuthRoleGuard />
       <div id="app-scroll" ref={scrollRef} className={isVideoScreen ? "bz-app--video" : undefined}>
-        {showNavbar && <Navbar />}
+        {showNavbar &&
+          (hideNavbarOnMobile ? (
+            <div className="bz-hide-mobile">
+              <Navbar />
+            </div>
+          ) : (
+            <Navbar />
+          ))}
         <main className={isVideoScreen ? "bz-main bz-main--video" : "bz-main"}>{children}</main>
         {showFooter && (
           <div className="bz-hide-mobile">

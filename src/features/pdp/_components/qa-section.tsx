@@ -1,11 +1,98 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Chip, SectionHead } from "@/components/ui";
+import { Button, Chip } from "@/components/ui";
 import { useBz } from "@/components/common";
-import { useProductQuestions } from "@/hooks/use-catalog";
+import { useProductQuestions, useCreateProductQuestion } from "@/hooks/use-catalog";
 import type { ProductQuestion } from "@/types";
-import { AskQuestionModal } from "./ask-question-modal";
+
+function QuestionComposer({ productId, onDone }: { productId: string; onDone: () => void }) {
+  const { toast, authed, promptLogin } = useBz();
+  const createQuestion = useCreateProductQuestion(productId);
+  const [text, setText] = useState("");
+  const canSubmit = text.trim().length > 0 && !createQuestion.isPending;
+
+  const submit = async () => {
+    if (!authed) {
+      promptLogin("Please sign in to ask a question.");
+      return;
+    }
+    if (!canSubmit) return;
+    try {
+      await createQuestion.mutateAsync({ text: text.trim() });
+      toast("Question posted — the seller will answer soon.");
+      setText("");
+      onDone();
+    } catch {
+      toast("Could not post question. Try again.");
+    }
+  };
+
+  return (
+    <div
+      style={{
+        marginBottom: 14,
+        padding: 14,
+        border: "1px solid var(--line-200)",
+        borderRadius: "var(--r-md)",
+        background: "#fff",
+      }}
+    >
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        rows={2}
+        maxLength={1000}
+        placeholder="Ask about size, materials, delivery…"
+        style={{
+          width: "100%",
+          resize: "vertical",
+          padding: "10px 12px",
+          borderRadius: "var(--r-sm)",
+          border: "1px solid var(--line-200)",
+          fontFamily: "var(--font-sans)",
+          fontSize: ".875rem",
+          color: "var(--ink-900)",
+        }}
+      />
+      <div style={{ marginTop: 8, display: "flex", justifyContent: "flex-end", gap: 12 }}>
+        <button
+          type="button"
+          onClick={onDone}
+          className="bz-link-hover"
+          style={{
+            background: "none",
+            border: "none",
+            color: "var(--ink-400)",
+            fontSize: ".8125rem",
+            fontWeight: 600,
+            cursor: "pointer",
+            padding: 0,
+          }}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={() => void submit()}
+          disabled={!canSubmit}
+          className="bz-link-hover"
+          style={{
+            background: "none",
+            border: "none",
+            color: canSubmit ? "var(--blue)" : "var(--ink-300)",
+            fontSize: ".8125rem",
+            fontWeight: 700,
+            cursor: canSubmit ? "pointer" : "not-allowed",
+            padding: 0,
+          }}
+        >
+          {createQuestion.isPending ? "Posting…" : "Post question"}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function timeAgo(iso: string): string {
   const then = new Date(iso).getTime();
@@ -78,24 +165,38 @@ function QuestionRow({ q, isLast }: { q: ProductQuestion; isLast: boolean }) {
 }
 
 export function QASection({ productId }: { productId: string }) {
-  const { authed, promptLogin } = useBz();
   const query = useProductQuestions(productId);
-  const [askOpen, setAskOpen] = useState(false);
+  const [composerOpen, setComposerOpen] = useState(false);
 
   const questions: ProductQuestion[] = (query.data?.pages ?? []).flatMap((p) => p.items);
   const isLoading = query.isLoading;
 
-  const onAsk = () => {
-    if (!authed) {
-      promptLogin("Please sign in to ask a question.");
-      return;
-    }
-    setAskOpen(true);
-  };
-
   return (
     <div>
-      <SectionHead title="Questions & answers" />
+      {!composerOpen && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+          <button
+            type="button"
+            onClick={() => setComposerOpen(true)}
+            className="bz-link-hover"
+            style={{
+              background: "none",
+              border: "none",
+              color: "var(--blue)",
+              fontSize: ".8125rem",
+              fontWeight: 700,
+              cursor: "pointer",
+              padding: 0,
+              whiteSpace: "nowrap",
+            }}
+          >
+            Ask a question
+          </button>
+        </div>
+      )}
+      {composerOpen && (
+        <QuestionComposer productId={productId} onDone={() => setComposerOpen(false)} />
+      )}
       <div
         style={{
           background: "#fff",
@@ -140,15 +241,7 @@ export function QASection({ productId }: { productId: string }) {
             </Button>
           </div>
         )}
-
-        <div style={{ marginTop: 18 }}>
-          <Button variant="secondary" full onClick={onAsk}>
-            Ask a question
-          </Button>
-        </div>
       </div>
-
-      {askOpen && <AskQuestionModal productId={productId} onClose={() => setAskOpen(false)} />}
     </div>
   );
 }

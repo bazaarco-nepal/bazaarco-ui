@@ -4,7 +4,6 @@ import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 import { screenFromPath } from "@/config/routes";
 import {
-  Splash,
   Auth,
   AuthCallback,
   Home,
@@ -52,7 +51,6 @@ export function MarketplaceScreen() {
   const { product } = useBz();
   const orderTotal = useBazaarStore((s) => s.orderTotal);
 
-  if (screen === "splash") return <Splash />;
   if (screen === "auth") return <Auth />;
   if (screen === "auth-callback") {
     return (

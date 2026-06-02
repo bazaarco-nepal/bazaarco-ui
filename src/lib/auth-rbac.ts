@@ -1,7 +1,7 @@
 import { BUYER_SCREENS, SELLER_SCREENS } from "@/config/routes";
 import type { AuthIntent, AuthUser } from "@/types/auth";
 
-const PUBLIC_SCREENS = new Set(["splash", "auth", "auth-callback"]);
+const PUBLIC_SCREENS = new Set(["auth", "auth-callback"]);
 
 /** Buyer screens an unauthenticated visitor may browse read-only. */
 const GUEST_BROWSE_SCREENS = new Set(["home", "browse", "pdp", "video"]);

@@ -39,7 +39,6 @@ export const SELLER_SCREENS = new Set([
 ]);
 
 export const NO_NAV_SCREENS = new Set([
-  "splash",
   "auth",
   "auth-callback",
   "checkout",
@@ -49,7 +48,6 @@ export const NO_NAV_SCREENS = new Set([
 ]);
 
 export const NO_FOOTER_SCREENS = new Set([
-  "splash",
   "auth",
   "auth-callback",
   "video",
@@ -59,7 +57,6 @@ export const NO_FOOTER_SCREENS = new Set([
 ]);
 
 export const NO_HELP_SCREENS = new Set([
-  "splash",
   "auth",
   "auth-callback",
   "checkout",
@@ -68,7 +65,6 @@ export const NO_HELP_SCREENS = new Set([
 ]);
 
 const SCREEN_PATH: Record<string, string> = {
-  splash: "/splash",
   auth: "/auth",
   "auth-callback": "/auth/callback",
   home: "/home",
@@ -111,7 +107,7 @@ const PATH_SCREEN: Record<string, string> = Object.fromEntries(
   Object.entries(SCREEN_PATH).map(([screen, path]) => [path, screen]),
 );
 
-PATH_SCREEN["/"] = "splash";
+PATH_SCREEN["/"] = "home";
 PATH_SCREEN["/product"] = "pdp";
 
 export function pathFromScreen(

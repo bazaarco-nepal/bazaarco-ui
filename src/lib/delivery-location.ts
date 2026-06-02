@@ -9,9 +9,9 @@ export interface DeliveryLocation {
 }
 
 export const DEFAULT_DELIVERY: DeliveryLocation = {
-  city: "Kathmandu",
-  area: "Chabahil",
-  postal: "44600",
+  city: "",
+  area: "",
+  postal: "",
 };
 
 const STORAGE_KEY = "bz_delivery_v1";

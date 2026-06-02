@@ -1,5 +1,5 @@
-"use client";
 // @ts-nocheck — legacy design prototype; typed incrementally
+"use client";
 
 import React, { useEffect, useState } from "react";
 import {
@@ -37,7 +37,7 @@ import {
   ApiState,
 } from "@/components/ui";
 import { useCatalog } from "@/hooks/use-catalog";
-import { useLogout } from "@/hooks/use-auth";
+import { useDeleteAccount, useLogout } from "@/hooks/use-auth";
 import { useBargains } from "@/hooks/use-bargains";
 import { useOrders } from "@/hooks/use-orders";
 import { useChatInbox } from "@/hooks/use-chat";
@@ -118,10 +118,10 @@ export function Orders() {
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
-      <div style={{ maxWidth: 820, margin: "0 auto", padding: "24px 28px 80px" }}>
+      <div style={{ maxWidth: 820, margin: "0 auto", padding: "28px 28px 96px" }}>
         <h1
           style={{
-            margin: "0 0 16px",
+            margin: "0 0 24px",
             fontSize: "1.5rem",
             fontWeight: 800,
             color: "var(--blue-deep)",
@@ -136,7 +136,7 @@ export function Orders() {
           </span>
         </h1>
 
-        <div style={{ marginBottom: 20 }}>
+        <div style={{ marginBottom: 24 }}>
           <ChipGroup
             options={[
               { value: "all", label: "All" },
@@ -273,13 +273,27 @@ export function Orders() {
 export function Profile() {
   const { nav, toast } = useBz();
   const logoutMutation = useLogout();
+  const deleteMutation = useDeleteAccount();
   const user = useBazaarStore((s) => s.user);
   const { data: bargains = [] } = useBargains();
   const { data: chatInbox } = useChatInbox();
   const unreadMessages = (chatInbox?.threads ?? []).reduce((sum, t) => sum + (t.unread || 0), 0);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteText, setDeleteText] = useState("");
-  const canDelete = deleteText.trim().toUpperCase() === "DELETE";
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const requiresPassword = user?.provider === "local";
+  const canDelete =
+    deleteText.trim().toUpperCase() === "DELETE" &&
+    (!requiresPassword || deletePassword.length > 0) &&
+    !deleteMutation.isPending;
+
+  const closeDeleteModal = () => {
+    setConfirmDelete(false);
+    setDeleteText("");
+    setDeletePassword("");
+    setDeleteError(null);
+  };
 
   const handleLogout = () => {
     logoutMutation.mutate(undefined, {
@@ -292,12 +306,15 @@ export function Profile() {
 
   const handleDelete = () => {
     if (!canDelete) return;
-    setConfirmDelete(false);
-    setDeleteText("");
-    logoutMutation.mutate(undefined, {
+    setDeleteError(null);
+    deleteMutation.mutate(requiresPassword ? { password: deletePassword } : undefined, {
       onSuccess: () => {
+        closeDeleteModal();
         toast?.("Account deleted. We're sorry to see you go.");
         nav("home");
+      },
+      onError: (err) => {
+        setDeleteError(err instanceof Error ? err.message : "Could not delete account");
       },
     });
   };
@@ -311,7 +328,7 @@ export function Profile() {
           gap: 22px;
           max-width: var(--container);
           margin: 0 auto;
-          padding: 24px 28px 32px;
+          padding: 28px 28px 96px;
           align-items: start;
         }
         @media (min-width: 900px) {
@@ -319,8 +336,38 @@ export function Profile() {
         }
         .bz-profile__rail { display: flex; flex-direction: column; gap: 14px; }
         .bz-profile__main { display: flex; flex-direction: column; gap: 10px; }
+        .bz-profile__actions { display: flex; flex-direction: column; gap: 14px; }
+        /* Mobile: collapse the separate menu cards into one grouped card with
+           inset hairline dividers — fewer borders reads calmer and more premium. */
+        @media (max-width: 899px) {
+          .bz-profile__main {
+            gap: 0;
+            background: #fff;
+            border: 1px solid var(--line-200);
+            border-radius: var(--r-xl);
+            overflow: hidden;
+          }
+          .bz-profile__main .bz-menu-row {
+            position: relative;
+            border: none;
+            border-radius: 0;
+            padding: 0 20px;
+            min-height: 72px;
+          }
+          .bz-profile__main .bz-menu-row:not(:first-child)::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 64px;
+            right: 0;
+            height: 1px;
+            background: var(--line-100);
+          }
+        }
         @media (min-width: 900px) {
-          .bz-profile__main { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; align-content: start; }
+          .bz-profile__rail    { grid-column: 1; grid-row: 1; }
+          .bz-profile__actions { grid-column: 1; grid-row: 2; }
+          .bz-profile__main    { grid-column: 2; grid-row: 1 / span 2; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; align-content: start; }
           .bz-profile__main > .bz-profile__full { grid-column: 1 / -1; }
         }
         .bz-profile__card {
@@ -454,18 +501,6 @@ export function Profile() {
               </button>
             </div>
           </div>
-
-          <div className="bz-profile__divider" />
-
-          {/* Account actions */}
-          <button className="bz-logout-btn" onClick={handleLogout}>
-            <Icon name="logout" size={18} color="var(--danger)" />
-            Log out
-          </button>
-          <button className="bz-delete-link" onClick={() => setConfirmDelete(true)}>
-            <Icon name="trash" size={14} color="var(--danger)" />
-            Delete my account
-          </button>
         </div>
       </aside>
 
@@ -511,13 +546,24 @@ export function Profile() {
         />
       </div>
 
+      {/* ACCOUNT ACTIONS — bottom on mobile, left-rail bottom on desktop */}
+      <div className="bz-profile__actions">
+        <div className="bz-profile__card">
+          <button className="bz-logout-btn" onClick={handleLogout}>
+            <Icon name="logout" size={18} color="var(--danger)" />
+            Log out
+          </button>
+          <button className="bz-delete-link" onClick={() => setConfirmDelete(true)}>
+            <Icon name="trash" size={14} color="var(--danger)" />
+            Delete my account
+          </button>
+        </div>
+      </div>
+
       {/* Account deletion confirmation modal */}
       {confirmDelete && (
         <div
-          onClick={() => {
-            setConfirmDelete(false);
-            setDeleteText("");
-          }}
+          onClick={closeDeleteModal}
           style={{
             position: "fixed",
             inset: 0,
@@ -618,23 +664,60 @@ export function Profile() {
                 fontSize: ".9375rem",
                 fontFamily: "var(--font-sans)",
                 outline: "none",
-                marginBottom: 18,
+                marginBottom: requiresPassword ? 12 : 18,
                 letterSpacing: ".02em",
               }}
             />
-            <div style={{ display: "flex", gap: 10 }}>
-              <Button
-                variant="ghost"
-                full
-                onClick={() => {
-                  setConfirmDelete(false);
-                  setDeleteText("");
+            {requiresPassword && (
+              <>
+                <p
+                  style={{
+                    margin: "0 0 8px",
+                    fontSize: ".8125rem",
+                    fontWeight: 700,
+                    color: "var(--ink-700)",
+                  }}
+                >
+                  Confirm your password
+                </p>
+                <input
+                  type="password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  placeholder="Your password"
+                  autoComplete="current-password"
+                  style={{
+                    width: "100%",
+                    height: 44,
+                    border: "1.5px solid var(--line-200)",
+                    borderRadius: "var(--r-md)",
+                    padding: "0 14px",
+                    fontSize: ".9375rem",
+                    fontFamily: "var(--font-sans)",
+                    outline: "none",
+                    marginBottom: 18,
+                  }}
+                />
+              </>
+            )}
+            {deleteError && (
+              <p
+                style={{
+                  margin: "0 0 14px",
+                  color: "var(--danger)",
+                  fontSize: ".875rem",
+                  fontWeight: 600,
                 }}
               >
+                {deleteError}
+              </p>
+            )}
+            <div style={{ display: "flex", gap: 10 }}>
+              <Button variant="ghost" full onClick={closeDeleteModal}>
                 Keep account
               </Button>
               <Button variant="danger" full disabled={!canDelete} onClick={handleDelete}>
-                Delete forever
+                {deleteMutation.isPending ? "Deleting…" : "Delete forever"}
               </Button>
             </div>
           </div>

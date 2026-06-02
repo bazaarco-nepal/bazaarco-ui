@@ -155,7 +155,9 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  overflow-x: hidden;
+  /* `clip` (not `hidden`) prevents horizontal scroll without becoming a
+     scroll container, so descendant `position: sticky` headers stay pinned. */
+  overflow-x: clip;
 }
 .bz-main {
   flex: 1;
@@ -187,6 +189,88 @@ a {
     display: none !important;
   }
   .bz-main {
-    padding-bottom: 68px;
+    /* nav bar (~68px) + extra breathing room so last cards aren't trapped */
+    padding-bottom: 96px;
+  }
+}
+
+.bz-picks-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  row-gap: 20px;
+  column-gap: 14px;
+}
+@media (min-width: 768px) {
+  .bz-picks-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 18px;
+  }
+}
+
+/* ---------- Mobile breathing room: lighter, more compact product cards ---------- */
+@media (max-width: 768px) {
+  /* Shorter, less dominant product image (avoid tall lifestyle shots) */
+  .bz-pcard__img {
+    aspect-ratio: 1 / 0.82 !important;
+  }
+  /* Fixed two-line title area so rating + price never shift between cards */
+  .bz-pcard__title {
+    font-size: 14px;
+    line-height: 19px;
+    min-height: 38px !important;
+    max-height: 38px;
+  }
+  .bz-pcard__rating {
+    font-size: 12px !important;
+    line-height: 16px;
+    min-height: 16px !important;
+  }
+  /* Strong but not headline — primary price ~18px, original stays muted */
+  .bz-pcard__price .tnum:first-child {
+    font-size: 18px !important;
+    line-height: 24px;
+  }
+
+  /* Tighter card body padding + spacing */
+  .bz-pcard__body {
+    padding: 10px 12px 12px !important;
+    gap: 0 !important;
+  }
+  .bz-pcard__title {
+    margin-bottom: 8px;
+  }
+  .bz-pcard__rating {
+    margin-bottom: 8px;
+  }
+
+  /* Calmer category row: smaller circle + lighter labels */
+  .bz-cat__circle {
+    width: 46px !important;
+    height: 46px !important;
+  }
+  .bz-cat__en {
+    font-size: 11px !important;
+    line-height: 14px !important;
+  }
+  .bz-cat__ne {
+    font-size: 10px !important;
+    font-weight: 500 !important;
+    color: var(--ink-300) !important;
+  }
+
+  /* Lighter section headers on mobile — large bold type reads heavy on a phone */
+  .bz-sec-head {
+    margin-bottom: 18px !important;
+  }
+  .bz-sec-head__eyebrow {
+    font-size: 11px !important;
+    letter-spacing: 0.14em !important;
+  }
+  .bz-sec-head__title {
+    font-size: 21px !important;
+    line-height: 27px !important;
+  }
+  .bz-sec-head__action {
+    font-size: 13px !important;
   }
 }

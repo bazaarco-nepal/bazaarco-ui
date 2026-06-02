@@ -1,13 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Icon, Logo, Button } from "@/components/ui";
 import { useBz } from "@/components/common";
-import { ASSETS } from "@/config/assets";
 import { resolvePostAuthScreen } from "@/lib/auth-rbac";
 import { screenFromPath } from "@/config/routes";
-import { hasOnboarded, markOnboarded } from "@/lib/onboarding";
 import { useLogin, useRegister } from "@/hooks/use-auth";
 import { getGoogleLoginUrl } from "@/services/api/auth";
 import { ApiRequestError } from "@/services/api/http";
@@ -25,110 +23,6 @@ const inputStyle: React.CSSProperties = {
   background: "#fff",
   color: "var(--ink-900)",
 };
-
-export function Splash() {
-  const { nav } = useBz();
-
-  // Returning visitors skip the splash and land on the homepage.
-  useEffect(() => {
-    if (hasOnboarded()) {
-      nav("home");
-    }
-  }, [nav]);
-
-  const goAuth = () => {
-    markOnboarded();
-    nav("auth");
-  };
-  const goGuest = () => {
-    markOnboarded();
-    nav("home");
-  };
-
-  const heroButtonStyle: React.CSSProperties = {
-    flex: 1,
-    width: "100%",
-    maxWidth: 480,
-    margin: "0 auto",
-    padding: "48px 28px 0",
-    textAlign: "center",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    fontFamily: "inherit",
-    color: "inherit",
-  };
-
-  return (
-    <div
-      style={{
-        minHeight: "calc(100vh - 110px)",
-        background: "var(--page)",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      <button
-        type="button"
-        onClick={goAuth}
-        style={heroButtonStyle}
-        aria-label="Continue to sign in"
-      >
-        <img
-          src={ASSETS.mascot}
-          alt=""
-          className="bz-auth-hero-img"
-          style={{ width: 240, height: 240, objectFit: "contain", margin: "0 auto 28px" }}
-        />
-        <h1
-          className="bz-hero-h2"
-          style={{ margin: 0, fontWeight: 800, color: "var(--blue-deep)", letterSpacing: "-.02em" }}
-        >
-          Nepal's <span style={{ color: "var(--red)" }}>fair</span> marketplace
-        </h1>
-        <p
-          className="ne"
-          style={{ color: "var(--ink-500)", fontSize: "1.0625rem", margin: "12px 0 6px" }}
-        >
-          नेपालको इमानदार बजार
-        </p>
-        <p
-          style={{
-            color: "var(--ink-500)",
-            fontSize: "1rem",
-            margin: 0,
-            maxWidth: 360,
-            marginInline: "auto",
-          }}
-        >
-          Low fees. Real product videos. Fast delivery across Nepal.
-        </p>
-      </button>
-
-      <div style={{ padding: "24px 28px 40px", maxWidth: 480, margin: "0 auto", width: "100%" }}>
-        <Button variant="primary" size="lg" full iconRight="arrowRight" onClick={goAuth}>
-          Get started · सुरु गर्नुहोस्
-        </Button>
-        <Button variant="ghost" full onClick={goGuest} style={{ marginTop: 10 }}>
-          Skip — browse as guest · पछि गर्ने
-        </Button>
-        <p
-          style={{
-            textAlign: "center",
-            color: "var(--ink-400)",
-            fontSize: ".8125rem",
-            marginTop: 14,
-          }}
-        >
-          Tap the hero or Get started to continue
-        </p>
-      </div>
-    </div>
-  );
-}
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -155,8 +49,8 @@ export function Auth() {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [intent, setIntent] = useState<"buyer" | "seller">("buyer");
   const [email, setEmail] = useState("");
-  const [username, setUsername] = useState("");
-  const [loginId, setLoginId] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [loginEmail, setLoginEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -188,13 +82,13 @@ export function Auth() {
       if (mode === "register") {
         user = await registerMutation.mutateAsync({
           email: email.trim(),
-          username: username.trim(),
+          name: fullName.trim(),
           password,
           intent,
         });
       } else {
         user = await loginMutation.mutateAsync({
-          login: loginId.trim(),
+          email: loginEmail.trim(),
           password,
         });
       }
@@ -210,8 +104,8 @@ export function Auth() {
   const canSubmit =
     password.length >= 8 &&
     (mode === "login"
-      ? loginId.trim().length > 0
-      : email.trim().length > 0 && username.trim().length >= 3);
+      ? loginEmail.trim().length > 0
+      : email.trim().length > 0 && fullName.trim().length >= 2);
 
   return (
     <div
@@ -219,7 +113,7 @@ export function Auth() {
     >
       <button
         type="button"
-        onClick={() => nav("splash")}
+        onClick={() => nav("home")}
         style={{
           background: "none",
           border: "none",
@@ -284,8 +178,8 @@ export function Auth() {
           </h1>
           <p style={{ color: "var(--ink-500)", margin: "6px 0 0" }}>
             {mode === "register"
-              ? "Email, username, and password — or continue with Google."
-              : "Sign in with email or username and password."}
+              ? "Your name, email, and password — or continue with Google."
+              : "Sign in with email and password — or continue with Google."}
           </p>
 
           <div style={{ marginTop: 28 }}>
@@ -349,6 +243,19 @@ export function Auth() {
           <form onSubmit={handleSubmit}>
             {mode === "register" ? (
               <>
+                <Field label="Full name">
+                  <input
+                    type="text"
+                    autoComplete="name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="e.g. Sita Sharma"
+                    style={inputStyle}
+                    minLength={2}
+                    maxLength={255}
+                    required
+                  />
+                </Field>
                 <Field label="Email">
                   <input
                     type="email"
@@ -360,28 +267,15 @@ export function Auth() {
                     required
                   />
                 </Field>
-                <Field label="Username">
-                  <input
-                    type="text"
-                    autoComplete="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ""))}
-                    placeholder="your_username"
-                    style={inputStyle}
-                    minLength={3}
-                    maxLength={32}
-                    required
-                  />
-                </Field>
               </>
             ) : (
-              <Field label="Email or username">
+              <Field label="Email">
                 <input
-                  type="text"
-                  autoComplete="username"
-                  value={loginId}
-                  onChange={(e) => setLoginId(e.target.value)}
-                  placeholder="you@example.com or username"
+                  type="email"
+                  autoComplete="email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder="you@example.com"
                   style={inputStyle}
                   required
                 />

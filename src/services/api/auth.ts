@@ -1,7 +1,13 @@
 import axios from "axios";
 
 import { clearAccessToken, getAccessToken, setAccessToken } from "@/lib/auth-token";
-import type { AuthSessionResponse, AuthUser, LoginPayload, RegisterPayload } from "@/types/auth";
+import type {
+  AuthSessionResponse,
+  AuthUser,
+  LoginPayload,
+  RegisterPayload,
+  UpdateProfilePayload,
+} from "@/types/auth";
 import type { ApiSuccessResponse } from "./types";
 import { ApiRequestError } from "./http";
 
@@ -70,6 +76,15 @@ export async function login(payload: LoginPayload): Promise<AuthUser> {
   }
 }
 
+export async function updateProfile(payload: UpdateProfilePayload): Promise<AuthUser> {
+  try {
+    const { data } = await authClient.patch<ApiSuccessResponse<AuthUser>>("/auth/me", payload);
+    return data.data;
+  } catch (error) {
+    throw mapAuthError(error);
+  }
+}
+
 export async function fetchCurrentUser(): Promise<AuthUser> {
   try {
     const { data } = await authClient.get<ApiSuccessResponse<AuthUser>>("/auth/me");
@@ -82,6 +97,16 @@ export async function fetchCurrentUser(): Promise<AuthUser> {
 export async function logout(): Promise<void> {
   try {
     await authClient.post("/auth/logout");
+  } catch (error) {
+    throw mapAuthError(error);
+  } finally {
+    clearAccessToken();
+  }
+}
+
+export async function deleteAccount(payload?: { password?: string }): Promise<void> {
+  try {
+    await authClient.delete("/auth/me", { data: payload ?? {} });
   } catch (error) {
     throw mapAuthError(error);
   } finally {

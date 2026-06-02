@@ -7,9 +7,7 @@ import {
   Button,
   Spinner,
   IconButton,
-  RatingStars,
   Chip,
-  VerifiedBadge,
   StatusPill,
   Price,
   Placeholder,
@@ -26,7 +24,6 @@ import {
   MobileBuyBar,
   BottomNav,
   LandmarkAddress,
-  VoiceMicButton,
   usePaged,
   usePages,
   LoadMore,
@@ -51,6 +48,9 @@ import {
   Footer,
   DevViewSwitcher,
 } from "@/components/common";
+import { PicksSections } from "./_components/picks-tabs";
+import { SearchOverlay } from "./_components/search-overlay";
+import { BestPicksHero, BestPicksBanner } from "./_components/best-picks-hero";
 
 function Countdown({ initial = 3 * 3600 + 42 * 60 + 9 }) {
   const [s, setS] = useState(initial);
@@ -87,126 +87,6 @@ function Countdown({ initial = 3 * 3600 + 42 * 60 + 9 }) {
       <span style={{ color: "#fff", fontWeight: 800 }}>:</span>
       <Box v={ss} />
     </span>
-  );
-}
-
-// Single sponsored placement — one premium paid ad, no carousel.
-function Hero() {
-  const { nav } = useBz();
-  return (
-    <div
-      className="bz-split-hero"
-      style={{
-        position: "relative",
-        borderRadius: "var(--r-xl)",
-        overflow: "hidden",
-        minHeight: 360,
-        display: "flex",
-        alignItems: "center",
-        background: "radial-gradient(130% 150% at 86% 50%, #eef0fc 0%, #e6ebfb 45%, #dde6f7 100%)",
-      }}
-    >
-      {/* Sponsor disclosure — top-left, honest and unobtrusive */}
-      <span
-        style={{
-          position: "absolute",
-          top: 18,
-          left: 24,
-          zIndex: 3,
-          fontSize: ".6875rem",
-          fontWeight: 700,
-          letterSpacing: ".12em",
-          textTransform: "uppercase",
-          color: "var(--ink-400)",
-        }}
-      >
-        Sponsored
-      </span>
-
-      {/* Copy — minimal, catchy */}
-      <div
-        className="fade-up"
-        style={{
-          position: "relative",
-          zIndex: 2,
-          flex: 1,
-          padding: "56px 56px",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          maxWidth: 560,
-        }}
-      >
-        <span
-          style={{
-            fontSize: ".8125rem",
-            fontWeight: 700,
-            letterSpacing: ".22em",
-            textTransform: "uppercase",
-            color: "var(--ink-500)",
-            marginBottom: 10,
-          }}
-        >
-          Samsung
-        </span>
-        <h1
-          className="bz-hero-h1"
-          style={{ margin: 0, fontWeight: 800, color: "var(--ink-900)", letterSpacing: "-.02em" }}
-        >
-          Galaxy S26 Ultra
-        </h1>
-        <p
-          style={{
-            color: "var(--ink-600)",
-            fontSize: "1.0625rem",
-            marginTop: 14,
-            lineHeight: 1.5,
-          }}
-        >
-          Now on BazaarCo. Pre-order &amp; save up to{" "}
-          <strong style={{ color: "var(--ink-900)" }}>Rs 18,000</strong>.
-        </p>
-        <div style={{ marginTop: 30 }}>
-          <Button
-            variant="primary"
-            size="lg"
-            style={{ borderRadius: "var(--r-full)" }}
-            iconRight="arrowRight"
-            onClick={() => nav("browse")}
-          >
-            Shop now
-          </Button>
-        </div>
-      </div>
-
-      {/* Product — white-bg render blended onto light panel via multiply (drops the white box) */}
-      <div
-        className="bz-hero-art"
-        style={{
-          position: "relative",
-          zIndex: 2,
-          width: 480,
-          flexShrink: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "24px 40px",
-        }}
-      >
-        <img
-          src={ASSETS.promotions.sponsoredS26Ultra}
-          alt="Samsung Galaxy S26 Ultra"
-          style={{
-            width: "100%",
-            maxWidth: 400,
-            height: "auto",
-            objectFit: "contain",
-            mixBlendMode: "multiply",
-            filter: "drop-shadow(0 18px 40px rgba(40,40,80,.22))",
-          }}
-        />
-      </div>
-    </div>
   );
 }
 
@@ -268,85 +148,6 @@ function VideoRailCard({ p, onOpen }) {
   );
 }
 
-function FeaturedSellers({ sellers }) {
-  const { openStore } = useBz();
-  const list = Object.values(sellers ?? {})
-    .filter((s) => s.verified)
-    .slice(0, 5);
-  // Curated section: cap columns to actual count so a short list never leaves a trailing empty track.
-  return (
-    <div
-      className="bz-grid-cards"
-      style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(${Math.min(list.length, 5)},1fr)`,
-        gap: 18,
-      }}
-    >
-      {list.map((s) => (
-        <div
-          key={s.id}
-          style={{
-            background: "#fff",
-            border: "1px solid var(--line-200)",
-            borderRadius: "var(--r-lg)",
-            padding: 22,
-            textAlign: "center",
-          }}
-        >
-          <div
-            style={{
-              width: 64,
-              height: 64,
-              borderRadius: "50%",
-              margin: "0 auto 12px",
-              overflow: "hidden",
-              border: "2px solid var(--line-200)",
-            }}
-          >
-            <img
-              src={s.avatar}
-              alt={s.name}
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-            />
-          </div>
-          <div
-            style={{
-              fontWeight: 700,
-              fontSize: ".9375rem",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
-            }}
-          >
-            {s.name} <Icon name="badgeCheck" size={15} color="var(--gold)" />
-          </div>
-          <div style={{ marginTop: 6, display: "flex", justifyContent: "center" }}>
-            <RatingStars value={s.rating} size={13} showVal count={s.reviews} />
-          </div>
-          <div
-            style={{
-              fontSize: ".75rem",
-              color: "var(--ink-400)",
-              marginTop: 4,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
-            }}
-          >
-            <Icon name="mapPin" size={12} color="var(--ink-400)" /> {s.city}
-          </div>
-          <div style={{ marginTop: 14 }}>
-            <Button variant="secondary" size="sm" full onClick={() => openStore(s.id)}>
-              Visit Store
-            </Button>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function SkeletonRail({ cols = 5 }) {
   return (
     <div
@@ -363,12 +164,13 @@ function SkeletonRail({ cols = 5 }) {
 export function Home() {
   const { nav, openProduct } = useBz();
   const user = useBazaarStore((s) => s.user);
+  const [searchOpen, setSearchOpen] = useState(false);
   const { data: homeData, isLoading: homeLoading, isError: homeError, error: homeErr } = useHome();
   const catalog = useCatalog();
   const loading = homeLoading || catalog.isLoading;
   const isError = homeError || catalog.isError;
   const error = homeErr ?? catalog.error;
-  const { products, categories, sellers, byId, videoProducts, flashProducts } = catalog;
+  const { products, categories, byId, videoProducts, flashProducts } = catalog;
   const trending = homeData?.trending?.length ? homeData.trending : [];
   const madeInNepal = homeData?.trending?.length ? homeData.trending.slice(0, 5) : [];
   const buyerGreeting = user ? displayName(user, "there") : null;
@@ -391,13 +193,17 @@ export function Home() {
         {/* Desktop hero — hidden on phones */}
         <div className="bz-hide-mobile">
           <W style={{ paddingTop: 22 }}>
-            <Hero />
+            <BestPicksHero />
           </W>
         </div>
 
-        {/* Mobile-only compact greeting + offer banner */}
-        <div className="bz-show-mobile">
-          <W style={{ paddingTop: 14 }}>
+        {/* Mobile-only header — greeting + notification on top, search below.
+            Sticky so the name row + search bar stay pinned while content scrolls. */}
+        <div
+          className="bz-show-mobile"
+          style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--page)" }}
+        >
+          <W style={{ paddingTop: 18, paddingBottom: 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
               <div
                 style={{
@@ -411,61 +217,93 @@ export function Home() {
                   flexShrink: 0,
                 }}
               >
-                <span style={{ fontSize: 22 }}>🙏</span>
+                <img
+                  src="/hiro%20hi%20Background%20Removed.png"
+                  alt="Hiro"
+                  style={{ width: 34, height: 34, objectFit: "contain" }}
+                />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", fontWeight: 600 }}>
-                  Namaste{buyerGreeting ? `, ${buyerGreeting.split(" ")[0]}` : ""}
+                  Hello 👋
                 </div>
-                <div style={{ fontSize: "1.0625rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-                  Let's shop · किनमेल गरौं
+                <div
+                  style={{
+                    fontSize: "1.0625rem",
+                    fontWeight: 800,
+                    color: "var(--blue-deep)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {buyerGreeting ?? "there"}
                 </div>
               </div>
+              <button
+                type="button"
+                aria-label="Notifications"
+                onClick={() => nav("orders")}
+                style={{
+                  position: "relative",
+                  width: 44,
+                  height: 44,
+                  borderRadius: "50%",
+                  border: "1px solid var(--line-200)",
+                  background: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  flexShrink: 0,
+                }}
+              >
+                <Icon name="bell" size={20} color="var(--ink-700)" />
+                <span
+                  aria-hidden
+                  style={{
+                    position: "absolute",
+                    top: 8,
+                    right: 9,
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: "var(--red)",
+                    border: "2px solid #fff",
+                  }}
+                />
+              </button>
             </div>
+
+            {/* Search — tapping opens the full search overlay (no inline typing on home) */}
             <button
-              onClick={() => nav("browse")}
+              type="button"
+              aria-label="Search for products, brands"
+              onClick={() => setSearchOpen(true)}
               style={{
                 width: "100%",
+                height: 50,
                 display: "flex",
                 alignItems: "center",
-                gap: 14,
-                background: "linear-gradient(90deg, var(--tint-red-50), #fff)",
-                border: "1.5px solid var(--red)",
-                borderRadius: "var(--r-lg)",
-                padding: "14px 16px",
+                gap: 10,
+                border: "1.5px solid var(--line-200)",
+                borderRadius: "var(--r-full)",
+                padding: "0 16px",
+                background: "#fff",
                 cursor: "pointer",
                 textAlign: "left",
               }}
             >
-              <div
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: "var(--r-md)",
-                  background: "var(--red)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <Icon name="gift" size={22} color="#fff" />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 800, color: "var(--red)", fontSize: ".9375rem" }}>
-                  Browse deals
-                </div>
-                <div style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
-                  Verified sellers · fair prices
-                </div>
-              </div>
-              <Icon name="arrowRight" size={18} color="var(--red)" />
+              <Icon name="search" size={19} color="var(--ink-400)" />
+              <span style={{ color: "var(--ink-400)", fontSize: ".9375rem" }}>
+                Search for products, brands…
+              </span>
             </button>
           </W>
         </div>
 
         {/* flash sale */}
-        <W style={{ paddingTop: 24 }}>
+        {/* <W style={{ paddingTop: 24 }}>
           <div
             className="bz-flash-head"
             style={{
@@ -535,35 +373,33 @@ export function Home() {
               <ProductRail items={flashProducts().slice(0, 5)} onOpen={openProduct} cols={5} sale />
             )}
           </div>
-        </W>
+        </W> */}
 
         {/* categories */}
         <W style={{ paddingTop: 44 }}>
           <SectionHead
-            eyebrow="Browse"
             title="Shop by category"
             action="All categories"
             onAction={() => nav("browse")}
           />
-          <div
-            className="bz-cat-row no-scrollbar"
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 12,
-              overflowX: "auto",
-              scrollSnapType: "x mandatory",
-              WebkitOverflowScrolling: "touch",
-            }}
-          >
+          <div className="bz-cat-row">
             {(categories ?? []).map((c) => (
-              <CategoryTile key={c.id} c={c} onClick={() => nav("browse")} />
+              <CategoryTile key={c.id} c={c} compact onClick={() => nav("browse")} />
             ))}
           </div>
         </W>
 
+        {/* Best Picks promo — mobile placement (after categories, per layout) */}
+        <div className="bz-show-mobile">
+          <W style={{ paddingTop: 32 }}>
+            <BestPicksBanner />
+          </W>
+        </div>
+
+        <PicksSections />
+
         {/* trending in Kathmandu — hyperlocal */}
-        <W style={{ paddingTop: 52 }}>
+        {/* <W style={{ paddingTop: 52 }}>
           <SectionHead
             eyebrow={
               <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
@@ -579,10 +415,10 @@ export function Home() {
           ) : (
             <ProductRail items={trending} onOpen={openProduct} cols={5} />
           )}
-        </W>
+        </W> */}
 
         {/* video shopping rail — desktop only */}
-        <div className="bz-hide-mobile">
+        {/* <div className="bz-hide-mobile">
           <W style={{ paddingTop: 52 }}>
             <div
               style={{
@@ -643,10 +479,10 @@ export function Home() {
               </div>
             </div>
           </W>
-        </div>
+        </div> */}
 
         {/* made in nepal */}
-        <W style={{ paddingTop: 52, position: "relative" }}>
+        {/* <W style={{ paddingTop: 52, position: "relative" }}>
           <SectionHead
             eyebrow="Made in Nepal"
             title="Loved in Nepal"
@@ -658,38 +494,20 @@ export function Home() {
           ) : (
             <ProductRail items={madeInNepal} onOpen={openProduct} cols={5} />
           )}
+        </W> */}
+
+        {/* Endless product feed — shown on both web and mobile */}
+        <W style={{ paddingTop: 36 }}>
+          <SectionHead title="More to explore" />
+          <div className="bz-picks-grid">
+            {feedPaged.visible.map((p) => (
+              <ProductCard key={p.id} p={p} onClick={openProduct} />
+            ))}
+          </div>
+          <LoadMore paged={feedPaged} noun="products" size="sm" style={{ paddingBottom: 12 }} />
         </W>
-
-        {/* featured sellers — desktop only; Meesho-style buyer doesn't need seller browsing here */}
-        <div className="bz-hide-mobile">
-          <W style={{ paddingTop: 52 }}>
-            <SectionHead
-              eyebrow="Trusted stores"
-              title="Featured"
-              accent="sellers"
-              action="All sellers"
-              onAction={() => nav("browse")}
-            />
-            <FeaturedSellers sellers={sellers} />
-          </W>
-        </div>
-
-        {/* Mobile-only: endless product feed */}
-        <div className="bz-show-mobile">
-          <W style={{ paddingTop: 28 }}>
-            <SectionHead eyebrow="Just for you" title="More to explore" />
-            <div
-              className="bz-grid-cards"
-              style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10 }}
-            >
-              {feedPaged.visible.map((p) => (
-                <ProductCard key={p.id} p={p} onClick={openProduct} />
-              ))}
-            </div>
-            <LoadMore paged={feedPaged} noun="products" style={{ paddingBottom: 12 }} />
-          </W>
-        </div>
       </div>
+      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
     </ApiState>
   );
 }

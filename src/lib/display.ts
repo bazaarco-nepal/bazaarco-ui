@@ -1,17 +1,11 @@
 /** Format user-visible labels from API / auth data (no mock fallbacks). */
 
-export function displayName(
-  user?: { name?: string | null; username?: string | null } | null,
-  fallback = "there",
-): string {
-  const name = user?.name?.trim() || user?.username?.trim();
-  return name || fallback;
+export function displayName(user?: { name?: string | null } | null, fallback = "there"): string {
+  return user?.name?.trim() || fallback;
 }
 
-export function userInitial(
-  user?: { name?: string | null; username?: string | null; email?: string | null } | null,
-): string {
-  const base = user?.name?.trim() || user?.username?.trim() || user?.email?.trim() || "?";
+export function userInitial(user?: { name?: string | null; email?: string | null } | null): string {
+  const base = user?.name?.trim() || user?.email?.trim() || "?";
   return base.charAt(0).toUpperCase();
 }
 

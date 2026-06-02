@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   catalogApi,
   type CreateSellerReviewPayload,
@@ -10,6 +10,7 @@ import { queryKeys } from "@/services/api/query-keys";
 import type { CategoryAttributeField, Product, Seller } from "@/types";
 
 const STALE_TIME = 5 * 60 * 1000;
+const PICKS_PAGE_SIZE = 12;
 
 export function useCategories() {
   return useQuery({
@@ -82,6 +83,30 @@ export function useProducts(params?: ProductListParams) {
 
 export function useAllProducts() {
   return useProducts({ page: 1, limit: 100 });
+}
+
+export function useTopPicks(days = 7) {
+  return useInfiniteQuery({
+    queryKey: queryKeys.catalog.topPicks(days),
+    queryFn: ({ pageParam }) =>
+      catalogApi.getTopPicks({ days, page: pageParam, limit: PICKS_PAGE_SIZE }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
+    staleTime: STALE_TIME,
+  });
+}
+
+export function useNewArrivals() {
+  return useInfiniteQuery({
+    queryKey: queryKeys.catalog.newArrivals,
+    queryFn: ({ pageParam }) =>
+      catalogApi.getNewArrivals({ page: pageParam, limit: PICKS_PAGE_SIZE }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
+    staleTime: STALE_TIME,
+  });
 }
 
 export function useProduct(id: string | null) {

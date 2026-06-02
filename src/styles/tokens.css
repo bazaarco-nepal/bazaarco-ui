@@ -83,7 +83,9 @@ html,
 body {
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
+  /* `clip` keeps horizontal overflow hidden without establishing a scroll
+     container — required for `position: sticky` headers to pin to the viewport. */
+  overflow-x: clip;
 }
 body {
   font-family: var(--font-sans);
@@ -441,6 +443,10 @@ body {
   }
   .bz-side-mobile-bar {
     display: flex;
+  }
+  /* reserve space for fixed bottom navbar so last item (My profile) isn't hidden */
+  .bz-side-scroll {
+    padding-bottom: 76px;
   }
 }
 
@@ -824,7 +830,7 @@ body {
   }
 }
 
-/* Auth + splash centered column on small screens */
+/* Auth centered column on small screens */
 @media (max-width: 480px) {
   .bz-auth-page {
     padding: 16px !important;
@@ -872,16 +878,51 @@ body {
   }
 }
 
-/* Category row — horizontal scroll on mobile, even spread on desktop */
-@media (max-width: 768px) {
+/* Category grid — icon tiles (no images). 6 cols desktop, 4 cols mobile. */
+.bz-cat-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 28px 12px;
+}
+/* Home category row is English-only on every viewport — drop Nepali line for a
+   cleaner, breathable look. Browse uses its own grid (not .bz-cat-row) so it
+   keeps bilingual labels. */
+.bz-cat-row .bz-cat__ne {
+  display: none;
+}
+/* Desktop — contained 6-col grid with FIXED 120px tiles instead of stretchy
+   1fr columns. 1fr columns made each 64px circle float in a ~218px cell, so
+   icons read as spread-out and disconnected from the tight product grid below.
+   Fixed 120px tiles + space-between keep the row's left/right edges flush with
+   the product grid (same .W container) while grouping the tiles into uniform
+   boxes. Tablet/mobile keep their own 4-col rules untouched. */
+@media (min-width: 1025px) {
   .bz-cat-row {
-    justify-content: flex-start !important;
-    padding-bottom: 4px;
-    scroll-padding-left: 16px;
+    max-width: 1160px;
+    margin: 0 auto;
+    grid-template-columns: repeat(6, 120px);
+    justify-content: space-between;
+    row-gap: 24px;
+    column-gap: 0;
   }
   .bz-cat-row > * {
-    flex: 0 0 auto;
-    scroll-snap-align: start;
+    width: 120px;
+  }
+}
+/* Tablet — 4 across, all categories shown */
+@media (max-width: 1024px) {
+  .bz-cat-row {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px 10px;
+  }
+}
+/* Mobile — 4 across, cap to first 8 (4 + 4); rest via "All categories" */
+@media (max-width: 768px) {
+  .bz-cat-row {
+    gap: 18px 6px;
+  }
+  .bz-cat-row > *:nth-child(n + 9) {
+    display: none !important;
   }
 }
 

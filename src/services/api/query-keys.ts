@@ -10,6 +10,8 @@ export const queryKeys = {
     sellerReviews: (id: string) => ["catalog", "seller", id, "reviews"] as const,
     sellerProducts: (id: string) => ["catalog", "seller", id, "products"] as const,
     products: (params?: Record<string, unknown>) => ["catalog", "products", params ?? {}] as const,
+    topPicks: (days: number) => ["catalog", "top-picks", days] as const,
+    newArrivals: ["catalog", "new-arrivals"] as const,
     product: (id: string) => ["catalog", "product", id] as const,
     productReviews: (id: string) => ["catalog", "product", id, "reviews"] as const,
     productProfile: (id: string) => ["catalog", "product", id, "profile"] as const,

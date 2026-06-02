@@ -38,7 +38,7 @@ import {
 } from "@/components/ui";
 import { useVideoFeed } from "@/hooks/use-video-feed";
 import { useVideoLike } from "@/hooks/use-video-like";
-import type { VideoFeedItem, VideoFeedTab } from "@/types/video";
+import type { VideoFeedItem } from "@/types/video";
 import {
   BazaarCtx,
   useBz,
@@ -76,25 +76,6 @@ function fmtCount(n) {
   if (v >= 1e3) return (v / 1e3).toFixed(1).replace(/\.0$/, "") + "K";
   return String(v);
 }
-
-const REEL_TABS: { id: VideoFeedTab; en: string }[] = [
-  { id: "foryou", en: "For You" },
-  { id: "following", en: "Following" },
-  { id: "nepal", en: "Made in Nepal" },
-  { id: "flash", en: "Flash Deals" },
-];
-
-const TAB_EMPTY: Partial<Record<VideoFeedTab, { title: string; message: string }>> = {
-  following: {
-    title: "No followed sellers yet",
-    message: "Follow shops from product pages — their videos will show here.",
-  },
-  nepal: { title: "No Made in Nepal videos", message: "Try For You to see all product clips." },
-  flash: {
-    title: "No flash-deal videos",
-    message: "Sale clips appear when sellers mark items on discount.",
-  },
-};
 
 /* ---- side action rail button ---- */
 function ReelAction({ icon, label, count, active, onClick, danger, inside }) {
@@ -744,8 +725,7 @@ export function VideoTheater() {
     else nav("home");
   }, [router, nav]);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [tab, setTab] = useState<VideoFeedTab>("foryou");
-  const { data: feed, isLoading, isError, error } = useVideoFeed(tab);
+  const { data: feed, isLoading, isError, error } = useVideoFeed();
   const vids: VideoFeedItem[] = feed?.items ?? [];
   const [follows, setFollows] = useState(() => new Set());
   const [liked, setLiked] = useState<Set<string>>(() => new Set());
@@ -795,11 +775,6 @@ export function VideoTheater() {
   const tint = TINTS[p?.tint] || TINTS.blue;
   const caption = p?.caption ?? "";
   const activeProductId = p?.id;
-
-  useEffect(() => {
-    setActiveIndex(0);
-    if (scrollRef.current) scrollRef.current.scrollTop = 0;
-  }, [tab]);
 
   useEffect(() => {
     if (vids.length > 0 && activeIndex >= vids.length) setActiveIndex(0);
@@ -891,48 +866,6 @@ export function VideoTheater() {
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   }, [activeIndex, scrollToIndex, activeProductId, toggleLike]);
-
-  /* ---- top filter chip row ---- */
-  const tabsRow = (
-    <div
-      className="bz-reel-chip-row"
-      style={{
-        display: "flex",
-        gap: 8,
-        overflowX: "auto",
-        padding: isMobile ? "0 12px" : 0,
-        scrollbarWidth: "none",
-      }}
-    >
-      {REEL_TABS.map((tb) => {
-        const active = tb.id === tab;
-        return (
-          <button
-            key={tb.id}
-            onClick={() => setTab(tb.id)}
-            style={{
-              padding: "8px 14px",
-              borderRadius: "var(--r-full)",
-              border: "none",
-              cursor: "pointer",
-              background: active ? "#fff" : "rgba(255,255,255,.12)",
-              color: active ? "var(--ink-900)" : "rgba(255,255,255,.88)",
-              fontWeight: 700,
-              fontSize: ".8125rem",
-              whiteSpace: "nowrap",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              flexShrink: 0,
-              transition: "background var(--dur-standard) var(--ease)",
-            }}
-          >
-            {tb.en}
-          </button>
-        );
-      })}
-    </div>
-  );
 
   /* ---- snap-scroll feed (renders all reels stacked) ---- */
   const reelFeed = (radius) => (
@@ -1269,8 +1202,6 @@ export function VideoTheater() {
   /* ============================================================
      LAYOUT
      ============================================================ */
-  const emptyCopy = TAB_EMPTY[tab];
-
   if (isLoading || isError) {
     return (
       <ApiState isLoading={isLoading} isError={isError} error={error}>
@@ -1303,11 +1234,11 @@ export function VideoTheater() {
             >
               <Icon name="chevronLeft" size={22} />
             </button>
-            <div style={{ flex: 1, minWidth: 0 }}>{tabsRow}</div>
           </div>
           <EmptyState
-            title={emptyCopy?.title ?? "No videos yet"}
-            message={emptyCopy?.message ?? "When sellers add product videos, they appear here."}
+            dark
+            title="No videos yet"
+            message="When sellers add product videos, they appear here."
             cta="Browse products"
             onCta={() => nav("browse")}
           />
@@ -1360,7 +1291,18 @@ export function VideoTheater() {
           >
             <Icon name="chevronLeft" size={20} />
           </button>
-          <div style={{ flex: 1, minWidth: 0 }}>{tabsRow}</div>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 7,
+              color: "#fff",
+              fontWeight: 800,
+              fontSize: "1.0625rem",
+            }}
+          >
+            <Icon name="video" size={18} color="#ff6b75" /> Watch
+          </span>
         </div>
 
         <div style={{ position: "relative", flex: 1, minHeight: 0 }}>{reelFeed(0)}</div>
@@ -1435,7 +1377,6 @@ export function VideoTheater() {
               </h1>
             </div>
           </div>
-          <div style={{ flex: 1, minWidth: 280, maxWidth: 560 }}>{tabsRow}</div>
           <div
             style={{
               color: "rgba(255,255,255,.55)",

@@ -32,7 +32,9 @@ import {
   LoadMore,
   PageBar,
   BackToTop,
+  AppLink,
 } from "@/components/ui";
+import { pathFromScreen } from "@/config/routes";
 import { useCatalog } from "@/hooks/use-catalog";
 import { useLogout } from "@/hooks/use-auth";
 import { displayName, userInitial } from "@/lib/display";
@@ -256,8 +258,6 @@ export function ProductCard({ p, onClick, sale = false }) {
   const s = sellerOf(p);
   const disc = p.original ? Math.round((1 - p.price / p.original) * 100) : 0;
   const wished = wish.includes(p.id);
-  const deliveryFee = 80;
-  const allIn = p.price + deliveryFee;
   // Sold count as social proof — sale cards only; derived from reviews × deterministic factor
   const soldCount = Math.max(p.reviews * 3, 12);
   const soldLabel =
@@ -268,8 +268,8 @@ export function ProductCard({ p, onClick, sale = false }) {
     <div
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
-      onClick={() => onClick(p)}
       style={{
+        position: "relative",
         background: "#fff",
         border: `1px solid ${hov ? "var(--ink-300)" : "var(--line-200)"}`,
         borderRadius: "var(--r-lg)",
@@ -282,6 +282,16 @@ export function ProductCard({ p, onClick, sale = false }) {
         flexDirection: "column",
       }}
     >
+      {/* Stretched link: a real <a> covering the card so the browser can open
+          the product in a new tab (⌘/Ctrl/middle/right-click). Left-click runs
+          the app's openProduct via onNavigate. Interactive controls below sit
+          above this overlay with their own z-index. */}
+      <AppLink
+        href={pathFromScreen("pdp", p.id)}
+        onNavigate={() => onClick(p)}
+        ariaLabel={p.name}
+        style={{ position: "absolute", inset: 0, zIndex: 1 }}
+      />
       <div style={{ position: "relative" }}>
         {p.img ? (
           <div
@@ -321,6 +331,7 @@ export function ProductCard({ p, onClick, sale = false }) {
             position: "absolute",
             top: 2,
             right: 2,
+            zIndex: 2,
             width: 44,
             height: 44,
             borderRadius: "50%",
@@ -430,7 +441,7 @@ export function ProductCard({ p, onClick, sale = false }) {
         {/* Trust row (cash on delivery / 7-day return) and delivery ETA live on the PDP only, not on cards. */}
         {/* marginTop:auto pins price to card bottom so price rows align across the grid */}
         <div className="bz-pcard__price" style={{ marginTop: "auto" }}>
-          <Price value={allIn} original={p.original} size="md" />
+          <Price value={p.price} original={p.original} size="md" />
         </div>
       </div>
     </div>
@@ -492,14 +503,19 @@ const CATEGORY_ICON: Record<string, string> = {
 
 // `compact` (home grid) hides the Nepali subtitle and shortens the label to a
 // single word so 4 cols stay calm. Full label + Nepali live on the browse page.
-export function CategoryTile({ c, onClick, compact = false }) {
+export function CategoryTile({ c, onClick, compact = false, href }) {
   const [hov, setHov] = useState(false);
   const t = CAT_TINTS[c.tint] ?? CAT_TINTS.red;
   const label = compact ? c.en.split(/\s*&\s*|\s+/)[0] : c.en;
   const iconName = CATEGORY_ICON[c.id] ?? "tag";
+  // Nav use (e.g. home → /browse) passes `href` and renders a real anchor so the
+  // browser can open it in a new tab. Filter use (browse page) omits href and
+  // stays a button toggling an in-page facet.
+  const Tag = href ? AppLink : "button";
+  const tagProps = href ? { href, onNavigate: () => onClick(c) } : { onClick: () => onClick(c) };
   return (
-    <button
-      onClick={() => onClick(c)}
+    <Tag
+      {...tagProps}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
@@ -512,6 +528,7 @@ export function CategoryTile({ c, onClick, compact = false }) {
         gap: 8,
         padding: 0,
         width: "100%",
+        textDecoration: "none",
       }}
     >
       <div
@@ -547,7 +564,7 @@ export function CategoryTile({ c, onClick, compact = false }) {
           </div>
         )}
       </div>
-    </button>
+    </Tag>
   );
 }
 
@@ -575,10 +592,10 @@ export function DevViewSwitcher() {
   const icon = isSeller ? "cart" : "store";
   const label = isSeller ? "Switch to buyer view" : "Switch to seller view";
   return (
-    <button
-      onClick={() => nav(target)}
+    <AppLink
+      href={pathFromScreen(target)}
       title={label}
-      aria-label={label}
+      ariaLabel={label}
       style={{
         position: "fixed",
         left: 22,
@@ -598,16 +615,18 @@ export function DevViewSwitcher() {
       }}
     >
       <Icon name={icon} size={26} color="#fff" />
-    </button>
+    </AppLink>
   );
 }
 
-export function NavMenuItem({ icon, label, danger, onClick }) {
+export function NavMenuItem({ icon, label, danger, onClick, href, onNavigate }) {
   const [hov, setHov] = useState(false);
   const color = danger ? "var(--red)" : "var(--ink-700)";
+  const Tag = href ? AppLink : "button";
+  const tagProps = href ? { href, onNavigate } : { onClick };
   return (
-    <button
-      onClick={onClick}
+    <Tag
+      {...tagProps}
       role="menuitem"
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
@@ -625,11 +644,12 @@ export function NavMenuItem({ icon, label, danger, onClick }) {
         color,
         fontSize: ".875rem",
         fontWeight: 600,
+        textDecoration: "none",
       }}
     >
       <Icon name={icon} size={18} color={color} />
       <span>{label}</span>
-    </button>
+    </Tag>
   );
 }
 
@@ -739,15 +759,16 @@ export function Navbar() {
           gap: 18,
         }}
       >
-        <button
-          onClick={() => nav("home")}
-          aria-label="BazaarCo home"
+        <AppLink
+          href={pathFromScreen("home")}
+          ariaLabel="BazaarCo home"
           style={{
             background: "none",
             border: "none",
             cursor: "pointer",
             padding: 0,
             flexShrink: 0,
+            display: "inline-flex",
           }}
         >
           {/* Desktop: full-size logo. Mobile: smaller logo so search owns the bar. */}
@@ -757,7 +778,7 @@ export function Navbar() {
           <span className="bz-show-mobile">
             <Logo height={26} />
           </span>
-        </button>
+        </AppLink>
         <button
           type="button"
           onClick={() => setDeliverOpen(true)}
@@ -855,8 +876,8 @@ export function Navbar() {
           />
         </div>
         <nav style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-          <button
-            onClick={() => nav("video")}
+          <AppLink
+            href={pathFromScreen("video")}
             className="bz-hide-mobile"
             style={{
               display: "inline-flex",
@@ -870,23 +891,24 @@ export function Navbar() {
               color: "var(--red)",
               fontWeight: 700,
               fontSize: ".875rem",
+              textDecoration: "none",
             }}
           >
             <Icon name="video" size={19} /> Watch
-          </button>
+          </AppLink>
           <span className="bz-hide-mobile">
             <IconButton
               name="heart"
               label="Wishlist"
               badge={wish.length + wishSellers.length}
-              onClick={() => nav("wishlist")}
+              href={pathFromScreen("wishlist")}
             />
           </span>
           {/* Bargain — BazaarCo's core differentiator. Desktop topbar only; on mobile
               search owns the bar and bargain lives in the search flow. */}
-          <button
-            onClick={() => nav("bargains")}
-            aria-label="Bargain"
+          <AppLink
+            href={pathFromScreen("bargains")}
+            ariaLabel="Bargain"
             title="Bargain · मोलतोल"
             className="bz-hide-mobile"
             style={{
@@ -903,10 +925,10 @@ export function Navbar() {
             }}
           >
             <Icon name="bargain" size={20} color="#fff" />
-          </button>
+          </AppLink>
           {/* Cart — desktop topbar only; mobile reaches it via bottom nav. */}
           <span className="bz-hide-mobile">
-            <IconButton name="cart" label="Cart" badge={cartCount} onClick={() => nav("cart")} />
+            <IconButton name="cart" label="Cart" badge={cartCount} href={pathFromScreen("cart")} />
           </span>
           <div ref={menuRef} className="bz-hide-mobile" style={{ position: "relative" }}>
             <button
@@ -962,8 +984,9 @@ export function Navbar() {
                   zIndex: 200,
                 }}
               >
-                <button
-                  onClick={() => goAndClose("profile")}
+                <AppLink
+                  href={pathFromScreen("profile")}
+                  onNavigate={() => goAndClose("profile")}
                   role="menuitem"
                   style={{
                     display: "flex",
@@ -977,6 +1000,7 @@ export function Navbar() {
                     width: "100%",
                     textAlign: "left",
                     marginBottom: 6,
+                    textDecoration: "none",
                   }}
                 >
                   <span
@@ -1017,11 +1041,12 @@ export function Navbar() {
                       View profile
                     </span>
                   </span>
-                </button>
+                </AppLink>
                 <NavMenuItem
                   icon="package"
                   label="My orders"
-                  onClick={() => goAndClose("orders")}
+                  href={pathFromScreen("orders")}
+                  onNavigate={() => goAndClose("orders")}
                 />
                 <div style={{ height: 1, background: "var(--line-200)", margin: "6px 4px" }} />
                 {authed ? (
@@ -1034,7 +1059,12 @@ export function Navbar() {
                     }
                   />
                 ) : (
-                  <NavMenuItem icon="user" label="Sign in" onClick={() => goAndClose("auth")} />
+                  <NavMenuItem
+                    icon="user"
+                    label="Sign in"
+                    href={pathFromScreen("auth")}
+                    onNavigate={() => goAndClose("auth")}
+                  />
                 )}
               </div>
             )}
@@ -1135,9 +1165,9 @@ export function Footer() {
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {col.links.map((l, j) => (
-                <a key={j} onClick={() => nav("home")} className="bz-footer-link">
+                <AppLink key={j} href={pathFromScreen("home")} className="bz-footer-link">
                   {l}
-                </a>
+                </AppLink>
               ))}
             </div>
           </div>

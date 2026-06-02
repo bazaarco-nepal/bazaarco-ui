@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui";
-import { useBz } from "@/components/common";
+import { pathFromScreen } from "@/config/routes";
 
 /* Best Picks promo — BazaarCo brand-red theme.
    Replaces the old single sponsored placement. One shared design,
@@ -56,7 +56,6 @@ function Spotlight({ size, glow }: { size: number; glow: number }) {
 
 /* ---------- Desktop ---------- */
 export function BestPicksHero() {
-  const { nav } = useBz();
   return (
     <div
       className="bz-split-hero"
@@ -107,7 +106,7 @@ export function BestPicksHero() {
             size="lg"
             style={{ borderRadius: "var(--r-full)" }}
             iconRight="arrowRight"
-            onClick={() => nav("browse")}
+            href={pathFromScreen("browse")}
           >
             Shop now
           </Button>
@@ -133,7 +132,6 @@ export function BestPicksHero() {
 
 /* ---------- Mobile (compact band) ---------- */
 export function BestPicksBanner() {
-  const { nav } = useBz();
   return (
     <div
       style={{
@@ -175,7 +173,7 @@ export function BestPicksBanner() {
           size="sm"
           style={{ borderRadius: "var(--r-full)" }}
           iconRight="arrowRight"
-          onClick={() => nav("browse")}
+          href={pathFromScreen("browse")}
         >
           Shop now
         </Button>

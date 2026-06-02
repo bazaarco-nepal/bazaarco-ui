@@ -35,7 +35,9 @@ import {
   PageBar,
   BackToTop,
   ApiState,
+  AppLink,
 } from "@/components/ui";
+import { pathFromScreen } from "@/config/routes";
 import {
   useCatalog,
   useProductReviews,
@@ -392,13 +394,21 @@ export function PDP({ p }: PdpProps) {
             marginBottom: 18,
           }}
         >
-          <span className="bz-crumb" onClick={() => nav("home")}>
+          <AppLink
+            href={pathFromScreen("home")}
+            className="bz-crumb"
+            style={{ textDecoration: "none" }}
+          >
             Home
-          </span>
+          </AppLink>
           <Icon name="chevronRight" size={13} color="var(--ink-300)" />
-          <span className="bz-crumb" onClick={() => nav("browse")}>
+          <AppLink
+            href={pathFromScreen("browse")}
+            className="bz-crumb"
+            style={{ textDecoration: "none" }}
+          >
             {(categories ?? []).find((c) => c.id === p.cat)?.en}
-          </span>
+          </AppLink>
           <Icon name="chevronRight" size={13} color="var(--ink-300)" />
           <span style={{ color: "var(--ink-700)" }}>{p.name}</span>
         </div>

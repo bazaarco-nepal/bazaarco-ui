@@ -3,8 +3,8 @@ import type { AuthIntent, AuthUser } from "@/types/auth";
 
 const PUBLIC_SCREENS = new Set(["auth", "auth-callback"]);
 
-/** Buyer screens an unauthenticated visitor may browse read-only. */
-const GUEST_BROWSE_SCREENS = new Set(["home", "browse", "pdp", "video"]);
+/** Buyer screens a guest sees rendered normally (read-only catalog browsing). */
+const GUEST_VIEW_SCREENS = new Set(["home", "browse", "pdp", "store"]);
 
 export function isSellerUser(user?: AuthUser | null): boolean {
   return user?.intent === "seller";
@@ -31,9 +31,22 @@ export function isPublicScreen(screen: string): boolean {
   return PUBLIC_SCREENS.has(screen);
 }
 
-/** Whether an unauthenticated visitor is allowed on this screen at all. */
+/**
+ * Whether a guest may LAND on this screen without a redirect. Guests may stay on
+ * any buyer screen — public ones render normally, gated ones show a sign-in CTA
+ * at the screen layer (see `isGuestViewableScreen`). Seller screens still bounce.
+ */
 export function isGuestAllowedScreen(screen: string): boolean {
-  return PUBLIC_SCREENS.has(screen) || GUEST_BROWSE_SCREENS.has(screen);
+  return PUBLIC_SCREENS.has(screen) || isBuyerScreen(screen);
+}
+
+/**
+ * Whether a guest sees the real screen rendered. Public/browse screens: yes.
+ * Other buyer screens (video, cart, orders, bargains, account, …): no — the
+ * screen layer renders a signed-out sign-in CTA instead of bouncing to /auth.
+ */
+export function isGuestViewableScreen(screen: string): boolean {
+  return PUBLIC_SCREENS.has(screen) || GUEST_VIEW_SCREENS.has(screen);
 }
 
 /** Whether this screen is allowed for the signed-in user's role. */

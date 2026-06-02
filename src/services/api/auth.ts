@@ -1,5 +1,6 @@
 import axios from "axios";
 
+import { clearAccessToken, getAccessToken, setAccessToken } from "@/lib/auth-token";
 import type { AuthSessionResponse, AuthUser, LoginPayload, RegisterPayload } from "@/types/auth";
 import type { ApiSuccessResponse } from "./types";
 import { ApiRequestError } from "./http";
@@ -11,6 +12,14 @@ const authClient = axios.create({
   timeout: 30_000,
   withCredentials: true,
   headers: { "Content-Type": "application/json" },
+});
+
+authClient.interceptors.request.use((config) => {
+  const token = getAccessToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 function mapAuthError(error: unknown): ApiRequestError {
@@ -31,7 +40,10 @@ function mapAuthError(error: unknown): ApiRequestError {
 
 export function getGoogleLoginUrl(intent: "buyer" | "seller" = "buyer"): string {
   const params = new URLSearchParams({ intent });
-  return `${apiBase}/auth/google?${params.toString()}`;
+  // Use absolute API URL when set so OAuth starts on the same host as GOOGLE_REDIRECT_URI.
+  const backend = process.env.NEXT_PUBLIC_BACKEND_URL ?? "";
+  const base = backend ? `${backend.replace(/\/$/, "")}/api/v1` : apiBase;
+  return `${base}/auth/google?${params.toString()}`;
 }
 
 export async function register(payload: RegisterPayload): Promise<AuthUser> {
@@ -72,6 +84,8 @@ export async function logout(): Promise<void> {
     await authClient.post("/auth/logout");
   } catch (error) {
     throw mapAuthError(error);
+  } finally {
+    clearAccessToken();
   }
 }
 

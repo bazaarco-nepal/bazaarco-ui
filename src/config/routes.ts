@@ -131,6 +131,55 @@ export function pathFromScreen(
   return SCREEN_PATH[screen] ?? "/home";
 }
 
+// Browser-tab label per screen. Rendered as `BazaarCo - <label>`.
+const SCREEN_TITLES: Record<string, string> = {
+  auth: "Sign In",
+  "auth-callback": "Signing In",
+  home: "Home",
+  browse: "Browse Products",
+  pdp: "Product",
+  store: "Store",
+  video: "Watch",
+  cart: "Your Cart",
+  checkout: "Checkout",
+  success: "Order Confirmed",
+  tracking: "Track Order",
+  wishlist: "Wishlist",
+  bargains: "Bargains",
+  messages: "Messages",
+  profile: "Account",
+  "profile-edit": "Edit Profile",
+  orders: "My Orders",
+  review: "Write a Review",
+  "s-onboarding": "Become a Seller",
+  "s-dashboard": "Seller Dashboard",
+  "s-inbox": "Seller Orders",
+  "s-order-detail": "Order Detail",
+  "s-add": "Add Product",
+  "s-products": "Inventory",
+  "s-ledger": "Ledger",
+  "s-chat": "Seller Chat",
+  "s-bargain": "Offers",
+  "s-promos": "Promotions",
+  "s-reviews": "Store Reviews",
+  "s-storefront": "Storefront",
+  "s-videos": "Seller Videos",
+  "s-analytics": "Analytics",
+  "s-reports": "Reports",
+  "s-settings": "Settings",
+  "s-profile": "Seller Profile",
+  "s-admin-verify": "Seller Verifications",
+};
+
+/**
+ * Builds the document title for a screen, e.g. `BazaarCo - Home`. Pass `detail`
+ * to override the label (the product or store name on detail pages).
+ */
+export function titleForScreen(screen: string, detail?: string): string {
+  const label = detail?.trim() || SCREEN_TITLES[screen] || "Shop";
+  return `BazaarCo - ${label}`;
+}
+
 export function searchQueryFromPath(pathname: string): string {
   const idx = pathname.indexOf("?");
   if (idx === -1) return "";

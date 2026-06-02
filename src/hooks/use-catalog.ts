@@ -3,6 +3,8 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   catalogApi,
+  type CreateProductQuestionPayload,
+  type CreateProductReviewPayload,
   type CreateSellerReviewPayload,
   type ProductListParams,
 } from "@/services/api/catalog";
@@ -142,6 +144,55 @@ export function useRatingDistribution(id: string | null) {
     queryFn: () => catalogApi.getRatingDistribution(id!),
     enabled: Boolean(id),
     staleTime: STALE_TIME,
+  });
+}
+
+const QUESTIONS_PAGE_SIZE = 8;
+
+export function useProductQuestions(id: string | null) {
+  return useInfiniteQuery({
+    queryKey: queryKeys.catalog.productQuestions(id ?? ""),
+    queryFn: ({ pageParam }) =>
+      catalogApi.getProductQuestions(id!, { page: pageParam, limit: QUESTIONS_PAGE_SIZE }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
+    enabled: Boolean(id),
+    staleTime: STALE_TIME,
+  });
+}
+
+export function useCreateProductQuestion(productId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateProductQuestionPayload) =>
+      catalogApi.createProductQuestion(productId!, payload),
+    onSuccess: async () => {
+      if (!productId) return;
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.catalog.productQuestions(productId),
+      });
+    },
+  });
+}
+
+export function useCreateProductReview(productId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateProductReviewPayload) =>
+      catalogApi.createProductReview(productId!, payload),
+    onSuccess: async () => {
+      if (!productId) return;
+      // Refresh the review list, the recomputed distribution, and the product
+      // header (denormalized rating/reviews bump in the same backend tx).
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.catalog.productReviews(productId) }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.catalog.ratingDistribution(productId),
+        }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.catalog.product(productId) }),
+      ]);
+    },
   });
 }
 

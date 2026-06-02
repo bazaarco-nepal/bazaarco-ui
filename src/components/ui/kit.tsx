@@ -126,8 +126,11 @@ export const ICON_PATHS = {
   ),
   bargain: (
     <>
-      <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.4 8.4 0 0 1-3.8-.8L3 21l1.9-5.2A8.4 8.4 0 0 1 12 3a8.4 8.4 0 0 1 9 8.5Z" />
-      <path d="M9.5 9.5h3.2a1.5 1.5 0 0 1 0 3H10l3 3" />
+      <path d="m11 17 2 2a1 1 0 1 0 3-3" />
+      <path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25H21" />
+      <path d="m21 3 1 11h-2" />
+      <path d="M3 4h8" />
+      <path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3" />
     </>
   ),
   video: (
@@ -876,7 +879,17 @@ function toReviewCount(count) {
   return Number.isFinite(n) ? n : 0;
 }
 
-export function RatingStars({ value, size = 15, showVal, count }) {
+export function RatingStars({
+  value,
+  size = 15,
+  showVal,
+  count,
+}: {
+  value: number;
+  size?: number;
+  showVal?: boolean;
+  count?: number;
+}) {
   const rating = toRatingNumber(value);
   const reviewCount = toReviewCount(count);
   return (
@@ -928,7 +941,17 @@ export function RatingStars({ value, size = 15, showVal, count }) {
 }
 
 /* ---------- Chips / badges ---------- */
-export function Chip({ children, tone = "neutral", icon, size = "md" }) {
+export function Chip({
+  children,
+  tone = "neutral",
+  icon,
+  size = "md",
+}: {
+  children: React.ReactNode;
+  tone?: string;
+  icon?: string;
+  size?: string;
+}) {
   const tones = {
     neutral: { bg: "var(--line-100)", fg: "var(--ink-700)" },
     red: { bg: "var(--tint-red-50)", fg: "var(--red)" },
@@ -956,22 +979,6 @@ export function Chip({ children, tone = "neutral", icon, size = "md" }) {
     >
       {icon && <Icon name={icon} size={size === "sm" ? 12 : 14} />}
       {children}
-    </span>
-  );
-}
-export function VerifiedBadge({ small }) {
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 4,
-        color: "var(--gold)",
-        fontWeight: 700,
-        fontSize: small ? ".75rem" : ".8125rem",
-      }}
-    >
-      <Icon name="badgeCheck" size={small ? 15 : 17} color="var(--gold)" /> Verified
     </span>
   );
 }
@@ -1035,6 +1042,14 @@ export function Placeholder({
   label,
   style,
   animate,
+}: {
+  icon?: string;
+  tint?: string;
+  radius?: string;
+  ratio?: string;
+  label?: React.ReactNode;
+  style?: React.CSSProperties;
+  animate?: boolean;
 }) {
   const c = TINTS[tint] || TINTS.slate;
   const inner = (
@@ -1552,7 +1567,21 @@ export function Toast({ toast }) {
 }
 
 /* ---------- Section header with crimson stripe accent (brand pattern) ---------- */
-export function SectionHead({ eyebrow, title, accent, action, onAction, actionHref }) {
+export function SectionHead({
+  eyebrow,
+  title,
+  accent,
+  action,
+  onAction,
+  actionHref,
+}: {
+  eyebrow?: React.ReactNode;
+  title: React.ReactNode;
+  accent?: React.ReactNode;
+  action?: React.ReactNode;
+  onAction?: () => void;
+  actionHref?: string;
+}) {
   return (
     <div
       className="bz-sec-head"
@@ -2019,7 +2048,7 @@ export function ChipGroup({ options, value, onChange }) {
 }
 
 /* ---------- Mobile sticky buy bar (guide §3.6) ---------- */
-export function MobileBuyBar({ onAdd, onBuy }) {
+export function MobileBuyBar({ onAdd, onBuy, total }) {
   return (
     <div
       className="bz-mobile-only"
@@ -2029,19 +2058,35 @@ export function MobileBuyBar({ onAdd, onBuy }) {
         right: 0,
         bottom: 0,
         zIndex: 90,
+        flexDirection: "column",
         background: "#fff",
         borderTop: "1px solid var(--line-200)",
         padding: "10px 14px calc(10px + env(safe-area-inset-bottom))",
-        gap: 10,
+        gap: 8,
         boxShadow: "0 -2px 12px rgba(15,23,42,.08)",
       }}
     >
-      <Button variant="secondary" size="lg" full icon="cart" onClick={onAdd}>
-        Add to Cart
-      </Button>
-      <Button variant="primary" size="lg" full onClick={onBuy}>
-        Buy Now
-      </Button>
+      {typeof total === "number" && (
+        <div
+          className="tnum"
+          style={{
+            fontSize: ".8125rem",
+            fontWeight: 700,
+            color: "var(--blue-deep)",
+            textAlign: "center",
+          }}
+        >
+          Rs. {total.toLocaleString()} to pay
+        </div>
+      )}
+      <div style={{ display: "flex", gap: 10 }}>
+        <Button variant="secondary" size="lg" full icon="cart" onClick={onAdd}>
+          Add to Cart
+        </Button>
+        <Button variant="primary" size="lg" full onClick={onBuy}>
+          Buy Now
+        </Button>
+      </div>
     </div>
   );
 }

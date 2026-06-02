@@ -12,7 +12,6 @@ export interface VideoFeedSeller {
   id: string;
   name: string;
   city: string;
-  verified: boolean;
   rating: number;
   reviews: number;
   avatar: string;

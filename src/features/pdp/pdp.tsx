@@ -10,7 +10,6 @@ import {
   IconButton,
   RatingStars,
   Chip,
-  VerifiedBadge,
   StatusPill,
   Price,
   Placeholder,
@@ -61,6 +60,20 @@ import { useSeller } from "@/hooks/use-catalog";
 import { useCreateBargainOffer } from "@/hooks/use-bargains";
 import { ApiRequestError } from "@/services/api/http";
 import type { PdpProps } from "@/types";
+import {
+  SectionTabs,
+  ReviewsSection,
+  QASection,
+  WriteReviewModal,
+  ImageLightbox,
+} from "./_components";
+
+const PDP_SECTIONS = [
+  { id: "pdp-description", label: "Description" },
+  { id: "pdp-specs", label: "Specifications" },
+  { id: "pdp-reviews", label: "Reviews" },
+  { id: "pdp-qa", label: "Q&A" },
+];
 
 /* ============================================================
    BazaarCo — Product Detail Page (video-led)
@@ -367,6 +380,8 @@ export function PDP({ p }: PdpProps) {
   const gallery = p.images?.length ? p.images : p.img ? [p.img] : [];
   const [qty, setQty] = useState(1);
   const [bargain, setBargain] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const [descOpen, setDescOpen] = useState(false);
   const [shown, setShown] = useState(5);
   const [variantSel, setVariantSel] = useState(() =>
@@ -383,8 +398,9 @@ export function PDP({ p }: PdpProps) {
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
       <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 0" }}>
-        {/* breadcrumb */}
+        {/* breadcrumb — desktop only */}
         <div
+          className="bz-hide-mobile"
           style={{
             display: "flex",
             alignItems: "center",
@@ -483,13 +499,21 @@ export function PDP({ p }: PdpProps) {
             {tab === "photos" && (
               <div>
                 {gallery.length > 0 ? (
-                  <div
+                  <button
+                    type="button"
+                    aria-label="Zoom photo"
+                    onClick={() => setLightboxOpen(true)}
                     style={{
                       position: "relative",
+                      display: "block",
                       width: "100%",
                       aspectRatio: "4 / 5",
                       borderRadius: "var(--r-lg)",
                       overflow: "hidden",
+                      padding: 0,
+                      border: "none",
+                      background: "none",
+                      cursor: "zoom-in",
                     }}
                   >
                     <img
@@ -497,7 +521,7 @@ export function PDP({ p }: PdpProps) {
                       alt={p.name}
                       style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />
-                  </div>
+                  </button>
                 ) : (
                   <Placeholder icon={p.icon} tint={p.tint} ratio="4 / 5" radius="var(--r-lg)" />
                 )}
@@ -760,6 +784,9 @@ export function PDP({ p }: PdpProps) {
           </div>
         </div>
 
+        {/* sticky in-page section nav */}
+        <SectionTabs sections={PDP_SECTIONS} />
+
         {/* lower sections */}
         <div
           className="bz-stack-900"
@@ -767,13 +794,23 @@ export function PDP({ p }: PdpProps) {
             display: "grid",
             gridTemplateColumns: "1.25fr 1fr",
             gap: 40,
-            marginTop: 48,
+            marginTop: 24,
             alignItems: "start",
           }}
         >
           <div>
             {/* description */}
-            <h3 style={{ fontSize: "1.125rem", fontWeight: 700, marginBottom: 12 }}>Description</h3>
+            <h3
+              id="pdp-description"
+              style={{
+                fontSize: "1.125rem",
+                fontWeight: 700,
+                marginBottom: 12,
+                scrollMarginTop: 140,
+              }}
+            >
+              Description
+            </h3>
             <p
               style={{
                 color: "var(--ink-500)",
@@ -801,7 +838,15 @@ export function PDP({ p }: PdpProps) {
             </button>
 
             {/* specs */}
-            <h3 style={{ fontSize: "1.125rem", fontWeight: 700, margin: "24px 0 12px" }}>
+            <h3
+              id="pdp-specs"
+              style={{
+                fontSize: "1.125rem",
+                fontWeight: 700,
+                margin: "24px 0 12px",
+                scrollMarginTop: 140,
+              }}
+            >
               Specifications
             </h3>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -835,290 +880,30 @@ export function PDP({ p }: PdpProps) {
             </table>
           </div>
 
-          {/* reviews — customer photos first per guide §3.6 */}
-          <div>
-            <h3 style={{ fontSize: "1.125rem", fontWeight: 700, marginBottom: 14 }}>
-              Customer photos & reviews
-            </h3>
-            {reviews.some((r) => r.photos > 0) ? (
-              <div style={{ marginBottom: 18 }}>
-                <div
-                  style={{
-                    fontSize: ".8125rem",
-                    fontWeight: 700,
-                    color: "var(--ink-500)",
-                    marginBottom: 8,
-                  }}
-                >
-                  Real photos from buyers
-                </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {reviews.flatMap((r, ri) =>
-                    Array.from({ length: r.photos }).map((_, j) => (
-                      <Placeholder
-                        key={`${ri}-${j}`}
-                        icon={p.icon}
-                        tint={[p.tint, "slate", "gold", "blue"][(ri + j) % 4]}
-                        style={{ width: 80, height: 80 }}
-                        radius="var(--r-sm)"
-                      />
-                    )),
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div
-                style={{
-                  background: "var(--tint-blue-50)",
-                  padding: 14,
-                  borderRadius: "var(--r-md)",
-                  fontSize: ".875rem",
-                  color: "var(--blue-deep)",
-                  marginBottom: 18,
-                }}
-              >
-                <Icon
-                  name="shieldCheck"
-                  size={18}
-                  color="var(--blue-deep)"
-                  style={{ verticalAlign: "middle", marginRight: 6 }}
-                />
-                No customer photos yet — shop safely with our 100% return policy.
-              </div>
-            )}
-            <div
-              style={{
-                display: "flex",
-                gap: 24,
-                padding: 18,
-                background: "#fff",
-                border: "1px solid var(--line-200)",
-                borderRadius: "var(--r-lg)",
+          {/* reviews — dynamic, with calm zero-state */}
+          <div id="pdp-reviews" style={{ scrollMarginTop: 140 }}>
+            <ReviewsSection
+              rating={p.rating}
+              reviewCount={p.reviews}
+              icon={p.icon}
+              tint={p.tint}
+              reviews={reviews}
+              ratingDist={ratingDist}
+              loading={reviewsLoading || ratingLoading}
+              onWriteReview={() => {
+                if (!authed) {
+                  promptLogin("Please sign in to write a review.");
+                  return;
+                }
+                setReviewOpen(true);
               }}
-            >
-              <div style={{ textAlign: "center", flexShrink: 0 }}>
-                <div
-                  className="tnum bz-hero-h2"
-                  style={{ fontWeight: 800, color: "var(--blue-deep)", lineHeight: 1 }}
-                >
-                  {p.rating.toFixed(1)}
-                </div>
-                <RatingStars value={p.rating} size={14} />
-                <div style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 4 }}>
-                  {p.reviews} reviews
-                </div>
-              </div>
-              <div style={{ flex: 1 }}>
-                {ratingDist.map((r) => (
-                  <div
-                    key={r.s}
-                    style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}
-                  >
-                    <span
-                      className="tnum"
-                      style={{ fontSize: ".75rem", color: "var(--ink-400)", width: 10 }}
-                    >
-                      {r.s}
-                    </span>
-                    <Icon name="star" size={11} color="var(--gold)" fill="var(--gold)" />
-                    <div
-                      style={{
-                        flex: 1,
-                        height: 6,
-                        background: "var(--line-100)",
-                        borderRadius: 3,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <div
-                        style={{ width: `${r.pct}%`, height: "100%", background: "var(--gold)" }}
-                      />
-                    </div>
-                    <span
-                      className="tnum"
-                      style={{
-                        fontSize: ".75rem",
-                        color: "var(--ink-400)",
-                        width: 28,
-                        textAlign: "right",
-                      }}
-                    >
-                      {r.pct}%
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
-              {reviews.map((r, i) => (
-                <div
-                  key={i}
-                  style={{
-                    paddingBottom: 14,
-                    borderBottom: i < reviews.length - 1 ? "1px solid var(--line-200)" : "none",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                    <div
-                      style={{
-                        width: 34,
-                        height: 34,
-                        borderRadius: "50%",
-                        overflow: "hidden",
-                        border: "1.5px solid var(--line-200)",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <img
-                        src={r.avatar}
-                        alt={r.name}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                          display: "block",
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: ".875rem" }}>{r.name}</div>
-                      <div style={{ fontSize: ".75rem", color: "var(--ink-400)" }}>
-                        {r.city} · {r.date}
-                      </div>
-                    </div>
-                    <div style={{ marginLeft: "auto" }}>
-                      <RatingStars value={r.rating} size={12} />
-                    </div>
-                  </div>
-                  <p
-                    style={{
-                      margin: 0,
-                      color: "var(--ink-600)",
-                      fontSize: ".875rem",
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    {r.text}
-                  </p>
-                  {r.photoUrls && r.photoUrls.length > 0 && (
-                    <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                      {r.photoUrls.map((url, j) => (
-                        <div
-                          key={j}
-                          style={{
-                            width: 56,
-                            height: 56,
-                            borderRadius: "var(--r-sm)",
-                            overflow: "hidden",
-                            border: "1px solid var(--line-200)",
-                          }}
-                        >
-                          <img
-                            src={url}
-                            alt=""
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                              display: "block",
-                            }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div style={{ marginTop: 8 }}>
-              <Button variant="secondary" full>
-                View all {p.reviews} reviews
-              </Button>
-            </div>
+            />
           </div>
         </div>
 
-        {/* Q&A */}
-        <div style={{ marginTop: 52 }}>
-          <SectionHead title="Questions & answers" />
-          <div
-            style={{
-              background: "#fff",
-              border: "1px solid var(--line-200)",
-              borderRadius: "var(--r-lg)",
-              padding: 20,
-            }}
-          >
-            {[
-              {
-                q: "Is this genuine pashmina or blended?",
-                a: "100% genuine Himalayan pashmina — certified by the seller. We refund full if the test fails.",
-                by: "Himalayan Handlooms · 3 days ago",
-              },
-              {
-                q: "Can I bargain on the price?",
-                a: "Yes. Tap 'Make an offer' on this page — sellers usually reply within minutes.",
-                by: "BazaarCo Team · 1 week ago",
-              },
-            ].map((it, i) => (
-              <div
-                key={i}
-                style={{
-                  borderBottom: i === 0 ? "1px solid var(--line-200)" : "none",
-                  padding: i === 0 ? "0 0 16px" : "16px 0 0",
-                }}
-              >
-                <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                  <span
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: "50%",
-                      background: "var(--tint-blue-50)",
-                      color: "var(--blue)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontWeight: 800,
-                      flexShrink: 0,
-                    }}
-                  >
-                    Q
-                  </span>
-                  <div style={{ fontWeight: 700 }}>{it.q}</div>
-                </div>
-                <div style={{ display: "flex", gap: 10, alignItems: "flex-start", marginTop: 10 }}>
-                  <span
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: "50%",
-                      background: "rgba(22,163,74,.12)",
-                      color: "var(--success)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontWeight: 800,
-                      flexShrink: 0,
-                    }}
-                  >
-                    A
-                  </span>
-                  <div>
-                    <div style={{ color: "var(--ink-700)", fontSize: ".9375rem" }}>{it.a}</div>
-                    <div style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 4 }}>
-                      {it.by}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-            <div style={{ marginTop: 18 }}>
-              <Button variant="secondary" full icon="headphones">
-                Ask a question
-              </Button>
-            </div>
-          </div>
+        {/* Q&A — fully dynamic */}
+        <div id="pdp-qa" style={{ marginTop: 52, scrollMarginTop: 140 }}>
+          <QASection productId={p.id} />
         </div>
 
         {/* related */}
@@ -1135,9 +920,29 @@ export function PDP({ p }: PdpProps) {
         </div>
 
         {bargain && <BargainModal p={p} onClose={() => setBargain(false)} />}
+        {reviewOpen && (
+          <WriteReviewModal
+            productId={p.id}
+            productName={p.name}
+            onClose={() => setReviewOpen(false)}
+          />
+        )}
+        {lightboxOpen && gallery.length > 0 && (
+          <ImageLightbox
+            images={gallery}
+            index={Math.min(photoIdx, gallery.length - 1)}
+            alt={p.name}
+            onIndex={setPhotoIdx}
+            onClose={() => setLightboxOpen(false)}
+          />
+        )}
 
         {/* Mobile sticky buy bar */}
-        <MobileBuyBar onAdd={() => void addToCart(p, qty)} onBuy={() => void buyNow(p, qty)} />
+        <MobileBuyBar
+          onAdd={() => void addToCart(p, qty)}
+          onBuy={() => void buyNow(p, qty)}
+          total={p.price + (p.price >= 1000 ? 0 : 80)}
+        />
       </div>
     </ApiState>
   );

@@ -6,7 +6,6 @@ import {
   Icon,
   Button,
   RatingStars,
-  VerifiedBadge,
   Chip,
   EmptyState,
   ApiState,
@@ -313,7 +312,6 @@ export function Store() {
                 >
                   {seller.name}
                 </h1>
-                {seller.verified && <VerifiedBadge />}
               </div>
               <div
                 style={{

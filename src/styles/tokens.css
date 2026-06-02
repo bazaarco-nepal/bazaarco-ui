@@ -74,6 +74,25 @@
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   --container: 1440px;
+
+  /* Spacing — modular scale (8px base). Use these for vertical rhythm so every
+     section steps in a uniform, predictable cadence. */
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  --space-4xl: 72px;
+  --space-5xl: 88px;
+  --space-6xl: 96px;
+
+  /* Homepage desktop rhythm (derived from the scale above).
+     navbar → hero ~44px; between major sections ~36px. */
+  --home-hero-top: 44px;
+  --home-section-gap: 36px;
 }
 
 * {
@@ -875,6 +894,26 @@ body {
   }
   .bz-flash-head > div:first-child {
     width: 100%;
+  }
+}
+
+/* Homepage vertical rhythm — desktop only. Inline paddingTop on each section
+   stays as the mobile baseline; here we override to a single modular cadence so
+   navbar → hero and every section-to-section gap line up. Mobile (<=768px) keeps
+   its own tighter inline spacing untouched. */
+@media (min-width: 769px) {
+  .bz-home-hero {
+    padding-top: var(--home-hero-top) !important;
+  }
+  .bz-home-section {
+    padding-top: var(--home-section-gap) !important;
+  }
+  /* The category card lives inside a .bz-home-section wrapper and adds its own
+     top/bottom margins — neutralize them so spacing isn't compounded. The
+     section paddingTop is the single source of the gap. */
+  .bz-home-section .bz-cat-card {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
   }
 }
 

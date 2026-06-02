@@ -180,9 +180,9 @@ export function Home() {
     products.filter((p) => !p.outOfStock),
     20,
   );
-  const W = ({ children, style }) => (
+  const W = ({ children, style, className }) => (
     <section
-      className="bz-container-pad"
+      className={`bz-container-pad${className ? ` ${className}` : ""}`}
       style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px", ...style }}
     >
       {children}
@@ -194,7 +194,7 @@ export function Home() {
         <BackToTop />
         {/* Desktop hero — hidden on phones */}
         <div className="bz-hide-mobile">
-          <W style={{ paddingTop: 22 }}>
+          <W className="bz-home-hero" style={{ paddingTop: 22 }}>
             <BestPicksHero />
           </W>
         </div>
@@ -380,7 +380,7 @@ export function Home() {
 
         {/* categories — desktop wraps header + grid in a card (.bz-cat-card);
             on mobile the card is `display:contents` so the layout is unchanged. */}
-        <W style={{ paddingTop: 44 }}>
+        <W className="bz-home-section" style={{ paddingTop: 44 }}>
           <div className="bz-cat-card">
             <SectionHead
               title="Shop by category"
@@ -513,7 +513,7 @@ export function Home() {
         </W> */}
 
         {/* Endless product feed — shown on both web and mobile */}
-        <W style={{ paddingTop: 36 }}>
+        <W className="bz-home-section" style={{ paddingTop: 36 }}>
           <SectionHead title="More to explore" />
           <div className="bz-picks-grid">
             {feedPaged.visible.map((p) => (

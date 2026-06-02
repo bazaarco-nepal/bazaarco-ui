@@ -30,7 +30,7 @@ function ProductSection({
 
   return (
     <section
-      className="bz-container-pad"
+      className="bz-container-pad bz-home-section"
       style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px", paddingTop: 36 }}
     >
       <SectionHead title={title} action="See All" onAction={() => router.push(seeAllHref)} />

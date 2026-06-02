@@ -10,7 +10,6 @@ import {
   IconButton,
   RatingStars,
   Chip,
-  VerifiedBadge,
   StatusPill,
   Price,
   Placeholder,
@@ -68,7 +67,6 @@ const PLP_QUICK_FILTERS = [
   { id: "free", label: "Free delivery", icon: "truck" },
   { id: "returnable", label: "7-day return", icon: "refresh" },
   { id: "rating4", label: "4★ & up", icon: "star" },
-  { id: "verified", label: "Verified seller", icon: "shieldCheck" },
 ];
 
 /* Price preset bands — replace numeric slider for low-literacy users. */
@@ -229,7 +227,6 @@ export function Browse() {
         categories: cats.length ? cats : undefined,
         price_min: priceActive ? effMin : undefined,
         price_max: priceActive && effMax < 1e9 ? effMax : undefined,
-        verified: quick.includes("verified") || undefined,
         rating4: quick.includes("rating4") || undefined,
         free: quick.includes("free") || undefined,
         sort: SORT_MAP[sort] ?? "relevance",
@@ -264,7 +261,6 @@ export function Browse() {
           return false;
         if (cats.length && !cats.includes(p.cat)) return false;
         if (priceActive && (p.price < effMin || p.price > effMax)) return false;
-        if (quick.includes("verified") && !sellerOf(p)?.verified) return false;
         if (quick.includes("free") && p.price < 1000) return false;
         if (quick.includes("rating4") && p.rating < 4) return false;
         return true;

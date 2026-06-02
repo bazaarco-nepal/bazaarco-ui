@@ -7,7 +7,6 @@ export interface SearchParams {
   categories?: string[];
   price_min?: number;
   price_max?: number;
-  verified?: boolean;
   rating4?: boolean;
   free?: boolean;
   sort?: "relevance" | "price_low" | "price_high" | "rating";

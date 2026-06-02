@@ -2,6 +2,7 @@ import type {
   Category,
   Product,
   ProductProfile,
+  ProductQuestion,
   ProductReview,
   RatingDistribution,
   Seller,
@@ -14,6 +15,18 @@ export interface CreateSellerReviewPayload {
   stars: number;
   text: string;
   product?: string;
+}
+
+export interface CreateProductReviewPayload {
+  rating: number;
+  text: string;
+  photoUrls?: string[];
+}
+
+export interface CreateProductQuestionPayload {
+  text: string;
+  // Only sent for guests; signed-in users are identified server-side.
+  askerName?: string;
 }
 
 export interface ProductListParams {
@@ -87,5 +100,20 @@ export const catalogApi = {
 
   getRatingDistribution(id: string): Promise<RatingDistribution[]> {
     return getData<RatingDistribution[]>(`/catalog/products/${id}/rating-distribution`);
+  },
+
+  createProductReview(id: string, payload: CreateProductReviewPayload): Promise<ProductReview> {
+    return postData<ProductReview>(`/catalog/products/${id}/reviews`, payload);
+  },
+
+  getProductQuestions(id: string, params?: PagedParams): Promise<PaginatedData<ProductQuestion>> {
+    return getData<PaginatedData<ProductQuestion>>(`/catalog/products/${id}/questions`, params);
+  },
+
+  createProductQuestion(
+    id: string,
+    payload: CreateProductQuestionPayload,
+  ): Promise<ProductQuestion> {
+    return postData<ProductQuestion>(`/catalog/products/${id}/questions`, payload);
   },
 };

@@ -378,23 +378,26 @@ export function Home() {
           </div>
         </W> */}
 
-        {/* categories */}
+        {/* categories — desktop wraps header + grid in a card (.bz-cat-card);
+            on mobile the card is `display:contents` so the layout is unchanged. */}
         <W style={{ paddingTop: 44 }}>
-          <SectionHead
-            title="Shop by category"
-            action="All categories"
-            actionHref={pathFromScreen("browse")}
-          />
-          <div className="bz-cat-row">
-            {(categories ?? []).map((c) => (
-              <CategoryTile
-                key={c.id}
-                c={c}
-                compact
-                href={pathFromScreen("browse")}
-                onClick={() => nav("browse")}
-              />
-            ))}
+          <div className="bz-cat-card">
+            <SectionHead
+              title="Shop by category"
+              action="All categories"
+              actionHref={pathFromScreen("browse")}
+            />
+            <div className="bz-cat-row">
+              {(categories ?? []).map((c) => (
+                <CategoryTile
+                  key={c.id}
+                  c={c}
+                  compact
+                  href={pathFromScreen("browse")}
+                  onClick={() => nav("browse")}
+                />
+              ))}
+            </div>
           </div>
         </W>
 

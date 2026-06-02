@@ -772,7 +772,6 @@ export const SELLERS = {
   himalayan: {
     id: "himalayan",
     name: "Himalayan Handlooms",
-    verified: true,
     rating: 4.8,
     reviews: 1240,
     city: "Bhaktapur",
@@ -782,7 +781,6 @@ export const SELLERS = {
   thimi: {
     id: "thimi",
     name: "Thimi Pottery Works",
-    verified: true,
     rating: 4.7,
     reviews: 860,
     city: "Madhyapur Thimi",
@@ -792,7 +790,6 @@ export const SELLERS = {
   pokhara: {
     id: "pokhara",
     name: "Pokhara Naturals",
-    verified: true,
     rating: 4.9,
     reviews: 2110,
     city: "Pokhara",
@@ -802,7 +799,6 @@ export const SELLERS = {
   stylenp: {
     id: "stylenp",
     name: "StyleByNepal",
-    verified: true,
     rating: 4.8,
     reviews: 1180,
     city: "Kathmandu",
@@ -812,7 +808,6 @@ export const SELLERS = {
   everest: {
     id: "everest",
     name: "Everest Gear Co.",
-    verified: false,
     rating: 4.5,
     reviews: 430,
     city: "Kathmandu",
@@ -822,7 +817,6 @@ export const SELLERS = {
   lumbini: {
     id: "lumbini",
     name: "Lumbini Crafts",
-    verified: true,
     rating: 4.6,
     reviews: 720,
     city: "Lumbini",

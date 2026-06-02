@@ -29,7 +29,6 @@ export interface Category {
 export interface Seller {
   id: string;
   name: string;
-  verified: boolean;
   rating: number;
   reviews: number;
   city: string;
@@ -96,6 +95,22 @@ export interface SellerReview {
 export interface RatingDistribution {
   s: number;
   pct: number;
+}
+
+export interface ProductQuestionAnswer {
+  text: string;
+  answeredBy: string | null;
+  answeredAt: string | null;
+}
+
+export interface ProductQuestion {
+  id: string;
+  askerName: string;
+  text: string;
+  status: "pending" | "answered";
+  createdAt: string;
+  // null until the seller answers.
+  answer: ProductQuestionAnswer | null;
 }
 
 export interface ProductVariantOption {

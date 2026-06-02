@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { screenFromPath } from "@/config/routes";
+import { screenFromPath, titleForScreen } from "@/config/routes";
 import {
   Auth,
   AuthCallback,
@@ -77,6 +77,13 @@ export function MarketplaceScreen() {
   const orderTotal = useBazaarStore((s) => s.orderTotal);
   const authed = useBazaarStore((s) => s.authed);
   const authReady = useBazaarStore((s) => s.authReady);
+
+  // Keep the browser tab title meaningful per screen. On the product page use
+  // the loaded product name; everything else maps to a friendly screen label.
+  useEffect(() => {
+    const detail = screen === "pdp" ? product?.name : undefined;
+    document.title = titleForScreen(screen, detail);
+  }, [screen, product?.name]);
 
   // Gate buyer screens that aren't publicly viewable. Guests stay on the page
   // (no redirect) and see a sign-in CTA. Public/browse screens fall through and

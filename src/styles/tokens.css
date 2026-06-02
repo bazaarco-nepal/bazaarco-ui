@@ -890,23 +890,56 @@ body {
 .bz-cat-row .bz-cat__ne {
   display: none;
 }
-/* Desktop — contained 6-col grid with FIXED 120px tiles instead of stretchy
-   1fr columns. 1fr columns made each 64px circle float in a ~218px cell, so
-   icons read as spread-out and disconnected from the tight product grid below.
-   Fixed 120px tiles + space-between keep the row's left/right edges flush with
-   the product grid (same .W container) while grouping the tiles into uniform
-   boxes. Tablet/mobile keep their own 4-col rules untouched. */
+/* Category tile (clickable cell). Base/mobile = transparent, no box — keeps the
+   mobile layout identical to before. Desktop layers a real tile + hover state. */
+.bz-cat__tile {
+  background: none;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+.bz-cat__en {
+  color: var(--ink-700);
+}
+/* Card wrapper — `display:contents` on mobile so the wrapper is invisible and
+   SectionHead + grid flow exactly as before. Desktop turns it into a card. */
+.bz-cat-card {
+  display: contents;
+}
+
+/* Tablet + desktop — wrap the section in a subtle white card and make each
+   category a proper clickable tile. Mobile (<=768px) is untouched. */
+@media (min-width: 769px) {
+  .bz-cat-card {
+    display: block;
+    background: #ffffff;
+    border: 1px solid #edf0f5;
+    border-radius: 24px;
+    padding: 28px 32px 30px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    margin-top: 32px;
+    margin-bottom: 36px;
+  }
+  .bz-cat-card .bz-sec-head {
+    margin-bottom: 24px !important;
+  }
+  .bz-cat-row .bz-cat__tile {
+    height: 104px;
+    border-radius: 18px;
+    justify-content: center;
+    gap: 10px;
+  }
+  .bz-cat-row .bz-cat__tile:hover .bz-cat__en {
+    color: var(--blue-deep);
+  }
+}
+/* Desktop — contained 6-col grid. The card now constrains width, so we use
+   clean stretchy 1fr columns (no more fixed-120px hack) aligned to the product
+   grid below. Tablet/mobile keep their own 4-col rules untouched. */
 @media (min-width: 1025px) {
   .bz-cat-row {
-    max-width: 1160px;
-    margin: 0 auto;
-    grid-template-columns: repeat(6, 120px);
-    justify-content: space-between;
-    row-gap: 24px;
-    column-gap: 0;
-  }
-  .bz-cat-row > * {
-    width: 120px;
+    grid-template-columns: repeat(6, 1fr);
+    column-gap: 20px;
+    row-gap: 22px;
   }
 }
 /* Tablet — 4 across, all categories shown */

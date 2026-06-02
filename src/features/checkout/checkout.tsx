@@ -11,7 +11,6 @@ import {
   IconButton,
   RatingStars,
   Chip,
-  VerifiedBadge,
   StatusPill,
   Price,
   Placeholder,

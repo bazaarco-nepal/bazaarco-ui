@@ -8,7 +8,6 @@ import {
   Spinner,
   IconButton,
   Chip,
-  VerifiedBadge,
   StatusPill,
   Price,
   Placeholder,
@@ -195,7 +194,6 @@ export function SellerRow({
           >
             {seller.name}
           </span>
-          {seller.verified && <VerifiedBadge />}
         </div>
         <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 2 }}>
           {seller.city}
@@ -433,9 +431,6 @@ export function ProductCard({ p, onClick, sale = false }) {
           </span>
           <span style={{ color: "var(--ink-400)" }}>· {p.reviews} reviews</span>
           {sale && <span style={{ color: "var(--ink-400)" }}>· {soldLabel}</span>}
-          {s?.verified && (
-            <Icon name="badgeCheck" size={13} color="var(--gold)" title="Verified seller" />
-          )}
         </div>
         {/* Single price line: all-in price + strikethrough original — via Price primitive */}
         {/* Trust row (cash on delivery / 7-day return) and delivery ETA live on the PDP only, not on cards. */}
@@ -516,16 +511,15 @@ export function CategoryTile({ c, onClick, compact = false, href }) {
   return (
     <Tag
       {...tagProps}
+      className="bz-cat__tile"
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        background: "none",
         border: "none",
         cursor: "pointer",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: 8,
         padding: 0,
         width: "100%",
         textDecoration: "none",
@@ -549,10 +543,7 @@ export function CategoryTile({ c, onClick, compact = false, href }) {
         <Icon name={iconName} size={27} color={hov ? "#fff" : t.fg} stroke={1.8} />
       </div>
       <div style={{ textAlign: "center", lineHeight: 1.2 }}>
-        <div
-          className="bz-cat__en"
-          style={{ fontSize: ".8125rem", fontWeight: 600, color: "var(--ink-700)" }}
-        >
+        <div className="bz-cat__en" style={{ fontSize: ".8125rem", fontWeight: 600 }}>
           {label}
         </div>
         {!compact && c.ne && (
@@ -912,19 +903,22 @@ export function Navbar() {
             title="Bargain · मोलतोल"
             className="bz-hide-mobile"
             style={{
-              width: 40,
-              height: 40,
               display: "inline-flex",
               alignItems: "center",
-              justifyContent: "center",
+              gap: 7,
               background: "var(--red)",
               border: "none",
               cursor: "pointer",
+              padding: "8px 12px",
               borderRadius: "var(--r-md)",
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: ".875rem",
+              textDecoration: "none",
               flexShrink: 0,
             }}
           >
-            <Icon name="bargain" size={20} color="#fff" />
+            <Icon name="bargain" size={19} color="#fff" /> Bargain
           </AppLink>
           {/* Cart — desktop topbar only; mobile reaches it via bottom nav. */}
           <span className="bz-hide-mobile">

@@ -10,7 +10,6 @@ import {
   IconButton,
   RatingStars,
   Chip,
-  VerifiedBadge,
   StatusPill,
   Price,
   Placeholder,
@@ -524,7 +523,6 @@ function ReelItem({
               >
                 @{s.id}
               </span>
-              {s.verified && <Icon name="badgeCheck" size={14} color="var(--gold)" />}
             </div>
             <span
               style={{ fontSize: ".75rem", opacity: 0.85, textShadow: "0 1px 2px rgba(0,0,0,.5)" }}
@@ -1017,11 +1015,6 @@ export function VideoTheater() {
           Featured in video
         </Chip>
         {p.original && <Chip tone="saffron">-{Math.round((1 - p.price / p.original) * 100)}%</Chip>}
-        {s.verified && (
-          <Chip tone="gold" icon="badgeCheck">
-            Verified seller
-          </Chip>
-        )}
       </div>
       <h2
         style={{

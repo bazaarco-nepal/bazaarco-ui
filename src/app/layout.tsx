@@ -23,7 +23,7 @@ const mukta = Mukta({
 });
 
 export const metadata: Metadata = {
-  title: "BazaarCo — Shop",
+  title: "BazaarCo - Shop",
   description: "Nepal's fair marketplace",
 };
 

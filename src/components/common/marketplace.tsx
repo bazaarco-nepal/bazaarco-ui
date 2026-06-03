@@ -644,6 +644,111 @@ export function NavMenuItem({ icon, label, danger, onClick, href, onNavigate }) 
   );
 }
 
+function AccountMenuPanel({ navLabel, navInitial, authed, goAndClose, logoutMutation }) {
+  return (
+    <>
+      <AppLink
+        href={pathFromScreen("profile")}
+        onNavigate={() => goAndClose("profile")}
+        role="menuitem"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "10px 12px",
+          border: "1px solid var(--line-200)",
+          borderRadius: "var(--r-md)",
+          background: "var(--line-100)",
+          cursor: "pointer",
+          width: "100%",
+          textAlign: "left",
+          marginBottom: 6,
+          textDecoration: "none",
+        }}
+      >
+        <span
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            background: "var(--blue-deep)",
+            color: "#fff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontWeight: 700,
+            fontSize: 13,
+          }}
+        >
+          {navInitial}
+        </span>
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span
+            style={{
+              display: "block",
+              fontSize: ".875rem",
+              fontWeight: 700,
+              color: "var(--ink-900)",
+            }}
+          >
+            {navLabel}
+          </span>
+          <span
+            style={{
+              display: "block",
+              fontSize: ".75rem",
+              color: "var(--blue)",
+              fontWeight: 600,
+            }}
+          >
+            View profile
+          </span>
+        </span>
+      </AppLink>
+      <NavMenuItem
+        icon="package"
+        label="My orders"
+        href={pathFromScreen("orders")}
+        onNavigate={() => goAndClose("orders")}
+      />
+      <NavMenuItem
+        icon="heart"
+        label="Wishlist"
+        href={pathFromScreen("wishlist")}
+        onNavigate={() => goAndClose("wishlist")}
+      />
+      <NavMenuItem
+        icon="video"
+        label="Watch"
+        href={pathFromScreen("video")}
+        onNavigate={() => goAndClose("video")}
+      />
+      <NavMenuItem
+        icon="bargain"
+        label="Bargains"
+        href={pathFromScreen("bargains")}
+        onNavigate={() => goAndClose("bargains")}
+      />
+      <div style={{ height: 1, background: "var(--line-200)", margin: "6px 4px" }} />
+      {authed ? (
+        <NavMenuItem
+          icon="x"
+          label="Log out"
+          danger
+          onClick={() => logoutMutation.mutate(undefined, { onSuccess: () => goAndClose("home") })}
+        />
+      ) : (
+        <NavMenuItem
+          icon="user"
+          label="Sign in"
+          href={pathFromScreen("auth")}
+          onNavigate={() => goAndClose("auth")}
+        />
+      )}
+    </>
+  );
+}
+
 export function Navbar() {
   const { nav, cartCount, wish, wishSellers, screen, query, setQuery, submitSearch, toast } =
     useBz();
@@ -653,21 +758,28 @@ export function Navbar() {
   const navLabel = displayName(user, "Account");
   const navInitial = userInitial(user);
   const [hint, setHint] = useState(0);
-  const [searchFocused, setSearchFocused] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [deliverOpen, setDeliverOpen] = useState(false);
   const deliveryLocation = useBazaarStore((s) => s.deliveryLocation);
   const setDeliveryLocation = useBazaarStore((s) => s.setDeliveryLocation);
   const deliverLabel = formatDeliverToLabel(deliveryLocation);
-  const menuRef = useRef(null);
+  const desktopMenuRef = useRef(null);
+  const mobileSheetRef = useRef(null);
+
   useEffect(() => {
     const id = setInterval(() => setHint((h) => (h + 1) % SEARCH_HINTS.length), 2800);
     return () => clearInterval(id);
   }, []);
+
   useEffect(() => {
     if (!menuOpen) return;
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
+    const prevOverflow = document.body.style.overflow;
+    if (isMobile) document.body.style.overflow = "hidden";
     const onDocClick = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+      const t = e.target;
+      if (desktopMenuRef.current?.contains(t) || mobileSheetRef.current?.contains(t)) return;
+      setMenuOpen(false);
     };
     const onKey = (e) => {
       if (e.key === "Escape") setMenuOpen(false);
@@ -675,53 +787,21 @@ export function Navbar() {
     document.addEventListener("mousedown", onDocClick);
     document.addEventListener("keydown", onKey);
     return () => {
+      document.body.style.overflow = prevOverflow;
       document.removeEventListener("mousedown", onDocClick);
       document.removeEventListener("keydown", onKey);
     };
   }, [menuOpen]);
+
   const goAndClose = (s) => {
     setMenuOpen(false);
     nav(s);
   };
+
   return (
-    <header
-      // Home owns its own mobile header (greeting + search), so suppress the
-      // shared navbar on phones there; keep it on desktop and all other screens.
-      className={screen === "home" ? "bz-hide-mobile" : undefined}
-      style={{
-        position: "sticky",
-        top: 0,
-        left: 0,
-        right: 0,
-        width: "100%",
-        zIndex: 100,
-        background: "#fff",
-        borderBottom: "1px solid var(--line-200)",
-      }}
-    >
-      {/* trust ribbon */}
-      <div
-        className="bz-hide-mobile"
-        style={{
-          background: "var(--blue-deep)",
-          color: "rgba(255,255,255,.92)",
-          fontSize: ".75rem",
-          padding: "8px 0",
-          fontWeight: 500,
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "var(--container)",
-            margin: "0 auto",
-            padding: "0 28px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 22,
-            flexWrap: "wrap",
-          }}
-        >
+    <header className={`bz-navbar${screen === "home" ? " bz-hide-mobile" : ""}`}>
+      <div className="bz-navbar__trust bz-hide-mobile">
+        <div className="bz-navbar__trust-inner">
           <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
             <Icon name="bargain" size={13} color="#fff" /> Bargain freely with every seller
           </span>
@@ -739,30 +819,13 @@ export function Navbar() {
           </span>
         </div>
       </div>
-      <div
-        style={{
-          maxWidth: "var(--container)",
-          margin: "0 auto",
-          padding: "0 28px",
-          height: 72,
-          display: "flex",
-          alignItems: "center",
-          gap: 18,
-        }}
-      >
+
+      <div className="bz-navbar__inner">
         <AppLink
           href={pathFromScreen("home")}
           ariaLabel="BazaarCo home"
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: 0,
-            flexShrink: 0,
-            display: "inline-flex",
-          }}
+          className="bz-navbar__brand"
         >
-          {/* Desktop: full-size logo. Mobile: smaller logo so search owns the bar. */}
           <span className="bz-hide-mobile">
             <Logo height={38} />
           </span>
@@ -770,27 +833,14 @@ export function Navbar() {
             <Logo height={26} />
           </span>
         </AppLink>
+
         <button
           type="button"
           onClick={() => setDeliverOpen(true)}
           aria-haspopup="dialog"
           aria-expanded={deliverOpen}
-          className="bz-hide-mobile"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            height: 40,
-            padding: "0 12px",
-            background: "var(--line-100)",
-            border: "1px solid var(--line-200)",
-            borderRadius: "var(--r-md)",
-            cursor: "pointer",
-            flexShrink: 0,
-            color: "var(--ink-700)",
-            fontWeight: 600,
-            fontSize: ".8125rem",
-          }}
+          aria-label={`Deliver to ${deliverLabel}`}
+          className="bz-navbar__deliver bz-hide-mobile"
         >
           <Icon name="mapPin" size={16} color="var(--red)" />
           <div style={{ textAlign: "left", lineHeight: 1.15 }}>
@@ -809,6 +859,28 @@ export function Navbar() {
           </div>
           <Icon name="chevronDown" size={14} color="var(--ink-500)" />
         </button>
+
+        <button
+          type="button"
+          onClick={() => setDeliverOpen(true)}
+          aria-label={`Deliver to ${deliverLabel}`}
+          className="bz-show-mobile"
+          style={{
+            flexShrink: 0,
+            width: 40,
+            height: 40,
+            borderRadius: "var(--r-md)",
+            border: "1px solid var(--line-200)",
+            background: "var(--line-100)",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+          }}
+        >
+          <Icon name="mapPin" size={18} color="var(--red)" />
+        </button>
+
         <DeliverToModal
           open={deliverOpen}
           value={deliveryLocation}
@@ -819,127 +891,68 @@ export function Navbar() {
             toast(`Delivering to ${formatDeliverToLabel(loc)}`);
           }}
         />
-        <div style={{ flex: 1, position: "relative" }}>
+
+        <div className="bz-navbar__search">
           <button
             type="button"
             aria-label="Search"
             onClick={submitSearch}
-            style={{
-              position: "absolute",
-              left: 8,
-              top: "50%",
-              transform: "translateY(-50%)",
-              width: 36,
-              height: 36,
-              border: "none",
-              borderRadius: "50%",
-              background: "transparent",
-              color: "var(--ink-400)",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
+            className="bz-navbar__search-btn"
           >
             <Icon name="search" size={19} />
           </button>
           <input
+            className="bz-navbar__search-input"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") submitSearch();
             }}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setSearchFocused(false)}
             placeholder={SEARCH_HINTS[hint]}
-            style={{
-              width: "100%",
-              height: 48,
-              border: `1.5px solid ${searchFocused ? "var(--red)" : "var(--line-200)"}`,
-              borderRadius: "var(--r-full)",
-              padding: "0 16px 0 48px",
-              fontSize: ".9375rem",
-              fontFamily: "var(--font-sans)",
-              background: "#fff",
-              outline: "none",
-              transition: "border-color var(--dur-standard) var(--ease)",
-            }}
+            aria-label="Search products"
           />
         </div>
-        <nav style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+
+        <div className="bz-navbar__mobile-actions">
+          <IconButton
+            name="cart"
+            label="Cart"
+            badge={cartCount}
+            href={pathFromScreen("cart")}
+            size={40}
+          />
+          <IconButton name="menu" label="Menu" onClick={() => setMenuOpen(true)} size={40} />
+        </div>
+
+        <nav className="bz-navbar__nav bz-navbar__nav--desktop">
           <AppLink
             href={pathFromScreen("video")}
-            className="bz-hide-mobile"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 7,
-              background: screen === "video" ? "var(--tint-red-50)" : "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "8px 12px",
-              borderRadius: "var(--r-md)",
-              color: "var(--red)",
-              fontWeight: 700,
-              fontSize: ".875rem",
-              textDecoration: "none",
-            }}
+            className={`bz-navbar__link bz-navbar__link--video${screen === "video" ? " is-active" : ""}`}
           >
             <Icon name="video" size={19} /> Watch
           </AppLink>
-          <span className="bz-hide-mobile">
-            <IconButton
-              name="heart"
-              label="Wishlist"
-              badge={wish.length + wishSellers.length}
-              href={pathFromScreen("wishlist")}
-            />
-          </span>
-          {/* Bargain — BazaarCo's core differentiator. Desktop topbar only; on mobile
-              search owns the bar and bargain lives in the search flow. */}
+          <IconButton
+            name="heart"
+            label="Wishlist"
+            badge={wish.length + wishSellers.length}
+            href={pathFromScreen("wishlist")}
+          />
           <AppLink
             href={pathFromScreen("bargains")}
             ariaLabel="Bargain"
             title="Bargain · मोलतोल"
-            className="bz-hide-mobile"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 7,
-              background: "var(--red)",
-              border: "none",
-              cursor: "pointer",
-              padding: "8px 12px",
-              borderRadius: "var(--r-md)",
-              color: "#fff",
-              fontWeight: 700,
-              fontSize: ".875rem",
-              textDecoration: "none",
-              flexShrink: 0,
-            }}
+            className="bz-navbar__link bz-navbar__link--bargain"
           >
             <Icon name="bargain" size={19} color="#fff" /> Bargain
           </AppLink>
-          {/* Cart — desktop topbar only; mobile reaches it via bottom nav. */}
-          <span className="bz-hide-mobile">
-            <IconButton name="cart" label="Cart" badge={cartCount} href={pathFromScreen("cart")} />
-          </span>
-          <div ref={menuRef} className="bz-hide-mobile" style={{ position: "relative" }}>
+          <IconButton name="cart" label="Cart" badge={cartCount} href={pathFromScreen("cart")} />
+          <div ref={desktopMenuRef} className="bz-navbar__account-wrap">
             <button
+              type="button"
               onClick={() => setMenuOpen((o) => !o)}
               aria-haspopup="menu"
               aria-expanded={menuOpen}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                border: `1px solid ${menuOpen ? "var(--blue)" : "var(--line-200)"}`,
-                background: menuOpen ? "var(--tint-blue-50)" : "#fff",
-                cursor: "pointer",
-                padding: "0 12px 0 8px",
-                height: 40,
-                borderRadius: "var(--r-md)",
-              }}
+              className={`bz-navbar__account-btn${menuOpen ? " is-open" : ""}`}
             >
               <span
                 style={{
@@ -957,129 +970,119 @@ export function Navbar() {
               >
                 {navInitial}
               </span>
-              <span style={{ fontSize: ".8125rem", fontWeight: 600, color: "var(--ink-700)" }}>
+              <span
+                className="bz-hide-mobile"
+                style={{ fontSize: ".8125rem", fontWeight: 600, color: "var(--ink-700)" }}
+              >
                 {navLabel}
               </span>
               <Icon name="chevronDown" size={14} color="var(--ink-500)" />
             </button>
             {menuOpen && (
-              <div
-                role="menu"
-                style={{
-                  position: "absolute",
-                  top: "calc(100% + 8px)",
-                  right: 0,
-                  minWidth: 240,
-                  background: "#fff",
-                  border: "1px solid var(--line-200)",
-                  borderRadius: "var(--r-lg)",
-                  boxShadow: "var(--sh-3)",
-                  padding: 6,
-                  zIndex: 200,
-                }}
-              >
-                <AppLink
-                  href={pathFromScreen("profile")}
-                  onNavigate={() => goAndClose("profile")}
-                  role="menuitem"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "10px 12px",
-                    border: "1px solid var(--line-200)",
-                    borderRadius: "var(--r-md)",
-                    background: "var(--line-100)",
-                    cursor: "pointer",
-                    width: "100%",
-                    textAlign: "left",
-                    marginBottom: 6,
-                    textDecoration: "none",
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: "50%",
-                      background: "var(--blue-deep)",
-                      color: "#fff",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontWeight: 700,
-                      fontSize: 13,
-                    }}
-                  >
-                    {navInitial}
-                  </span>
-                  <span style={{ flex: 1, minWidth: 0 }}>
-                    <span
-                      style={{
-                        display: "block",
-                        fontSize: ".875rem",
-                        fontWeight: 700,
-                        color: "var(--ink-900)",
-                      }}
-                    >
-                      {navLabel}
-                    </span>
-                    <span
-                      style={{
-                        display: "block",
-                        fontSize: ".75rem",
-                        color: "var(--blue)",
-                        fontWeight: 600,
-                      }}
-                    >
-                      View profile
-                    </span>
-                  </span>
-                </AppLink>
-                <NavMenuItem
-                  icon="package"
-                  label="My orders"
-                  href={pathFromScreen("orders")}
-                  onNavigate={() => goAndClose("orders")}
+              <div role="menu" className="bz-navbar__menu bz-hide-mobile">
+                <AccountMenuPanel
+                  navLabel={navLabel}
+                  navInitial={navInitial}
+                  authed={authed}
+                  goAndClose={goAndClose}
+                  logoutMutation={logoutMutation}
                 />
-                <div style={{ height: 1, background: "var(--line-200)", margin: "6px 4px" }} />
-                {authed ? (
-                  <NavMenuItem
-                    icon="x"
-                    label="Log out"
-                    danger
-                    onClick={() =>
-                      logoutMutation.mutate(undefined, { onSuccess: () => goAndClose("home") })
-                    }
-                  />
-                ) : (
-                  <NavMenuItem
-                    icon="user"
-                    label="Sign in"
-                    href={pathFromScreen("auth")}
-                    onNavigate={() => goAndClose("auth")}
-                  />
-                )}
               </div>
             )}
           </div>
         </nav>
       </div>
+
+      {menuOpen && (
+        <>
+          <div
+            className="bz-navbar__overlay bz-show-mobile"
+            aria-hidden
+            onClick={() => setMenuOpen(false)}
+          />
+          <div
+            ref={mobileSheetRef}
+            className="bz-navbar__sheet bz-show-mobile"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Account menu"
+          >
+            <div className="bz-navbar__sheet-head">
+              <h2 className="bz-navbar__sheet-title">Menu</h2>
+              <button
+                type="button"
+                aria-label="Close menu"
+                onClick={() => setMenuOpen(false)}
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  border: "none",
+                  background: "var(--line-100)",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Icon name="x" size={18} />
+              </button>
+            </div>
+            <div role="menu">
+              <AccountMenuPanel
+                navLabel={navLabel}
+                navInitial={navInitial}
+                authed={authed}
+                goAndClose={goAndClose}
+                logoutMutation={logoutMutation}
+              />
+            </div>
+          </div>
+        </>
+      )}
     </header>
   );
 }
 
 /* ---------- Footer ---------- */
 export function Footer() {
-  const { nav } = useBz();
-  const cols = [
-    { h: "BazaarCo", links: ["About us", "Careers", "Press", "Seller stories"] },
-    { h: "Buy", links: ["How to order", "Payment options", "Delivery", "Returns & refunds"] },
+  const cols: { h: string; links: { label: string; href: string }[] }[] = [
+    {
+      h: "BazaarCo",
+      links: [
+        { label: "About us", href: pathFromScreen("about") },
+        { label: "Careers", href: pathFromScreen("help") },
+        { label: "Press", href: pathFromScreen("help") },
+        { label: "Seller stories", href: pathFromScreen("about") },
+      ],
+    },
+    {
+      h: "Buy",
+      links: [
+        { label: "How to order", href: pathFromScreen("help") },
+        { label: "Payment options", href: pathFromScreen("help") },
+        { label: "Delivery", href: pathFromScreen("help") },
+        { label: "Returns & refunds", href: pathFromScreen("help") },
+      ],
+    },
     {
       h: "Sell",
-      links: ["Become a seller", "Seller dashboard", "Commission & fees", "Seller policies"],
+      links: [
+        { label: "Become a seller", href: pathFromScreen("auth") },
+        { label: "Seller dashboard", href: pathFromScreen("s-dashboard") },
+        { label: "Commission & fees", href: pathFromScreen("help") },
+        { label: "Seller policies", href: pathFromScreen("terms") },
+      ],
     },
-    { h: "Help", links: ["Contact support", "Track order", "FAQs", "Report an issue"] },
+    {
+      h: "Help",
+      links: [
+        { label: "Contact support", href: pathFromScreen("help") },
+        { label: "Track order", href: pathFromScreen("orders") },
+        { label: "FAQs", href: pathFromScreen("help") },
+        { label: "Report an issue", href: pathFromScreen("help") },
+      ],
+    },
   ];
   return (
     <footer
@@ -1158,9 +1161,9 @@ export function Footer() {
               {col.h}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {col.links.map((l, j) => (
-                <AppLink key={j} href={pathFromScreen("home")} className="bz-footer-link">
-                  {l}
+              {col.links.map((link) => (
+                <AppLink key={link.label} href={link.href} className="bz-footer-link">
+                  {link.label}
                 </AppLink>
               ))}
             </div>
@@ -1183,8 +1186,21 @@ export function Footer() {
           <span style={{ color: "rgba(255,255,255,.5)", fontSize: ".8125rem" }}>
             © 2026 BazaarCo Nepal Pvt. Ltd.
           </span>
-          <span style={{ color: "rgba(255,255,255,.5)", fontSize: ".8125rem" }}>
-            Privacy · Terms
+          <span style={{ display: "inline-flex", gap: 12, fontSize: ".8125rem" }}>
+            <AppLink
+              href={pathFromScreen("privacy")}
+              className="bz-footer-link"
+              style={{ color: "rgba(255,255,255,.5)" }}
+            >
+              Privacy
+            </AppLink>
+            <AppLink
+              href={pathFromScreen("terms")}
+              className="bz-footer-link"
+              style={{ color: "rgba(255,255,255,.5)" }}
+            >
+              Terms
+            </AppLink>
           </span>
         </div>
       </div>

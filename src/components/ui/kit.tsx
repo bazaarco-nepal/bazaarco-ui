@@ -22,6 +22,14 @@ export const ICON_PATHS = {
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </>
   ),
+  zoomIn: (
+    <>
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      <line x1="11" y1="8" x2="11" y2="14" />
+      <line x1="8" y1="11" x2="14" y2="11" />
+    </>
+  ),
   heart: (
     <path d="M19 14c1.5-1.5 3-3.2 3-5.5A4.5 4.5 0 0 0 12 5.5 4.5 4.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7Z" />
   ),
@@ -240,6 +248,13 @@ export const ICON_PATHS = {
     <>
       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
       <circle cx="12" cy="12" r="3" />
+    </>
+  ),
+  eyeOff: (
+    <>
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-8-10-8a18.45 18.45 0 0 1 5.06-5.94" />
+      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19" />
+      <line x1="1" y1="1" x2="23" y2="23" />
     </>
   ),
   menu: (
@@ -693,9 +708,10 @@ export function Button({
     userSelect: "none",
     ...style,
   };
+  // Primary = recommended action (Continue, Submit, Buy). Secondary = alternate / cancel (red outline).
   const variants = {
-    primary: { background: "var(--red)", color: "#fff", borderColor: "var(--red)" },
-    secondary: { background: "#fff", color: "var(--blue)", borderColor: "var(--blue)" },
+    primary: { background: "var(--blue)", color: "#fff", borderColor: "var(--blue)" },
+    secondary: { background: "#fff", color: "var(--red)", borderColor: "var(--red)" },
     ghost: { background: "transparent", color: "var(--ink-500)", borderColor: "transparent" },
     danger: { background: "#fff", color: "var(--danger)", borderColor: "var(--danger)" },
     blue: { background: "var(--blue)", color: "#fff", borderColor: "var(--blue)" },
@@ -707,19 +723,15 @@ export function Button({
       borderColor: "var(--line-100)",
     };
   }
-  const hoverMap = {
-    primary: "var(--red-hover)",
-    blue: "var(--blue-hover)",
-  };
   const [hov, setHov] = useState(false);
   const linkClick = useSpaLinkClick(href, onNavigate, target);
   let merged = { ...base, ...variants[variant] };
   if (hov && !disabled) {
-    if (variant === "primary") merged.background = "var(--red-hover)";
-    else if (variant === "blue") merged.background = "var(--blue-hover)";
+    if (variant === "primary" || variant === "blue") merged.background = "var(--blue-hover)";
     else if (variant === "secondary") {
-      merged.background = "var(--blue)";
+      merged.background = "var(--red)";
       merged.color = "#fff";
+      merged.borderColor = "var(--red)";
     } else if (variant === "ghost") {
       merged.background = "var(--line-100)";
       merged.color = "var(--ink-700)";
@@ -985,11 +997,14 @@ export function Chip({
 export function StatusPill({ status }) {
   const map = {
     new: { tone: "blue", label: "New" },
+    placed: { tone: "blue", label: "Order placed" },
+    applied: { tone: "blue", label: "Awaiting confirmation" },
     packing: { tone: "saffron", label: "Packing" },
     packed: { tone: "saffron", label: "Packed" },
     shipped: { tone: "blue", label: "Shipped" },
     delivered: { tone: "success", label: "Delivered" },
     confirmed: { tone: "blue", label: "Confirmed" },
+    cancelled: { tone: "neutral", label: "Cancelled" },
   };
   const m = map[status] || map.new;
   return <Chip tone={m.tone}>{m.label}</Chip>;
@@ -2096,16 +2111,18 @@ export function BottomNav({
   active,
   onNav,
   seller,
+  cartCount = 0,
 }: {
   active: string | null;
   onNav: (screen: string) => void;
   seller?: boolean;
+  cartCount?: number;
 }) {
   const buyerItems = [
     { id: "home", icon: "home", label: "Home" },
-    { id: "bargains", icon: "bargain", label: "Bargains" },
+    { id: "bargains", icon: "bargain", label: "Bargain" },
+    { id: "cart", icon: "cart", label: "Cart", badge: cartCount },
     { id: "orders", icon: "package", label: "Orders" },
-    { id: "video", icon: "video", label: "Watch" },
     { id: "profile", icon: "user", label: "Account" },
   ];
   const sellerItems = [
@@ -2121,6 +2138,7 @@ export function BottomNav({
       {items.map((it) => (
         <button
           key={it.id}
+          type="button"
           onClick={() => {
             if (it.id === "__menu") {
               window.dispatchEvent(new CustomEvent("bz-seller-menu"));
@@ -2128,22 +2146,16 @@ export function BottomNav({
             }
             onNav(it.id);
           }}
-          aria-pressed={active === it.id}
-          style={{
-            flex: 1,
-            background: "none",
-            border: "none",
-            padding: "8px 4px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 3,
-            cursor: "pointer",
-            color: active === it.id ? "var(--red)" : "var(--ink-500)",
-          }}
+          aria-current={active === it.id ? "page" : undefined}
+          className={`bz-bnav__item${active === it.id ? " bz-bnav__item--active" : ""}`}
         >
           <Icon name={it.icon} size={22} />
-          <span style={{ fontSize: 11, fontWeight: 700 }}>{it.label}</span>
+          <span className="bz-bnav__label">{it.label}</span>
+          {"badge" in it && it.badge > 0 ? (
+            <span className="bz-bnav__badge tnum" aria-hidden>
+              {it.badge > 9 ? "9+" : it.badge}
+            </span>
+          ) : null}
         </button>
       ))}
     </nav>
@@ -2601,7 +2613,7 @@ export function DeliverToModal({ open, value, onClose, onSave }) {
         </div>
 
         <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-          <Button variant="ghost" full onClick={onClose}>
+          <Button variant="secondary" full onClick={onClose}>
             Cancel
           </Button>
           <Button

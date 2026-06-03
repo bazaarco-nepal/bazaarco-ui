@@ -159,7 +159,7 @@ export function WriteReviewModal({ productId, productName, onClose }: WriteRevie
         )}
 
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           <Button

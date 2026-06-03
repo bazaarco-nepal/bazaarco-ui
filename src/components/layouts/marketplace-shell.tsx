@@ -7,8 +7,25 @@ import { BottomNav, Toast } from "@/components/ui";
 import { Footer, Navbar, useBz } from "@/components/common";
 import { AuthRoleGuard } from "@/components/layouts/auth-role-guard";
 
+const BUYER_BOTTOM_NAV_SCREENS = new Set([
+  "home",
+  "browse",
+  "bargains",
+  "cart",
+  "orders",
+  "tracking",
+  "profile",
+  "profile-edit",
+  "wishlist",
+  "help",
+  "privacy",
+  "terms",
+  "about",
+  "store",
+]);
+
 function BottomNavBridge() {
-  const { nav } = useBz();
+  const { nav, cartCount } = useBz();
   const pathname = usePathname();
   const screen = screenFromPath(pathname);
   const isSeller = SELLER_SCREENS.has(screen);
@@ -16,22 +33,34 @@ function BottomNavBridge() {
   const bottomNavActive = (() => {
     if (screen === "home" || screen === "browse") return "home";
     if (screen === "bargains") return "bargains";
-    if (screen === "video") return "video";
+    if (screen === "cart") return "cart";
     if (screen === "orders" || screen === "tracking") return "orders";
-    if (screen === "profile" || screen === "profile-edit" || screen === "wishlist") {
+    if (
+      screen === "profile" ||
+      screen === "profile-edit" ||
+      screen === "wishlist" ||
+      screen === "help" ||
+      screen === "privacy" ||
+      screen === "terms" ||
+      screen === "about"
+    ) {
       return "profile";
     }
     return null;
   })();
 
-  if (!bottomNavActive || isSeller) {
-    if (isSeller && screen !== "s-onboarding") {
+  if (isSeller) {
+    if (screen !== "s-onboarding") {
       return <BottomNav seller active={screen} onNav={nav} />;
     }
     return null;
   }
 
-  return <BottomNav active={bottomNavActive} onNav={nav} />;
+  if (!BUYER_BOTTOM_NAV_SCREENS.has(screen)) {
+    return null;
+  }
+
+  return <BottomNav active={bottomNavActive} onNav={nav} cartCount={cartCount} />;
 }
 
 export function MarketplaceShell({ children }: { children: React.ReactNode }) {

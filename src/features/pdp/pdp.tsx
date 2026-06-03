@@ -1,7 +1,7 @@
 // @ts-nocheck — legacy design prototype; typed incrementally
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Icon,
   Logo,
@@ -41,6 +41,7 @@ import { useBazaarStore } from "@/store/bazaar-store";
 import { formatDeliverToLabel } from "@/lib/delivery-location";
 import {
   useCatalog,
+  useProduct,
   useProductReviews,
   useProductProfile,
   useRatingDistribution,
@@ -61,7 +62,7 @@ import { useSeller } from "@/hooks/use-catalog";
 import { useCreateBargainOffer } from "@/hooks/use-bargains";
 import { ApiRequestError } from "@/services/api/http";
 import type { PdpProps } from "@/types";
-import { ReviewsSection, QASection, ImageLightbox } from "./_components";
+import { ReviewsSection, QASection, ImageLightbox, PdpZoomButton } from "./_components";
 
 // Flat Rs. 100 delivery (matches checkout's default; no backend fee endpoint yet).
 const DELIVERY_FEE = 100;
@@ -279,7 +280,7 @@ function BargainModal({ p, onClose }) {
               <span className="tnum">Rs. {p.price.toLocaleString()}</span>
             </div>
             <div style={{ marginTop: 20 }}>
-              <Button variant="blue" full size="lg" onClick={submit}>
+              <Button variant="primary" full size="lg" onClick={submit}>
                 Send offer to seller
               </Button>
             </div>
@@ -369,7 +370,7 @@ function BargainModal({ p, onClose }) {
             </p>
             <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
               <Button
-                variant="ghost"
+                variant="secondary"
                 full
                 onClick={() => {
                   setOffer(Math.round((p.price * 0.9) / 10) * 10);
@@ -397,7 +398,7 @@ function BargainModal({ p, onClose }) {
   );
 }
 
-export function PDP({ p }: PdpProps) {
+export function PDP({ p: pProp }: PdpProps) {
   const {
     addToCart,
     buyNow,
@@ -412,24 +413,34 @@ export function PDP({ p }: PdpProps) {
     authed,
     promptLogin,
   } = useBz();
+  const productId = pProp.id;
+  const { data: productFromApi, isLoading: productDetailLoading } = useProduct(productId);
   const catalog = useCatalog();
   const deliveryLocation = useBazaarStore((s) => s.deliveryLocation);
   const setDeliveryLocation = useBazaarStore((s) => s.setDeliveryLocation);
   const hasDeliveryLoc = Boolean(deliveryLocation?.city);
-  const { data: reviews = [], isLoading: reviewsLoading } = useProductReviews(p.id);
-  const { data: profile, isLoading: profileLoading } = useProductProfile(p.id);
-  const { data: ratingDist = [], isLoading: ratingLoading } = useRatingDistribution(p.id);
-  const isLoading = catalog.isLoading || reviewsLoading || profileLoading || ratingLoading;
+  const p = productFromApi ?? pProp;
+  const { data: reviews = [], isLoading: reviewsLoading } = useProductReviews(productId);
+  const { data: profile, isLoading: profileLoading } = useProductProfile(productId);
+  const { data: ratingDist = [], isLoading: ratingLoading } = useRatingDistribution(productId);
+  const isLoading =
+    productDetailLoading || catalog.isLoading || reviewsLoading || profileLoading || ratingLoading;
   const isError = catalog.isError;
   const error = catalog.error;
   const { products, categories, sellerOf } = catalog;
   const { data: sellerFromApi } = useSeller(p.seller);
   const s = sellerOf(p) ?? sellerFromApi;
   const related = products.filter((x) => x.cat === p.cat && x.id !== p.id);
-  const { variants = [], specs = [], desc = "" } = profile ?? {};
+  const { variants = [], specs = [] } = profile ?? {};
+  const desc = useMemo(() => {
+    const fromListing = p.description?.trim();
+    if (fromListing) return fromListing;
+    return profile?.desc?.trim() ?? "";
+  }, [p.description, profile?.desc]);
   const [mediaIdx, setMediaIdx] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const touchDelta = useRef<number>(0);
+  const swipeDragging = useRef(false);
   // Gallery, cover first. Falls back to the single cover for older products.
   const gallery = p.images?.length ? p.images : p.img ? [p.img] : [];
   // Unified media list — photos plus an optional video slide at the end.
@@ -437,15 +448,49 @@ export function PDP({ p }: PdpProps) {
     ...gallery.map((src) => ({ type: "photo" as const, src })),
     ...(p.hasVideo ? [{ type: "video" as const, src: p.videoUrl, thumb: p.videoThumb }] : []),
   ];
+
+  const photoIndexFromMedia = (idx: number) => {
+    const item = media[idx];
+    if (item?.type === "photo") {
+      const i = gallery.indexOf(item.src);
+      return i >= 0 ? i : 0;
+    }
+    return 0;
+  };
+
+  const setMediaFromPhotoIndex = (photoIdx: number) => {
+    const src = gallery[photoIdx];
+    if (!src) return;
+    const mediaI = media.findIndex((m) => m.type === "photo" && m.src === src);
+    setMediaIdx(mediaI >= 0 ? mediaI : photoIdx);
+  };
+
+  const openPhotoLightbox = () => {
+    if (gallery.length > 0) setLightboxOpen(true);
+  };
   const [qty, setQty] = useState(1);
   const [bargain, setBargain] = useState(false);
+  const bargainingAvailable = Boolean(p.allowBargaining);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [descOpen, setDescOpen] = useState(false);
   const [deliverOpen, setDeliverOpen] = useState(false);
-  const [variantSel, setVariantSel] = useState(() =>
-    Object.fromEntries((profile?.variants ?? []).map((v) => [v.name, v.default || 0])),
-  );
+  const [variantSel, setVariantSel] = useState<Record<string, number>>({});
   const disc = p.original ? Math.round((1 - p.price / p.original) * 100) : 0;
+
+  useEffect(() => {
+    setMediaIdx(0);
+    setDescOpen(false);
+    setQty(1);
+    setBargain(false);
+    setLightboxOpen(false);
+    setDeliverOpen(false);
+  }, [productId]);
+
+  useEffect(() => {
+    setVariantSel(
+      Object.fromEntries((profile?.variants ?? []).map((v) => [v.name, v.default || 0])),
+    );
+  }, [productId, profile?.variants]);
   const wished = wish.includes(p.id);
   const pickVariant = (name, i) => setVariantSel((prev) => ({ ...prev, [name]: i }));
 
@@ -453,7 +498,11 @@ export function PDP({ p }: PdpProps) {
     <ApiState isLoading={isLoading} isError={isError} error={error}>
       <div
         className="bz-pdp-root"
-        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 0" }}
+        style={{
+          maxWidth: "var(--container)",
+          margin: "0 auto",
+          padding: "20px clamp(12px, 4vw, 28px) 0",
+        }}
       >
         {/* breadcrumb — desktop only */}
         <div
@@ -480,118 +529,149 @@ export function PDP({ p }: PdpProps) {
 
         {/* MOBILE HERO — clean app-style layout */}
         <div className="bz-show-mobile bz-pdp-mobile">
-          {/* Image carousel */}
-          <div
-            style={{
-              position: "relative",
-              width: "100%",
-              aspectRatio: "1 / 1",
-              background: "var(--ink-50)",
-              overflow: "hidden",
-              borderRadius: "var(--r-lg)",
-            }}
-            onTouchStart={(e) => {
-              touchStartX.current = e.touches[0].clientX;
-              touchDelta.current = 0;
-            }}
-            onTouchMove={(e) => {
-              if (touchStartX.current == null) return;
-              touchDelta.current = e.touches[0].clientX - touchStartX.current;
-            }}
-            onTouchEnd={() => {
-              if (touchStartX.current == null) return;
-              const dx = touchDelta.current;
-              if (Math.abs(dx) > 40) {
-                setMediaIdx((i) =>
-                  Math.max(0, Math.min(gallery.length - 1, i + (dx < 0 ? 1 : -1))),
-                );
-              }
-              touchStartX.current = null;
-              touchDelta.current = 0;
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                width: "100%",
-                height: "100%",
-                transform: `translateX(-${Math.min(mediaIdx, gallery.length - 1) * 100}%)`,
-                transition: "transform .35s ease",
-              }}
-            >
-              {gallery.map((src, i) => (
-                <img
-                  key={i}
-                  src={src}
-                  alt={p.name}
-                  style={{
-                    flex: "0 0 100%",
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                    display: "block",
+          <div className="bz-pdp-mobile__gallery">
+            {media.length > 0 ? (
+              <>
+                <div
+                  className="bz-pdp-mobile__viewport"
+                  onTouchStart={(e) => {
+                    touchStartX.current = e.touches[0].clientX;
+                    touchDelta.current = 0;
                   }}
-                />
-              ))}
-            </div>
-            {/* Floating back */}
-            <button
-              type="button"
-              aria-label="Back"
-              onClick={() => window.history.back()}
-              className="bz-pdp-m-fab"
-              style={{ top: 12, left: 12 }}
-            >
-              <Icon name="chevronLeft" size={18} />
-            </button>
-            {/* Floating wishlist + share */}
-            <button
-              type="button"
-              aria-label={wished ? "Remove from wishlist" : "Save to wishlist"}
-              onClick={() => toggleWish(p.id)}
-              className="bz-pdp-m-fab"
-              style={{
-                top: 12,
-                right: 56,
-                color: wished ? "var(--red)" : "var(--ink-700)",
-              }}
-            >
-              <Icon name="heart" size={18} fill={wished ? "currentColor" : "none"} />
-            </button>
-            <button
-              type="button"
-              aria-label="Share"
-              className="bz-pdp-m-fab"
-              style={{ top: 12, right: 12 }}
-            >
-              <Icon name="share" size={16} />
-            </button>
-            {/* Dots */}
-            {gallery.length > 1 && (
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: 14,
-                  left: 0,
-                  right: 0,
-                  display: "flex",
-                  justifyContent: "center",
-                  gap: 6,
-                }}
-              >
-                {gallery.map((_, i) => (
-                  <span
-                    key={i}
+                  onTouchMove={(e) => {
+                    if (touchStartX.current == null) return;
+                    touchDelta.current = e.touches[0].clientX - touchStartX.current;
+                  }}
+                  onTouchEnd={() => {
+                    if (touchStartX.current == null) return;
+                    const dx = touchDelta.current;
+                    const maxIdx = Math.max(0, media.length - 1);
+                    if (Math.abs(dx) > 40) {
+                      setMediaIdx((i) => Math.max(0, Math.min(maxIdx, i + (dx < 0 ? 1 : -1))));
+                    } else if (Math.abs(dx) <= 12 && media[mediaIdx]?.type === "photo") {
+                      openPhotoLightbox();
+                    }
+                    touchStartX.current = null;
+                    touchDelta.current = 0;
+                  }}
+                >
+                  <div
+                    className="bz-pdp-mobile__track"
+                    style={{ transform: `translate3d(-${mediaIdx * 100}%, 0, 0)` }}
+                  >
+                    {media.map((m, i) => (
+                      <div key={`${m.type}-${i}`} className="bz-pdp-mobile__slide">
+                        {m.type === "photo" ? (
+                          <button
+                            type="button"
+                            aria-label="Zoom photo"
+                            className="bz-pdp-mobile__zoom-hit"
+                            onClick={openPhotoLightbox}
+                          >
+                            <img src={m.src} alt={p.name} draggable={false} />
+                          </button>
+                        ) : (
+                          <VideoPlayer
+                            tint={p.tint}
+                            icon={p.icon}
+                            ratio="1 / 1"
+                            autoplay={mediaIdx === i}
+                            thumb={m.thumb}
+                            src={m.src}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {media[mediaIdx]?.type === "photo" && gallery.length > 0 && (
+                    <PdpZoomButton onClick={openPhotoLightbox} />
+                  )}
+                  {/* Floating back */}
+                  <button
+                    type="button"
+                    aria-label="Back"
+                    onClick={() => window.history.back()}
+                    className="bz-pdp-m-fab"
+                    style={{ top: 12, left: 12 }}
+                  >
+                    <Icon name="chevronLeft" size={18} />
+                  </button>
+                  {/* Floating wishlist + share */}
+                  <button
+                    type="button"
+                    aria-label={wished ? "Remove from wishlist" : "Save to wishlist"}
+                    onClick={() => toggleWish(p.id)}
+                    className="bz-pdp-m-fab"
                     style={{
-                      width: i === mediaIdx ? 18 : 6,
-                      height: 6,
-                      borderRadius: 999,
-                      background: i === mediaIdx ? "var(--ink-900)" : "rgba(15,23,42,.25)",
-                      transition: "all .2s ease",
+                      top: 12,
+                      right: 56,
+                      color: wished ? "var(--red)" : "var(--ink-700)",
                     }}
-                  />
-                ))}
-              </div>
+                  >
+                    <Icon name="heart" size={18} fill={wished ? "currentColor" : "none"} />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Share"
+                    className="bz-pdp-m-fab"
+                    style={{ top: 12, right: 12 }}
+                  >
+                    <Icon name="share" size={16} />
+                  </button>
+                  {/* Dots */}
+                  {media.length > 1 && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: 14,
+                        left: 0,
+                        right: 0,
+                        display: "flex",
+                        justifyContent: "center",
+                        gap: 6,
+                        pointerEvents: "none",
+                      }}
+                    >
+                      {media.map((_, i) => (
+                        <span
+                          key={i}
+                          style={{
+                            width: i === mediaIdx ? 18 : 6,
+                            height: 6,
+                            borderRadius: 999,
+                            background: i === mediaIdx ? "var(--ink-900)" : "rgba(15,23,42,.25)",
+                            transition: "all .2s ease",
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {gallery.length > 1 && (
+                  <div className="bz-pdp-mobile__thumbs" role="tablist" aria-label="Product photos">
+                    {gallery.map((src) => {
+                      const thumbMediaIdx = media.findIndex(
+                        (m) => m.type === "photo" && m.src === src,
+                      );
+                      return (
+                        <button
+                          key={src}
+                          type="button"
+                          role="tab"
+                          aria-label="View product photo"
+                          aria-pressed={thumbMediaIdx === mediaIdx}
+                          className="bz-pdp-mobile__thumb"
+                          onClick={() => setMediaIdx(thumbMediaIdx >= 0 ? thumbMediaIdx : 0)}
+                        >
+                          <img src={src} alt="" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            ) : (
+              <Placeholder icon={p.icon} tint={p.tint} ratio="1 / 1" radius="var(--r-lg)" />
             )}
           </div>
 
@@ -875,22 +955,28 @@ export function PDP({ p }: PdpProps) {
                 }}
                 onPointerDown={(e) => {
                   if (e.pointerType === "touch") return;
+                  if ((e.target as HTMLElement).closest("button, a")) return;
+                  swipeDragging.current = false;
                   touchStartX.current = e.clientX;
                   touchDelta.current = 0;
-                  (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
                 }}
                 onPointerMove={(e) => {
                   if (e.pointerType === "touch" || touchStartX.current == null) return;
                   touchDelta.current = e.clientX - touchStartX.current;
+                  if (!swipeDragging.current && Math.abs(touchDelta.current) > 8) {
+                    swipeDragging.current = true;
+                    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+                  }
                 }}
                 onPointerUp={(e) => {
                   if (e.pointerType === "touch" || touchStartX.current == null) return;
                   const dx = touchDelta.current;
-                  if (Math.abs(dx) > 60) {
+                  if (swipeDragging.current && Math.abs(dx) > 60) {
                     setMediaIdx((i) =>
                       Math.max(0, Math.min(media.length - 1, i + (dx < 0 ? 1 : -1))),
                     );
                   }
+                  swipeDragging.current = false;
                   touchStartX.current = null;
                   touchDelta.current = 0;
                 }}
@@ -918,7 +1004,7 @@ export function PDP({ p }: PdpProps) {
                         <button
                           type="button"
                           aria-label="Zoom photo"
-                          onClick={() => setLightboxOpen(true)}
+                          onClick={openPhotoLightbox}
                           style={{
                             display: "block",
                             width: "100%",
@@ -933,7 +1019,12 @@ export function PDP({ p }: PdpProps) {
                             src={m.src}
                             alt={p.name}
                             draggable={false}
-                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                              pointerEvents: "none",
+                            }}
                           />
                         </button>
                       ) : (
@@ -949,6 +1040,9 @@ export function PDP({ p }: PdpProps) {
                     </div>
                   ))}
                 </div>
+                {media[mediaIdx]?.type === "photo" && gallery.length > 0 && (
+                  <PdpZoomButton onClick={openPhotoLightbox} />
+                )}
                 {media.length > 1 && (
                   <>
                     <button
@@ -1354,22 +1448,42 @@ export function PDP({ p }: PdpProps) {
                 Buy Now
               </Button>
             </div>
-            {/* Make an offer — secondary, demoted below the main CTAs */}
+            {/* Bargaining — only when the seller enabled it for this product */}
             <div style={{ marginTop: 12 }}>
-              <Button
-                variant="secondary"
-                full
-                icon="bargain"
-                onClick={() => {
-                  if (!authed) {
-                    promptLogin("Please sign in to make an offer.");
-                    return;
-                  }
-                  setBargain(true);
-                }}
-              >
-                Make an offer
-              </Button>
+              {bargainingAvailable ? (
+                <Button
+                  variant="secondary"
+                  full
+                  icon="bargain"
+                  onClick={() => {
+                    if (!authed) {
+                      promptLogin("Please sign in to make an offer.");
+                      return;
+                    }
+                    setBargain(true);
+                  }}
+                >
+                  Make an offer
+                </Button>
+              ) : (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    padding: "12px 16px",
+                    borderRadius: "var(--r-md)",
+                    background: "var(--line-50)",
+                    color: "var(--ink-500)",
+                    fontSize: ".875rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  <Icon name="bargain" size={18} color="var(--ink-400)" />
+                  Bargaining is not available for this product
+                </div>
+              )}
             </div>
             <div
               style={{
@@ -1459,7 +1573,7 @@ export function PDP({ p }: PdpProps) {
                 {
                   key: "description",
                   label: "Description",
-                  content: (
+                  content: desc ? (
                     <>
                       <p
                         style={{
@@ -1491,42 +1605,51 @@ export function PDP({ p }: PdpProps) {
                         </button>
                       )}
                     </>
+                  ) : (
+                    <p style={{ color: "var(--ink-400)", margin: 0, fontSize: ".875rem" }}>
+                      No description provided.
+                    </p>
                   ),
                 },
                 {
                   key: "specs",
                   label: "Specifications",
-                  content: (
-                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                      <tbody>
-                        {specs.map(([k, v], i) => (
-                          <tr key={i} style={{ borderBottom: "1px solid var(--line-200)" }}>
-                            <td
-                              style={{
-                                padding: "11px 0",
-                                color: "var(--ink-400)",
-                                fontSize: ".875rem",
-                                width: 180,
-                                verticalAlign: "top",
-                              }}
-                            >
-                              {k}
-                            </td>
-                            <td
-                              style={{
-                                padding: "11px 0",
-                                color: "var(--ink-800)",
-                                fontSize: ".875rem",
-                                fontWeight: 500,
-                              }}
-                            >
-                              {v}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  ),
+                  content:
+                    specs.length > 0 ? (
+                      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                        <tbody>
+                          {specs.map(([k, v], i) => (
+                            <tr key={i} style={{ borderBottom: "1px solid var(--line-200)" }}>
+                              <td
+                                style={{
+                                  padding: "11px 0",
+                                  color: "var(--ink-400)",
+                                  fontSize: ".875rem",
+                                  width: 180,
+                                  verticalAlign: "top",
+                                }}
+                              >
+                                {k}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "11px 0",
+                                  color: "var(--ink-800)",
+                                  fontSize: ".875rem",
+                                  fontWeight: 500,
+                                }}
+                              >
+                                {v}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <p style={{ color: "var(--ink-400)", margin: 0, fontSize: ".875rem" }}>
+                        No specifications listed.
+                      </p>
+                    ),
                 },
               ]}
             />
@@ -1571,13 +1694,13 @@ export function PDP({ p }: PdpProps) {
           </div>
         )}
 
-        {bargain && <BargainModal p={p} onClose={() => setBargain(false)} />}
+        {bargain && bargainingAvailable && <BargainModal p={p} onClose={() => setBargain(false)} />}
         {lightboxOpen && gallery.length > 0 && (
           <ImageLightbox
             images={gallery}
-            index={Math.min(mediaIdx, gallery.length - 1)}
+            index={photoIndexFromMedia(mediaIdx)}
             alt={p.name}
-            onIndex={setMediaIdx}
+            onIndex={setMediaFromPhotoIndex}
             onClose={() => setLightboxOpen(false)}
           />
         )}

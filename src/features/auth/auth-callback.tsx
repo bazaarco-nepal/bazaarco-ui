@@ -7,7 +7,7 @@ import { useBz } from "@/components/common";
 import { Spinner } from "@/components/ui";
 import { resolvePostAuthScreen } from "@/lib/auth-rbac";
 import { setAccessToken } from "@/lib/auth-token";
-import { fetchCurrentUser } from "@/services/api/auth";
+import { establishBrowserSession, fetchCurrentUser } from "@/services/api/auth";
 import { useBazaarStore } from "@/store/bazaar-store";
 
 export function AuthCallback() {
@@ -32,19 +32,25 @@ export function AuthCallback() {
     }
 
     const sessionToken = searchParams.get("session_token");
-    if (sessionToken) {
-      setAccessToken(sessionToken);
-      if (typeof window !== "undefined") {
-        const clean = new URL(window.location.href);
-        clean.searchParams.delete("session_token");
-        window.history.replaceState({}, "", clean.pathname + clean.search);
-      }
-    }
 
     let cancelled = false;
 
     (async () => {
       try {
+        if (sessionToken) {
+          setAccessToken(sessionToken);
+          try {
+            await establishBrowserSession(sessionToken);
+          } catch {
+            // Storefront cookie may fail cross-origin; Bearer in localStorage still works.
+          }
+          if (typeof window !== "undefined") {
+            const clean = new URL(window.location.href);
+            clean.searchParams.delete("session_token");
+            window.history.replaceState({}, "", clean.pathname + clean.search);
+          }
+        }
+
         let user = await fetchCurrentUser();
         if (cancelled) return;
 

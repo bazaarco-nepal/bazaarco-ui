@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
-    const backendUrl = process.env.BACKEND_URL ?? "http://localhost:3001";
+    const backendUrl = process.env.BACKEND_URL ?? "http://localhost:3000";
     return [
       {
         source: "/api/v1/:path*",

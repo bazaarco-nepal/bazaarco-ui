@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Fragment, useRef, useCallback } from "react";
+import React, { useState, useEffect, Fragment, useRef, useCallback, useMemo } from "react";
 import {
   Icon,
   Logo,
@@ -34,6 +34,7 @@ import {
   BackToTop,
   ApiState,
   AppLink,
+  PasswordInput,
 } from "@/components/ui";
 import { ProductPhotoPicker, type ProductPhoto } from "@/components/seller/product-photo-picker";
 import { SellerVideoLibrary } from "@/components/seller/seller-video-library";
@@ -51,10 +52,16 @@ import {
 import { usePendingSellerVerifications, useReviewSellerVerification } from "@/hooks/use-admin";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { displayName, userInitial } from "@/lib/display";
+import {
+  clearDeferredSellerOnboarding,
+  deferSellerOnboarding,
+  isSellerOnboardingDeferred,
+} from "@/lib/seller-onboarding";
 import { useCategories } from "@/hooks/use-catalog";
 import { useUploadImage } from "@/hooks/use-media-upload";
 import {
   useCreateProduct,
+  useUpdateProduct,
   useSellerDashboard,
   useSellerInbox,
   useSellerInventory,
@@ -84,8 +91,9 @@ import {
   emitTypingStop,
   joinConversation,
   leaveConversation,
-  sendChatMessageSocket,
+  sendChatMessage,
 } from "@/lib/chat-socket";
+import { ImageCropModal } from "@/components/common/image-crop-modal";
 import { chatApi, type ChatMessage, type ChatThread } from "@/services/api/chat";
 import {
   BazaarCtx,
@@ -305,7 +313,7 @@ export function SellerShell({ screen, children }) {
 
   useEffect(() => {
     if (orgLoading || screen === "s-onboarding") return;
-    if (organization && !organization.linked) {
+    if (organization && !organization.linked && !isSellerOnboardingDeferred()) {
       nav("s-onboarding");
     }
   }, [organization, orgLoading, screen, nav]);
@@ -547,6 +555,7 @@ export function SellerOnboarding() {
         ownerName: owner,
         address: scanned?.address?.trim() || undefined,
       });
+      clearDeferredSellerOnboarding();
       setStage("done");
     } catch (e) {
       toast(e instanceof Error ? e.message : "Could not register your shop");
@@ -758,11 +767,22 @@ export function SellerOnboarding() {
                 size="lg"
                 full
                 icon="image"
-                onClick={() => setStage("docPick")}
+                onClick={() => {
+                  clearDeferredSellerOnboarding();
+                  setStage("docPick");
+                }}
               >
                 Register your shop · पसल दर्ता गर्नुहोस्
               </Button>
-              <Button variant="ghost" full href={pathFromScreen("home")} style={{ marginTop: 10 }}>
+              <Button
+                variant="ghost"
+                full
+                style={{ marginTop: 10 }}
+                onClick={() => {
+                  deferSellerOnboarding();
+                  nav("s-dashboard");
+                }}
+              >
                 I'll do this later · पछि गर्छु
               </Button>
             </div>
@@ -3783,14 +3803,29 @@ export function SellerAddProduct() {
   const attrFields = categories.find((c) => c.id === category)?.fields || [];
 
   const titleOk = title.trim().length >= 3;
+  const descriptionOk = description.trim().length >= 10;
+  const requiredAttrFields = attrFields.filter((f) => f.req);
+  const specsOk =
+    !category ||
+    attrFields.length === 0 ||
+    (requiredAttrFields.length > 0
+      ? requiredAttrFields.every((f) => attrFilled(f, attrs[f.k]))
+      : attrFields.some((f) => attrFilled(f, attrs[f.k])));
   const variantsOk = !hasVariants || variants.every((v) => v.price && v.stock);
   const photosOk = productPhotos.length >= 3 && productPhotos.length <= 5;
   const canPublish =
-    photosOk && titleOk && Boolean(category) && (hasVariants ? variantsOk : price && stock);
+    photosOk &&
+    titleOk &&
+    descriptionOk &&
+    specsOk &&
+    Boolean(category) &&
+    (hasVariants ? variantsOk : price && stock);
 
   const publishMissing: string[] = [];
-  if (!photosOk) publishMissing.push("3 to 5 photos");
+  if (!photosOk) publishMissing.push("3 to 5 photos (required)");
   if (!titleOk) publishMissing.push("product name (3+ characters)");
+  if (!descriptionOk) publishMissing.push("product description (10+ characters)");
+  if (!specsOk) publishMissing.push("required product specifications");
   if (!category) publishMissing.push("category");
   if (hasVariants) {
     if (!variantsOk) publishMissing.push("price & stock on every variant");
@@ -3823,7 +3858,7 @@ export function SellerAddProduct() {
       const images = uploaded.map((u) => u.url);
       await createProduct.mutateAsync({
         name: title.trim(),
-        description: description.trim() || undefined,
+        description: description.trim(),
         price: Number(price || displayPrice || 0),
         categoryId: category,
         images,
@@ -3867,7 +3902,7 @@ export function SellerAddProduct() {
   return (
     <div className="bz-seller-page">
       <div className="bz-seller-add-layout">
-        <div>
+        <div className="bz-seller-add-form">
           <SellerHelpBar />
 
           <AppLink
@@ -3898,7 +3933,12 @@ export function SellerAddProduct() {
 
           {/* Progress */}
           <div style={{ display: "flex", gap: 6, marginBottom: 22 }}>
-            {[photosOk, titleOk, hasVariants ? variantsOk : price && stock].map((done, i) => (
+            {[
+              photosOk,
+              titleOk && descriptionOk,
+              specsOk,
+              hasVariants ? variantsOk : price && stock,
+            ].map((done, i) => (
               <div
                 key={i}
                 style={{
@@ -3973,7 +4013,7 @@ export function SellerAddProduct() {
                   width: 32,
                   height: 32,
                   borderRadius: "50%",
-                  background: titleOk ? "var(--success)" : "var(--blue)",
+                  background: titleOk && descriptionOk ? "var(--success)" : "var(--blue)",
                   color: "#fff",
                   display: "flex",
                   alignItems: "center",
@@ -3981,7 +4021,7 @@ export function SellerAddProduct() {
                   fontWeight: 800,
                 }}
               >
-                {titleOk ? <Icon name="check" size={18} color="#fff" /> : 2}
+                {titleOk && descriptionOk ? <Icon name="check" size={18} color="#fff" /> : 2}
               </span>
               <div>
                 <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>
@@ -4030,26 +4070,37 @@ export function SellerAddProduct() {
                 marginBottom: 6,
               }}
             >
-              Description · विवरण{" "}
-              <span style={{ fontWeight: 600, color: "var(--ink-400)" }}>· optional</span>
+              Description · विवरण <span style={{ color: "var(--red)", fontWeight: 800 }}>*</span>
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Tell buyers what makes it special — material, size, what's included…"
-              rows={3}
+              placeholder="Tell buyers what makes it special — material, size, what's included… (min. 10 characters)"
+              rows={4}
+              required
+              minLength={10}
               style={{
                 width: "100%",
                 fontSize: "1rem",
-                border: "1.5px solid var(--line-200)",
+                border: `1.5px solid ${descriptionOk ? "var(--line-200)" : "var(--saffron)"}`,
                 borderRadius: "var(--r-md)",
                 padding: "12px 16px",
                 outline: "none",
                 fontFamily: "var(--font-sans)",
                 resize: "vertical",
-                marginBottom: 12,
+                marginBottom: descriptionOk ? 12 : 6,
               }}
             />
+            {!descriptionOk && description.length > 0 && (
+              <p style={{ fontSize: ".75rem", color: "var(--saffron)", margin: "0 0 12px" }}>
+                Add at least {10 - description.trim().length} more character(s).
+              </p>
+            )}
+            {!descriptionOk && description.length === 0 && (
+              <p style={{ fontSize: ".75rem", color: "var(--ink-400)", margin: "0 0 12px" }}>
+                Required — shown to buyers on the product page.
+              </p>
+            )}
 
             <label
               style={{
@@ -4119,20 +4170,24 @@ export function SellerAddProduct() {
                 </span>
                 <div style={{ flex: 1 }}>
                   <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>
-                    Product details{" "}
-                    <span style={{ fontSize: ".75rem", color: "var(--ink-400)", fontWeight: 600 }}>
-                      Optional · ऐच्छिक
-                    </span>
+                    Product specifications{" "}
+                    <span style={{ color: "var(--red)", fontWeight: 800 }}>*</span>
                   </h3>
                   <div className="ne" style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
-                    विवरण भर्नुहोस् — किनेर फिर्ता आउने सम्भावना घट्छ
+                    विशिष्टताहरू — खरिदकर्तालाई Specifications ट्याबमा देखिन्छ
                   </div>
                 </div>
               </div>
               <p style={{ margin: "0 0 14px", fontSize: ".8125rem", color: "var(--ink-500)" }}>
-                More detail = buyers find you in filters and get fewer surprises (fewer returns).{" "}
-                <span style={{ color: "var(--red)", fontWeight: 800 }}>*</span> = important.
+                Fill all fields marked{" "}
+                <span style={{ color: "var(--red)", fontWeight: 800 }}>*</span> — they appear under
+                Specifications on your product page.
               </p>
+              {!specsOk && (
+                <p style={{ margin: "0 0 14px", fontSize: ".8125rem", color: "var(--saffron)" }}>
+                  Complete required specifications before publishing.
+                </p>
+              )}
 
               <CategoryAttrFields category={category} values={attrs} onChange={setAttrs} />
             </div>
@@ -4502,14 +4557,8 @@ export function SellerAddProduct() {
               <img
                 src={productPhotos[0].previewUrl}
                 alt=""
-                style={{
-                  width: "100%",
-                  aspectRatio: "1",
-                  marginBottom: 12,
-                  borderRadius: "var(--r-md)",
-                  objectFit: "cover",
-                  border: "1px solid var(--line-200)",
-                }}
+                className="bz-seller-preview-card__img"
+                style={{ marginBottom: 12 }}
               />
             ) : (
               <div
@@ -4626,24 +4675,82 @@ export const INV_SORTS = [
 export function SellerInventory() {
   const { nav, toast } = useBz();
   const { data: inventoryData = [], isLoading, isError, error } = useSellerInventory();
+  const updateProduct = useUpdateProduct();
   const [items, setItems] = useState([]);
   useEffect(() => {
     setItems(inventoryData);
   }, [inventoryData]);
   const [expanded, setExpanded] = useState(null);
+  const [savingId, setSavingId] = useState(null);
+  const [priceDraft, setPriceDraft] = useState({});
   const [status, setStatus] = useState("all"); // all | active | low | oos
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("added");
 
-  const dec = (id) =>
-    setItems((list) =>
-      list.map((it) => (it.id === id ? { ...it, stock: Math.max(0, it.stock - 1) } : it)),
-    );
-  const inc = (id) =>
-    setItems((list) => list.map((it) => (it.id === id ? { ...it, stock: it.stock + 1 } : it)));
+  const persistStock = useCallback(
+    async (id, newStock) => {
+      const prev = items.find((it) => it.id === id);
+      if (!prev || newStock < 0 || newStock === prev.stock) return;
+      setItems((list) => list.map((it) => (it.id === id ? { ...it, stock: newStock } : it)));
+      setSavingId(id);
+      try {
+        await updateProduct.mutateAsync({ id, stock: newStock });
+        toast("Stock saved");
+      } catch (err) {
+        setItems((list) => list.map((it) => (it.id === id ? prev : it)));
+        toast(err instanceof Error ? err.message : "Could not update stock");
+      } finally {
+        setSavingId(null);
+      }
+    },
+    [items, updateProduct, toast],
+  );
+
+  const dec = (id) => {
+    const it = items.find((i) => i.id === id);
+    if (!it || it.stock <= 0 || savingId) return;
+    void persistStock(id, it.stock - 1);
+  };
+  const inc = (id) => {
+    const it = items.find((i) => i.id === id);
+    if (!it || savingId) return;
+    void persistStock(id, it.stock + 1);
+  };
   const sellInShop = (id) => {
-    dec(id);
+    const it = items.find((i) => i.id === id);
+    if (!it || it.stock <= 0 || savingId) return;
+    void persistStock(id, it.stock - 1);
     toast("Sold one in shop · −1 stock");
+  };
+
+  const savePrice = async (id) => {
+    const it = items.find((i) => i.id === id);
+    const raw = String(priceDraft[id] ?? it?.price ?? "").replace(/\D/g, "");
+    const next = parseInt(raw, 10);
+    if (!it || !Number.isFinite(next) || next <= 0) {
+      toast("Enter a valid price (Rs.)");
+      return;
+    }
+    if (next === it.price) return;
+    setSavingId(id);
+    try {
+      await updateProduct.mutateAsync({ id, price: next });
+      setItems((list) => list.map((i) => (i.id === id ? { ...i, price: next } : i)));
+      toast("Price saved");
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Could not update price");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const toggleExpanded = (id) => {
+    setExpanded((cur) => {
+      if (cur === id) return null;
+      const it = items.find((i) => i.id === id);
+      if (it) setPriceDraft((d) => ({ ...d, [id]: String(it.price) }));
+      return id;
+    });
   };
 
   const bucket = (it) => (it.stock === 0 ? "oos" : it.stock <= 3 ? "low" : "active");
@@ -4929,7 +5036,8 @@ export function SellerInventory() {
                     }}
                   >
                     <button
-                      onClick={() => setExpanded(isOpen ? null : it.id)}
+                      type="button"
+                      onClick={() => toggleExpanded(it.id)}
                       style={{
                         width: "100%",
                         display: "flex",
@@ -4942,12 +5050,28 @@ export function SellerInventory() {
                         textAlign: "left",
                       }}
                     >
-                      <Placeholder
-                        icon={it.icon}
-                        tint={it.tint}
-                        style={{ width: 72, height: 72 }}
-                        radius="var(--r-md)"
-                      />
+                      {it.img ? (
+                        <img
+                          src={it.img}
+                          alt=""
+                          style={{
+                            width: 72,
+                            height: 72,
+                            flexShrink: 0,
+                            borderRadius: "var(--r-md)",
+                            objectFit: "cover",
+                            border: "1px solid var(--line-200)",
+                            background: "var(--line-100)",
+                          }}
+                        />
+                      ) : (
+                        <Placeholder
+                          icon={it.icon}
+                          tint={it.tint}
+                          style={{ width: 72, height: 72, flexShrink: 0 }}
+                          radius="var(--r-md)"
+                        />
+                      )}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontWeight: 700, fontSize: "1rem" }}>{it.name}</div>
                         <div
@@ -5002,16 +5126,41 @@ export function SellerInventory() {
                       <div
                         style={{ padding: "0 14px 14px", borderTop: "1px dashed var(--line-200)" }}
                       >
+                        {it.hasVariants && (
+                          <p
+                            style={{
+                              margin: "12px 0 0",
+                              fontSize: ".75rem",
+                              color: "var(--ink-500)",
+                            }}
+                          >
+                            This product has size variants — stock changes apply to total inventory.
+                          </p>
+                        )}
                         <div
                           style={{
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "space-between",
                             padding: "14px 0",
+                            gap: 12,
+                            flexWrap: "wrap",
                           }}
                         >
                           <div style={{ fontWeight: 700, fontSize: ".875rem" }}>
                             Change stock · संख्या परिवर्तन
+                            {savingId === it.id && (
+                              <span
+                                style={{
+                                  marginLeft: 8,
+                                  fontSize: ".75rem",
+                                  color: "var(--ink-400)",
+                                  fontWeight: 600,
+                                }}
+                              >
+                                Saving…
+                              </span>
+                            )}
                           </div>
                           <div
                             style={{
@@ -5021,20 +5170,23 @@ export function SellerInventory() {
                               borderRadius: "var(--r-md)",
                               overflow: "hidden",
                               background: "#fff",
+                              opacity: savingId === it.id ? 0.6 : 1,
                             }}
                           >
                             <button
+                              type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 dec(it.id);
                               }}
-                              disabled={it.stock === 0}
+                              disabled={it.stock === 0 || savingId === it.id}
                               style={{
                                 width: 44,
                                 height: 48,
                                 background: "#fff",
                                 border: "none",
-                                cursor: "pointer",
+                                cursor:
+                                  it.stock === 0 || savingId === it.id ? "not-allowed" : "pointer",
                                 color: "var(--ink-700)",
                               }}
                             >
@@ -5052,16 +5204,18 @@ export function SellerInventory() {
                               {it.stock}
                             </span>
                             <button
+                              type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 inc(it.id);
                               }}
+                              disabled={savingId === it.id}
                               style={{
                                 width: 44,
                                 height: 48,
                                 background: "#fff",
                                 border: "none",
-                                cursor: "pointer",
+                                cursor: savingId === it.id ? "not-allowed" : "pointer",
                                 color: "var(--ink-700)",
                               }}
                             >
@@ -5073,19 +5227,59 @@ export function SellerInventory() {
                           <Button
                             variant="secondary"
                             full
+                            disabled={savingId === it.id}
                             onClick={() => sellInShop(it.id)}
                             icon="store"
                           >
                             Sold one in my shop · पसलमा बेचेँ (−1)
                           </Button>
                         )}
-                        <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                          <Button variant="ghost" full icon="image">
-                            Edit photo
-                          </Button>
-                          <Button variant="ghost" full>
-                            Edit price
-                          </Button>
+                        <div style={{ marginTop: 14 }}>
+                          <div
+                            style={{
+                              fontWeight: 700,
+                              fontSize: ".875rem",
+                              marginBottom: 8,
+                            }}
+                          >
+                            Price (Rs.) · मूल्य
+                          </div>
+                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              value={priceDraft[it.id] ?? String(it.price)}
+                              onChange={(e) =>
+                                setPriceDraft((d) => ({
+                                  ...d,
+                                  [it.id]: e.target.value.replace(/\D/g, ""),
+                                }))
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") void savePrice(it.id);
+                              }}
+                              disabled={savingId === it.id}
+                              className="tnum"
+                              style={{
+                                flex: "1 1 140px",
+                                minWidth: 120,
+                                height: 48,
+                                padding: "0 12px",
+                                border: "1.5px solid var(--line-200)",
+                                borderRadius: "var(--r-md)",
+                                fontSize: "1rem",
+                                fontWeight: 700,
+                                outline: "none",
+                              }}
+                            />
+                            <Button
+                              variant="primary"
+                              disabled={savingId === it.id}
+                              onClick={() => void savePrice(it.id)}
+                            >
+                              Save price
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -5331,8 +5525,8 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
   const { toast } = useBz();
   const { data: inbox, isLoading, isError, error } = useChatInbox();
   const { invalidateInbox, invalidateMessages } = useInvalidateChat();
-  const CHAT_THREADS = inbox?.threads ?? [];
-  const CHAT_QUICK_REPLIES = inbox?.quickReplies ?? [];
+  const chatThreads = useMemo(() => inbox?.threads ?? [], [inbox?.threads]);
+  const chatQuickReplies = useMemo(() => inbox?.quickReplies ?? [], [inbox?.quickReplies]);
   const [active, setActive] = useState<ChatThread | null>(null);
   const [msg, setMsg] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -5344,8 +5538,8 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
   const { data: msgPage, isLoading: msgsLoading } = useChatMessages(active?.id ?? null);
 
   useEffect(() => {
-    if (CHAT_THREADS.length && !active) setActive(CHAT_THREADS[0] ?? null);
-  }, [CHAT_THREADS, active]);
+    if (chatThreads.length && !active) setActive(chatThreads[0] ?? null);
+  }, [chatThreads, active]);
 
   useEffect(() => {
     if (!buyerMode || typeof sessionStorage === "undefined") return;
@@ -5462,14 +5656,18 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
   }, [active?.id]);
 
   const send = async (text: string, attachment?: ChatMessage["attachment"]) => {
-    if (!active?.id || sending) return;
+    if (!active?.id) {
+      toast("Select a conversation first");
+      return;
+    }
+    if (sending) return;
     const trimmed = text.trim();
     if (!trimmed && !attachment) return;
     setSending(true);
     try {
       const clientMessageId =
         typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}`;
-      const sent = await sendChatMessageSocket(active.id, {
+      const sent = await sendChatMessage(active.id, {
         body: trimmed || undefined,
         clientMessageId,
         attachment: attachment
@@ -5531,7 +5729,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
     );
   }
 
-  if (!CHAT_THREADS.length) {
+  if (!chatThreads.length) {
     return (
       <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
         {!buyerMode ? <SellerHelpBar /> : null}
@@ -5598,7 +5796,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
             overflowY: "auto",
           }}
         >
-          {CHAT_THREADS.map((t) => {
+          {chatThreads.map((t) => {
             const sel = active.id === t.id;
             return (
               <button
@@ -5829,10 +6027,10 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
               background: "#fff",
             }}
           >
-            {CHAT_QUICK_REPLIES.map((q) => (
+            {chatQuickReplies.map((q) => (
               <button
                 key={q.en}
-                onClick={() => send(q.en)}
+                onClick={() => void send(q.en)}
                 style={{
                   flexShrink: 0,
                   padding: "6px 12px",
@@ -5915,6 +6113,8 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
               }}
             />
             <button
+              type="button"
+              aria-label="Send message"
               onClick={() => void send(msg)}
               disabled={!msg.trim() || sending}
               style={{
@@ -6597,6 +6797,7 @@ export function SellerStorefront() {
   const uploadBanner = useUploadStorefrontBanner();
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
+  const [logoCropUrl, setLogoCropUrl] = useState<string | null>(null);
   const [blocks, setBlocks] = useState([]);
   const [about, setAbout] = useState("");
   const [shopName, setShopName] = useState("");
@@ -6612,20 +6813,44 @@ export function SellerStorefront() {
   const bannerUrl = storefront?.bannerUrl;
   const busy = updateStorefront.isPending || uploadLogo.isPending || uploadBanner.isPending;
 
+  const revokeObjectUrl = (url: string | null) => {
+    if (!url) return;
+    try {
+      URL.revokeObjectURL(url);
+    } catch {
+      /* ignore */
+    }
+  };
+
   const pickImage = async (file: File, kind: "logo" | "banner") => {
     const allowed = ["image/jpeg", "image/png", "image/webp"];
     if (!allowed.includes(file.type)) {
       toast("Use JPEG, PNG, or WebP");
       return;
     }
+    if (kind === "logo") {
+      revokeObjectUrl(logoCropUrl);
+      setLogoCropUrl(URL.createObjectURL(file));
+      return;
+    }
     try {
-      if (kind === "logo") {
-        await uploadLogo.mutateAsync(file);
-        toast("Logo updated");
-      } else {
-        await uploadBanner.mutateAsync(file);
-        toast("Banner updated");
-      }
+      await uploadBanner.mutateAsync(file);
+      toast("Banner updated");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Upload failed");
+    }
+  };
+
+  const closeLogoCrop = () => {
+    revokeObjectUrl(logoCropUrl);
+    setLogoCropUrl(null);
+  };
+
+  const saveLogoCrop = async (file: File) => {
+    closeLogoCrop();
+    try {
+      await uploadLogo.mutateAsync(file);
+      toast("Logo updated");
     } catch (e) {
       toast(e instanceof Error ? e.message : "Upload failed");
     }
@@ -6647,6 +6872,22 @@ export function SellerStorefront() {
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
+      {logoCropUrl ? (
+        <ImageCropModal
+          objectUrl={logoCropUrl}
+          aspectRatio={1}
+          outputWidth={512}
+          outputHeight={512}
+          maskShape="circle"
+          showBrightness={false}
+          title="Crop shop logo"
+          subtitle="Drag and zoom to fit your logo inside the circle"
+          confirmLabel="Save logo"
+          fileNamePrefix="shop-logo"
+          onCancel={closeLogoCrop}
+          onConfirm={(file) => void saveLogoCrop(file)}
+        />
+      ) : null}
       <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
         <SellerHelpBar />
         <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
@@ -6719,15 +6960,20 @@ export function SellerStorefront() {
                     radius="50%"
                   />
                 )}
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  icon="image"
-                  disabled={busy}
-                  onClick={() => logoInputRef.current?.click()}
-                >
-                  {uploadLogo.isPending ? "Uploading…" : "Change logo"}
-                </Button>
+                <div>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon="image"
+                    disabled={busy}
+                    onClick={() => logoInputRef.current?.click()}
+                  >
+                    {uploadLogo.isPending ? "Uploading…" : "Change logo"}
+                  </Button>
+                  <p style={{ margin: "6px 0 0", fontSize: ".75rem", color: "var(--ink-400)" }}>
+                    You can crop and position before saving.
+                  </p>
+                </div>
               </div>
               {bannerUrl ? (
                 <img
@@ -7834,13 +8080,12 @@ export function SellerProfile() {
                 >
                   Confirm your password
                 </p>
-                <input
-                  type="password"
+                <PasswordInput
                   value={deletePassword}
                   onChange={(e) => setDeletePassword(e.target.value)}
                   placeholder="Your password"
                   autoComplete="current-password"
-                  style={{
+                  inputStyle={{
                     width: "100%",
                     height: 44,
                     border: "1.5px solid var(--line-200)",
@@ -7867,7 +8112,7 @@ export function SellerProfile() {
               </p>
             )}
             <div style={{ display: "flex", gap: 10 }}>
-              <Button variant="ghost" full onClick={closeDeleteModal}>
+              <Button variant="secondary" full onClick={closeDeleteModal}>
                 Keep account
               </Button>
               <Button variant="danger" full disabled={!canDelete} onClick={handleDelete}>

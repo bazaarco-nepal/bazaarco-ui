@@ -375,7 +375,7 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
         >
           Save draft
         </Button>
-        <Button type="button" variant="ghost" disabled={busy} onClick={onCancel}>
+        <Button type="button" variant="secondary" disabled={busy} onClick={onCancel}>
           Cancel
         </Button>
       </div>

@@ -4,7 +4,16 @@ import type { AuthIntent, AuthUser } from "@/types/auth";
 const PUBLIC_SCREENS = new Set(["auth", "auth-callback"]);
 
 /** Buyer screens a guest sees rendered normally (read-only catalog browsing). */
-const GUEST_VIEW_SCREENS = new Set(["home", "browse", "pdp", "store"]);
+const GUEST_VIEW_SCREENS = new Set([
+  "home",
+  "browse",
+  "pdp",
+  "store",
+  "help",
+  "privacy",
+  "terms",
+  "about",
+]);
 
 export function isSellerUser(user?: AuthUser | null): boolean {
   return user?.intent === "seller";

@@ -44,6 +44,29 @@ function mapAuthError(error: unknown): ApiRequestError {
   return new ApiRequestError("Request failed", 500);
 }
 
+/**
+ * Sets the httpOnly session cookie on the UI origin (via Next /api/v1 proxy).
+ * Required after Google OAuth when the API host differs from the storefront.
+ */
+export async function establishBrowserSession(token: string): Promise<void> {
+  try {
+    await authClient.post<ApiSuccessResponse<{ user: AuthUser; token: string }>>("/auth/session", {
+      token,
+    });
+  } catch (error) {
+    throw mapAuthError(error);
+  }
+}
+
+async function persistClientSession(token: string): Promise<void> {
+  setAccessToken(token);
+  try {
+    await establishBrowserSession(token);
+  } catch {
+    // Bearer token in localStorage still allows API calls if the proxy cookie fails.
+  }
+}
+
 export function getGoogleLoginUrl(intent: "buyer" | "seller" = "buyer"): string {
   const params = new URLSearchParams({ intent });
   // Use absolute API URL when set so OAuth starts on the same host as GOOGLE_REDIRECT_URI.
@@ -58,7 +81,7 @@ export async function register(payload: RegisterPayload): Promise<AuthUser> {
       "/auth/register",
       payload,
     );
-    setAccessToken(data.data.token);
+    await persistClientSession(data.data.token);
     return data.data.user;
   } catch (error) {
     throw mapAuthError(error);
@@ -71,7 +94,7 @@ export async function login(payload: LoginPayload): Promise<AuthUser> {
       "/auth/login",
       payload,
     );
-    setAccessToken(data.data.token);
+    await persistClientSession(data.data.token);
     return data.data.user;
   } catch (error) {
     throw mapAuthError(error);

@@ -231,7 +231,10 @@ export function useCatalog(): CatalogHelpers {
     return sellers[key] ?? sellersList.find((s) => s.id === key);
   };
   const inCat = (categoryId: string) => products.filter((p) => p.cat === categoryId);
-  const videoProducts = () => products.filter((p) => p.hasVideo);
+  const videoProducts = () =>
+    products.filter(
+      (p) => p.hasVideo && typeof p.videoUrl === "string" && p.videoUrl.trim().length > 0,
+    );
   const flashProducts = () => products.filter((p) => p.original);
 
   const isLoading = productsQuery.isLoading || categoriesQuery.isLoading || sellersQuery.isLoading;

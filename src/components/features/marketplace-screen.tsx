@@ -19,6 +19,7 @@ import {
   Bargains,
   Profile,
   ProfileEdit,
+  AddressesPage,
   Orders,
   WriteReview,
   SellerShell,
@@ -40,6 +41,10 @@ import {
   SellerSettings,
   SellerProfile,
   AdminSellerVerifications,
+  HelpSupportPage,
+  PrivacyPolicyPage,
+  TermsPage,
+  AboutPage,
 } from "@/features";
 import { useBz } from "@/components/common";
 import { EmptyState, Spinner } from "@/components/ui";
@@ -103,7 +108,10 @@ export function MarketplaceScreen() {
   }
   if (screen === "home") return <Home />;
   if (screen === "browse") return <Browse />;
-  if (screen === "pdp" && product) return <PDP p={product} />;
+  if (screen === "pdp") {
+    if (!product) return <ScreenLoader />;
+    return <PDP key={product.id} p={product} />;
+  }
   if (screen === "store") return <Store />;
   if (screen === "video") return <VideoTheater />;
   if (screen === "cart") return <Cart />;
@@ -115,8 +123,13 @@ export function MarketplaceScreen() {
   if (screen === "messages") return <SellerChat buyerMode />;
   if (screen === "profile") return <Profile />;
   if (screen === "profile-edit") return <ProfileEdit />;
+  if (screen === "addresses") return <AddressesPage />;
   if (screen === "orders") return <Orders />;
   if (screen === "review") return <WriteReview />;
+  if (screen === "help") return <HelpSupportPage />;
+  if (screen === "privacy") return <PrivacyPolicyPage />;
+  if (screen === "terms") return <TermsPage />;
+  if (screen === "about") return <AboutPage />;
 
   if (SELLER_SCREENS.has(screen)) {
     let inner: React.ReactNode;

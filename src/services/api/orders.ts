@@ -24,6 +24,7 @@ export interface Order {
   eta: string;
   total: number;
   items: string[];
+  canCancel?: boolean;
   phone?: string | null;
   paymentMethod?: string | null;
   deliveryAddress?: DeliveryAddress | null;
@@ -41,5 +42,9 @@ export const ordersApi = {
 
   checkout(payload: CheckoutPayload): Promise<Order> {
     return postData<Order>("/orders/checkout", payload);
+  },
+
+  cancel(id: string): Promise<Order> {
+    return postData<Order>(`/orders/${id}/cancel`);
   },
 };

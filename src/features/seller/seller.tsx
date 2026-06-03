@@ -5816,17 +5816,21 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
             </span>
           </h1>
           <p style={{ margin: "2px 0 0", fontSize: ".8125rem", color: "var(--ink-500)" }}>
-            Reply fast. Buyers who wait &gt; 1hr usually leave.
+            {buyerMode
+              ? "Chat directly with sellers about products and orders."
+              : "Reply fast. Buyers who wait > 1hr usually leave."}
           </p>
         </div>
-        <Button
-          variant="secondary"
-          icon="edit"
-          size="sm"
-          onClick={() => toast("Edit quick replies — coming soon")}
-        >
-          Edit quick replies
-        </Button>
+        {!buyerMode ? (
+          <Button
+            variant="secondary"
+            icon="edit"
+            size="sm"
+            onClick={() => toast("Edit quick replies — coming soon")}
+          >
+            Edit quick replies
+          </Button>
+        ) : null}
       </div>
 
       <div className={`bz-chat-shell${showMobileThread ? " bz-chat-shell--in-thread" : ""}`}>

@@ -164,7 +164,7 @@ function SkeletonRail({ cols = 5 }) {
 }
 
 export function Home() {
-  const { nav, openProduct } = useBz();
+  const { nav, openProduct, cartCount } = useBz();
   const user = useBazaarStore((s) => s.user);
   const [searchOpen, setSearchOpen] = useState(false);
   const { data: homeData, isLoading: homeLoading, isError: homeError, error: homeErr } = useHome();
@@ -246,26 +246,13 @@ export function Home() {
                   {buyerGreeting ?? "there"}
                 </div>
               </div>
-              <AppLink
-                href={pathFromScreen("wishlist")}
-                ariaLabel="Wishlist"
-                style={{
-                  position: "relative",
-                  width: 44,
-                  height: 44,
-                  borderRadius: "50%",
-                  border: "1px solid var(--line-200)",
-                  background: "#fff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  flexShrink: 0,
-                  textDecoration: "none",
-                }}
-              >
-                <Icon name="heart" size={20} color="var(--ink-700)" />
-              </AppLink>
+              <IconButton
+                name="cart"
+                label="Cart"
+                badge={cartCount}
+                href={pathFromScreen("cart")}
+                size={44}
+              />
             </div>
 
             {/* Search — tapping opens the full search overlay (no inline typing on home) */}

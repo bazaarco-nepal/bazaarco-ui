@@ -74,7 +74,7 @@ export function Tracking() {
 
   if (!orderId) {
     return (
-      <div style={{ maxWidth: 820, margin: "0 auto", padding: "24px 28px 80px" }}>
+      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "24px 28px 80px" }}>
         <EmptyState
           icon="package"
           title="No order selected"
@@ -105,7 +105,7 @@ export function Tracking() {
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
-      <div style={{ maxWidth: 820, margin: "0 auto", padding: "24px 28px 0" }}>
+      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "24px 28px 0" }}>
         <AppLink
           href={pathFromScreen("orders")}
           style={{
@@ -430,7 +430,7 @@ export function Wishlist() {
 
   if (!authed) {
     return (
-      <div style={{ maxWidth: 700, margin: "0 auto", padding: "20px 28px" }}>
+      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px" }}>
         <EmptyState
           title="Sign in to see your wishlist"
           message="Save products and sellers you love — they stay on your account."
@@ -451,7 +451,7 @@ export function Wishlist() {
 
   if (totalSaved === 0) {
     return (
-      <div style={{ maxWidth: 700, margin: "0 auto", padding: "20px 28px" }}>
+      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px" }}>
         <EmptyState
           title="Your wishlist is empty"
           message="Tap the heart on any product or seller to save them here."
@@ -551,7 +551,7 @@ export function Bargains() {
     <ApiState isLoading={isLoading} isError={isError} error={error}>
       <div
         className="bz-container-pad"
-        style={{ maxWidth: 820, margin: "0 auto", padding: "28px 28px 96px" }}
+        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "28px 28px 96px" }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
           <div
@@ -588,25 +588,6 @@ export function Bargains() {
             <p style={{ margin: "2px 0 0", color: "var(--ink-500)", fontSize: ".875rem" }}>
               Your offers and seller responses.
             </p>
-          </div>
-        </div>
-
-        <div
-          style={{
-            background: "#f7faff",
-            border: "1px solid #dbe6ff",
-            borderRadius: "var(--r-lg)",
-            padding: "16px 18px",
-            margin: "16px 0 20px",
-            display: "flex",
-            gap: 10,
-            alignItems: "flex-start",
-          }}
-        >
-          <Icon name="bargain" size={18} color="var(--blue)" />
-          <div style={{ fontSize: ".9375rem", color: "var(--ink-700)", lineHeight: 1.53 }}>
-            <b>How it works:</b> open any product, tap <b>Make an offer</b>. Sellers usually reply
-            within minutes. Accepted offers add to cart at the bargained price.
           </div>
         </div>
 

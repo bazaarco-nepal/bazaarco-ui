@@ -221,8 +221,14 @@ export function Store() {
       isError={isError}
       error={error}
       fallback={
-        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 18 }}>
+        <div
+          className="bz-store-page"
+          style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px" }}
+        >
+          <div
+            className="bz-grid-cards"
+            style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 18 }}
+          >
             {Array.from({ length: 4 }).map((_, i) => (
               <SkeletonCard key={i} />
             ))}
@@ -231,7 +237,10 @@ export function Store() {
       }
     >
       {seller && (
-        <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 0" }}>
+        <div
+          className="bz-store-page"
+          style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 0" }}
+        >
           {/* breadcrumb */}
           <div
             style={{
@@ -252,6 +261,7 @@ export function Store() {
 
           {/* store header */}
           <div
+            className="bz-store-header"
             style={{
               display: "flex",
               alignItems: "center",
@@ -343,11 +353,14 @@ export function Store() {
                 )}
               </div>
             </div>
-            <div style={{ display: "flex", gap: 10, flexShrink: 0, flexWrap: "wrap" }}>
-              <Button variant="primary" icon="messageDots" onClick={openChat}>
+            <div
+              className="bz-store-actions"
+              style={{ display: "flex", gap: 10, flexShrink: 0, flexWrap: "wrap" }}
+            >
+              <Button variant="primary" size="sm" icon="messageDots" onClick={openChat}>
                 Chat with seller
               </Button>
-              <Button variant="secondary" icon="star" onClick={openRate}>
+              <Button variant="secondary" size="sm" icon="star" onClick={openRate}>
                 Rate store
               </Button>
             </div>
@@ -423,6 +436,7 @@ export function Store() {
                 />
               ) : (
                 <div
+                  className="bz-grid-cards"
                   style={{
                     display: "grid",
                     gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",

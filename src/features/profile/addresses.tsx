@@ -223,7 +223,7 @@ export function AddressesPage() {
     setDefault.isPending;
 
   return (
-    <div style={{ maxWidth: 640, margin: "0 auto", padding: "24px 28px 80px" }}>
+    <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "24px 28px 80px" }}>
       <AppLink
         href={pathFromScreen("profile")}
         onNavigate={() => nav("profile")}
@@ -261,7 +261,7 @@ export function AddressesPage() {
             बचत गरिएका ठेगानाहरू — checkout मा छान्नुहोस्
           </p>
         </div>
-        {!editing && addresses.length < 10 && (
+        {!editing && addresses.length > 0 && addresses.length < 10 && (
           <Button variant="primary" size="sm" icon="plus" onClick={openNew}>
             Add
           </Button>
@@ -288,7 +288,7 @@ export function AddressesPage() {
             border: "1px dashed var(--line-200)",
           }}
         >
-          <Icon name="mapPin" size={36} color="var(--ink-300)" />
+          <Icon name="mapPin" size={36} color="var(--ink-300)" style={{ margin: "0 auto" }} />
           <p style={{ margin: "12px 0 16px", color: "var(--ink-500)" }}>
             No saved addresses yet. Add Home, Office, or other spots for faster checkout.
           </p>

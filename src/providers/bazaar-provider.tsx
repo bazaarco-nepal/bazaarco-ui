@@ -29,11 +29,24 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
 
   const meQuery = useCurrentUser(true);
   const setAuthReady = useBazaarStore((s) => s.setAuthReady);
+  const hydrateRoleHint = useBazaarStore((s) => s.hydrateRoleHint);
+
+  // Seed the persisted role hint as early as possible so a returning seller is
+  // held on a loader (not the buyer homepage) while the /me probe is in flight.
+  useEffect(() => {
+    hydrateRoleHint();
+  }, [hydrateRoleHint]);
+
   useEffect(() => {
     if (meQuery.isFetched) {
       setAuthReady(true);
     }
-  }, [meQuery.isFetched, setAuthReady]);
+    // Probe failed — no live session. Drop a stale hint so we don't keep
+    // gating a signed-out (e.g. expired) former seller behind a loader.
+    if (meQuery.isError) {
+      useBazaarStore.getState().setRoleHint(null);
+    }
+  }, [meQuery.isFetched, meQuery.isError, setAuthReady]);
 
   const searchParams = useSearchParams();
   const urlQuery = searchParams.get("q")?.trim() ?? "";

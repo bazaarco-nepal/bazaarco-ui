@@ -1470,12 +1470,12 @@ export function EmptyState({
       )}
       <div style={{ display: "flex", gap: 12, marginTop: 28 }}>
         {cta && (
-          <Button variant="primary" size="lg" onClick={onCta} href={ctaHref} iconRight="arrowRight">
+          <Button variant="primary" size="md" onClick={onCta} href={ctaHref} iconRight="arrowRight">
             {cta}
           </Button>
         )}
         {secondary && (
-          <Button variant="secondary" size="lg" onClick={onSecondary} href={secondaryHref}>
+          <Button variant="secondary" size="md" onClick={onSecondary} href={secondaryHref}>
             {secondary}
           </Button>
         )}
@@ -2121,7 +2121,7 @@ export function BottomNav({
   const buyerItems = [
     { id: "home", icon: "home", label: "Home" },
     { id: "bargains", icon: "bargain", label: "Bargain" },
-    { id: "cart", icon: "cart", label: "Cart", badge: cartCount },
+    { id: "video", icon: "video", label: "Watch" },
     { id: "orders", icon: "package", label: "Orders" },
     { id: "profile", icon: "user", label: "Account" },
   ];

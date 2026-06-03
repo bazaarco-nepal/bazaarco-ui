@@ -125,7 +125,7 @@ export function Orders() {
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
-      <div style={{ maxWidth: 820, margin: "0 auto", padding: "28px 28px 96px" }}>
+      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "28px 28px 96px" }}>
         <h1
           style={{
             margin: "0 0 24px",
@@ -769,7 +769,7 @@ export function WriteReview({ productId }: WriteReviewProps) {
   };
 
   return (
-    <div style={{ maxWidth: 600, margin: "0 auto", padding: "24px 28px 80px" }}>
+    <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "24px 28px 80px" }}>
       <AppLink
         href={pathFromScreen("orders")}
         style={{
@@ -1010,7 +1010,7 @@ export function ProfileEdit() {
   const grid2 = { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 };
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "20px 22px 100px" }}>
+    <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 22px 100px" }}>
       <AppLink
         href={pathFromScreen("profile")}
         style={{

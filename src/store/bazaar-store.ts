@@ -4,12 +4,14 @@ import {
   readDeliveryFromStorage,
   writeDeliveryToStorage,
 } from "@/lib/delivery-location";
+import { readRoleHint } from "@/lib/auth-hint";
 import type { BazaarStoreState } from "@/types/store";
 
 export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
   authed: false,
   authReady: false,
   user: null,
+  roleHint: null,
   cart: [],
   wish: [],
   wishSellers: [],
@@ -30,6 +32,8 @@ export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
     set({ deliveryLocation, deliveryHydrated: true });
   },
   setUser: (user) => set({ user }),
+  setRoleHint: (roleHint) => set({ roleHint }),
+  hydrateRoleHint: () => set({ roleHint: readRoleHint() }),
   setCart: (cart) =>
     set((state) => ({
       cart: typeof cart === "function" ? cart(state.cart) : cart,

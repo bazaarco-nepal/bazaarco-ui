@@ -12,9 +12,9 @@ type InfoPageProps = {
 
 function InfoPageShell({ title, subtitle, children }: InfoPageProps) {
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "28px 28px 80px" }}>
+    <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "28px 28px 80px" }}>
       <AppLink
-        href={pathFromScreen("home")}
+        href={pathFromScreen("profile")}
         style={{
           display: "inline-flex",
           alignItems: "center",
@@ -26,7 +26,7 @@ function InfoPageShell({ title, subtitle, children }: InfoPageProps) {
           marginBottom: 20,
         }}
       >
-        ← Back to home
+        ← Back to profile
       </AppLink>
       <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 800, color: "var(--blue-deep)" }}>
         {title}
@@ -65,12 +65,10 @@ export function HelpSupportPage() {
       <ul style={{ paddingLeft: 20, margin: "0 0 16px" }}>
         <li>
           Email:{" "}
-          <a href="mailto:support@bazaarco.com.np" style={{ color: "var(--blue)" }}>
-            support@bazaarco.com.np
+          <a href="mailto:bazaarco.business@gmail.com" style={{ color: "var(--blue)" }}>
+            bazaarco.business@gmail.com
           </a>
         </li>
-        <li>Phone: +977 1-555-0100 (10:00–18:00 NPT, Sun–Fri)</li>
-        <li>Viber / WhatsApp: same number during business hours</li>
       </ul>
       <h2 style={{ fontSize: "1.125rem", margin: "24px 0 8px" }}>Common topics</h2>
       <ul style={{ paddingLeft: 20, margin: 0 }}>
@@ -123,8 +121,8 @@ export function PrivacyPolicyPage() {
       <h2 style={{ fontSize: "1.125rem", margin: "24px 0 8px" }}>Your rights</h2>
       <p>
         You may update your profile, export or delete your account from Profile settings, or email{" "}
-        <a href="mailto:privacy@bazaarco.com.np" style={{ color: "var(--blue)" }}>
-          privacy@bazaarco.com.np
+        <a href="mailto:bazaarco.business@gmail.com" style={{ color: "var(--blue)" }}>
+          bazaarco.business@gmail.com
         </a>
         .
       </p>
@@ -163,6 +161,14 @@ export function TermsPage() {
       <p>
         To the extent permitted by law, BazaarCo is not liable for indirect damages. Our aggregate
         liability for a claim is limited to the fees paid to BazaarCo for that order.
+      </p>
+      <h2 style={{ fontSize: "1.125rem", margin: "24px 0 8px" }}>Contact</h2>
+      <p>
+        Questions about these terms? Email{" "}
+        <a href="mailto:bazaarco.business@gmail.com" style={{ color: "var(--blue)" }}>
+          bazaarco.business@gmail.com
+        </a>
+        .
       </p>
       <p style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 24 }}>
         Last updated: June 2026

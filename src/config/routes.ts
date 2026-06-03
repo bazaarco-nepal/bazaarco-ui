@@ -129,6 +129,9 @@ export function pathFromScreen(
   if (screen === "pdp" && productId) {
     return `/product/${productId}`;
   }
+  if (screen === "store" && productId) {
+    return `/store/${productId}`;
+  }
   if (screen === "tracking" && orderId) {
     return `/orders/tracking/${encodeURIComponent(orderId)}`;
   }

@@ -49,7 +49,7 @@ import {
 import { useBz } from "@/components/common";
 import { EmptyState, Spinner } from "@/components/ui";
 import { SELLER_SCREENS } from "@/config/routes";
-import { isBuyerScreen, isGuestViewableScreen } from "@/lib/auth-rbac";
+import { isBuyerScreen, isGuestViewableScreen, isSellerUser } from "@/lib/auth-rbac";
 import { useBazaarStore } from "@/store/bazaar-store";
 
 /** Centered loader shown while the session probe settles on a gated screen. */
@@ -82,6 +82,8 @@ export function MarketplaceScreen() {
   const orderTotal = useBazaarStore((s) => s.orderTotal);
   const authed = useBazaarStore((s) => s.authed);
   const authReady = useBazaarStore((s) => s.authReady);
+  const roleHint = useBazaarStore((s) => s.roleHint);
+  const user = useBazaarStore((s) => s.user);
 
   // Keep the browser tab title meaningful per screen. On the product page use
   // the loaded product name; everything else maps to a friendly screen label.
@@ -96,6 +98,15 @@ export function MarketplaceScreen() {
   if (isBuyerScreen(screen) && !isGuestViewableScreen(screen)) {
     if (!authReady) return <ScreenLoader />;
     if (!authed) return <SignedOutScreen onLogin={() => nav("auth")} />;
+  }
+
+  // A seller should never see buyer content. On a buyer screen, hold a loader
+  // whenever this is (or is hinted to be) a seller account, so AuthRoleGuard can
+  // redirect to the seller dashboard without the buyer homepage flashing first:
+  //   - persisted role hint + probe not yet resolved  → returning-seller cold load
+  //   - resolved seller user, redirect not yet applied → the post-probe gap
+  if (isBuyerScreen(screen) && (isSellerUser(user) || (!authReady && roleHint === "seller"))) {
+    return <ScreenLoader />;
   }
 
   if (screen === "auth") return <Auth />;

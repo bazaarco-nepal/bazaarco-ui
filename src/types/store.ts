@@ -1,4 +1,4 @@
-import type { AuthUser } from "@/types/auth";
+import type { AuthIntent, AuthUser } from "@/types/auth";
 import type { CartLine, Product } from "@/types/catalog";
 import type { DeliveryLocation } from "@/lib/delivery-location";
 
@@ -6,6 +6,8 @@ export interface BazaarStoreState {
   authed: boolean;
   authReady: boolean;
   user: AuthUser | null;
+  /** Last-known role from a previous session, hydrated from storage on boot. */
+  roleHint: AuthIntent | null;
   cart: CartLine[];
   wish: string[];
   wishSellers: string[];
@@ -18,6 +20,8 @@ export interface BazaarStoreState {
   setAuthed: (authed: boolean) => void;
   setAuthReady: (authReady: boolean) => void;
   setUser: (user: AuthUser | null) => void;
+  setRoleHint: (role: AuthIntent | null) => void;
+  hydrateRoleHint: () => void;
   setCart: (cart: CartLine[] | ((prev: CartLine[]) => CartLine[])) => void;
   setWish: (wish: string[] | ((prev: string[]) => string[])) => void;
   setWishSellers: (sellerIds: string[] | ((prev: string[]) => string[])) => void;

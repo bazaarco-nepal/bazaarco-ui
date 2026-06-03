@@ -149,7 +149,7 @@ export function Cart() {
 
   if (cart.length === 0)
     return (
-      <div style={{ maxWidth: 700, margin: "0 auto", padding: "20px 28px" }}>
+      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px" }}>
         <EmptyState
           title="Your cart is empty"
           message="Looks like you haven't added anything yet. Let's find something you'll love."
@@ -635,7 +635,7 @@ export function Checkout() {
   const payLabel = `Place order — Rs. ${total.toLocaleString()} cash on delivery`;
 
   return (
-    <div style={{ maxWidth: 760, margin: "0 auto", padding: "20px 28px 80px" }}>
+    <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 80px" }}>
       <AppLink
         href={pathFromScreen("cart")}
         style={{
@@ -1123,7 +1123,7 @@ export function OrderSuccess({ total }) {
   const { nav, openTracking } = useBz();
   const orderId = useBazaarStore((s) => s.lastOrderId);
   return (
-    <div style={{ maxWidth: 620, margin: "0 auto", padding: "40px 28px" }}>
+    <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "40px 28px" }}>
       <div
         style={{
           background: "#fff",

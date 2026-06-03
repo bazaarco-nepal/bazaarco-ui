@@ -1731,6 +1731,23 @@ body {
   }
 }
 
+/* Storefront page — tighter padding, wrapped header, full-width actions on mobile */
+@media (max-width: 768px) {
+  .bz-store-page {
+    padding: 12px 16px 0 !important;
+  }
+  .bz-store-header {
+    flex-wrap: wrap;
+    gap: 14px 16px !important;
+    padding: 16px !important;
+  }
+  /* Push the action buttons onto their own row below avatar + name,
+     keeping them at their natural content size (not stretched). */
+  .bz-store-actions {
+    flex: 1 1 100%;
+  }
+}
+
 /* PDP detail columns — vertical divider on desktop only */
 @media (min-width: 769px) {
   .bz-pdp-details__col--right {

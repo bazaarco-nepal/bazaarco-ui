@@ -14,6 +14,7 @@ import {
 import type { LoginPayload, RegisterPayload, UpdateProfilePayload } from "@/types/auth";
 import { queryKeys } from "@/services/api/query-keys";
 import { useBazaarStore } from "@/store/bazaar-store";
+import { clearRoleHint, writeRoleHint } from "@/lib/auth-hint";
 
 function normalizeAuthUser(user: Awaited<ReturnType<typeof fetchCurrentUser>>) {
   return { ...user, onBoarding: user.onBoarding ?? false };
@@ -23,6 +24,9 @@ function applySession(user: Awaited<ReturnType<typeof fetchCurrentUser>>) {
   const normalized = normalizeAuthUser(user);
   useBazaarStore.getState().setAuthed(true);
   useBazaarStore.getState().setUser(normalized);
+  // Remember the role so the next cold load can skip the buyer-home flash.
+  writeRoleHint(normalized.intent);
+  useBazaarStore.getState().setRoleHint(normalized.intent);
   return normalized;
 }
 
@@ -92,6 +96,8 @@ export function useCompleteOnboarding() {
 function clearSessionState(queryClient: ReturnType<typeof useQueryClient>) {
   useBazaarStore.getState().setAuthed(false);
   useBazaarStore.getState().setUser(null);
+  clearRoleHint();
+  useBazaarStore.getState().setRoleHint(null);
   useBazaarStore.getState().setCart([]);
   useBazaarStore.getState().setWish([]);
   useBazaarStore.getState().setWishSellers([]);

@@ -31,4 +31,5 @@ export interface UpdateProfilePayload {
 
 export interface AuthSessionResponse {
   user: AuthUser;
+  token: string;
 }

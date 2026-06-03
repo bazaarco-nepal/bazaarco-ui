@@ -58,6 +58,7 @@ export async function register(payload: RegisterPayload): Promise<AuthUser> {
       "/auth/register",
       payload,
     );
+    setAccessToken(data.data.token);
     return data.data.user;
   } catch (error) {
     throw mapAuthError(error);
@@ -70,6 +71,7 @@ export async function login(payload: LoginPayload): Promise<AuthUser> {
       "/auth/login",
       payload,
     );
+    setAccessToken(data.data.token);
     return data.data.user;
   } catch (error) {
     throw mapAuthError(error);

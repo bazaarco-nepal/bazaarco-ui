@@ -32,7 +32,7 @@ import {
   ApiState,
   AppLink,
 } from "@/components/ui";
-import { pathFromScreen } from "@/config/routes";
+import { browsePath, pathFromScreen } from "@/config/routes";
 import { ASSETS } from "@/config/assets";
 import { useCatalog } from "@/hooks/use-catalog";
 import { useHome } from "@/hooks/use-home";
@@ -402,8 +402,8 @@ export function Home() {
                       key={c.id}
                       c={c}
                       compact
-                      href={pathFromScreen("browse")}
-                      onClick={() => nav("browse")}
+                      href={browsePath({ cat: c.id })}
+                      onClick={() => nav("browse", { cat: c.id })}
                     />
                   ))}
             </div>

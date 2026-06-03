@@ -313,7 +313,7 @@ function VideoEditModal({
           <Button variant="primary" disabled={update.isPending} onClick={() => void save()}>
             {update.isPending ? <Spinner size={18} /> : "Save changes"}
           </Button>
-          <Button variant="ghost" disabled={update.isPending} onClick={onClose}>
+          <Button variant="secondary" disabled={update.isPending} onClick={onClose}>
             Cancel
           </Button>
         </div>

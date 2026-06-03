@@ -8,6 +8,7 @@ import { useCartMutations, useCartQuery } from "@/hooks/use-cart";
 import { useWishlistMutations, useWishlistQuery } from "@/hooks/use-wishlist";
 import { useProduct } from "@/hooks/use-catalog";
 import {
+  browsePath,
   pathFromScreen,
   productIdFromPath,
   screenFromPath,
@@ -159,11 +160,20 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   );
 
   const nav = useCallback(
-    (nextScreen: string) => {
+    (nextScreen: string, options?: { cat?: string }) => {
       const state = useBazaarStore.getState();
       const productId = state.activeProduct?.id;
-      const searchQuery = nextScreen === "browse" ? state.query : undefined;
-      router.push(pathFromScreen(nextScreen, productId, searchQuery));
+      if (nextScreen === "browse") {
+        const q = state.query.trim();
+        router.push(
+          browsePath({
+            q: q || undefined,
+            cat: options?.cat,
+          }),
+        );
+      } else {
+        router.push(pathFromScreen(nextScreen, productId));
+      }
       setTimeout(scrollTop, 0);
     },
     [router, scrollTop],
@@ -171,7 +181,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
 
   const submitSearch = useCallback(() => {
     const q = useBazaarStore.getState().query.trim();
-    router.push(pathFromScreen("browse", undefined, q || undefined));
+    router.push(browsePath({ q: q || undefined }));
     setTimeout(scrollTop, 0);
   }, [router, scrollTop]);
 
@@ -284,11 +294,25 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   const routeProductId = productIdFromPath(pathname);
   const { data: routeProduct } = useProduct(routeProductId);
 
+  // Keep activeProduct aligned with the URL. Never fall back to a different
+  // product id — that caused another product's description/details on PDP.
+  useEffect(() => {
+    if (routeProduct) {
+      setActiveProduct(routeProduct);
+    }
+  }, [routeProduct, setActiveProduct]);
+
   const productFromRoute = useMemo(() => {
     if (!routeProductId) {
       return activeProduct;
     }
-    return routeProduct ?? activeProduct;
+    if (routeProduct) {
+      return routeProduct;
+    }
+    if (activeProduct?.id === routeProductId) {
+      return activeProduct;
+    }
+    return null;
   }, [routeProductId, activeProduct, routeProduct]);
 
   const value = useMemo(

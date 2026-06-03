@@ -664,16 +664,18 @@ function ReelItem({
             spawnBurst(160, 240);
           }}
         />
-        <ReelAction
-          icon="bargain"
-          label="Bargain & ask"
-          count={metrics.comments}
-          inside={isMobile}
-          onClick={() => {
-            toast("Opening bargain chat…");
-            openProduct(p);
-          }}
-        />
+        {p.allowBargaining && (
+          <ReelAction
+            icon="bargain"
+            label="Bargain & ask"
+            count={metrics.comments}
+            inside={isMobile}
+            onClick={() => {
+              toast("Opening bargain chat…");
+              openProduct(p);
+            }}
+          />
+        )}
         <ReelAction
           icon="share"
           label="Share"
@@ -728,7 +730,9 @@ export function VideoTheater() {
   }, [router, nav]);
   const [activeIndex, setActiveIndex] = useState(0);
   const { data: feed, isLoading, isError, error } = useVideoFeed();
-  const vids: VideoFeedItem[] = feed?.items ?? [];
+  const vids: VideoFeedItem[] = (feed?.items ?? []).filter(
+    (v) => typeof v.videoUrl === "string" && v.videoUrl.trim().length > 0,
+  );
   const [follows, setFollows] = useState(() => new Set());
   const [liked, setLiked] = useState<Set<string>>(() => new Set());
 
@@ -1075,25 +1079,51 @@ export function VideoTheater() {
         >
           Add to Cart
         </Button>
-        <div style={{ display: "flex", gap: 10 }}>
-          <Button
-            variant="secondary"
-            full
-            icon="bargain"
-            href={pathFromScreen("pdp", p.id)}
-            onNavigate={() => openProduct(p)}
-          >
-            Bargain
-          </Button>
-          <Button
-            variant="ghost"
-            full
-            iconRight="arrowRight"
-            href={pathFromScreen("pdp", p.id)}
-            onNavigate={() => openProduct(p)}
-          >
-            Full details
-          </Button>
+        <div style={{ display: "flex", gap: 10, flexDirection: "column" }}>
+          {p.allowBargaining ? (
+            <div style={{ display: "flex", gap: 10 }}>
+              <Button
+                variant="secondary"
+                full
+                icon="bargain"
+                href={pathFromScreen("pdp", p.id)}
+                onNavigate={() => openProduct(p)}
+              >
+                Bargain
+              </Button>
+              <Button
+                variant="ghost"
+                full
+                iconRight="arrowRight"
+                href={pathFromScreen("pdp", p.id)}
+                onNavigate={() => openProduct(p)}
+              >
+                Full details
+              </Button>
+            </div>
+          ) : (
+            <>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: ".8125rem",
+                  color: "var(--ink-500)",
+                  fontWeight: 600,
+                }}
+              >
+                Bargaining is not available for this product
+              </p>
+              <Button
+                variant="ghost"
+                full
+                iconRight="arrowRight"
+                href={pathFromScreen("pdp", p.id)}
+                onNavigate={() => openProduct(p)}
+              >
+                Full details
+              </Button>
+            </>
+          )}
         </div>
       </div>
       <div

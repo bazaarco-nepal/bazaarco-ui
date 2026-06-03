@@ -11,10 +11,15 @@ export const BUYER_SCREENS = new Set([
   "wishlist",
   "profile",
   "profile-edit",
+  "addresses",
   "orders",
   "review",
   "bargains",
   "messages",
+  "help",
+  "privacy",
+  "terms",
+  "about",
 ]);
 
 export const SELLER_SCREENS = new Set([
@@ -79,10 +84,15 @@ const SCREEN_PATH: Record<string, string> = {
   wishlist: "/wishlist",
   profile: "/profile",
   "profile-edit": "/profile/edit",
+  addresses: "/profile/addresses",
   orders: "/orders",
   review: "/review",
   bargains: "/bargains",
   messages: "/messages",
+  help: "/help",
+  privacy: "/privacy",
+  terms: "/terms",
+  about: "/about",
   "s-onboarding": "/seller/onboarding",
   "s-dashboard": "/seller",
   "s-inbox": "/seller/inbox",
@@ -122,13 +132,29 @@ export function pathFromScreen(
   if (screen === "tracking" && orderId) {
     return `/orders/tracking/${encodeURIComponent(orderId)}`;
   }
-  if (screen === "browse") {
-    const q = searchQuery?.trim();
-    if (q) {
-      return `/browse?q=${encodeURIComponent(q)}`;
-    }
-  }
   return SCREEN_PATH[screen] ?? "/home";
+}
+
+export type BrowsePathOptions = {
+  q?: string;
+  cat?: string | string[];
+  sort?: string;
+};
+
+/** Build `/browse` with optional search, category, and sort query params. */
+export function browsePath(options?: BrowsePathOptions): string {
+  const params = new URLSearchParams();
+  const q = options?.q?.trim();
+  if (q) params.set("q", q);
+  const cats = options?.cat;
+  if (cats) {
+    const joined = (Array.isArray(cats) ? cats : [cats]).filter(Boolean).join(",");
+    if (joined) params.set("cat", joined);
+  }
+  const sort = options?.sort?.trim();
+  if (sort) params.set("sort", sort);
+  const qs = params.toString();
+  return qs ? `/browse?${qs}` : "/browse";
 }
 
 // Browser-tab label per screen. Rendered as `BazaarCo - <label>`.
@@ -149,8 +175,13 @@ const SCREEN_TITLES: Record<string, string> = {
   messages: "Messages",
   profile: "Account",
   "profile-edit": "Edit Profile",
+  addresses: "Saved Addresses",
   orders: "My Orders",
   review: "Write a Review",
+  help: "Help & Support",
+  privacy: "Privacy Policy",
+  terms: "Terms & Conditions",
+  about: "About Us",
   "s-onboarding": "Become a Seller",
   "s-dashboard": "Seller Dashboard",
   "s-inbox": "Seller Orders",
@@ -184,6 +215,23 @@ export function searchQueryFromPath(pathname: string): string {
   const idx = pathname.indexOf("?");
   if (idx === -1) return "";
   return new URLSearchParams(pathname.slice(idx + 1)).get("q")?.trim() ?? "";
+}
+
+export function categoryIdsFromPath(pathname: string): string[] {
+  const idx = pathname.indexOf("?");
+  if (idx === -1) return [];
+  const raw = new URLSearchParams(pathname.slice(idx + 1)).get("cat");
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+}
+
+export function sortFromPath(pathname: string): string | null {
+  const idx = pathname.indexOf("?");
+  if (idx === -1) return null;
+  return new URLSearchParams(pathname.slice(idx + 1)).get("sort");
 }
 
 export function screenFromPath(pathname: string): string {

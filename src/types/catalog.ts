@@ -60,6 +60,8 @@ export interface Product {
   images?: string[];
   lowStock?: number;
   outOfStock?: boolean;
+  allowBargaining?: boolean;
+  maxDiscountPct?: number;
   createdAt?: string;
 }
 

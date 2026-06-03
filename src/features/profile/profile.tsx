@@ -35,11 +35,15 @@ import {
   PageBar,
   BackToTop,
   ApiState,
+  PasswordInput,
 } from "@/components/ui";
 import { useCatalog } from "@/hooks/use-catalog";
 import { useDeleteAccount, useLogout } from "@/hooks/use-auth";
 import { useBargains } from "@/hooks/use-bargains";
-import { useOrders } from "@/hooks/use-orders";
+import { useAddresses } from "@/hooks/use-addresses";
+import { useCancelOrder, useOrders } from "@/hooks/use-orders";
+import { canCancelOrder } from "@/lib/order-utils";
+import { ConfirmModal } from "@/features/checkout/checkout";
 import { useChatInbox } from "@/hooks/use-chat";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { displayName, userInitial } from "@/lib/display";
@@ -73,8 +77,8 @@ const ORDER_STATUS_META = {
   applied: {
     tone: "blue",
     label: "Awaiting confirmation",
-    action: "Cancel order",
-    actionVariant: "ghost",
+    action: "Track",
+    actionVariant: "secondary",
   },
   confirmed: { tone: "blue", label: "Confirmed", action: "Track", actionVariant: "secondary" },
   packed: { tone: "saffron", label: "Packed", action: "Track", actionVariant: "secondary" },
@@ -107,8 +111,10 @@ function orderStatusMeta(status: string) {
 export function Orders() {
   const { nav, openTracking } = useBz();
   const { data: ordersData = [], isLoading, isError, error } = useOrders();
+  const cancelOrder = useCancelOrder();
   const { byId } = useCatalog();
   const [filter, setFilter] = useState("all");
+  const [cancelTarget, setCancelTarget] = useState(null);
   const orders = ordersData.filter((o) => {
     if (filter === "active")
       return ["placed", "applied", "confirmed", "packed", "shipped"].includes(o.status);
@@ -240,23 +246,38 @@ export function Orders() {
                   </div>
 
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    <Button
-                      variant={meta.actionVariant}
-                      onClick={() => {
-                        if (
-                          o.status === "placed" ||
-                          o.status === "applied" ||
-                          o.status === "shipped" ||
-                          o.status === "confirmed" ||
-                          o.status === "packed"
-                        )
-                          openTracking(o.id);
-                        else if (o.status === "delivered") nav("review");
-                      }}
-                      icon={o.status === "shipped" ? "phone" : undefined}
-                    >
-                      {meta.action}
-                    </Button>
+                    {o.status === "cancelled" ? (
+                      <Button variant="ghost" onClick={() => nav("home")}>
+                        Order again
+                      </Button>
+                    ) : (
+                      <Button
+                        variant={meta.actionVariant}
+                        onClick={() => {
+                          if (
+                            o.status === "placed" ||
+                            o.status === "applied" ||
+                            o.status === "shipped" ||
+                            o.status === "confirmed" ||
+                            o.status === "packed"
+                          )
+                            openTracking(o.id);
+                          else if (o.status === "delivered") nav("review");
+                        }}
+                        icon={o.status === "shipped" ? "phone" : undefined}
+                      >
+                        {meta.action}
+                      </Button>
+                    )}
+                    {canCancelOrder(o) && (
+                      <Button
+                        variant="secondary"
+                        disabled={cancelOrder.isPending}
+                        onClick={() => setCancelTarget(o)}
+                      >
+                        Cancel order
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       href={pathFromScreen("tracking", undefined, undefined, o.id)}
@@ -271,6 +292,22 @@ export function Orders() {
           </div>
         )}
       </div>
+      {cancelTarget && (
+        <ConfirmModal
+          title="Cancel order?"
+          message={`Cancel order #${cancelTarget.id}? You can only cancel before the seller ships your items.`}
+          confirmLabel={cancelOrder.isPending ? "Cancelling…" : "Cancel order"}
+          onConfirm={async () => {
+            try {
+              await cancelOrder.mutateAsync(cancelTarget.id);
+              setCancelTarget(null);
+            } catch {
+              /* ApiState / global handlers surface errors */
+            }
+          }}
+          onCancel={() => !cancelOrder.isPending && setCancelTarget(null)}
+        />
+      )}
     </ApiState>
   );
 }
@@ -281,6 +318,7 @@ export function Profile() {
   const deleteMutation = useDeleteAccount();
   const user = useBazaarStore((s) => s.user);
   const { data: bargains = [] } = useBargains();
+  const { data: savedAddresses = [] } = useAddresses();
   const { data: chatInbox } = useChatInbox();
   const unreadMessages = (chatInbox?.threads ?? []).reduce((sum, t) => sum + (t.unread || 0), 0);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -506,23 +544,34 @@ export function Profile() {
         <MenuRow
           icon="mapPin"
           label="Saved addresses"
-          sub="None saved yet"
-          href={pathFromScreen("orders")}
-          onClick={() => nav("orders")}
+          sub={
+            savedAddresses.length
+              ? `${savedAddresses.length} saved · ${savedAddresses.find((a) => a.isDefault)?.label ?? "Home"} default`
+              : "Add Home, Office, and more"
+          }
+          href={pathFromScreen("addresses")}
+          onClick={() => nav("addresses")}
         />
         <MenuRow
           icon="headphones"
           label="Help & support"
           sub="Chat, call, FAQs"
-          href={pathFromScreen("orders")}
-          onClick={() => nav("orders")}
+          href={pathFromScreen("help")}
+          onClick={() => nav("help")}
         />
         <MenuRow
           icon="lock"
-          label="Privacy & terms"
+          label="Privacy policy"
           sub="How we handle your data"
-          href={pathFromScreen("orders")}
-          onClick={() => nav("orders")}
+          href={pathFromScreen("privacy")}
+          onClick={() => nav("privacy")}
+        />
+        <MenuRow
+          icon="file"
+          label="Terms & conditions"
+          sub="Marketplace rules"
+          href={pathFromScreen("terms")}
+          onClick={() => nav("terms")}
         />
       </div>
 
@@ -660,13 +709,12 @@ export function Profile() {
                 >
                   Confirm your password
                 </p>
-                <input
-                  type="password"
+                <PasswordInput
                   value={deletePassword}
                   onChange={(e) => setDeletePassword(e.target.value)}
                   placeholder="Your password"
                   autoComplete="current-password"
-                  style={{
+                  inputStyle={{
                     width: "100%",
                     height: 44,
                     border: "1.5px solid var(--line-200)",
@@ -693,7 +741,7 @@ export function Profile() {
               </p>
             )}
             <div style={{ display: "flex", gap: 10 }}>
-              <Button variant="ghost" full onClick={closeDeleteModal}>
+              <Button variant="secondary" full onClick={closeDeleteModal}>
                 Keep account
               </Button>
               <Button variant="danger" full disabled={!canDelete} onClick={handleDelete}>
@@ -1308,7 +1356,7 @@ export function ProfileEdit() {
           borderTop: "1px solid transparent",
         }}
       >
-        <Button variant="ghost" full href={pathFromScreen("profile")}>
+        <Button variant="secondary" full href={pathFromScreen("profile")}>
           Cancel
         </Button>
         <Button variant="primary" full onClick={save}>
@@ -1401,7 +1449,7 @@ export function ProfileEdit() {
             </div>
             <div style={{ display: "flex", gap: 10 }}>
               <Button
-                variant="ghost"
+                variant="secondary"
                 full
                 onClick={() => {
                   setShowPhoneOtp(false);

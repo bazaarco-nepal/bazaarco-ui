@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ordersApi } from "@/services/api/orders";
 import { queryKeys } from "@/services/api/query-keys";
 
@@ -20,5 +20,17 @@ export function useOrder(id: string | null) {
     queryFn: () => ordersApi.getById(id!),
     enabled: Boolean(id),
     staleTime: STALE_TIME,
+  });
+}
+
+export function useCancelOrder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (orderId: string) => ordersApi.cancel(orderId),
+    onSuccess: (order) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.list });
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders.detail(order.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tracking(order.id) });
+    },
   });
 }

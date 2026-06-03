@@ -8,7 +8,7 @@ export interface BazaarToast {
 
 export interface BazaarContextValue {
   screen: string;
-  nav: (screen: string) => void;
+  nav: (screen: string, options?: { cat?: string }) => void;
   openProduct: (product: Product) => void;
   openStore: (sellerId: string) => void;
   openTracking: (orderId: string) => void;

@@ -1,7 +1,7 @@
 // @ts-nocheck — legacy design prototype; typed incrementally
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Icon,
   Logo,
@@ -40,6 +40,9 @@ import { usePathname } from "next/navigation";
 import { orderIdFromPath, pathFromScreen } from "@/config/routes";
 import { useCatalog } from "@/hooks/use-catalog";
 import { useTracking } from "@/hooks/use-tracking";
+import { useCancelOrder, useOrder } from "@/hooks/use-orders";
+import { canCancelOrder } from "@/lib/order-utils";
+import { ConfirmModal } from "@/features/checkout/checkout";
 import { useBargains } from "@/hooks/use-bargains";
 import { useWishlistQuery } from "@/hooks/use-wishlist";
 import { useBazaarStore } from "@/store/bazaar-store";
@@ -64,6 +67,9 @@ export function Tracking() {
   const lastOrderId = useBazaarStore((s) => s.lastOrderId);
   const orderId = routeOrderId ?? lastOrderId ?? "";
   const { data, isLoading, isError, error } = useTracking(orderId, Boolean(orderId));
+  const { data: order } = useOrder(orderId || null);
+  const cancelOrder = useCancelOrder();
+  const [confirmCancel, setConfirmCancel] = useState(false);
   const nodes = data?.nodes ?? [];
 
   if (!orderId) {
@@ -138,7 +144,24 @@ export function Tracking() {
               Track your delivery
             </span>
           </div>
-          <StatusPill status={nodes.length ? trackingStatus : "confirmed"} />
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <StatusPill
+              status={
+                order?.status === "cancelled"
+                  ? "cancelled"
+                  : (order?.status ?? (nodes.length ? trackingStatus : "confirmed"))
+              }
+            />
+            {order && canCancelOrder(order) && (
+              <Button
+                variant="secondary"
+                disabled={cancelOrder.isPending}
+                onClick={() => setConfirmCancel(true)}
+              >
+                Cancel order
+              </Button>
+            )}
+          </div>
         </div>
 
         <div
@@ -227,6 +250,22 @@ export function Tracking() {
           <TrackingSidebar nav={nav} cart={cart} />
         </div>
       </div>
+      {confirmCancel && order && (
+        <ConfirmModal
+          title="Cancel order?"
+          message={`Cancel order #${order.id}? You can only cancel before the seller ships your items.`}
+          confirmLabel={cancelOrder.isPending ? "Cancelling…" : "Cancel order"}
+          onConfirm={async () => {
+            try {
+              await cancelOrder.mutateAsync(order.id);
+              setConfirmCancel(false);
+            } catch {
+              /* surfaced by API layer */
+            }
+          }}
+          onCancel={() => !cancelOrder.isPending && setConfirmCancel(false)}
+        />
+      )}
     </ApiState>
   );
 }

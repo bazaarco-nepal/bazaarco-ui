@@ -1,6 +1,6 @@
-import { getData, postData } from "./http";
-import type { StorefrontData } from "./storefront";
+import { getData, patchData, postData } from "./http";
 import type { Product } from "@/types";
+import type { StorefrontData } from "./storefront";
 
 // What the Add Product form sends. The owning seller is resolved from auth on
 // the server; icon/tint are inherited from the category.
@@ -9,6 +9,31 @@ export interface CreateProductVariantPayload {
   name: string;
   price: number;
   stock: number;
+}
+
+export interface UpdateProductPayload {
+  name?: string;
+  description?: string;
+  price?: number;
+  original?: number | null;
+  stock?: number;
+  metadata?: Record<string, unknown>;
+  variants?: CreateProductVariantPayload[];
+  allowBargaining?: boolean;
+  maxDiscountPct?: number;
+}
+
+export interface SellerInventoryItem {
+  id: string;
+  name: string;
+  price: number;
+  stock: number;
+  img?: string | null;
+  images?: string[];
+  hasVariants?: boolean;
+  variants?: CreateProductVariantPayload[];
+  icon: string;
+  tint: string;
 }
 
 export interface CreateProductPayload {
@@ -34,6 +59,10 @@ export const sellerApi = {
     return postData<Product>("/seller/products", payload);
   },
 
+  updateProduct(id: string, payload: UpdateProductPayload): Promise<Product> {
+    return patchData<Product>(`/seller/products/${encodeURIComponent(id)}`, payload);
+  },
+
   getDashboard<T = unknown>(): Promise<T> {
     return getData<T>("/seller/dashboard");
   },
@@ -42,8 +71,8 @@ export const sellerApi = {
     return getData<T>("/seller/inbox");
   },
 
-  getInventory<T = unknown>(): Promise<T> {
-    return getData<T>("/seller/inventory");
+  getInventory(): Promise<SellerInventoryItem[]> {
+    return getData<SellerInventoryItem[]>("/seller/inventory");
   },
 
   getBargains<T = unknown>(): Promise<T> {

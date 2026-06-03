@@ -1,7 +1,7 @@
 // @ts-nocheck — legacy design prototype; typed incrementally
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Icon,
   Logo,
@@ -36,6 +36,16 @@ import {
   BackToTop,
 } from "@/components/ui";
 import { useCatalog } from "@/hooks/use-catalog";
+import { useAddresses, useCreateAddress, pickDefaultAddress } from "@/hooks/use-addresses";
+import { SavedAddressPicker } from "@/features/profile/addresses";
+import {
+  deliveryToSavePayload,
+  isAddressComplete,
+  savedAddressToDelivery,
+} from "@/lib/saved-address";
+import { DEFAULT_DELIVERY } from "@/lib/delivery-location";
+import { useBazaarStore } from "@/store/bazaar-store";
+import { ApiRequestError } from "@/services/api/http";
 import {
   BazaarCtx,
   useBz,
@@ -48,7 +58,6 @@ import {
   Footer,
   DevViewSwitcher,
 } from "@/components/common";
-import { useBazaarStore } from "@/store/bazaar-store";
 import { pathFromScreen } from "@/config/routes";
 
 export function priceBreakdown(cart) {
@@ -472,7 +481,7 @@ export function ConfirmModal({ title, message, confirmLabel, onConfirm, onCancel
           {message}
         </p>
         <div style={{ display: "flex", gap: 12 }}>
-          <Button variant="ghost" full onClick={onCancel}>
+          <Button variant="secondary" full onClick={onCancel}>
             Keep
           </Button>
           <Button variant="danger" full onClick={onConfirm}>
@@ -555,14 +564,23 @@ function isValidNpPhone(digits) {
 
 /* ---------- CHECKOUT (single page, 3 collapsed sections) ---------- */
 export function Checkout() {
-  const { cart, nav, placeOrder } = useBz();
+  const { cart, nav, placeOrder, toast } = useBz();
+  const authed = useBazaarStore((s) => s.authed);
+  const { data: savedAddresses = [] } = useAddresses(authed);
+  const createAddress = useCreateAddress();
   const [openSec, setOpenSec] = useState(0);
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState({
+    ...DEFAULT_DELIVERY,
     city: "Kathmandu",
     area: "Chabahil",
     landmark: "Next to Bhatbhateni, opposite petrol pump",
+    postal: "44600",
   });
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [useNewAddress, setUseNewAddress] = useState(false);
+  const [saveNewAddress, setSaveNewAddress] = useState(false);
+  const [newAddressLabel, setNewAddressLabel] = useState("Home");
   const [loading, setLoading] = useState(false);
   const bd = priceBreakdown(cart);
   const total = bd.total;
@@ -570,17 +588,42 @@ export function Checkout() {
 
   const phoneDigits = phone.replace(/\D/g, "");
   const phoneComplete = isValidNpPhone(phoneDigits);
-  const addressComplete = !!(address.city && address.area && address.landmark);
+  const addressComplete = isAddressComplete(address);
   const canPlaceOrder = phoneComplete && addressComplete;
+
+  useEffect(() => {
+    if (!authed || !savedAddresses.length || selectedAddressId || useNewAddress) return;
+    const def = pickDefaultAddress(savedAddresses);
+    if (def) {
+      setSelectedAddressId(def.id);
+      setAddress(savedAddressToDelivery(def));
+    }
+  }, [authed, savedAddresses, selectedAddressId, useNewAddress]);
 
   const submit = async () => {
     if (!canPlaceOrder) return;
     setLoading(true);
     try {
+      if (saveNewAddress && useNewAddress && authed) {
+        try {
+          await createAddress.mutateAsync(
+            deliveryToSavePayload(address, newAddressLabel, savedAddresses.length === 0),
+          );
+        } catch (e) {
+          const msg = e instanceof ApiRequestError ? e.message : "Could not save address";
+          toast(msg);
+          setLoading(false);
+          return;
+        }
+      }
       await placeOrder({
         phone: phoneDigits,
         paymentMethod: "cod",
-        deliveryAddress: address,
+        deliveryAddress: {
+          city: address.city.trim(),
+          area: address.area.trim(),
+          landmark: (address.landmark ?? "").trim(),
+        },
       });
     } catch {
       /* toast shown in provider */
@@ -709,7 +752,79 @@ export function Checkout() {
           open={openSec === 1}
           onToggle={() => setOpenSec(openSec === 1 ? -1 : 1)}
         >
-          <LandmarkAddress value={address} onChange={setAddress} />
+          {authed && savedAddresses.length > 0 && (
+            <SavedAddressPicker
+              addresses={savedAddresses}
+              selectedId={selectedAddressId}
+              useNew={useNewAddress}
+              onSelect={(addr) => {
+                setSelectedAddressId(addr.id);
+                setUseNewAddress(false);
+                setSaveNewAddress(false);
+                setAddress(savedAddressToDelivery(addr));
+              }}
+              onUseNew={() => {
+                setUseNewAddress(true);
+                setSelectedAddressId(null);
+                setAddress({ ...DEFAULT_DELIVERY, city: "Kathmandu", area: "", landmark: "" });
+              }}
+              onManage={() => nav("addresses")}
+            />
+          )}
+
+          {(useNewAddress || !savedAddresses.length || !authed) && (
+            <>
+              <LandmarkAddress value={address} onChange={setAddress} />
+              {authed && useNewAddress && (
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 10,
+                    marginTop: 14,
+                    fontSize: ".875rem",
+                    color: "var(--ink-700)",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={saveNewAddress}
+                    onChange={(e) => setSaveNewAddress(e.target.checked)}
+                    style={{ marginTop: 3, width: 18, height: 18, accentColor: "var(--blue)" }}
+                  />
+                  <span>
+                    Save to my addresses for next time
+                    {saveNewAddress && (
+                      <span style={{ display: "block", marginTop: 8 }}>
+                        <input
+                          value={newAddressLabel}
+                          onChange={(e) => setNewAddressLabel(e.target.value)}
+                          placeholder="Label (Home, Office…)"
+                          style={{
+                            width: "100%",
+                            height: 40,
+                            border: "1.5px solid var(--line-200)",
+                            borderRadius: "var(--r-md)",
+                            padding: "0 12px",
+                            fontFamily: "var(--font-sans)",
+                          }}
+                        />
+                      </span>
+                    )}
+                  </span>
+                </label>
+              )}
+            </>
+          )}
+
+          {authed && !useNewAddress && selectedAddressId && (
+            <p style={{ fontSize: ".8125rem", color: "var(--ink-500)", margin: "0 0 8px" }}>
+              Delivering to your saved address above. Choose &quot;Deliver to a different
+              address&quot; to edit details.
+            </p>
+          )}
+
           <div style={{ marginTop: 14 }}>
             <Button
               variant="primary"
@@ -717,7 +832,7 @@ export function Checkout() {
               onClick={() => setOpenSec(2)}
               disabled={!addressComplete}
             >
-              Save address
+              Continue
             </Button>
           </div>
         </CheckoutSection>

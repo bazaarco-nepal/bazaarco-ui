@@ -295,8 +295,9 @@ function ImageCropModal({
               flex: 1,
               padding: "12px 16px",
               borderRadius: "var(--r-md)",
-              border: "1.5px solid var(--line-200)",
+              border: "1.5px solid var(--red)",
               background: "#fff",
+              color: "var(--red)",
               fontWeight: 700,
               cursor: "pointer",
             }}
@@ -413,58 +414,28 @@ export function ProductPhotoPicker({
         onChange={onFileChosen}
       />
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+      <div className="bz-photo-grid">
         {photos.map((photo, i) => (
           <div
             key={photo.id}
+            className="bz-photo-cell"
             onMouseEnter={() => setHover(i)}
             onMouseLeave={() => setHover((h) => (h === i ? null : h))}
-            style={{
-              position: "relative",
-              aspectRatio: "1",
-              borderRadius: "var(--r-md)",
-              overflow: "hidden",
-              border: "1.5px solid var(--line-200)",
-            }}
           >
             <img
               src={photo.previewUrl}
               alt={`Product photo ${i + 1}`}
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              className="bz-photo-cell__img"
             />
 
-            {/* Tap / hover the photo to replace it. The dim + change icon only
-                show on hover so the grid stays clean. */}
             <button
               type="button"
               onClick={() => openFilePicker(i)}
               aria-label={`Replace photo ${i + 1}`}
               title="Replace"
-              style={{
-                position: "absolute",
-                inset: 0,
-                border: "none",
-                cursor: "pointer",
-                padding: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: hover === i ? "rgba(11,18,32,.32)" : "transparent",
-                opacity: hover === i ? 1 : 0,
-                transition: "opacity var(--dur-standard) var(--ease)",
-              }}
+              className="bz-photo-cell__replace"
             >
-              <span
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: "50%",
-                  background: "rgba(255,255,255,.95)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
+              <span className="bz-photo-cell__replace-icon">
                 <Icon name="refresh" size={18} color="var(--ink-700)" />
               </span>
             </button>

@@ -1,7 +1,11 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { sellerApi, type CreateProductPayload } from "@/services/api/seller";
+import {
+  sellerApi,
+  type CreateProductPayload,
+  type UpdateProductPayload,
+} from "@/services/api/seller";
 import {
   sellerOrganizationApi,
   type SetupSellerOrganizationPayload,
@@ -49,6 +53,19 @@ export function useCreateProduct() {
       // surface the new product.
       void qc.invalidateQueries({ queryKey: queryKeys.seller.inventory });
       void qc.invalidateQueries({ queryKey: queryKeys.catalog.products() });
+    },
+  });
+}
+
+export function useUpdateProduct() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: UpdateProductPayload & { id: string }) =>
+      sellerApi.updateProduct(id, payload),
+    onSuccess: (_data, { id }) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.seller.inventory });
+      void qc.invalidateQueries({ queryKey: queryKeys.catalog.products() });
+      void qc.invalidateQueries({ queryKey: queryKeys.catalog.product(id) });
     },
   });
 }

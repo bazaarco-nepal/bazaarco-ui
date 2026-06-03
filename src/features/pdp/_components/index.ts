@@ -3,4 +3,4 @@ export { ReviewsSection } from "./reviews-section";
 export { QASection } from "./qa-section";
 export { AskQuestionModal } from "./ask-question-modal";
 export { WriteReviewModal } from "./write-review-modal";
-export { ImageLightbox } from "./image-lightbox";
+export { ImageLightbox, PdpZoomButton } from "./image-lightbox";

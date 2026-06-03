@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Icon,
   Logo,
@@ -36,7 +36,7 @@ import {
   ApiState,
   AppLink,
 } from "@/components/ui";
-import { pathFromScreen } from "@/config/routes";
+import { browsePath, categoryIdsFromPath, pathFromScreen } from "@/config/routes";
 import { useCatalog } from "@/hooks/use-catalog";
 import { useSearch } from "@/hooks/use-search";
 import type { SearchParams } from "@/services/api/search";
@@ -175,6 +175,8 @@ const PHONETIC = {
 
 export function Browse() {
   const { openProduct, nav, query, setQuery } = useBz();
+  const router = useRouter();
+  const pathname = usePathname();
   const catalog = useCatalog();
   const {
     products: PRODUCTS,
@@ -185,7 +187,8 @@ export function Browse() {
     error: catalogErr,
   } = catalog;
   const [loading, setLoading] = useState(true);
-  const [cats, setCats] = useState([]);
+  const catFromUrl = categoryIdsFromPath(pathname);
+  const [cats, setCats] = useState(catFromUrl);
   const [quick, setQuick] = useState([]);
   const [priceBand, setPriceBand] = useState(null); // band id or null
   const [priceMin, setPriceMin] = useState(""); // custom min — overrides band when set
@@ -197,6 +200,25 @@ export function Browse() {
   })();
   const [sort, setSort] = useState(initialSort);
   const [sheet, setSheet] = useState(false);
+
+  // Keep category filters in sync when landing via ?cat= from home or footer.
+  useEffect(() => {
+    setCats(catFromUrl);
+  }, [catFromUrl.join(",")]);
+
+  useEffect(() => {
+    const next = browsePath({
+      q: query?.trim() || undefined,
+      cat: cats.length ? cats : undefined,
+      sort: sort !== "popular" ? sort : undefined,
+    });
+    if (typeof window !== "undefined") {
+      const current = window.location.pathname + window.location.search;
+      if (current !== next) {
+        router.replace(next, { scroll: false });
+      }
+    }
+  }, [cats, query, sort, router]);
 
   const correctedQuery = (query && PHONETIC[query.toLowerCase().trim()]) || query;
   const effectiveQuery = correctedQuery;
@@ -317,6 +339,25 @@ export function Browse() {
   ].filter(Boolean);
   const hasActive = activeChips.length > 0;
 
+  const browseHeading = (() => {
+    if (query) return `Results for "${query}"`;
+    if (cats.length === 1) {
+      const c = (CATEGORIES ?? []).find((x) => x.id === cats[0]);
+      return c?.en ?? "Products";
+    }
+    if (cats.length > 1) return "Filtered products";
+    return "All products";
+  })();
+
+  const browseCrumb = (() => {
+    if (query) return `Search: "${query}"`;
+    if (cats.length === 1) {
+      const c = (CATEGORIES ?? []).find((x) => x.id === cats[0]);
+      return c?.en ?? "Category";
+    }
+    return "All products";
+  })();
+
   // Paginate in-stock matches. Reset to page 1 whenever the filter signature changes.
   const filterKey = `${effectiveQuery}|${cats.join(",")}|${quick.join(",")}|${sort}|${priceLabel}`;
   const strictPaged = usePaged(strict, 24, filterKey);
@@ -326,7 +367,11 @@ export function Browse() {
     <ApiState isLoading={catalogLoading} isError={catalogError} error={catalogErr}>
       <div
         className="bz-container-pad"
-        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "16px 28px 0" }}
+        style={{
+          maxWidth: "var(--container)",
+          margin: "0 auto",
+          padding: "16px clamp(12px, 4vw, 28px) 0",
+        }}
       >
         <BackToTop />
         {/* Mobile browse — sticky filter bar + product list when filtered, category grid otherwise */}
@@ -506,7 +551,7 @@ export function Browse() {
                 }}
               >
                 {(CATEGORIES ?? []).map((c) => (
-                  <CategoryTile key={c.id} c={c} onClick={() => toggleCat(c.id)} />
+                  <CategoryTile key={c.id} c={c} onClick={() => setCats([c.id])} />
                 ))}
               </div>
             </>
@@ -616,9 +661,7 @@ export function Browse() {
               Home
             </AppLink>
             <Icon name="chevronRight" size={13} color="var(--ink-300)" />
-            <span style={{ color: "var(--ink-700)" }}>
-              {query ? `Search: "${query}"` : "All products"}
-            </span>
+            <span style={{ color: "var(--ink-700)" }}>{browseCrumb}</span>
           </div>
 
           {/* corrected query banner */}
@@ -672,7 +715,7 @@ export function Browse() {
                   color: "var(--blue-deep)",
                 }}
               >
-                {query ? `Results for "${query}"` : "All products"}
+                {browseHeading}
               </h1>
               <div
                 className="tnum"

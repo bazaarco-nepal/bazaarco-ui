@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Icon, Logo, Button, AppLink } from "@/components/ui";
+import { Icon, Logo, Button, AppLink, PasswordInput } from "@/components/ui";
 import { useBz } from "@/components/common";
 import { resolvePostAuthScreen } from "@/lib/auth-rbac";
 import { screenFromPath, pathFromScreen } from "@/config/routes";
@@ -283,13 +283,12 @@ export function Auth() {
             )}
 
             <Field label="Password">
-              <input
-                type="password"
+              <PasswordInput
                 autoComplete={mode === "register" ? "new-password" : "current-password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={mode === "register" ? "At least 8 characters" : "Your password"}
-                style={inputStyle}
+                inputStyle={inputStyle}
                 minLength={8}
                 required
               />

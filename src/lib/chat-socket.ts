@@ -131,14 +131,28 @@ export function sendChatMessageSocket(
   });
 }
 
-/** Prefer realtime socket; fall back to REST when socket auth or ack fails. */
+const SOCKET_SEND_TIMEOUT_MS = 2500;
+
+/**
+ * Send via REST for a fast, reliable path. Use socket only when already connected
+ * (avoids waiting up to 6s for connection before the HTTP fallback).
+ */
 export async function sendChatMessage(
   conversationId: string,
   payload: SendChatMessagePayload,
 ): Promise<ChatMessage> {
-  try {
-    return await sendChatMessageSocket(conversationId, payload);
-  } catch {
-    return chatApi.sendMessage(conversationId, payload);
+  const sock = getChatSocket();
+  if (sock.connected) {
+    try {
+      return await Promise.race([
+        sendChatMessageSocket(conversationId, payload),
+        new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error("Socket send timed out")), SOCKET_SEND_TIMEOUT_MS);
+        }),
+      ]);
+    } catch {
+      // fall through to REST
+    }
   }
+  return chatApi.sendMessage(conversationId, payload);
 }

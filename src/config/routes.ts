@@ -217,15 +217,23 @@ export function searchQueryFromPath(pathname: string): string {
   return new URLSearchParams(pathname.slice(idx + 1)).get("q")?.trim() ?? "";
 }
 
-export function categoryIdsFromPath(pathname: string): string[] {
-  const idx = pathname.indexOf("?");
-  if (idx === -1) return [];
-  const raw = new URLSearchParams(pathname.slice(idx + 1)).get("cat");
+/** Read `?cat=` from Next.js `useSearchParams()` (pathname alone has no query string). */
+export function categoryIdsFromSearchParams(
+  params: { get: (key: string) => string | null } | null | undefined,
+): string[] {
+  const raw = params?.get("cat");
   if (!raw) return [];
   return raw
     .split(",")
     .map((id) => id.trim())
     .filter(Boolean);
+}
+
+/** @deprecated Prefer `categoryIdsFromSearchParams` — `usePathname()` omits `?cat=`. */
+export function categoryIdsFromPath(pathname: string): string[] {
+  const idx = pathname.indexOf("?");
+  if (idx === -1) return [];
+  return categoryIdsFromSearchParams(new URLSearchParams(pathname.slice(idx + 1)));
 }
 
 export function sortFromPath(pathname: string): string | null {

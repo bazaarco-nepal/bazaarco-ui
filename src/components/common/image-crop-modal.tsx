@@ -242,6 +242,7 @@ export function ImageCropModal({
             touchAction: "none",
           }}
         >
+          {/* eslint-disable-next-line @next/next/no-img-element -- blob preview for canvas crop */}
           <img
             ref={imgRef}
             src={objectUrl}

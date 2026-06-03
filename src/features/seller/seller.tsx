@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Fragment, useRef, useCallback } from "react";
+import React, { useState, useEffect, Fragment, useRef, useCallback, useMemo } from "react";
 import {
   Icon,
   Logo,
@@ -5525,8 +5525,8 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
   const { toast } = useBz();
   const { data: inbox, isLoading, isError, error } = useChatInbox();
   const { invalidateInbox, invalidateMessages } = useInvalidateChat();
-  const CHAT_THREADS = inbox?.threads ?? [];
-  const CHAT_QUICK_REPLIES = inbox?.quickReplies ?? [];
+  const chatThreads = useMemo(() => inbox?.threads ?? [], [inbox?.threads]);
+  const chatQuickReplies = useMemo(() => inbox?.quickReplies ?? [], [inbox?.quickReplies]);
   const [active, setActive] = useState<ChatThread | null>(null);
   const [msg, setMsg] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -5538,8 +5538,8 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
   const { data: msgPage, isLoading: msgsLoading } = useChatMessages(active?.id ?? null);
 
   useEffect(() => {
-    if (CHAT_THREADS.length && !active) setActive(CHAT_THREADS[0] ?? null);
-  }, [CHAT_THREADS, active]);
+    if (chatThreads.length && !active) setActive(chatThreads[0] ?? null);
+  }, [chatThreads, active]);
 
   useEffect(() => {
     if (!buyerMode || typeof sessionStorage === "undefined") return;
@@ -5729,7 +5729,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
     );
   }
 
-  if (!CHAT_THREADS.length) {
+  if (!chatThreads.length) {
     return (
       <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
         {!buyerMode ? <SellerHelpBar /> : null}
@@ -5796,7 +5796,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
             overflowY: "auto",
           }}
         >
-          {CHAT_THREADS.map((t) => {
+          {chatThreads.map((t) => {
             const sel = active.id === t.id;
             return (
               <button
@@ -6027,7 +6027,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
               background: "#fff",
             }}
           >
-            {CHAT_QUICK_REPLIES.map((q) => (
+            {chatQuickReplies.map((q) => (
               <button
                 key={q.en}
                 onClick={() => void send(q.en)}

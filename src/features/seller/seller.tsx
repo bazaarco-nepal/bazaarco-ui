@@ -100,6 +100,7 @@ import {
   DevViewSwitcher,
 } from "@/components/common";
 import { ASSETS } from "@/config/assets";
+import { pathFromScreen } from "@/config/routes";
 import { SHIPPING_ZONES } from "@/services/api/seller-settings";
 
 export type SellerInboxOrderItem = {

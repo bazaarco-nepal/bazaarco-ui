@@ -1,19 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { BazaarCtx, LoginPromptModal } from "@/components/common";
 import { useCurrentUser } from "@/hooks/use-auth";
 import { useCartMutations, useCartQuery } from "@/hooks/use-cart";
 import { useWishlistMutations, useWishlistQuery } from "@/hooks/use-wishlist";
 import { useProduct } from "@/hooks/use-catalog";
-import {
-  browsePath,
-  pathFromScreen,
-  productIdFromPath,
-  screenFromPath,
-  searchQueryFromPath,
-} from "@/config/routes";
+import { browsePath, pathFromScreen, productIdFromPath, screenFromPath } from "@/config/routes";
 import { ordersApi } from "@/services/api/orders";
 import { ApiRequestError } from "@/services/api/http";
 import { useBazaarStore } from "@/store/bazaar-store";
@@ -41,16 +35,17 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
     }
   }, [meQuery.isFetched, setAuthReady]);
 
-  const pathnameSearch = searchQueryFromPath(pathname);
+  const searchParams = useSearchParams();
+  const urlQuery = searchParams.get("q")?.trim() ?? "";
   const setQuery = useBazaarStore((s) => s.setQuery);
   useEffect(() => {
-    if (screenFromPath(pathname) === "browse" && pathnameSearch) {
+    if (screenFromPath(pathname) === "browse" && urlQuery) {
       const current = useBazaarStore.getState().query;
-      if (pathnameSearch !== current) {
-        setQuery(pathnameSearch);
+      if (urlQuery !== current) {
+        setQuery(urlQuery);
       }
     }
-  }, [pathname, pathnameSearch, setQuery]);
+  }, [pathname, urlQuery, setQuery]);
 
   const authed = useBazaarStore((s) => s.authed);
   const setAuthed = useBazaarStore((s) => s.setAuthed);

@@ -36,7 +36,7 @@ import {
   ApiState,
   AppLink,
 } from "@/components/ui";
-import { browsePath, categoryIdsFromPath, pathFromScreen } from "@/config/routes";
+import { browsePath, categoryIdsFromSearchParams, pathFromScreen } from "@/config/routes";
 import { useCatalog } from "@/hooks/use-catalog";
 import { useSearch } from "@/hooks/use-search";
 import type { SearchParams } from "@/services/api/search";
@@ -187,24 +187,25 @@ export function Browse() {
     error: catalogErr,
   } = catalog;
   const [loading, setLoading] = useState(true);
-  const catFromUrl = categoryIdsFromPath(pathname);
+  const urlParams = useSearchParams();
+  const catParam = urlParams.get("cat") ?? "";
+  const catFromUrl = useMemo(() => categoryIdsFromSearchParams(urlParams), [catParam]);
   const [cats, setCats] = useState(catFromUrl);
   const [quick, setQuick] = useState([]);
   const [priceBand, setPriceBand] = useState(null); // band id or null
   const [priceMin, setPriceMin] = useState(""); // custom min — overrides band when set
   const [priceMax, setPriceMax] = useState(""); // custom max — overrides band when set
-  const urlParams = useSearchParams();
   const initialSort = (() => {
-    const fromUrl = urlParams?.get("sort");
+    const fromUrl = urlParams.get("sort");
     return fromUrl && PLP_SORT_OPTIONS.some((o) => o.value === fromUrl) ? fromUrl : "popular";
   })();
   const [sort, setSort] = useState(initialSort);
   const [sheet, setSheet] = useState(false);
 
-  // Keep category filters in sync when landing via ?cat= from home or footer.
+  // Keep category filters in sync when landing via ?cat= from home or mobile category tap.
   useEffect(() => {
     setCats(catFromUrl);
-  }, [catFromUrl.join(",")]);
+  }, [catFromUrl]);
 
   useEffect(() => {
     const next = browsePath({

@@ -5521,13 +5521,29 @@ export function SellerLedger() {
 }
 
 /* ---------- 4.7 Customer Chat ---------- */
+function useChatMobile(bp = 720) {
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== "undefined" && window.matchMedia(`(max-width:${bp}px)`).matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width:${bp}px)`);
+    const onChange = () => setIsMobile(mq.matches);
+    onChange();
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, [bp]);
+  return isMobile;
+}
+
 export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
   const { toast } = useBz();
+  const isMobile = useChatMobile();
   const { data: inbox, isLoading, isError, error } = useChatInbox();
   const { invalidateInbox, invalidateMessages } = useInvalidateChat();
   const chatThreads = useMemo(() => inbox?.threads ?? [], [inbox?.threads]);
   const chatQuickReplies = useMemo(() => inbox?.quickReplies ?? [], [inbox?.quickReplies]);
   const [active, setActive] = useState<ChatThread | null>(null);
+  const [mobileInThread, setMobileInThread] = useState(false);
   const [msg, setMsg] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [peerTyping, setPeerTyping] = useState(false);
@@ -5535,11 +5551,18 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const typingStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { data: msgPage, isLoading: msgsLoading } = useChatMessages(active?.id ?? null);
+  const {
+    data: msgPage,
+    isLoading: msgsLoading,
+    isError: msgsError,
+    error: msgsLoadError,
+    refetch: refetchMessages,
+  } = useChatMessages(active?.id ?? null);
 
   useEffect(() => {
-    if (chatThreads.length && !active) setActive(chatThreads[0] ?? null);
-  }, [chatThreads, active]);
+    if (isMobile || !chatThreads.length || active) return;
+    setActive(chatThreads[0] ?? null);
+  }, [chatThreads, active, isMobile]);
 
   useEffect(() => {
     if (!buyerMode || typeof sessionStorage === "undefined") return;
@@ -5550,6 +5573,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
       .createConversation(sellerId)
       .then((thread) => {
         setActive(thread);
+        setMobileInThread(true);
         void invalidateInbox();
       })
       .catch((e) => {
@@ -5663,10 +5687,28 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
     if (sending) return;
     const trimmed = text.trim();
     if (!trimmed && !attachment) return;
+
+    const clientMessageId =
+      typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}`;
+    const messageType = attachment?.mediaType ?? "text";
+    const optimistic: ChatMessage = {
+      id: clientMessageId,
+      from: "me",
+      text: trimmed || (messageType === "image" ? "Photo" : messageType === "video" ? "Video" : ""),
+      t: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      messageType,
+      attachment,
+      status: "sent",
+      createdAt: new Date().toISOString(),
+      senderUserId: "",
+    };
+
+    appendMessage(optimistic);
+    setMsg("");
+    emitTypingStop(active.id);
     setSending(true);
+
     try {
-      const clientMessageId =
-        typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}`;
       const sent = await sendChatMessage(active.id, {
         body: trimmed || undefined,
         clientMessageId,
@@ -5679,12 +5721,10 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
             }
           : undefined,
       });
-      appendMessage(sent);
-      setMsg("");
-      emitTypingStop(active.id);
+      setMessages((prev) => prev.map((m) => (m.id === clientMessageId ? sent : m)));
       void invalidateInbox();
-      void invalidateMessages(active.id);
     } catch (e) {
+      setMessages((prev) => prev.filter((m) => m.id !== clientMessageId));
       toast(e instanceof Error ? e.message : "Could not send message");
     } finally {
       setSending(false);
@@ -5731,7 +5771,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
 
   if (!chatThreads.length) {
     return (
-      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
+      <div className="bz-chat-page">
         {!buyerMode ? <SellerHelpBar /> : null}
         <EmptyState
           title="No conversations yet"
@@ -5741,7 +5781,9 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
     );
   }
 
-  if (!active) {
+  const showMobileThread = isMobile && mobileInThread && active;
+
+  if (!active && !isMobile) {
     return (
       <ApiState isLoading>
         <div />
@@ -5750,9 +5792,10 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
   }
 
   return (
-    <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
+    <div className="bz-chat-page">
       {!buyerMode ? <SellerHelpBar /> : null}
       <div
+        className="bz-chat-page__head"
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -5786,18 +5829,11 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
         </Button>
       </div>
 
-      <div className="bz-chat-shell">
+      <div className={`bz-chat-shell${showMobileThread ? " bz-chat-shell--in-thread" : ""}`}>
         {/* Threads list */}
-        <aside
-          style={{
-            borderRight: "1px solid var(--line-200)",
-            display: "flex",
-            flexDirection: "column",
-            overflowY: "auto",
-          }}
-        >
+        <aside className="bz-chat-shell__threads">
           {chatThreads.map((t) => {
-            const sel = active.id === t.id;
+            const sel = active?.id === t.id;
             return (
               <button
                 key={t.id}
@@ -5805,6 +5841,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
                   setActive(t);
                   setMessages([]);
                   setPeerTyping(false);
+                  if (isMobile) setMobileInThread(true);
                 }}
                 style={{
                   display: "flex",
@@ -5886,254 +5923,284 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
         </aside>
 
         {/* Conversation */}
-        <div style={{ display: "flex", flexDirection: "column", minHeight: 0 }}>
-          <div
-            style={{
-              padding: "12px 16px",
-              borderBottom: "1px solid var(--line-200)",
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-            }}
-          >
+        {active ? (
+          <div className="bz-chat-shell__panel">
             <div
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: "50%",
-                background: TINTS[active.tone][0],
-                color: TINTS[active.tone][2],
+                padding: "12px 16px",
+                borderBottom: "1px solid var(--line-200)",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
-                fontWeight: 800,
+                gap: 10,
+                flexShrink: 0,
               }}
             >
-              {active.avatar}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 800, fontSize: ".9375rem" }}>{active.buyer}</div>
-              <div style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
-                {peerTyping
-                  ? `${active.buyer} is typing...`
-                  : `${active.city} · ${active.lastSeenLabel}`}
-              </div>
-            </div>
-            <a
-              href="tel:98XXXXXXXX"
-              style={{
-                width: 38,
-                height: 38,
-                borderRadius: "50%",
-                background: "#16a34a",
-                color: "#fff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                textDecoration: "none",
-              }}
-            >
-              <Icon name="phone" size={18} color="#fff" />
-            </a>
-          </div>
-
-          <div
-            style={{
-              flex: 1,
-              overflowY: "auto",
-              padding: 16,
-              background: "#f7f8fb",
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-            }}
-          >
-            {msgsLoading && !messages.length ? (
-              <div style={{ textAlign: "center", color: "var(--ink-400)", fontSize: ".8125rem" }}>
-                Loading messages...
-              </div>
-            ) : null}
-            {messages.map((m) => (
-              <div
-                key={m.id}
-                style={{ alignSelf: m.from === "me" ? "flex-end" : "flex-start", maxWidth: "75%" }}
-              >
-                <div
+              {isMobile ? (
+                <button
+                  type="button"
+                  onClick={() => setMobileInThread(false)}
+                  aria-label="Back to conversations"
                   style={{
-                    padding: "10px 14px",
-                    background: m.from === "me" ? "var(--blue)" : "#fff",
-                    color: m.from === "me" ? "#fff" : "var(--ink-900)",
-                    borderRadius: m.from === "me" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
-                    fontSize: ".875rem",
-                    border: m.from === "me" ? "none" : "1px solid var(--line-200)",
-                  }}
-                >
-                  {m.attachment?.mediaType === "image" ? (
-                    <a href={m.attachment.url} download target="_blank" rel="noopener noreferrer">
-                      <img
-                        src={m.attachment.thumbnailUrl || m.attachment.url}
-                        alt=""
-                        style={{ maxWidth: "100%", borderRadius: 8, display: "block" }}
-                      />
-                    </a>
-                  ) : m.attachment?.mediaType === "video" ? (
-                    <video
-                      src={m.attachment.url}
-                      controls
-                      style={{ maxWidth: "100%", borderRadius: 8, display: "block" }}
-                    />
-                  ) : null}
-                  {m.text && m.messageType === "text" ? m.text : null}
-                  {m.text && m.messageType !== "text" ? (
-                    <div style={{ marginTop: m.attachment ? 6 : 0, fontSize: ".8125rem" }}>
-                      {m.text}
-                    </div>
-                  ) : null}
-                </div>
-                <div
-                  style={{
-                    fontSize: ".65rem",
-                    color: "var(--ink-400)",
-                    marginTop: 2,
-                    textAlign: m.from === "me" ? "right" : "left",
+                    width: 36,
+                    height: 36,
+                    borderRadius: "50%",
+                    border: "1.5px solid var(--line-200)",
+                    background: "#fff",
                     display: "flex",
-                    gap: 6,
-                    justifyContent: m.from === "me" ? "flex-end" : "flex-start",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    flexShrink: 0,
                   }}
                 >
-                  <span>{m.t}</span>
-                  {m.from === "me" && m.status ? (
-                    <span>
-                      {m.status === "read"
-                        ? "Read"
-                        : m.status === "delivered"
-                          ? "Delivered"
-                          : "Sent"}
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Quick replies */}
-          <div
-            style={{
-              padding: "8px 12px",
-              borderTop: "1px solid var(--line-200)",
-              display: "flex",
-              gap: 6,
-              overflowX: "auto",
-              background: "#fff",
-            }}
-          >
-            {chatQuickReplies.map((q) => (
-              <button
-                key={q.en}
-                onClick={() => void send(q.en)}
+                  <Icon name="arrowLeft" size={18} color="var(--ink-700)" />
+                </button>
+              ) : null}
+              <div
                 style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: "50%",
+                  background: TINTS[active.tone][0],
+                  color: TINTS[active.tone][2],
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 800,
                   flexShrink: 0,
-                  padding: "6px 12px",
-                  background: "var(--tint-blue-50)",
-                  border: "1px solid var(--blue)",
-                  color: "var(--blue)",
-                  borderRadius: 999,
-                  fontSize: ".75rem",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
                 }}
               >
-                {q.en}
-              </button>
-            ))}
-          </div>
+                {active.avatar}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 800, fontSize: ".9375rem" }}>{active.buyer}</div>
+                <div style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
+                  {peerTyping
+                    ? `${active.buyer} is typing...`
+                    : `${active.city} · ${active.lastSeenLabel}`}
+                </div>
+              </div>
+              <a
+                href="tel:98XXXXXXXX"
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: "50%",
+                  background: "#16a34a",
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  textDecoration: "none",
+                  flexShrink: 0,
+                }}
+              >
+                <Icon name="phone" size={18} color="#fff" />
+              </a>
+            </div>
 
-          {/* Input */}
-          <div
-            style={{
-              padding: 10,
-              borderTop: "1px solid var(--line-200)",
-              display: "flex",
-              gap: 8,
-              background: "#fff",
-            }}
-          >
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
-              style={{ display: "none" }}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) void onPickMedia(file);
-              }}
-            />
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              disabled={sending}
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: "50%",
-                background: "#fff",
-                border: "1.5px solid var(--line-200)",
-                cursor: sending ? "not-allowed" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              aria-label="Attach media"
-            >
-              <Icon name="image" size={20} color="var(--ink-500)" />
-            </button>
-            <input
-              value={msg}
-              onChange={(e) => {
-                setMsg(e.target.value);
-                notifyTyping();
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  void send(msg);
-                }
-              }}
-              placeholder="Type a message · सन्देश लेख्नुहोस्"
-              style={{
-                flex: 1,
-                height: 44,
-                padding: "0 14px",
-                border: "1.5px solid var(--line-200)",
-                borderRadius: 999,
-                fontSize: ".9375rem",
-                outline: "none",
-                fontFamily: "var(--font-sans)",
-              }}
-            />
-            <button
-              type="button"
-              aria-label="Send message"
-              onClick={() => void send(msg)}
-              disabled={!msg.trim() || sending}
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: "50%",
-                background: msg.trim() && !sending ? "var(--red)" : "var(--line-200)",
-                color: "#fff",
-                border: "none",
-                cursor: msg.trim() && !sending ? "pointer" : "not-allowed",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Icon name="arrowRight" size={20} color="#fff" />
-            </button>
+            <div className="bz-chat-shell__messages">
+              {msgsLoading && !messages.length ? (
+                <div style={{ textAlign: "center", color: "var(--ink-400)", fontSize: ".8125rem" }}>
+                  Loading messages...
+                </div>
+              ) : null}
+              {msgsError && !messages.length ? (
+                <div
+                  style={{
+                    margin: "auto",
+                    textAlign: "center",
+                    color: "var(--ink-500)",
+                    fontSize: ".8125rem",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 10,
+                    alignItems: "center",
+                  }}
+                >
+                  <p style={{ margin: 0 }}>
+                    {msgsLoadError instanceof Error
+                      ? msgsLoadError.message
+                      : "Could not load messages"}
+                  </p>
+                  <Button variant="secondary" size="sm" onClick={() => void refetchMessages()}>
+                    Retry
+                  </Button>
+                </div>
+              ) : null}
+              {!msgsLoading && !msgsError && !messages.length ? (
+                <div
+                  style={{
+                    margin: "auto",
+                    textAlign: "center",
+                    color: "var(--ink-400)",
+                    fontSize: ".8125rem",
+                  }}
+                >
+                  No messages yet. Say hello.
+                </div>
+              ) : null}
+              {messages.map((m) => (
+                <div
+                  key={m.id}
+                  style={{
+                    alignSelf: m.from === "me" ? "flex-end" : "flex-start",
+                    maxWidth: "75%",
+                  }}
+                >
+                  <div
+                    style={{
+                      padding: "10px 14px",
+                      background: m.from === "me" ? "var(--blue)" : "#fff",
+                      color: m.from === "me" ? "#fff" : "var(--ink-900)",
+                      borderRadius: m.from === "me" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
+                      fontSize: ".875rem",
+                      border: m.from === "me" ? "none" : "1px solid var(--line-200)",
+                    }}
+                  >
+                    {m.attachment?.mediaType === "image" ? (
+                      <a href={m.attachment.url} download target="_blank" rel="noopener noreferrer">
+                        <img
+                          src={m.attachment.thumbnailUrl || m.attachment.url}
+                          alt=""
+                          style={{ maxWidth: "100%", borderRadius: 8, display: "block" }}
+                        />
+                      </a>
+                    ) : m.attachment?.mediaType === "video" ? (
+                      <video
+                        src={m.attachment.url}
+                        controls
+                        style={{ maxWidth: "100%", borderRadius: 8, display: "block" }}
+                      />
+                    ) : null}
+                    {m.text && m.messageType === "text" ? m.text : null}
+                    {m.text && m.messageType !== "text" ? (
+                      <div style={{ marginTop: m.attachment ? 6 : 0, fontSize: ".8125rem" }}>
+                        {m.text}
+                      </div>
+                    ) : null}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: ".65rem",
+                      color: "var(--ink-400)",
+                      marginTop: 2,
+                      textAlign: m.from === "me" ? "right" : "left",
+                      display: "flex",
+                      gap: 6,
+                      justifyContent: m.from === "me" ? "flex-end" : "flex-start",
+                    }}
+                  >
+                    <span>{m.t}</span>
+                    {m.from === "me" && m.status ? (
+                      <span>
+                        {m.status === "read"
+                          ? "Read"
+                          : m.status === "delivered"
+                            ? "Delivered"
+                            : "Sent"}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Quick replies */}
+            <div className="bz-chat-shell__quick">
+              {chatQuickReplies.map((q) => (
+                <button
+                  key={q.en}
+                  onClick={() => void send(q.en)}
+                  style={{
+                    flexShrink: 0,
+                    padding: "6px 12px",
+                    background: "var(--tint-blue-50)",
+                    border: "1px solid var(--blue)",
+                    color: "var(--blue)",
+                    borderRadius: 999,
+                    fontSize: ".75rem",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {q.en}
+                </button>
+              ))}
+            </div>
+
+            {/* Input */}
+            <div className="bz-chat-shell__composer">
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
+                style={{ display: "none" }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void onPickMedia(file);
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={sending}
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: "50%",
+                  background: "#fff",
+                  border: "1.5px solid var(--line-200)",
+                  cursor: sending ? "not-allowed" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                aria-label="Attach media"
+              >
+                <Icon name="image" size={20} color="var(--ink-500)" />
+              </button>
+              <input
+                type="text"
+                className="bz-chat-shell__composer-input"
+                value={msg}
+                onChange={(e) => {
+                  setMsg(e.target.value);
+                  notifyTyping();
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    void send(msg);
+                  }
+                }}
+                placeholder="Type a message · सन्देश लेख्नुहोस्"
+                disabled={sending}
+              />
+              <button
+                type="button"
+                aria-label="Send message"
+                onClick={() => void send(msg)}
+                disabled={!msg.trim() || sending}
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: "50%",
+                  background: msg.trim() && !sending ? "var(--red)" : "var(--line-200)",
+                  color: "#fff",
+                  border: "none",
+                  cursor: msg.trim() && !sending ? "pointer" : "not-allowed",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Icon name="arrowRight" size={20} color="#fff" />
+              </button>
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
     </div>
   );

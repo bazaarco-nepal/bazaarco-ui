@@ -64,12 +64,24 @@ import {
   DevViewSwitcher,
 } from "@/components/common";
 import { pathFromScreen } from "@/config/routes";
+import { resolveDelivery, deliveryChoices, distinctSellerCount } from "@/lib/delivery-options";
 
-export function priceBreakdown(cart) {
+export function priceBreakdown(cart, deliveryTier = "standard") {
   const subtotal = cart.reduce((s, it) => s + it.price * it.qty, 0);
-  const delivery = subtotal >= 1000 || subtotal === 0 ? 0 : 100;
-  const discount = cart.some((it) => it.coupon) ? Math.round(subtotal * 0.1) : 0;
-  return { subtotal, delivery, discount, total: subtotal + delivery - discount };
+  // Launch delivery pricing: a flat tier fee (Standard/Premium), auto-combined
+  // when the cart spans 2+ sellers. No more free-over-Rs1000 threshold.
+  const resolved = resolveDelivery(cart, deliveryTier);
+  const delivery = subtotal === 0 ? 0 : resolved.fee;
+  const discount = 0;
+  return {
+    subtotal,
+    delivery,
+    discount,
+    total: subtotal + delivery - discount,
+    deliveryLabel: resolved.label,
+    deliveryType: resolved.type,
+    combined: resolved.combined,
+  };
 }
 function Row({ label, value, strong, free, color }) {
   return (
@@ -106,6 +118,138 @@ function Row({ label, value, strong, free, color }) {
   );
 }
 
+/* ---------- DELIVERY OPTION PICKER ---------- */
+function DeliveryOptionPicker({ cart, tier, onChange }) {
+  const choices = deliveryChoices(cart);
+  const combined = choices[0]?.combined;
+  const sellerCount = distinctSellerCount(cart);
+  return (
+    <div
+      style={{
+        marginTop: 14,
+        background: "#fff",
+        border: "1px solid var(--line-200)",
+        borderRadius: "var(--r-lg)",
+        padding: 20,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          marginBottom: 4,
+          flexWrap: "wrap",
+        }}
+      >
+        <div style={{ fontWeight: 700 }}>Delivery option</div>
+        {combined && (
+          <Chip tone="blue" size="sm" icon="package">
+            Combined · {sellerCount} sellers
+          </Chip>
+        )}
+      </div>
+      <div style={{ fontSize: ".8125rem", color: "var(--ink-400)", marginBottom: 14 }}>
+        {combined
+          ? "Your cart has items from 2+ sellers, so combined delivery pricing applies."
+          : "Kathmandu Valley · delivery times are estimates, not guarantees."}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {choices.map((c) => {
+          const selected = c.tier === tier;
+          return (
+            <button
+              key={c.tier}
+              type="button"
+              onClick={() => onChange(c.tier)}
+              style={{
+                textAlign: "left",
+                display: "flex",
+                gap: 12,
+                alignItems: "flex-start",
+                padding: 14,
+                borderRadius: "var(--r-md)",
+                border: `1.5px solid ${selected ? "var(--blue)" : "var(--line-200)"}`,
+                background: selected ? "var(--tint-blue-50)" : "#fff",
+                cursor: "pointer",
+                width: "100%",
+                fontFamily: "inherit",
+              }}
+            >
+              <span
+                style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: "50%",
+                  border: `2px solid ${selected ? "var(--blue)" : "var(--ink-400)"}`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  marginTop: 1,
+                }}
+              >
+                {selected && (
+                  <span
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: "50%",
+                      background: "var(--blue)",
+                    }}
+                  />
+                )}
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 10,
+                    alignItems: "baseline",
+                  }}
+                >
+                  <span style={{ fontWeight: 700, fontSize: ".9375rem", color: "var(--ink-900)" }}>
+                    {c.label}
+                  </span>
+                  <span
+                    className="tnum"
+                    style={{ fontWeight: 800, color: "var(--blue-deep)", whiteSpace: "nowrap" }}
+                  >
+                    Rs.&nbsp;{c.fee.toLocaleString("en-IN")}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    fontSize: ".8125rem",
+                    color: "var(--ink-500)",
+                    marginTop: 4,
+                    lineHeight: 1.45,
+                  }}
+                >
+                  {c.promise}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      <p
+        style={{
+          fontSize: ".75rem",
+          color: "var(--ink-400)",
+          margin: "12px 0 0",
+          lineHeight: 1.5,
+        }}
+      >
+        Delivery times are estimates, not a promise. The exact day can change with the weather,
+        traffic, and how quickly the seller packs your order.
+      </p>
+    </div>
+  );
+}
+
 /* ---------- CART ---------- */
 export function Cart() {
   const {
@@ -120,9 +264,10 @@ export function Cart() {
     promptLogin,
   } = useBz();
   const { sellerOf } = useCatalog();
+  const deliveryTier = useBazaarStore((s) => s.deliveryTier);
   const [coupon, setCoupon] = useState("");
   const [confirm, setConfirm] = useState(null);
-  const bd = priceBreakdown(cart);
+  const bd = priceBreakdown(cart, deliveryTier);
   const setQty = (id, q) => {
     void updateCartQty(id, q);
   };
@@ -168,6 +313,22 @@ export function Cart() {
 
   return (
     <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "24px 28px 0" }}>
+      <AppLink
+        href={pathFromScreen("home")}
+        className="bz-show-mobile bz-show-mobile--flex"
+        style={{
+          display: "none",
+          alignItems: "center",
+          gap: 6,
+          marginBottom: 10,
+          color: "var(--blue)",
+          fontWeight: 700,
+          fontSize: ".9375rem",
+          textDecoration: "none",
+        }}
+      >
+        <Icon name="chevronLeft" size={16} /> Continue shopping
+      </AppLink>
       <h1
         style={{
           margin: "0 0 8px",
@@ -184,56 +345,7 @@ export function Cart() {
           · {cart.length} item{cart.length > 1 ? "s" : ""}
         </span>
       </h1>
-      {/* free-delivery progress */}
-      {bd.subtotal < 1000 && bd.subtotal > 0 && (
-        <div
-          style={{
-            background: "var(--tint-blue-50)",
-            borderRadius: "var(--r-md)",
-            padding: 14,
-            margin: "10px 0 20px",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              fontSize: ".875rem",
-              color: "var(--blue-deep)",
-              marginBottom: 6,
-            }}
-          >
-            <span>
-              <Icon
-                name="truck"
-                size={16}
-                color="var(--blue-deep)"
-                style={{ verticalAlign: "middle", marginRight: 4 }}
-              />{" "}
-              Add Rs. {(1000 - bd.subtotal).toLocaleString()} more for free delivery
-            </span>
-            <span className="tnum" style={{ fontWeight: 700 }}>
-              {Math.round((bd.subtotal / 1000) * 100)}%
-            </span>
-          </div>
-          <div
-            style={{
-              height: 8,
-              borderRadius: 4,
-              background: "rgba(29,78,216,.15)",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                width: `${Math.min(100, (bd.subtotal / 1000) * 100)}%`,
-                height: "100%",
-                background: "var(--blue)",
-              }}
-            />
-          </div>
-        </div>
-      )}
+      <div style={{ height: 8 }} />
       <div
         className="bz-stack-900"
         style={{
@@ -344,25 +456,6 @@ export function Cart() {
               </div>
             );
           })}
-          <AppLink
-            href={pathFromScreen("browse")}
-            style={{
-              alignSelf: "flex-start",
-              background: "none",
-              border: "none",
-              color: "var(--blue)",
-              fontWeight: 700,
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: ".9375rem",
-              marginTop: 4,
-              textDecoration: "none",
-            }}
-          >
-            <Icon name="chevronLeft" size={16} /> Continue shopping
-          </AppLink>
         </div>
 
         {/* summary */}
@@ -411,11 +504,24 @@ export function Cart() {
               </div>
             </details>
             <Row label="Subtotal" value={bd.subtotal} />
-            <Row label="Delivery" value={bd.delivery} free={bd.delivery === 0} />
+            <Row label="Delivery" value={bd.delivery} />
             {bd.discount > 0 && (
               <Row label="Discount (10%)" value={bd.discount} color="var(--success)" />
             )}
             <Row label="Total" value={bd.total} strong />
+            <div
+              style={{
+                fontSize: ".75rem",
+                color: "var(--ink-400)",
+                marginTop: 8,
+                display: "flex",
+                alignItems: "center",
+                gap: 5,
+              }}
+            >
+              <Icon name="truck" size={13} color="var(--ink-400)" /> Choose Standard or Premium
+              same-day at checkout
+            </div>
             <div style={{ marginTop: 16 }}>
               <Button
                 variant="primary"
@@ -574,6 +680,8 @@ export function Checkout() {
   const authed = useBazaarStore((s) => s.authed);
   const buyerPhone = useBazaarStore((s) => s.buyerPhone);
   const setBuyerPhone = useBazaarStore((s) => s.setBuyerPhone);
+  const deliveryTier = useBazaarStore((s) => s.deliveryTier);
+  const setDeliveryTier = useBazaarStore((s) => s.setDeliveryTier);
   const { data: savedAddresses = [] } = useAddresses(authed);
   const [openSec, setOpenSec] = useState(0);
   // Phone is shared with the profile — prefill from there, and saving the order
@@ -587,7 +695,7 @@ export function Checkout() {
   const [saveNewAddress, setSaveNewAddress] = useState(true);
   const [newAddressLabel, setNewAddressLabel] = useState("Home");
   const [loading, setLoading] = useState(false);
-  const bd = priceBreakdown(cart);
+  const bd = priceBreakdown(cart, deliveryTier);
   const total = bd.total;
   const pay = "cod";
 
@@ -627,6 +735,7 @@ export function Checkout() {
       const payload = {
         phone: phoneDigits,
         paymentMethod: "cod",
+        deliveryTier,
         addressId: !enteringNewAddress && selectedAddressId ? selectedAddressId : undefined,
         deliveryAddress: {
           city: address.city.trim(),
@@ -1013,6 +1122,9 @@ export function Checkout() {
         </CheckoutSection>
       </div>
 
+      {/* Delivery option — customer picks the speed; combined pricing is auto */}
+      <DeliveryOptionPicker cart={cart} tier={deliveryTier} onChange={setDeliveryTier} />
+
       {/* Cancellation + refund policy — shown before order is placed */}
       <PolicyDisclosure pay={pay} />
 
@@ -1027,7 +1139,7 @@ export function Checkout() {
         }}
       >
         <Row label="Subtotal" value={bd.subtotal} />
-        <Row label="Delivery" value={bd.delivery} free={bd.delivery === 0} />
+        <Row label={`Delivery · ${bd.deliveryLabel}`} value={bd.delivery} />
         {bd.discount > 0 && <Row label="Discount" value={bd.discount} color="var(--success)" />}
         <Row label="Total" value={total} strong />
         <div style={{ marginTop: 18 }}>
@@ -1188,8 +1300,12 @@ export function OrderSuccess({ total }) {
   const { nav, openTracking } = useBz();
   const orderId = useBazaarStore((s) => s.lastOrderId);
   return (
-    <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "40px 28px" }}>
+    <div
+      className="bz-order-success"
+      style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "40px 28px" }}
+    >
       <div
+        className="bz-order-success__card"
         style={{
           background: "#fff",
           border: "1px solid var(--line-200)",
@@ -1241,24 +1357,11 @@ export function OrderSuccess({ total }) {
           )}
         </p>
         <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            background: "var(--tint-blue-50)",
-            color: "var(--blue)",
-            padding: "10px 16px",
-            borderRadius: "var(--r-md)",
-            marginTop: 16,
-            fontWeight: 600,
-            fontSize: ".9375rem",
-          }}
+          className="bz-order-success__actions"
+          style={{ display: "flex", gap: 12, marginTop: 28 }}
         >
-          <Icon name="truck" size={18} color="var(--blue)" /> Arriving by Tomorrow, May 30
-        </div>
-
-        <div style={{ display: "flex", gap: 12, marginTop: 28 }}>
           <Button
+            className="bz-order-success__action"
             variant="primary"
             full
             size="lg"
@@ -1269,7 +1372,13 @@ export function OrderSuccess({ total }) {
           >
             Track order
           </Button>
-          <Button variant="secondary" full size="lg" href={pathFromScreen("home")}>
+          <Button
+            className="bz-order-success__action"
+            variant="secondary"
+            full
+            size="lg"
+            href={pathFromScreen("home")}
+          >
             Continue shopping
           </Button>
         </div>
@@ -1285,7 +1394,7 @@ export function OrderSuccess({ total }) {
           marginTop: 16,
         }}
       >
-        SMS confirmation sent to your phone
+        Email receipt sent to your inbox
       </p>
     </div>
   );

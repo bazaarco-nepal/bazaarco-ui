@@ -533,13 +533,6 @@ export function CategoryTile({ c, onClick, compact = false, href }) {
 }
 
 /* ---------- Navbar ---------- */
-export const SEARCH_HINTS = [
-  "Search",
-  'Try "Pashmina shawl"',
-  'Try "Dhaka topi"',
-  'Try "earbuds"',
-  'Try "honey"',
-];
 export function DevViewSwitcher() {
   const { screen } = useBz();
   const SELLER = [
@@ -714,7 +707,6 @@ export function Navbar() {
   const authed = useBazaarStore((s) => s.authed);
   const logoutMutation = useLogout();
   const navLabel = displayName(user, "Account");
-  const [hint, setHint] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [deliverOpen, setDeliverOpen] = useState(false);
   const deliveryLocation = useBazaarStore((s) => s.deliveryLocation);
@@ -722,11 +714,6 @@ export function Navbar() {
   const deliverLabel = formatDeliverToLabel(deliveryLocation);
   const desktopMenuRef = useRef(null);
   const mobileSheetRef = useRef(null);
-
-  useEffect(() => {
-    const id = setInterval(() => setHint((h) => (h + 1) % SEARCH_HINTS.length), 2800);
-    return () => clearInterval(id);
-  }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -844,7 +831,7 @@ export function Navbar() {
             onKeyDown={(e) => {
               if (e.key === "Enter") submitSearch();
             }}
-            placeholder={SEARCH_HINTS[hint]}
+            placeholder="Search"
             aria-label="Search products"
           />
         </div>

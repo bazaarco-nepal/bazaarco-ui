@@ -256,3 +256,11 @@ export function useUpdateSellerSettings() {
     },
   });
 }
+
+export function useShippingZones() {
+  return useQuery({
+    queryKey: queryKeys.seller.shippingZones,
+    queryFn: () => sellerSettingsApi.getShippingZones(),
+    staleTime: 10 * 60 * 1000,
+  });
+}

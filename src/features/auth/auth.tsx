@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Icon, Logo, Button, AppLink, PasswordInput } from "@/components/ui";
 import { useBz } from "@/components/common";
 import { resolvePostAuthScreen } from "@/lib/auth-rbac";
@@ -50,6 +50,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 export function Auth() {
   const { nav, toast } = useBz();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [intent, setIntent] = useState<"buyer" | "seller">("buyer");
@@ -78,6 +79,14 @@ export function Auth() {
     const role = isSeller ? "seller" : "buyer";
     if (typeof window !== "undefined") {
       sessionStorage.setItem("bz_oauth_intent", role);
+      // Preserve the return-to target across the OAuth redirect, since the
+      // `?next=` query param won't survive the round-trip to Google.
+      const next = searchParams.get("next");
+      if (next) {
+        sessionStorage.setItem("bz_oauth_next", next);
+      } else {
+        sessionStorage.removeItem("bz_oauth_next");
+      }
     }
     window.location.href = getGoogleLoginUrl(role);
   };
@@ -85,7 +94,16 @@ export function Auth() {
   const afterAuth = (user: AuthUser) => {
     const next = searchParams.get("next");
     const requestedScreen = next ? screenFromPath(next) : null;
-    nav(resolvePostAuthScreen(user, requestedScreen));
+    const resolved = resolvePostAuthScreen(user, requestedScreen);
+    // When the user is allowed to land on exactly where they came from, push the
+    // original path verbatim so product ids and browse filters are preserved.
+    // Otherwise fall back to the role-resolved default screen.
+    if (next && requestedScreen && resolved === requestedScreen) {
+      router.push(next);
+      if (typeof window !== "undefined") window.scrollTo({ top: 0 });
+    } else {
+      nav(resolved);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

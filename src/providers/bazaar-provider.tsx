@@ -116,9 +116,19 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
 
   const goToSignIn = useCallback(() => {
     setAuthPrompt(null);
-    router.push(pathFromScreen("auth"));
+    // Remember where the prompt was triggered so we can return here after
+    // sign-in. Capture the full location (path + query) so product ids and
+    // browse filters survive the round-trip.
+    const here =
+      typeof window !== "undefined" ? window.location.pathname + window.location.search : pathname;
+    const authPath = pathFromScreen("auth");
+    const target =
+      here && screenFromPath(here) !== "auth"
+        ? `${authPath}?next=${encodeURIComponent(here)}`
+        : authPath;
+    router.push(target);
     setTimeout(scrollTop, 0);
-  }, [router, scrollTop]);
+  }, [router, scrollTop, pathname]);
 
   const ensureAuthed = useCallback(
     (message: string) => {

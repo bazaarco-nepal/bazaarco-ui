@@ -58,6 +58,11 @@ import {
   isSellerOnboardingDeferred,
 } from "@/lib/seller-onboarding";
 import { useCategories, useProduct } from "@/hooks/use-catalog";
+import {
+  useAcceptBargainOffer,
+  useRejectBargainOffer,
+  useCounterBargainOffer,
+} from "@/hooks/use-bargains";
 import { useUploadImage } from "@/hooks/use-media-upload";
 import type { SellerInventoryItem } from "@/services/api/seller";
 import type { OrderStatus } from "@/lib/order-utils";
@@ -129,6 +134,9 @@ export type SellerInboxOrderItem = {
   icon: string;
   tint: string;
   canCancel: boolean;
+  // Multi-seller order: this seller accepted, but the order waits in "placed"
+  // until the remaining sellers confirm their parcels too.
+  awaitingOtherSellers?: boolean;
 };
 
 export const sellerOrderRef = { current: null as SellerInboxOrderItem | null };
@@ -1472,15 +1480,7 @@ export function SellerDashboard() {
   const topProducts = dashboard?.topProducts ?? [];
   const activity = dashboard?.activity ?? [];
   const kpis = dashboard?.kpis ?? [];
-  const bargainGlance = dashboard?.bargainGlance ?? {
-    pending: 0,
-    accepted: 0,
-    avgGiven: 0,
-    marginGiven: 0,
-  };
-  // Store trust strip — real numbers from the backend snapshot. A brand-new
-  // seller has no orders/reviews/shipments yet, so we show calm placeholders
-  // ("New", "—") instead of fabricated stats.
+  const bargainGlance = dashboard?.bargainGlance;
   const trust = (
     dashboard as
       | {
@@ -1493,35 +1493,31 @@ export function SellerDashboard() {
           };
         }
       | undefined
-  )?.trust ?? {
-    ordersThisWeek: 0,
-    storeRating: 0,
-    ratingCount: 0,
-    onTimeShipPct: null,
-    repeatBuyerPct: 0,
-  };
-  const trustStrip = [
-    {
-      k: "Orders this week",
-      v: String(trust.ordersThisWeek ?? 0),
-      c: "var(--blue-deep)",
-    },
-    {
-      k: "Store rating",
-      v: (trust.ratingCount ?? 0) > 0 ? `${Number(trust.storeRating).toFixed(1)} ★` : "New",
-      c: "var(--gold)",
-    },
-    {
-      k: "On-time ship",
-      v: trust.onTimeShipPct == null ? "—" : `${trust.onTimeShipPct}%`,
-      c: "var(--success)",
-    },
-    {
-      k: "Repeat buyers",
-      v: (trust.ordersThisWeek ?? 0) > 0 ? `${trust.repeatBuyerPct ?? 0}%` : "—",
-      c: "var(--saffron)",
-    },
-  ];
+  )?.trust;
+  const trustStrip = trust
+    ? [
+        {
+          k: "Orders this week",
+          v: String(trust.ordersThisWeek ?? 0),
+          c: "var(--blue-deep)",
+        },
+        {
+          k: "Store rating",
+          v: (trust.ratingCount ?? 0) > 0 ? `${Number(trust.storeRating).toFixed(1)} ★` : "New",
+          c: "var(--gold)",
+        },
+        {
+          k: "On-time ship",
+          v: trust.onTimeShipPct == null ? "—" : `${trust.onTimeShipPct}%`,
+          c: "var(--success)",
+        },
+        {
+          k: "Repeat buyers",
+          v: (trust.ordersThisWeek ?? 0) > 0 ? `${trust.repeatBuyerPct ?? 0}%` : "—",
+          c: "var(--saffron)",
+        },
+      ]
+    : [];
   const sellerName = displayName(user, "Seller");
   const todaySales = kpis[0]?.value ?? "Rs. 0";
   const ordersPlaced = funnel.length > 0 ? (funnel[funnel.length - 1]?.value ?? 0) : 0;
@@ -2016,7 +2012,7 @@ export function SellerDashboard() {
                 Open
               </Button>
             </div>
-            {bargainGlance.pending > 0 && (
+            {bargainGlance && bargainGlance.pending > 0 && (
               <AppLink
                 href={pathFromScreen("s-bargain")}
                 style={{
@@ -2043,56 +2039,58 @@ export function SellerDashboard() {
                 <Icon name="chevronRight" size={18} color="var(--red)" />
               </AppLink>
             )}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              <div
-                style={{
-                  padding: 10,
-                  border: "1px solid var(--line-200)",
-                  borderRadius: "var(--r-md)",
-                }}
-              >
+            {bargainGlance && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                 <div
-                  className="tnum"
-                  style={{ fontWeight: 800, fontSize: "1.125rem", color: "var(--success)" }}
+                  style={{
+                    padding: 10,
+                    border: "1px solid var(--line-200)",
+                    borderRadius: "var(--r-md)",
+                  }}
                 >
-                  {bargainGlance.accepted}
+                  <div
+                    className="tnum"
+                    style={{ fontWeight: 800, fontSize: "1.125rem", color: "var(--success)" }}
+                  >
+                    {bargainGlance.accepted}
+                  </div>
+                  <div style={{ fontSize: ".7rem", color: "var(--ink-500)" }}>Accepted today</div>
                 </div>
-                <div style={{ fontSize: ".7rem", color: "var(--ink-500)" }}>Accepted today</div>
-              </div>
-              <div
-                style={{
-                  padding: 10,
-                  border: "1px solid var(--line-200)",
-                  borderRadius: "var(--r-md)",
-                }}
-              >
                 <div
-                  className="tnum"
-                  style={{ fontWeight: 800, fontSize: "1.125rem", color: "var(--saffron)" }}
+                  style={{
+                    padding: 10,
+                    border: "1px solid var(--line-200)",
+                    borderRadius: "var(--r-md)",
+                  }}
                 >
-                  {bargainGlance.avgGiven}%
+                  <div
+                    className="tnum"
+                    style={{ fontWeight: 800, fontSize: "1.125rem", color: "var(--saffron)" }}
+                  >
+                    {bargainGlance.avgGiven}%
+                  </div>
+                  <div style={{ fontSize: ".7rem", color: "var(--ink-500)" }}>Avg discount</div>
                 </div>
-                <div style={{ fontSize: ".7rem", color: "var(--ink-500)" }}>Avg discount</div>
-              </div>
-              <div
-                style={{
-                  padding: 10,
-                  border: "1px solid var(--line-200)",
-                  borderRadius: "var(--r-md)",
-                  gridColumn: "1 / -1",
-                }}
-              >
                 <div
-                  className="tnum"
-                  style={{ fontWeight: 800, fontSize: "1rem", color: "var(--ink-900)" }}
+                  style={{
+                    padding: 10,
+                    border: "1px solid var(--line-200)",
+                    borderRadius: "var(--r-md)",
+                    gridColumn: "1 / -1",
+                  }}
                 >
-                  Rs. {bargainGlance.marginGiven.toLocaleString()}
-                </div>
-                <div style={{ fontSize: ".7rem", color: "var(--ink-500)" }}>
-                  Margin given via bargain (this week)
+                  <div
+                    className="tnum"
+                    style={{ fontWeight: 800, fontSize: "1rem", color: "var(--ink-900)" }}
+                  >
+                    Rs. {bargainGlance.marginGiven.toLocaleString()}
+                  </div>
+                  <div style={{ fontSize: ".7rem", color: "var(--ink-500)" }}>
+                    Margin given via bargain (this week)
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -3111,7 +3109,21 @@ export function SellerOrderDetail() {
         </div>
 
         {/* Status actions */}
-        {nextStatus[o.status] ? (
+        {o.awaitingOtherSellers ? (
+          <div
+            style={{
+              background: "var(--tint-blue-50)",
+              border: "1.5px solid var(--blue)",
+              borderRadius: "var(--r-lg)",
+              padding: 16,
+              textAlign: "center",
+              color: "var(--blue-deep)",
+              fontWeight: 700,
+            }}
+          >
+            <Icon name="check" size={18} /> Accepted — waiting for other sellers to confirm
+          </div>
+        ) : nextStatus[o.status] ? (
           <Button
             variant="primary"
             size="lg"
@@ -3397,7 +3409,7 @@ export function SellerAddProduct({
     { id: 3, name: "Large", price: "", stock: "" },
   ]);
   const [bargainOk, setBargainOk] = useState(true);
-  const [bargainPct, setBargainPct] = useState(10);
+  const [bargainMinPrice, setBargainMinPrice] = useState("");
   const [attrs, setAttrs] = useState<Record<string, unknown>>({});
 
   // Prefill once from the existing product when editing. The inventory row
@@ -3415,7 +3427,7 @@ export function SellerAddProduct({
     delete meta.stock;
     setAttrs(meta);
     setBargainOk(editingProduct.allowBargaining ?? false);
-    setBargainPct(editingProduct.maxDiscountPct ?? 10);
+    setBargainMinPrice(editingProduct.minimumPrice ? String(editingProduct.minimumPrice) : "");
     if (editing?.hasVariants && editing.variants?.length) {
       setHasVariants(true);
       setVariants(
@@ -3516,7 +3528,7 @@ export function SellerAddProduct({
           stock: hasVariants ? undefined : Number(stock) || 0,
           variants: buildVariants(),
           allowBargaining: bargainOk,
-          maxDiscountPct: bargainOk ? bargainPct : 0,
+          minimumPrice: bargainOk && bargainMinPrice ? Number(bargainMinPrice) : null,
         });
         toast("Product updated");
         nav("s-products");
@@ -4180,31 +4192,32 @@ export function SellerAddProduct({
             </div>
             {bargainOk && (
               <>
-                <div
+                <label
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
+                    fontSize: ".8125rem",
+                    color: "var(--ink-700)",
+                    display: "block",
                     marginBottom: 6,
                   }}
                 >
-                  <span style={{ fontSize: ".8125rem", color: "var(--ink-700)" }}>
-                    Max discount you allow
-                  </span>
-                  <span className="tnum" style={{ fontWeight: 800, color: "var(--red)" }}>
-                    {bargainPct}%
-                  </span>
-                </div>
+                  Lowest price you'll accept (Rs.)
+                </label>
                 <input
-                  type="range"
-                  min={0}
-                  max={30}
-                  value={bargainPct}
-                  onChange={(e) => setBargainPct(parseInt(e.target.value))}
-                  style={{ width: "100%", accentColor: "var(--red)" }}
+                  type="number"
+                  min={1}
+                  placeholder="e.g. 800"
+                  value={bargainMinPrice}
+                  onChange={(e) => setBargainMinPrice(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: "1.5px solid var(--line-200)",
+                    borderRadius: "var(--r-md)",
+                    fontSize: ".875rem",
+                  }}
                 />
                 <p style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 4 }}>
-                  Buyers see only &quot;Make an offer&quot; — never your limit.
+                  Offers at or above this price are auto-accepted. Buyers never see this limit.
                 </p>
               </>
             )}
@@ -5788,6 +5801,9 @@ export function SellerBargain() {
   const { data: BARGAIN_OFFERS = [], isLoading, isError, error } = useSellerBargains();
   const [maxPct, setMaxPct] = useState(12);
   const [enabled, setEnabled] = useState(true);
+  const acceptMutation = useAcceptBargainOffer();
+  const rejectMutation = useRejectBargainOffer();
+  const counterMutation = useCounterBargainOffer();
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
@@ -6052,17 +6068,47 @@ export function SellerBargain() {
                   </div>
                   {status === "pending" && (
                     <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                      <Button variant="primary" size="sm" onClick={() => toast("Offer accepted")}>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            await acceptMutation.mutateAsync(o.id);
+                            toast("Offer accepted");
+                          } catch {
+                            toast("Could not accept offer");
+                          }
+                        }}
+                      >
                         Accept
                       </Button>
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() => toast("Counter offer sent")}
+                        onClick={async () => {
+                          const mid = Math.round((o.listed + o.offered) / 2 / 10) * 10;
+                          try {
+                            await counterMutation.mutateAsync({ id: o.id, counter: mid });
+                            toast("Counter offer sent");
+                          } catch {
+                            toast("Could not send counter");
+                          }
+                        }}
                       >
                         Counter
                       </Button>
-                      <Button variant="danger" size="sm" onClick={() => toast("Offer rejected")}>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={async () => {
+                          try {
+                            await rejectMutation.mutateAsync(o.id);
+                            toast("Offer rejected");
+                          } catch {
+                            toast("Could not reject offer");
+                          }
+                        }}
+                      >
                         Reject
                       </Button>
                     </div>

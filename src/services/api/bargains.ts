@@ -1,5 +1,6 @@
 import type { Product } from "@/types";
-import { getData, postData } from "./http";
+import { apiClient, getData, postData } from "./http";
+import type { ApiSuccessResponse } from "./types";
 
 export interface BargainOffer {
   id: string;
@@ -24,5 +25,24 @@ export const bargainsApi = {
   },
   create(payload: CreateBargainOfferPayload): Promise<BargainOffer> {
     return postData<BargainOffer>("/bargains", payload);
+  },
+  async accept(id: string): Promise<BargainOffer> {
+    const { data } = await apiClient.patch<ApiSuccessResponse<BargainOffer>>(
+      `/bargains/${id}/accept`,
+    );
+    return data.data;
+  },
+  async reject(id: string): Promise<BargainOffer> {
+    const { data } = await apiClient.patch<ApiSuccessResponse<BargainOffer>>(
+      `/bargains/${id}/reject`,
+    );
+    return data.data;
+  },
+  async counter(id: string, counterAmount: number): Promise<BargainOffer> {
+    const { data } = await apiClient.patch<ApiSuccessResponse<BargainOffer>>(
+      `/bargains/${id}/counter`,
+      { counter: counterAmount },
+    );
+    return data.data;
   },
 };

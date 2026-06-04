@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Icon, RatingStars } from "@/components/ui";
-import { useBz } from "@/components/common";
+import { BuyerAvatar, useBz } from "@/components/common";
 import { useCreateProductReview } from "@/hooks/use-catalog";
 import { useUploadImage } from "@/hooks/use-media-upload";
 import { ApiRequestError } from "@/services/api/http";
@@ -519,27 +519,13 @@ export function ReviewsSection({
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                  <div
-                    style={{
-                      width: 34,
-                      height: 34,
-                      borderRadius: "50%",
-                      overflow: "hidden",
-                      border: "1.5px solid var(--line-200)",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <img
-                      src={r.avatar}
-                      alt={r.name}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        display: "block",
-                      }}
-                    />
-                  </div>
+                  <BuyerAvatar
+                    src={r.avatar}
+                    name={r.name}
+                    size={34}
+                    fontSize=".875rem"
+                    border="1.5px solid var(--line-200)"
+                  />
                   <div>
                     <div style={{ fontWeight: 700, fontSize: ".875rem" }}>{r.name}</div>
                     <div style={{ fontSize: ".75rem", color: "var(--ink-400)" }}>

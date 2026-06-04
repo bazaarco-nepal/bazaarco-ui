@@ -77,7 +77,7 @@ export interface ProductReview {
   text: string;
   photos: number;
   photoUrls: string[];
-  avatar: string;
+  avatar: string | null;
   tint: Tint;
 }
 
@@ -85,6 +85,7 @@ export interface SellerReview {
   id: string;
   sellerId: string;
   buyer: string;
+  avatar: string | null;
   stars: number;
   product: string;
   text: string;

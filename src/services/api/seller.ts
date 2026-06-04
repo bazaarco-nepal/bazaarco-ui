@@ -40,6 +40,7 @@ export interface SellerInventoryItem {
 export interface SellerOrder {
   id: string;
   buyer: string;
+  buyerAvatarUrl: string | null;
   city: string;
   item: string;
   qty: number;

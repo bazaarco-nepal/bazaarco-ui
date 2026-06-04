@@ -109,6 +109,7 @@ import {
   Navbar,
   Footer,
   DevViewSwitcher,
+  BuyerAvatar,
 } from "@/components/common";
 import { ASSETS } from "@/config/assets";
 import { pathFromScreen } from "@/config/routes";
@@ -116,6 +117,7 @@ import { pathFromScreen } from "@/config/routes";
 export type SellerInboxOrderItem = {
   id: string;
   buyer: string;
+  buyerAvatarUrl?: string | null;
   city: string;
   item: string;
   qty: number;
@@ -2428,11 +2430,12 @@ export function OrderCard({
         gap: 10,
       }}
     >
-      <Placeholder
-        icon={o.icon}
-        tint={o.tint}
-        style={{ width: 56, height: 56, flexShrink: 0 }}
-        radius="var(--r-md)"
+      <BuyerAvatar
+        src={o.buyerAvatarUrl}
+        name={o.buyer}
+        size={56}
+        fontSize="1.25rem"
+        style={{ background: "var(--tint-blue-50)", color: "var(--blue)" }}
       />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
@@ -3010,22 +3013,13 @@ export function SellerOrderDetail() {
             Buyer · खरिदकर्ता
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <div
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: "50%",
-                background: "var(--tint-blue-50)",
-                color: "var(--blue)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: 800,
-                fontSize: "1.5rem",
-              }}
-            >
-              {o.buyer[0]}
-            </div>
+            <BuyerAvatar
+              src={o.buyerAvatarUrl}
+              name={o.buyer}
+              size={56}
+              fontSize="1.5rem"
+              style={{ background: "var(--tint-blue-50)", color: "var(--blue)" }}
+            />
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 800, fontSize: "1.0625rem" }}>{o.buyer}</div>
               <div style={{ fontSize: ".875rem", color: "var(--ink-500)" }}>{o.city}</div>
@@ -3130,20 +3124,6 @@ export function SellerOrderDetail() {
           </div>
           <div
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 6,
-              fontSize: ".875rem",
-            }}
-          >
-            <span style={{ color: "var(--ink-500)" }}>Platform fee (2%)</span>
-            <span className="tnum" style={{ color: "var(--danger)", fontWeight: 700 }}>
-              − Rs. {Math.round(o.price * 0.02)}
-            </span>
-          </div>
-          <div
-            style={{
               paddingTop: 10,
               borderTop: "1px dashed var(--line-200)",
               display: "flex",
@@ -3156,7 +3136,7 @@ export function SellerOrderDetail() {
               className="tnum"
               style={{ fontWeight: 800, fontSize: "1.375rem", color: "var(--success)" }}
             >
-              Rs. {(o.price - Math.round(o.price * 0.02)).toLocaleString()}
+              Rs. {o.price.toLocaleString()}
             </span>
           </div>
           <div style={{ marginTop: 8, fontSize: ".75rem", color: "var(--ink-500)" }}>
@@ -3192,105 +3172,6 @@ export function SellerOrderDetail() {
             Can't fulfill · पूरा गर्न सक्दिनँ
           </Button>
         )}
-
-        {/* Print actions */}
-        <div
-          style={{
-            marginTop: 16,
-            padding: 14,
-            background: "#fff",
-            border: "1.5px solid var(--line-200)",
-            borderRadius: "var(--r-lg)",
-          }}
-        >
-          <div
-            style={{
-              fontSize: ".75rem",
-              color: "var(--ink-400)",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: ".06em",
-              marginBottom: 10,
-            }}
-          >
-            Print · प्रिन्ट
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-            {[
-              {
-                icon: "printer",
-                en: "Shipping label",
-                ne: "लेबल",
-                msg: "Pathao label generated — print or share PDF",
-              },
-              { icon: "file", en: "Invoice", ne: "बिल", msg: "Invoice PDF ready" },
-              { icon: "filePlus", en: "Packing slip", ne: "प्याकिङ", msg: "Packing slip ready" },
-            ].map((p) => (
-              <button
-                key={p.en}
-                onClick={() => toast(p.msg)}
-                style={{
-                  background: "#fff",
-                  border: "1.5px solid var(--line-200)",
-                  borderRadius: "var(--r-md)",
-                  padding: "12px 8px",
-                  cursor: "pointer",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 4,
-                }}
-              >
-                <Icon name={p.icon} size={22} color="var(--blue)" />
-                <div style={{ fontWeight: 700, fontSize: ".75rem", color: "var(--ink-900)" }}>
-                  {p.en}
-                </div>
-                <div className="ne" style={{ fontSize: ".65rem", color: "var(--ink-500)" }}>
-                  {p.ne}
-                </div>
-              </button>
-            ))}
-          </div>
-          <p style={{ marginTop: 10, fontSize: ".75rem", color: "var(--ink-500)" }}>
-            Courier:&nbsp;
-            <select
-              defaultValue="pathao"
-              style={{
-                border: "1px solid var(--line-200)",
-                borderRadius: 6,
-                padding: "2px 6px",
-                fontFamily: "var(--font-sans)",
-                color: "var(--ink-900)",
-                fontWeight: 600,
-              }}
-            >
-              <option value="pathao">Pathao</option>
-              <option value="aramex">Aramex</option>
-              <option value="sajilo">Sajilo Logistics</option>
-              <option value="self">Self-delivery</option>
-            </select>
-          </p>
-        </div>
-
-        <div
-          style={{
-            marginTop: 18,
-            background: "var(--tint-blue-50)",
-            borderRadius: "var(--r-md)",
-            padding: 12,
-            display: "flex",
-            gap: 10,
-            alignItems: "flex-start",
-          }}
-        >
-          <Icon name="badgeCheck" size={18} color="var(--blue)" />
-          <div style={{ fontSize: ".8125rem", color: "var(--blue-deep)" }}>
-            <b>What happens next?</b>
-            <br />
-            Keep the order status current. Buyers can cancel until BazaarCo pickup collects the
-            package from your store.
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -4421,142 +4302,6 @@ export function SellerAddProduct({
             </p>
           )}
         </div>
-
-        <aside className="bz-seller-add-preview" aria-label="Listing preview">
-          <div
-            style={{
-              background: "#fff",
-              border: "1.5px solid var(--line-200)",
-              borderRadius: "var(--r-lg)",
-              padding: 18,
-              boxShadow: "var(--sh-2)",
-            }}
-          >
-            <div
-              style={{
-                fontSize: ".7rem",
-                fontWeight: 800,
-                textTransform: "uppercase",
-                letterSpacing: ".06em",
-                color: "var(--ink-500)",
-                marginBottom: 12,
-              }}
-            >
-              Buyer preview
-            </div>
-            {(productPhotos[0]?.previewUrl ??
-            (isEdit ? (editingProduct?.img ?? editing?.img ?? editing?.images?.[0]) : null)) ? (
-              <img
-                src={
-                  productPhotos[0]?.previewUrl ??
-                  editingProduct?.img ??
-                  editing?.img ??
-                  editing?.images?.[0] ??
-                  ""
-                }
-                alt=""
-                className="bz-seller-preview-card__img"
-                style={{ marginBottom: 12 }}
-              />
-            ) : (
-              <div
-                style={{
-                  width: "100%",
-                  aspectRatio: "1",
-                  marginBottom: 12,
-                  borderRadius: "var(--r-md)",
-                  background: "var(--line-100)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "var(--ink-400)",
-                  fontSize: ".875rem",
-                  fontWeight: 600,
-                }}
-              >
-                Add photos
-              </div>
-            )}
-            <div
-              style={{
-                fontWeight: 800,
-                fontSize: "1.05rem",
-                color: "var(--blue-deep)",
-                lineHeight: 1.3,
-              }}
-            >
-              {titleOk ? title : "Product title"}
-            </div>
-            {categoryMeta && (
-              <p
-                className="ne"
-                style={{ margin: "6px 0 0", fontSize: ".8125rem", color: "var(--ink-500)" }}
-              >
-                {categoryMeta.en}
-              </p>
-            )}
-            <div
-              className="tnum"
-              style={{
-                marginTop: 12,
-                fontSize: "1.35rem",
-                fontWeight: 800,
-                color: displayPrice ? "var(--blue-deep)" : "var(--ink-400)",
-              }}
-            >
-              {displayPrice ? `Rs. ${Number(displayPrice).toLocaleString()}` : "Set price"}
-            </div>
-            {displayStock ? (
-              <p style={{ margin: "6px 0 0", fontSize: ".8125rem", color: "var(--ink-500)" }}>
-                {displayStock} in stock
-                {hasVariants ? " (all sizes)" : ""}
-              </p>
-            ) : null}
-            <ul
-              style={{
-                margin: "16px 0 0",
-                padding: 0,
-                listStyle: "none",
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-              }}
-            >
-              {[
-                { done: isEdit ? true : productPhotos.length > 0, label: "Photos" },
-                { done: titleOk, label: "Title & category" },
-                { done: hasVariants ? variantsOk : !!(price && stock), label: "Price & stock" },
-              ].map((step) => (
-                <li
-                  key={step.label}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    fontSize: ".8125rem",
-                    color: step.done ? "var(--success)" : "var(--ink-400)",
-                    fontWeight: 600,
-                  }}
-                >
-                  {step.done ? (
-                    <Icon name="check" size={14} color="currentColor" />
-                  ) : (
-                    <span
-                      style={{
-                        width: 14,
-                        height: 14,
-                        borderRadius: "50%",
-                        border: "2px solid currentColor",
-                        flexShrink: 0,
-                      }}
-                    />
-                  )}
-                  {step.label}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </aside>
       </div>
     </div>
   );
@@ -5770,22 +5515,13 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
                   width: "100%",
                 }}
               >
-                <div
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: "50%",
-                    background: TINTS[t.tone][0],
-                    color: TINTS[t.tone][2],
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 800,
-                    flexShrink: 0,
-                  }}
-                >
-                  {t.avatar}
-                </div>
+                <BuyerAvatar
+                  src={t.avatarUrl}
+                  name={t.buyer}
+                  size={40}
+                  fontSize=".875rem"
+                  style={{ background: TINTS[t.tone][0], color: TINTS[t.tone][2] }}
+                />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
                     <div
@@ -5871,22 +5607,13 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
                   <Icon name="arrowLeft" size={18} color="var(--ink-700)" />
                 </button>
               ) : null}
-              <div
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: "50%",
-                  background: TINTS[active.tone][0],
-                  color: TINTS[active.tone][2],
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontWeight: 800,
-                  flexShrink: 0,
-                }}
-              >
-                {active.avatar}
-              </div>
+              <BuyerAvatar
+                src={active.avatarUrl}
+                name={active.buyer}
+                size={36}
+                fontSize=".875rem"
+                style={{ background: TINTS[active.tone][0], color: TINTS[active.tone][2] }}
+              />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 800, fontSize: ".9375rem" }}>{active.buyer}</div>
                 <div style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
@@ -6344,11 +6071,12 @@ export function SellerBargain() {
                   gap: 12,
                 }}
               >
-                <Placeholder
-                  icon={o.icon}
-                  tint={o.tint}
-                  style={{ width: 56, height: 56, flexShrink: 0 }}
-                  radius="var(--r-md)"
+                <BuyerAvatar
+                  src={o.buyerAvatarUrl}
+                  name={o.buyer}
+                  size={56}
+                  fontSize="1.25rem"
+                  style={{ background: "var(--tint-blue-50)", color: "var(--blue)" }}
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
@@ -6699,21 +6427,13 @@ export function SellerReviews() {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                <div
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: "50%",
-                    background: "var(--tint-blue-50)",
-                    color: "var(--blue)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 800,
-                  }}
-                >
-                  {r.buyer[0]}
-                </div>
+                <BuyerAvatar
+                  src={r.avatar}
+                  name={r.buyer}
+                  size={36}
+                  fontSize=".875rem"
+                  style={{ background: "var(--tint-blue-50)", color: "var(--blue)" }}
+                />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 800 }}>{r.buyer}</div>
                   <div style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>

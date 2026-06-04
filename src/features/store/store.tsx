@@ -13,7 +13,7 @@ import {
   TINTS,
   AppLink,
 } from "@/components/ui";
-import { ProductCard, useBz } from "@/components/common";
+import { BuyerAvatar, ProductCard, useBz } from "@/components/common";
 import {
   useSeller,
   useSellerReviews,
@@ -486,6 +486,13 @@ export function Store() {
                           marginBottom: 8,
                         }}
                       >
+                        <BuyerAvatar
+                          src={r.avatar}
+                          name={r.buyer}
+                          size={34}
+                          fontSize=".875rem"
+                          border="1.5px solid var(--line-200)"
+                        />
                         <div style={{ fontWeight: 700, fontSize: ".9375rem" }}>{r.buyer}</div>
                         <div style={{ marginLeft: "auto" }}>
                           <RatingStars value={r.stars} size={13} />

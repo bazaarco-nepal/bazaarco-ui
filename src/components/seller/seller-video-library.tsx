@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import { useState } from "react";
 import { VideoUploadForm } from "@/components/common/video-upload-form";
 import { Button, Chip, EmptyState, Icon, Spinner } from "@/components/ui";

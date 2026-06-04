@@ -1,5 +1,5 @@
 import { BUYER_SCREENS, SELLER_SCREENS } from "@/config/routes";
-import type { AuthIntent, AuthUser } from "@/types/auth";
+import type { AuthUser } from "@/types/auth";
 
 const PUBLIC_SCREENS = new Set(["auth", "auth-callback"]);
 

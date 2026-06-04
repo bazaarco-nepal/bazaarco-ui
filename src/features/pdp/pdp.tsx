@@ -857,7 +857,7 @@ export function PDP({ p: pProp }: PdpProps) {
                           type="button"
                           role="tab"
                           aria-label="View product photo"
-                          aria-pressed={thumbMediaIdx === mediaIdx}
+                          aria-selected={thumbMediaIdx === mediaIdx}
                           className="bz-pdp-mobile__thumb"
                           onClick={() => setMediaIdx(thumbMediaIdx >= 0 ? thumbMediaIdx : 0)}
                         >

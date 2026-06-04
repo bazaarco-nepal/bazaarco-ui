@@ -27,8 +27,13 @@ export function MapPinPicker({ city, lat, lng, onPick, height = 220 }: MapPinPic
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const markerRef = useRef<LeafletMarker | null>(null);
+  const onPickRef = useRef(onPick);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    onPickRef.current = onPick;
+  }, [onPick]);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,7 +72,7 @@ export function MapPinPicker({ city, lat, lng, onPick, height = 220 }: MapPinPic
         mapRef.current = map;
 
         const emit = (position: { lat: number; lng: number }) => {
-          onPick(position.lat, position.lng);
+          onPickRef.current(position.lat, position.lng);
         };
 
         map.on("click", (e) => {
@@ -102,7 +107,7 @@ export function MapPinPicker({ city, lat, lng, onPick, height = 220 }: MapPinPic
       mapRef.current = null;
       markerRef.current = null;
     };
-  }, [city]); // re-init when city changes
+  }, [city, lat, lng]); // re-init when the requested starting point changes
 
   useEffect(() => {
     if (!mapRef.current || !markerRef.current) return;

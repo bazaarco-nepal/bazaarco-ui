@@ -1,12 +1,13 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import { Icon, Button } from "@/components/ui";
 import { ASSETS } from "@/config/assets";
 import type { SellerVerificationStatus } from "@/services/api/seller-verification";
 
 export function SellerVerificationBanner({
   status,
-  note,
 }: {
   status: SellerVerificationStatus;
   note?: string | null;

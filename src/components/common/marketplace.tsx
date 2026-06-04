@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import React, { useState, useEffect, useRef, useContext, createContext } from "react";
 import {
   Icon,
@@ -8,33 +10,13 @@ import {
   Spinner,
   IconButton,
   Chip,
-  StatusPill,
   Price,
   Placeholder,
-  VideoPlayer,
-  SkeletonCard,
-  EmptyState,
-  QtyStepper,
-  Toast,
-  SectionHead,
   TINTS,
-  AllInPriceCard,
-  OTPInput,
-  MenuRow,
-  ChipGroup,
-  MobileBuyBar,
-  BottomNav,
-  LandmarkAddress,
   DeliverToModal,
-  usePaged,
-  usePages,
-  LoadMore,
-  PageBar,
-  BackToTop,
   AppLink,
 } from "@/components/ui";
 import { pathFromScreen } from "@/config/routes";
-import { useCatalog } from "@/hooks/use-catalog";
 import { useLogout } from "@/hooks/use-auth";
 import { displayName, userInitial } from "@/lib/display";
 import { useBazaarStore } from "@/store/bazaar-store";
@@ -251,9 +233,7 @@ export function SellerRow({
 /* ---------- Product card ---------- */
 export function ProductCard({ p, onClick, sale = false }) {
   const { toggleWish, wish } = useBz();
-  const { sellerOf } = useCatalog();
   const [hov, setHov] = useState(false);
-  const s = sellerOf(p);
   const disc = p.original ? Math.round((1 - p.price / p.original) * 100) : 0;
   const wished = wish.includes(p.id);
   // Sold count as social proof — sale cards only; derived from reviews × deterministic factor
@@ -568,7 +548,7 @@ export const SEARCH_HINTS = [
   'Try "honey"',
 ];
 export function DevViewSwitcher() {
-  const { nav, screen } = useBz();
+  const { screen } = useBz();
   const SELLER = [
     "s-onboarding",
     "s-dashboard",

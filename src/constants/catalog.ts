@@ -1,5 +1,3 @@
-import type { Product, Seller, Category } from "@/types";
-
 /* ============================================================
    BazaarCo — Catalog data (realistic Nepali products, Rs. prices)
    ============================================================ */
@@ -1704,7 +1702,7 @@ export const CATEGORY_PROFILES = {
       },
       { name: "Size", kind: "pill", options: ["S", "M", "L", "XL"], default: 1 },
     ],
-    specs: (p, s) => [
+    specs: (p) => [
       ["Material", "Hand-loomed natural fibre"],
       ["Fit", "Regular"],
       ["Origin", `Handmade in ${s.city}, Nepal`],
@@ -1720,7 +1718,7 @@ export const CATEGORY_PROFILES = {
       { name: "Format", kind: "pill", options: ["Paperback", "Hardcover", "eBook"] },
       { name: "Language", kind: "pill", options: ["Nepali", "English"] },
     ],
-    specs: (p, s) => [
+    specs: (p) => [
       ["Author", "Various contributors"],
       ["Language", "Nepali / English"],
       ["Pages", "200"],
@@ -1742,7 +1740,7 @@ export const CATEGORY_PROFILES = {
         ],
       },
     ],
-    specs: (p, s) => [
+    specs: (p) => [
       ["Brand", s.name],
       ["Warranty", "1 year seller warranty"],
       ["In the box", "Device, cable, manual"],
@@ -1765,7 +1763,7 @@ export const CATEGORY_PROFILES = {
         ],
       },
     ],
-    specs: (p, s) => [
+    specs: (p) => [
       ["Material", "Handmade ceramic / clay"],
       ["Dimensions", "Approx. 18 × 12 cm"],
       ["Origin", `Handmade in ${s.city}, Nepal`],
@@ -1791,7 +1789,7 @@ export const CATEGORY_PROFILES = {
   },
   beauty: {
     variants: [{ name: "Size", kind: "pill", options: ["50 ml", "100 ml"], default: 1 }],
-    specs: (p, s) => [
+    specs: (p) => [
       ["Type", "Natural / herbal"],
       ["Volume", "100 ml"],
       ["Key ingredients", "Himalayan botanicals"],
@@ -1829,7 +1827,7 @@ export const CATEGORY_PROFILES = {
       },
       { name: "Size", kind: "pill", options: ["S", "M", "L", "XL"], default: 1 },
     ],
-    specs: (p, s) => [
+    specs: (p) => [
       ["Material", "Performance fabric / alloy"],
       ["Use", "Training & outdoor"],
       ["Origin", "Imported, sold by Nepal seller"],

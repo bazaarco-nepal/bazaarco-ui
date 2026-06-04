@@ -1752,6 +1752,29 @@ body {
   }
 }
 
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  .bz-seller-ledger-print,
+  .bz-seller-ledger-print * {
+    visibility: visible !important;
+  }
+  .bz-seller-ledger-print {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    padding: 24px !important;
+    background: #fff !important;
+  }
+  .bz-no-print,
+  .bz-no-print * {
+    display: none !important;
+    visibility: hidden !important;
+  }
+}
+
 /* Storefront page — tighter padding, wrapped header, full-width actions on mobile */
 @media (max-width: 768px) {
   .bz-store-page {

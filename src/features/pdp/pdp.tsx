@@ -857,7 +857,7 @@ export function PDP({ p: pProp }: PdpProps) {
                           type="button"
                           role="tab"
                           aria-label="View product photo"
-                          aria-pressed={thumbMediaIdx === mediaIdx}
+                          aria-selected={thumbMediaIdx === mediaIdx}
                           className="bz-pdp-mobile__thumb"
                           onClick={() => setMediaIdx(thumbMediaIdx >= 0 ? thumbMediaIdx : 0)}
                         >
@@ -1117,7 +1117,7 @@ export function PDP({ p: pProp }: PdpProps) {
           className="bz-stack-900 bz-hide-mobile"
           style={{
             display: "grid",
-            gridTemplateColumns: "minmax(0, 1.1fr) minmax(380px, 1fr)",
+            gridTemplateColumns: "minmax(0, 0.6fr) minmax(380px, 1fr)",
             gap: 56,
             alignItems: "start",
           }}

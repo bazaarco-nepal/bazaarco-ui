@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui";
 
@@ -344,7 +346,6 @@ export function ProductPhotoPicker({
   photosRef.current = photos;
   const [cropDraft, setCropDraft] = useState<CropDraft | null>(null);
   const [pickIndex, setPickIndex] = useState<number | null>(null);
-  const [hover, setHover] = useState<number | null>(null);
 
   const revoke = (url: string) => {
     try {
@@ -416,12 +417,7 @@ export function ProductPhotoPicker({
 
       <div className="bz-photo-grid">
         {photos.map((photo, i) => (
-          <div
-            key={photo.id}
-            className="bz-photo-cell"
-            onMouseEnter={() => setHover(i)}
-            onMouseLeave={() => setHover((h) => (h === i ? null : h))}
-          >
+          <div key={photo.id} className="bz-photo-cell">
             <img
               src={photo.previewUrl}
               alt={`Product photo ${i + 1}`}

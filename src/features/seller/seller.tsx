@@ -5248,9 +5248,20 @@ export function SellerInventory() {
 
 /* ---------- 4.6 Payouts Ledger ---------- */
 export function SellerLedger() {
-  const { nav } = useBz();
   const { data: ledger, isLoading, isError, error } = useSellerLedger();
   const rows = ledger?.rows ?? [];
+  const supportEmail = "bazaarco.business@gmail.com";
+  const supportMailto = `mailto:${supportEmail}?subject=${encodeURIComponent(
+    "Seller payout support",
+  )}&body=${encodeURIComponent("Hi BazaarCo team,\n\nI need help with my seller payouts.\n\n")}`;
+  const saveAsPdf = () => {
+    if (typeof window === "undefined") return;
+    window.print();
+  };
+  const talkToSupport = () => {
+    if (typeof window === "undefined") return;
+    window.location.href = supportMailto;
+  };
   const statusLabel = {
     received: {
       en: "Received",
@@ -5264,8 +5275,13 @@ export function SellerLedger() {
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
-      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
-        <SellerHelpBar />
+      <div
+        className="bz-seller-ledger-print"
+        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
+      >
+        <div className="bz-no-print">
+          <SellerHelpBar />
+        </div>
 
         <div
           style={{
@@ -5284,49 +5300,14 @@ export function SellerLedger() {
               · भुक्तानी
             </span>
           </h1>
-          <Button variant="ghost" href={pathFromScreen("s-dashboard")} icon="chevronLeft">
-            Back
-          </Button>
-        </div>
-
-        {/* When will I get my money? explainer */}
-        <div
-          style={{
-            background: "linear-gradient(135deg, var(--tint-blue-50) 0%, rgba(22,163,74,.06) 100%)",
-            border: "1.5px solid var(--line-200)",
-            borderRadius: "var(--r-lg)",
-            padding: 16,
-            marginBottom: 16,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-            <Icon name="wallet" size={22} color="var(--blue-deep)" />
-            <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-              When do I get my money?
-            </h3>
+          <div className="bz-no-print">
+            <Button variant="ghost" href={pathFromScreen("s-dashboard")} icon="chevronLeft">
+              Back
+            </Button>
           </div>
-          <ul
-            style={{
-              margin: 0,
-              paddingLeft: 18,
-              fontSize: ".875rem",
-              color: "var(--ink-700)",
-              lineHeight: 1.7,
-            }}
-          >
-            <li>
-              <b>eSewa / Khalti orders:</b> Money lands within 24 hours of delivery.
-            </li>
-            <li>
-              <b>Cash on Delivery:</b> Money lands 2 days after rider returns cash.
-            </li>
-            <li>
-              <b>On hold:</b> Buyer raised a return — money is paused until resolved.
-            </li>
-          </ul>
         </div>
 
-        <div style={{ marginBottom: 14 }}>
+        <div className="bz-no-print" style={{ marginBottom: 14 }}>
           <ChipGroup
             options={[
               { value: "week", label: "This week" },
@@ -5437,11 +5418,11 @@ export function SellerLedger() {
           </table>
         </div>
 
-        <div style={{ marginTop: 14, display: "flex", gap: 10 }}>
-          <Button variant="ghost" full icon="image">
+        <div className="bz-no-print" style={{ marginTop: 14, display: "flex", gap: 10 }}>
+          <Button variant="ghost" full icon="image" onClick={saveAsPdf}>
             Save as PDF
           </Button>
-          <Button variant="ghost" full icon="phone">
+          <Button variant="ghost" full icon="phone" onClick={talkToSupport}>
             Talk to support
           </Button>
         </div>

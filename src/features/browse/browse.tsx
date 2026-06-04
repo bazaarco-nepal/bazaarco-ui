@@ -188,8 +188,7 @@ export function Browse() {
   } = catalog;
   const [loading, setLoading] = useState(true);
   const urlParams = useSearchParams();
-  const catParam = urlParams.get("cat") ?? "";
-  const catFromUrl = useMemo(() => categoryIdsFromSearchParams(urlParams), [catParam]);
+  const catFromUrl = useMemo(() => categoryIdsFromSearchParams(urlParams), [urlParams]);
   const [cats, setCats] = useState(catFromUrl);
   const [quick, setQuick] = useState([]);
   const [priceBand, setPriceBand] = useState(null); // band id or null

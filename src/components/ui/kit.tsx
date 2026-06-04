@@ -2063,7 +2063,11 @@ export function ChipGroup({ options, value, onChange }) {
 }
 
 /* ---------- Mobile sticky buy bar (guide §3.6) ---------- */
-export function MobileBuyBar({ onAdd, onBuy, total }) {
+export function MobileBuyBar({ onAdd, onBuy }) {
+  // Older shoppers parse a calm bar fastest: clean outlined "Add to Cart" with a
+  // single cart icon, solid high-contrast "Buy Now" with its Nepali label. No
+  // running total here — the summed price (item + delivery) is only revealed on
+  // the final checkout/confirmation screen so the bar stays uncluttered.
   return (
     <div
       className="bz-mobile-only"
@@ -2073,33 +2077,21 @@ export function MobileBuyBar({ onAdd, onBuy, total }) {
         right: 0,
         bottom: 0,
         zIndex: 90,
-        flexDirection: "column",
         background: "#fff",
         borderTop: "1px solid var(--line-200)",
-        padding: "10px 14px calc(10px + env(safe-area-inset-bottom))",
-        gap: 8,
+        padding: "12px 14px calc(12px + env(safe-area-inset-bottom))",
         boxShadow: "0 -2px 12px rgba(15,23,42,.08)",
       }}
     >
-      {typeof total === "number" && (
-        <div
-          className="tnum"
-          style={{
-            fontSize: ".8125rem",
-            fontWeight: 700,
-            color: "var(--blue-deep)",
-            textAlign: "center",
-          }}
-        >
-          Rs. {total.toLocaleString()} to pay
-        </div>
-      )}
       <div style={{ display: "flex", gap: 10 }}>
         <Button variant="secondary" size="lg" full icon="cart" onClick={onAdd}>
           Add to Cart
         </Button>
         <Button variant="primary" size="lg" full onClick={onBuy}>
           Buy Now
+          <span className="ne" style={{ fontWeight: 600, opacity: 0.92 }}>
+            · तुरुन्तै
+          </span>
         </Button>
       </div>
     </div>

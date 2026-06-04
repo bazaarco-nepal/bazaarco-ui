@@ -1772,6 +1772,37 @@ body {
   .bz-tab-bar {
     display: none !important;
   }
+  /* Stronger, calmer section headers on mobile (Description / Specifications /
+     Reviews / Q&A) so each block reads as a distinct resting point. */
+  .bz-tab-pane__title {
+    font-size: 1.25rem !important;
+    font-weight: 800 !important;
+    color: var(--ink-900) !important;
+    margin: 0 0 14px !important;
+  }
+  .bz-tab-pane {
+    margin-bottom: 36px !important;
+  }
+  /* Borderless specification list — left label muted, right value bold,
+     generous spacing instead of an invoice-style grid. */
+  .bz-spec-table tr {
+    border-bottom: none !important;
+  }
+  .bz-spec-table td {
+    padding: 9px 0 !important;
+    font-size: 0.9375rem !important;
+    vertical-align: top;
+  }
+  .bz-spec-table td:first-child {
+    width: 42% !important;
+    color: var(--ink-400) !important;
+    font-weight: 500 !important;
+  }
+  .bz-spec-table td:last-child {
+    text-align: right;
+    color: var(--ink-900) !important;
+    font-weight: 700 !important;
+  }
 }
 .bz-tab-btn {
   background: none;

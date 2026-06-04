@@ -29,6 +29,7 @@ import {
   SellerOrderDetail,
   SellerAddProduct,
   SellerInventory,
+  editProductRef,
   SellerLedger,
   SellerChat,
   SellerBargain,
@@ -37,8 +38,8 @@ import {
   SellerStorefront,
   SellerVideos,
   SellerAnalytics,
-  SellerReports,
   SellerSettings,
+  SellerVerificationTimeline,
   SellerProfile,
   AdminSellerVerifications,
   HelpSupportPage,
@@ -149,6 +150,14 @@ export function MarketplaceScreen() {
     else if (screen === "s-inbox") inner = <SellerInbox />;
     else if (screen === "s-order-detail") inner = <SellerOrderDetail />;
     else if (screen === "s-add") inner = <SellerAddProduct />;
+    else if (screen === "s-edit")
+      // The edit target is set on the ref before navigation. On a cold load
+      // (refresh / deep link) there's nothing to edit — fall back to inventory.
+      inner = editProductRef.current ? (
+        <SellerAddProduct editing={editProductRef.current} />
+      ) : (
+        <SellerInventory />
+      );
     else if (screen === "s-products") inner = <SellerInventory />;
     else if (screen === "s-ledger") inner = <SellerLedger />;
     else if (screen === "s-chat") inner = <SellerChat />;
@@ -158,7 +167,7 @@ export function MarketplaceScreen() {
     else if (screen === "s-storefront") inner = <SellerStorefront />;
     else if (screen === "s-videos") inner = <SellerVideos />;
     else if (screen === "s-analytics") inner = <SellerAnalytics />;
-    else if (screen === "s-reports") inner = <SellerReports />;
+    else if (screen === "s-verification") inner = <SellerVerificationTimeline />;
     else if (screen === "s-settings") inner = <SellerSettings />;
     else if (screen === "s-profile") inner = <SellerProfile />;
     else if (screen === "s-admin-verify") inner = <AdminSellerVerifications />;

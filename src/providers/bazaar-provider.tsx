@@ -30,12 +30,14 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   const meQuery = useCurrentUser(true);
   const setAuthReady = useBazaarStore((s) => s.setAuthReady);
   const hydrateRoleHint = useBazaarStore((s) => s.hydrateRoleHint);
+  const hydrateBuyerPhone = useBazaarStore((s) => s.hydrateBuyerPhone);
 
   // Seed the persisted role hint as early as possible so a returning seller is
   // held on a loader (not the buyer homepage) while the /me probe is in flight.
   useEffect(() => {
     hydrateRoleHint();
-  }, [hydrateRoleHint]);
+    hydrateBuyerPhone();
+  }, [hydrateRoleHint, hydrateBuyerPhone]);
 
   useEffect(() => {
     if (meQuery.isFetched) {

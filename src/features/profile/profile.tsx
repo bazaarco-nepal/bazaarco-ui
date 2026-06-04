@@ -969,15 +969,22 @@ function profileFormFromUser(user: { name?: string | null; email?: string | null
 export function ProfileEdit() {
   const { nav, toast } = useBz();
   const user = useBazaarStore((s) => s.user);
-  const [form, setForm] = useState(() => profileFormFromUser(user));
+  const buyerPhone = useBazaarStore((s) => s.buyerPhone);
+  const setBuyerPhone = useBazaarStore((s) => s.setBuyerPhone);
+  const [form, setForm] = useState(() => ({ ...profileFormFromUser(user), phone: buyerPhone }));
   useEffect(() => {
-    setForm(profileFormFromUser(user));
+    // Preserve the shared phone across user refreshes.
+    setForm({ ...profileFormFromUser(user), phone: useBazaarStore.getState().buyerPhone });
   }, [user]);
+  useEffect(() => {
+    setForm((f) => ({ ...f, phone: buyerPhone }));
+  }, [buyerPhone]);
   const [showPhoneOtp, setShowPhoneOtp] = useState(false);
   const [otpDigits, setOtpDigits] = useState("");
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const save = () => {
+    setBuyerPhone(form.phone);
     toast?.("Profile saved · प्रोफाइल सुरक्षित");
     nav("profile");
   };
@@ -1158,6 +1165,7 @@ export function ProfileEdit() {
               value={form.phone}
               readOnly
               inputMode="numeric"
+              placeholder="Not added yet"
               className="tnum"
               style={{
                 flex: 1,
@@ -1173,11 +1181,11 @@ export function ProfileEdit() {
             />
           </div>
           <Button variant="secondary" onClick={() => setShowPhoneOtp(true)}>
-            Change
+            {form.phone ? "Change" : "Add"}
           </Button>
         </div>
         <p style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 6 }}>
-          We verify phone changes with an OTP.
+          Used for order updates and delivery calls.
         </p>
 
         <div style={{ marginTop: 14 }}>
@@ -1401,12 +1409,12 @@ export function ProfileEdit() {
                 color: "var(--ink-900)",
               }}
             >
-              Change phone number
+              {form.phone ? "Change phone number" : "Add phone number"}
             </h3>
             <p style={{ margin: "0 0 16px", color: "var(--ink-500)", fontSize: ".875rem" }}>
-              Enter your new phone number. We'll send an OTP.
+              Used for order updates and delivery calls.
             </p>
-            <label style={labelStyle}>New phone</label>
+            <label style={labelStyle}>Mobile number</label>
             <div
               style={{
                 display: "flex",
@@ -1461,13 +1469,16 @@ export function ProfileEdit() {
               <Button
                 variant="primary"
                 full
-                disabled={!/^9\d{9}$/.test(otpDigits)}
+                disabled={!/^9[678]\d{8}$/.test(otpDigits)}
                 onClick={() => {
+                  setBuyerPhone(otpDigits);
+                  set("phone", otpDigits);
                   setShowPhoneOtp(false);
-                  toast?.(`OTP sent to +977 ${otpDigits}`);
+                  setOtpDigits("");
+                  toast?.(`Phone number saved · +977 ${otpDigits}`);
                 }}
               >
-                Send OTP
+                Save
               </Button>
             </div>
           </div>

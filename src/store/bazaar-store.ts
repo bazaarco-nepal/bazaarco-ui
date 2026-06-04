@@ -5,6 +5,7 @@ import {
   writeDeliveryToStorage,
 } from "@/lib/delivery-location";
 import { readRoleHint } from "@/lib/auth-hint";
+import { normalizePhone, readPhoneFromStorage, writePhoneToStorage } from "@/lib/buyer-contact";
 import type { BazaarStoreState } from "@/types/store";
 
 export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
@@ -21,6 +22,8 @@ export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
   activeProduct: null,
   deliveryLocation: DEFAULT_DELIVERY,
   deliveryHydrated: false,
+  buyerPhone: "",
+  buyerPhoneHydrated: false,
   setAuthed: (authed) => set({ authed }),
   setAuthReady: (authReady) => set({ authReady }),
   hydrateDelivery: () => {
@@ -30,6 +33,15 @@ export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
   setDeliveryLocation: (deliveryLocation) => {
     writeDeliveryToStorage(deliveryLocation);
     set({ deliveryLocation, deliveryHydrated: true });
+  },
+  hydrateBuyerPhone: () => {
+    if (get().buyerPhoneHydrated) return;
+    set({ buyerPhone: readPhoneFromStorage(), buyerPhoneHydrated: true });
+  },
+  setBuyerPhone: (phone) => {
+    const buyerPhone = normalizePhone(phone);
+    writePhoneToStorage(buyerPhone);
+    set({ buyerPhone, buyerPhoneHydrated: true });
   },
   setUser: (user) => set({ user }),
   setRoleHint: (roleHint) => set({ roleHint }),

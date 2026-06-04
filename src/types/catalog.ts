@@ -60,6 +60,7 @@ export interface Product {
   outOfStock?: boolean;
   allowBargaining?: boolean;
   maxDiscountPct?: number;
+  minimumPrice?: number | null;
   createdAt?: string;
 }
 

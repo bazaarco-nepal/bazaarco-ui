@@ -61,11 +61,11 @@ import {
 import { useSeller } from "@/hooks/use-catalog";
 import { useCreateBargainOffer } from "@/hooks/use-bargains";
 import { ApiRequestError } from "@/services/api/http";
+import { resolveDelivery, deliveryEstimate } from "@/lib/delivery-options";
 import type { PdpProps } from "@/types";
 import { ReviewsSection, QASection, ImageLightbox, PdpZoomButton } from "./_components";
 
-// Flat Rs. 100 delivery (matches checkout's default; no backend fee endpoint yet).
-const DELIVERY_FEE = 100;
+const DELIVERY_FEE = resolveDelivery([], "standard").fee;
 
 type TabItem = { key: string; label: string; content: React.ReactNode };
 
@@ -133,14 +133,16 @@ function BargainModal({ p, onClose }) {
   const { addToCart, toast } = useBz();
   const { sellerOf } = useCatalog();
   const createOffer = useCreateBargainOffer();
-  const [offer, setOffer] = useState(Math.round((p.price * 0.9) / 10) * 10);
+  const floor = p.minimumPrice ?? Math.round(p.price * 0.7);
+  const midpoint = Math.round((floor + p.price) / 2 / 10) * 10;
+  const [offer, setOffer] = useState(midpoint);
   const [stage, setStage] = useState("offer"); // offer | thinking | counter | accepted
-  const [counter, setCounter] = useState(Math.round((p.price * 0.93) / 10) * 10);
+  const [counter, setCounter] = useState(midpoint);
   const submit = async () => {
     setStage("thinking");
     try {
       const result = await createOffer.mutateAsync({ productId: p.id, yourOffer: offer });
-      setCounter(result.sellerCounter ?? Math.round((p.price * 0.93) / 10) * 10);
+      if (result.sellerCounter) setCounter(result.sellerCounter);
       setStage(result.status === "accepted" ? "accepted" : "counter");
     } catch (error) {
       const msg = error instanceof ApiRequestError ? error.message : "Could not send offer";
@@ -260,7 +262,7 @@ function BargainModal({ p, onClose }) {
             </div>
             <input
               type="range"
-              min={Math.round(p.price * 0.7)}
+              min={floor}
               max={p.price}
               step={10}
               value={offer}
@@ -276,7 +278,7 @@ function BargainModal({ p, onClose }) {
                 marginTop: 2,
               }}
             >
-              <span className="tnum">Rs. {Math.round(p.price * 0.7).toLocaleString()}</span>
+              <span className="tnum">Rs. {floor.toLocaleString()}</span>
               <span className="tnum">Rs. {p.price.toLocaleString()}</span>
             </div>
             <div style={{ marginTop: 20 }}>

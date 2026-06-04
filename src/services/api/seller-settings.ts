@@ -1,17 +1,6 @@
 import { apiClient, getData } from "./http";
 import type { ApiSuccessResponse } from "./types";
 
-export const SHIPPING_ZONES = [
-  "Kathmandu Valley",
-  "Pokhara",
-  "Biratnagar",
-  "Butwal",
-  "Dharan",
-  "Nepalgunj",
-  "Birgunj",
-  "Anywhere in Nepal",
-] as const;
-
 export interface ShopRules {
   openTime: string;
   closeTime: string;
@@ -34,6 +23,10 @@ export type UpdateSellerSettingsPayload = {
 export const sellerSettingsApi = {
   getSettings(): Promise<SellerSettings> {
     return getData<SellerSettings>("/seller/settings");
+  },
+
+  getShippingZones(): Promise<string[]> {
+    return getData<string[]>("/seller/settings/shipping-zones");
   },
 
   async updateSettings(payload: UpdateSellerSettingsPayload): Promise<SellerSettings> {

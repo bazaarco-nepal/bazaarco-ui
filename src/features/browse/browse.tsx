@@ -158,18 +158,6 @@ function DidYouMean({ q, suggestions, onPick, onReset }) {
   );
 }
 
-/* Phonetic correction examples — Nepglish auto-correct */
-const PHONETIC = {
-  lapatop: "laptop",
-  leptop: "laptop",
-  motarsaikal: "motorcycle",
-  fon: "phone",
-  phonn: "phone",
-  earbud: "earbuds",
-  shol: "shawl",
-  kurtha: "kurta",
-};
-
 export function Browse() {
   const { openProduct, nav, query, setQuery } = useBz();
   const router = useRouter();
@@ -217,8 +205,7 @@ export function Browse() {
     }
   }, [cats, query, sort, router]);
 
-  const correctedQuery = (query && PHONETIC[query.toLowerCase().trim()]) || query;
-  const effectiveQuery = correctedQuery;
+  const effectiveQuery = query;
   const band = PLP_PRICE_BANDS.find((b) => b.id === priceBand);
   // Custom min/max take precedence over preset band.
   const customMin = priceMin === "" ? null : Math.max(0, parseInt(priceMin, 10) || 0);
@@ -255,6 +242,7 @@ export function Browse() {
     : null;
 
   const { data: searchData, isLoading: searchLoading } = useSearch(searchParams);
+  const correctedQuery = searchData?.correction || query;
 
   useEffect(() => {
     if (catalogLoading || searchLoading) return;
@@ -318,9 +306,6 @@ export function Browse() {
 
   const totalCount = strict.length + related.length;
   const showDidYouMean = !loading && query && totalCount === 0;
-  const suggestions = ["pashmina", "kurta", "earbuds", "honey", "topi"]
-    .filter((s) => s !== effectiveQuery.toLowerCase())
-    .slice(0, 4);
 
   // Active filters — labeled chips with one-tap removal.
   const activeChips = [
@@ -978,7 +963,7 @@ export function Browse() {
           ) : showDidYouMean ? (
             <DidYouMean
               q={query}
-              suggestions={suggestions}
+              suggestions={[]}
               onPick={(s) => setQuery(s)}
               onReset={() => {
                 setQuery("");

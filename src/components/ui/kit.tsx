@@ -706,6 +706,9 @@ export function Button({
     whiteSpace: "nowrap",
     lineHeight: 1,
     userSelect: "none",
+    // Buttons with an `href` render as <a>; kill the default anchor underline so
+    // link-buttons (e.g. "Continue shopping") look identical to real buttons.
+    textDecoration: "none",
     ...style,
   };
   // Primary = recommended action (Continue, Submit, Buy). Secondary = alternate / cancel (red outline).

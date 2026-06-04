@@ -24,3 +24,37 @@ export function useCreateBargainOffer() {
     },
   });
 }
+
+export function useAcceptBargainOffer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => bargainsApi.accept(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.bargains });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.seller.bargains });
+    },
+  });
+}
+
+export function useRejectBargainOffer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => bargainsApi.reject(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.bargains });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.seller.bargains });
+    },
+  });
+}
+
+export function useCounterBargainOffer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, counter }: { id: string; counter: number }) =>
+      bargainsApi.counter(id, counter),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.bargains });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.seller.bargains });
+    },
+  });
+}

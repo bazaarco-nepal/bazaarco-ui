@@ -57,5 +57,6 @@ export const queryKeys = {
     storefront: ["seller", "storefront"] as const,
     ledger: ["seller", "ledger"] as const,
     settings: ["seller", "settings"] as const,
+    shippingZones: ["seller", "shipping-zones"] as const,
   },
 };

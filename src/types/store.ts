@@ -1,6 +1,7 @@
 import type { AuthIntent, AuthUser } from "@/types/auth";
 import type { CartLine, Product } from "@/types/catalog";
 import type { DeliveryLocation } from "@/lib/delivery-location";
+import type { DeliveryTier } from "@/lib/delivery-options";
 
 export interface BazaarStoreState {
   authed: boolean;
@@ -20,6 +21,8 @@ export interface BazaarStoreState {
   /** Buyer's contact phone — shared between profile and checkout. */
   buyerPhone: string;
   buyerPhoneHydrated: boolean;
+  /** Customer-chosen delivery speed; shared between Cart summary and Checkout. */
+  deliveryTier: DeliveryTier;
   setAuthed: (authed: boolean) => void;
   setAuthReady: (authReady: boolean) => void;
   setUser: (user: AuthUser | null) => void;
@@ -34,4 +37,5 @@ export interface BazaarStoreState {
   setOrderTotal: (total: number) => void;
   setLastOrderId: (id: string | null) => void;
   setActiveProduct: (product: Product | null) => void;
+  setDeliveryTier: (tier: DeliveryTier) => void;
 }

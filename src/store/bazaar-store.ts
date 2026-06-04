@@ -24,6 +24,7 @@ export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
   deliveryHydrated: false,
   buyerPhone: "",
   buyerPhoneHydrated: false,
+  deliveryTier: "standard",
   setAuthed: (authed) => set({ authed }),
   setAuthReady: (authReady) => set({ authReady }),
   hydrateDelivery: () => {
@@ -62,4 +63,5 @@ export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
   setOrderTotal: (orderTotal) => set({ orderTotal }),
   setLastOrderId: (lastOrderId) => set({ lastOrderId }),
   setActiveProduct: (activeProduct) => set({ activeProduct }),
+  setDeliveryTier: (deliveryTier) => set({ deliveryTier }),
 }));

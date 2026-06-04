@@ -38,6 +38,7 @@ import {
 } from "@/components/ui";
 import { usePathname } from "next/navigation";
 import { orderIdFromPath, pathFromScreen } from "@/config/routes";
+import { deliveryTypeLabel } from "@/lib/delivery-options";
 import { useCatalog } from "@/hooks/use-catalog";
 import { useTracking } from "@/hooks/use-tracking";
 import { useCancelOrder, useOrder } from "@/hooks/use-orders";
@@ -61,7 +62,7 @@ import {
 } from "@/components/common";
 
 export function Tracking() {
-  const { nav, cart } = useBz();
+  const { nav } = useBz();
   const pathname = usePathname();
   const routeOrderId = orderIdFromPath(pathname);
   const lastOrderId = useBazaarStore((s) => s.lastOrderId);
@@ -247,7 +248,7 @@ export function Tracking() {
             ))}
           </div>
 
-          <TrackingSidebar nav={nav} cart={cart} />
+          <TrackingSidebar nav={nav} order={order} />
         </div>
       </div>
       {confirmCancel && order && (
@@ -270,151 +271,199 @@ export function Tracking() {
   );
 }
 
-function TrackingSidebar({ nav, cart }) {
+function TrackingSidebar({ nav, order }) {
   const { byId } = useCatalog();
-  const fallbackItems = [byId("bz-1"), byId("bz-3")].filter(Boolean);
-  const displayItems = cart.length ? cart : fallbackItems;
+  // Prefer real per-line quantities from the backend; fall back to bare product
+  // ids (qty 1) for older payloads. Unit price comes from the live catalog.
+  const rawLines = order?.lineItems?.length
+    ? order.lineItems
+    : (order?.items ?? []).map((productId) => ({ productId, quantity: 1 }));
+  const lines = rawLines
+    .map((li) => {
+      const product = byId(li.productId);
+      return product ? { product, qty: li.quantity, lineTotal: product.price * li.quantity } : null;
+    })
+    .filter(Boolean);
+  const subtotal = lines.reduce((sum, l) => sum + l.lineTotal, 0);
+  const total = order?.total ?? subtotal;
+  // Prefer the persisted delivery fee; fall back to the remainder for older orders.
+  const delivery = order?.deliveryFee ?? Math.max(0, total - subtotal);
+  const deliveryLabel = deliveryTypeLabel(order?.deliveryType);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, position: "sticky", top: 96 }}>
-      <button
-        style={{
-          background: "var(--success)",
-          color: "#fff",
-          border: "none",
-          borderRadius: "var(--r-lg)",
-          padding: "18px 20px",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          gap: 14,
-          boxShadow: "var(--sh-2)",
-          animation: "bz-pulse-ring 2s infinite",
-        }}
-      >
-        <span
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: "50%",
-            background: "rgba(255,255,255,.2)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
-          <Icon name="phone" size={22} color="#fff" />
-        </span>
-        <div style={{ textAlign: "left", flex: 1 }}>
-          <div style={{ fontWeight: 800, fontSize: "1rem" }}>Call rider</div>
-          <div style={{ fontSize: ".8125rem", opacity: 0.9 }}>
-            Ramesh K. · arrives in about 25 min
-          </div>
-        </div>
-        <Icon name="arrowRight" size={20} color="#fff" />
-      </button>
-
-      <div
-        style={{
-          background: "#fff",
-          border: "1px solid var(--line-200)",
-          borderRadius: "var(--r-lg)",
-          padding: 18,
-        }}
-      >
+      {order?.eta && (
         <div
           style={{
-            fontSize: ".75rem",
-            color: "var(--ink-400)",
-            fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: ".05em",
+            background: "#fff",
+            border: "1px solid var(--line-200)",
+            borderRadius: "var(--r-lg)",
+            padding: 18,
           }}
         >
-          Estimated delivery
-        </div>
-        <div
-          style={{ fontSize: "1.25rem", fontWeight: 800, color: "var(--blue-deep)", marginTop: 4 }}
-        >
-          Sat, May 30
-        </div>
-        <div style={{ borderTop: "1px solid var(--line-200)", marginTop: 14, paddingTop: 14 }}>
-          <div style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}>Courier</div>
           <div
             style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
+              fontSize: ".75rem",
+              color: "var(--ink-400)",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: ".05em",
+            }}
+          >
+            Estimated delivery
+          </div>
+          <div
+            style={{
+              fontSize: "1.25rem",
+              fontWeight: 800,
+              color: "var(--blue-deep)",
               marginTop: 4,
             }}
           >
-            <span style={{ fontWeight: 700, fontSize: ".875rem" }}>Pathao Parcel</span>
-            <button
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 5,
-                background: "none",
-                border: "none",
-                color: "var(--blue)",
-                fontWeight: 700,
-                fontSize: ".8125rem",
-                cursor: "pointer",
-              }}
-            >
-              <Icon name="copy" size={14} /> NP-77213
-            </button>
+            {order.eta}
           </div>
         </div>
-      </div>
-      <div
-        style={{
-          background: "#fff",
-          border: "1px solid var(--line-200)",
-          borderRadius: "var(--r-lg)",
-          padding: 18,
-        }}
-      >
-        <div style={{ fontWeight: 700, fontSize: ".9375rem", marginBottom: 12 }}>Items</div>
-        {displayItems.slice(0, 3).map((it) => (
+      )}
+      {lines.length > 0 && (
+        <div
+          style={{
+            background: "#fff",
+            border: "1px solid var(--line-200)",
+            borderRadius: "var(--r-lg)",
+            padding: 18,
+          }}
+        >
+          <div style={{ fontWeight: 700, fontSize: ".9375rem", marginBottom: 14 }}>Items</div>
+          {lines.map(({ product, qty, lineTotal }) => (
+            <div
+              key={product.id}
+              style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 14 }}
+            >
+              {product.img ? (
+                <img
+                  src={product.img}
+                  alt={product.name}
+                  style={{
+                    width: 44,
+                    height: 44,
+                    objectFit: "cover",
+                    borderRadius: "var(--r-sm)",
+                    flexShrink: 0,
+                  }}
+                />
+              ) : (
+                <Placeholder
+                  icon={product.icon}
+                  tint={product.tint}
+                  style={{ width: 44, height: 44, flexShrink: 0 }}
+                  radius="var(--r-sm)"
+                />
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: ".8125rem",
+                    fontWeight: 600,
+                    color: "var(--ink-900)",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }}
+                >
+                  {product.name}
+                </div>
+                <div
+                  className="tnum"
+                  style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 3 }}
+                >
+                  Qty {qty} × Rs.&nbsp;{product.price.toLocaleString("en-IN")}
+                </div>
+              </div>
+              <span
+                className="tnum"
+                style={{
+                  fontSize: ".8125rem",
+                  fontWeight: 700,
+                  color: "var(--ink-900)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Rs.&nbsp;{lineTotal.toLocaleString("en-IN")}
+              </span>
+            </div>
+          ))}
+
           <div
-            key={it.id}
-            style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 10 }}
+            style={{
+              borderTop: "1px solid var(--line-200)",
+              marginTop: 4,
+              paddingTop: 12,
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+            }}
           >
-            {it.img ? (
-              <img
-                src={it.img}
-                alt={it.name}
-                style={{ width: 40, height: 40, objectFit: "cover", borderRadius: "var(--r-sm)" }}
-              />
-            ) : (
-              <Placeholder
-                icon={it.icon}
-                tint={it.tint}
-                style={{ width: 40, height: 40 }}
-                radius="var(--r-sm)"
-              />
-            )}
-            <span
+            <div
               style={{
-                flex: 1,
+                display: "flex",
+                justifyContent: "space-between",
                 fontSize: ".8125rem",
-                display: "-webkit-box",
-                WebkitLineClamp: 1,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
+                color: "var(--ink-500)",
               }}
             >
-              {it.name}
-            </span>
+              <span>Subtotal</span>
+              <span className="tnum">Rs.&nbsp;{subtotal.toLocaleString("en-IN")}</span>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: ".8125rem",
+                color: "var(--ink-500)",
+              }}
+            >
+              <span style={{ paddingRight: 8 }}>{deliveryLabel}</span>
+              <span
+                className="tnum"
+                style={{
+                  whiteSpace: "nowrap",
+                  ...(delivery === 0 ? { color: "var(--success)" } : {}),
+                }}
+              >
+                {delivery === 0 ? "Free" : `Rs. ${delivery.toLocaleString("en-IN")}`}
+              </span>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+                borderTop: "1px solid var(--line-200)",
+                marginTop: 4,
+                paddingTop: 10,
+              }}
+            >
+              <span style={{ fontWeight: 800, fontSize: ".9375rem", color: "var(--ink-900)" }}>
+                Total
+              </span>
+              <span
+                className="tnum"
+                style={{ fontWeight: 800, fontSize: "1.0625rem", color: "var(--blue-deep)" }}
+              >
+                Rs.&nbsp;{total.toLocaleString("en-IN")}
+              </span>
+            </div>
           </div>
-        ))}
-      </div>
-      <Button variant="ghost" full icon="headphones">
+        </div>
+      )}
+      <Button
+        variant="ghost"
+        full
+        icon="headphones"
+        href={pathFromScreen("help")}
+        onNavigate={() => nav("help")}
+      >
         Need help?
-      </Button>
-      <Button variant="danger" full>
-        Return / Refund
       </Button>
     </div>
   );

@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { useBz } from "@/components/common";
 import { Spinner } from "@/components/ui";
+import { screenFromPath } from "@/config/routes";
 import { resolvePostAuthScreen } from "@/lib/auth-rbac";
 import { setAccessToken } from "@/lib/auth-token";
 import { establishBrowserSession, fetchCurrentUser } from "@/services/api/auth";
@@ -12,6 +13,7 @@ import { useBazaarStore } from "@/store/bazaar-store";
 
 export function AuthCallback() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { nav, toast } = useBz();
   const setAuthed = useBazaarStore((s) => s.setAuthed);
   const setUser = useBazaarStore((s) => s.setUser);
@@ -66,8 +68,22 @@ export function AuthCallback() {
 
         setAuthed(true);
         setUser(user);
-        const next = resolvePostAuthScreen(user, searchParams.get("next"));
-        nav(next);
+        // Prefer the return-to path stashed before the OAuth redirect; fall back
+        // to the `?next=` query if the provider echoed it back.
+        const storedNext =
+          typeof window !== "undefined" ? sessionStorage.getItem("bz_oauth_next") : null;
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("bz_oauth_next");
+        }
+        const nextPath = storedNext || searchParams.get("next");
+        const requestedScreen = nextPath ? screenFromPath(nextPath) : null;
+        const resolved = resolvePostAuthScreen(user, requestedScreen);
+        if (nextPath && requestedScreen && resolved === requestedScreen) {
+          router.push(nextPath);
+          if (typeof window !== "undefined") window.scrollTo({ top: 0 });
+        } else {
+          nav(resolved);
+        }
       } catch {
         if (cancelled) return;
         setMessage("Could not load your session");

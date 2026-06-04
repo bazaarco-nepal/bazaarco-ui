@@ -528,6 +528,13 @@ export function Profile() {
       {/* RIGHT MAIN — action grid */}
       <div className="bz-profile__main">
         <MenuRow
+          icon="cart"
+          label="My cart"
+          sub="Items ready for checkout"
+          href={pathFromScreen("cart")}
+          onClick={() => nav("cart")}
+        />
+        <MenuRow
           icon="package"
           label="My orders"
           sub="Track, return, re-order"
@@ -840,9 +847,7 @@ export function WriteReview({ productId }: WriteReviewProps) {
         )}
         <div>
           <div style={{ fontWeight: 700 }}>{p.name}</div>
-          <div style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 3 }}>
-            Delivered May 18
-          </div>
+          <div style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 3 }}>Delivered</div>
         </div>
       </div>
 

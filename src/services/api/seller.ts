@@ -21,7 +21,7 @@ export interface UpdateProductPayload {
   metadata?: Record<string, unknown>;
   variants?: CreateProductVariantPayload[];
   allowBargaining?: boolean;
-  maxDiscountPct?: number;
+  minimumPrice?: number | null;
 }
 
 export interface SellerInventoryItem {
@@ -52,6 +52,9 @@ export interface SellerOrder {
   icon: string;
   tint: string;
   canCancel: boolean;
+  // Multi-seller order: this seller has accepted, but the order stays in
+  // "placed" until the other sellers confirm their parcels too.
+  awaitingOtherSellers?: boolean;
 }
 
 export interface CreateProductPayload {
@@ -69,7 +72,7 @@ export interface CreateProductPayload {
   stock?: number;
   variants?: CreateProductVariantPayload[];
   allowBargaining?: boolean;
-  maxDiscountPct?: number;
+  minimumPrice?: number | null;
 }
 
 export const sellerApi = {

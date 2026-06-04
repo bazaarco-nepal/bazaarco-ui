@@ -15,14 +15,14 @@ export const DEFAULT_DELIVERY: DeliveryLocation = {
 };
 
 /**
- * Cities we currently deliver to. We're launching in Kathmandu and expanding
- * across Nepal soon — gate address selection on this list everywhere.
+ * Cities we currently deliver to. We're launching in the Kathmandu Valley and
+ * expanding across Nepal soon — gate address selection on this list everywhere.
  */
-export const SERVICEABLE_CITIES = ["Kathmandu"] as const;
+export const SERVICEABLE_CITIES = ["Kathmandu", "Bhaktapur", "Lalitpur"] as const;
 
 /** Friendly, simple apology shown when a buyer picks a city we don't serve yet. */
 export const DELIVERY_AREA_MESSAGE =
-  "We're very sorry — for now we only deliver inside Kathmandu. We're expanding across all of Nepal soon!";
+  "We're very sorry — for now we only deliver inside Kathmandu, Bhaktapur, and Lalitpur. We're expanding across all of Nepal soon!";
 
 /** True when we currently deliver to the given city. */
 export function isDeliverableCity(city?: string | null): boolean {

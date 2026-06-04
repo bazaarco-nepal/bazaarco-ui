@@ -185,6 +185,13 @@ a {
 .bz-mobile-show {
   display: none;
 }
+.bz-order-success__actions {
+  width: 100%;
+}
+.bz-order-success__action {
+  min-width: 0;
+  flex: 1 1 0;
+}
 @media (max-width: 768px) {
   .bz-mobile-only {
     display: flex !important;
@@ -198,6 +205,19 @@ a {
   .bz-main {
     /* bottom nav + safe area + sticky buy bars */
     padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+  .bz-order-success {
+    padding: 24px 16px !important;
+  }
+  .bz-order-success__card {
+    padding: 28px 20px !important;
+  }
+  .bz-order-success__actions {
+    flex-direction: column;
+  }
+  .bz-order-success__action {
+    width: 100% !important;
+    white-space: normal !important;
   }
 }
 

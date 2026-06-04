@@ -20,6 +20,7 @@ export interface SearchProductHit extends Product {
 
 export interface SearchResponse {
   query: string;
+  correction?: string | null;
   page: number;
   limit: number;
   total: number;

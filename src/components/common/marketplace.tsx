@@ -18,6 +18,8 @@ import {
 } from "@/components/ui";
 import { pathFromScreen } from "@/config/routes";
 import { useLogout } from "@/hooks/use-auth";
+import { useAddresses, useCreateAddress } from "@/hooks/use-addresses";
+import { deliveryToSavePayload } from "@/lib/saved-address";
 import { displayName } from "@/lib/display";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { formatDeliverToLabel } from "@/lib/delivery-location";
@@ -712,6 +714,11 @@ export function Navbar() {
   const deliveryLocation = useBazaarStore((s) => s.deliveryLocation);
   const setDeliveryLocation = useBazaarStore((s) => s.setDeliveryLocation);
   const deliverLabel = formatDeliverToLabel(deliveryLocation);
+  const { data: savedAddresses = [] } = useAddresses(authed);
+  const createAddress = useCreateAddress();
+  // Only offer the navbar "Deliver to" picker while the buyer has no saved
+  // address yet. Once one exists, the profile is the source of truth.
+  const hasSavedAddress = savedAddresses.length > 0;
   const desktopMenuRef = useRef(null);
   const mobileSheetRef = useRef(null);
 
@@ -778,42 +785,55 @@ export function Navbar() {
           </span>
         </AppLink>
 
-        <button
-          type="button"
-          onClick={() => setDeliverOpen(true)}
-          aria-haspopup="dialog"
-          aria-expanded={deliverOpen}
-          aria-label={`Deliver to ${deliverLabel}`}
-          className="bz-navbar__deliver bz-hide-mobile"
-        >
-          <Icon name="mapPin" size={16} color="var(--red)" />
-          <div style={{ textAlign: "left", lineHeight: 1.15 }}>
-            <div
-              style={{
-                fontSize: ".625rem",
-                color: "var(--ink-400)",
-                fontWeight: 700,
-                letterSpacing: ".06em",
-                textTransform: "uppercase",
-              }}
+        {!hasSavedAddress && (
+          <>
+            <button
+              type="button"
+              onClick={() => setDeliverOpen(true)}
+              aria-haspopup="dialog"
+              aria-expanded={deliverOpen}
+              aria-label={`Deliver to ${deliverLabel}`}
+              className="bz-navbar__deliver bz-hide-mobile"
             >
-              Deliver to
-            </div>
-            <div>{deliverLabel}</div>
-          </div>
-          <Icon name="chevronDown" size={14} color="var(--ink-500)" />
-        </button>
+              <Icon name="mapPin" size={16} color="var(--red)" />
+              <div style={{ textAlign: "left", lineHeight: 1.15 }}>
+                <div
+                  style={{
+                    fontSize: ".625rem",
+                    color: "var(--ink-400)",
+                    fontWeight: 700,
+                    letterSpacing: ".06em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Deliver to
+                </div>
+                <div>{deliverLabel}</div>
+              </div>
+              <Icon name="chevronDown" size={14} color="var(--ink-500)" />
+            </button>
 
-        <DeliverToModal
-          open={deliverOpen}
-          value={deliveryLocation}
-          onClose={() => setDeliverOpen(false)}
-          onSave={(loc) => {
-            setDeliveryLocation(loc);
-            setDeliverOpen(false);
-            toast(`Delivering to ${formatDeliverToLabel(loc)}`);
-          }}
-        />
+            <DeliverToModal
+              open={deliverOpen}
+              value={deliveryLocation}
+              onClose={() => setDeliverOpen(false)}
+              onSave={async (loc) => {
+                setDeliveryLocation(loc);
+                setDeliverOpen(false);
+                toast(`Delivering to ${formatDeliverToLabel(loc)}`);
+                // Mirror checkout: persist the entered address to the buyer's
+                // profile so it becomes their (first, default) saved address.
+                if (authed) {
+                  try {
+                    await createAddress.mutateAsync(deliveryToSavePayload(loc, "Home", true));
+                  } catch {
+                    /* local delivery location already set; ignore sync error */
+                  }
+                }
+              }}
+            />
+          </>
+        )}
 
         <div className="bz-navbar__search">
           <button

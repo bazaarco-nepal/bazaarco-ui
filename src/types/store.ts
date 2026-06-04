@@ -17,11 +17,16 @@ export interface BazaarStoreState {
   activeProduct: Product | null;
   deliveryLocation: DeliveryLocation;
   deliveryHydrated: boolean;
+  /** Buyer's contact phone — shared between profile and checkout. */
+  buyerPhone: string;
+  buyerPhoneHydrated: boolean;
   setAuthed: (authed: boolean) => void;
   setAuthReady: (authReady: boolean) => void;
   setUser: (user: AuthUser | null) => void;
   setRoleHint: (role: AuthIntent | null) => void;
   hydrateRoleHint: () => void;
+  hydrateBuyerPhone: () => void;
+  setBuyerPhone: (phone: string) => void;
   setCart: (cart: CartLine[] | ((prev: CartLine[]) => CartLine[])) => void;
   setWish: (wish: string[] | ((prev: string[]) => string[])) => void;
   setWishSellers: (sellerIds: string[] | ((prev: string[]) => string[])) => void;

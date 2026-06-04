@@ -155,14 +155,6 @@ export function useSellerAnalytics() {
   });
 }
 
-export function useSellerReports() {
-  return useQuery({
-    queryKey: queryKeys.seller.reports,
-    queryFn: () => sellerApi.getReports(),
-    staleTime: STALE_TIME,
-  });
-}
-
 export function useSellerNotifications() {
   return useQuery({
     queryKey: queryKeys.seller.notifications,

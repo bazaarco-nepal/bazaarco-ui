@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Fragment, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   Icon,
   Logo,
@@ -57,8 +57,9 @@ import {
   deferSellerOnboarding,
   isSellerOnboardingDeferred,
 } from "@/lib/seller-onboarding";
-import { useCategories } from "@/hooks/use-catalog";
+import { useCategories, useProduct } from "@/hooks/use-catalog";
 import { useUploadImage } from "@/hooks/use-media-upload";
+import type { SellerInventoryItem } from "@/services/api/seller";
 import {
   useCreateProduct,
   useUpdateProduct,
@@ -70,7 +71,6 @@ import {
   useSellerPromotions,
   useSellerVideos,
   useSellerAnalytics,
-  useSellerReports,
   useSellerNotifications,
   useSellerSettings,
   useUpdateSellerSettings,
@@ -109,7 +109,6 @@ import {
 } from "@/components/common";
 import { ASSETS } from "@/config/assets";
 import { pathFromScreen } from "@/config/routes";
-import { SHIPPING_ZONES } from "@/services/api/seller-settings";
 
 export type SellerInboxOrderItem = {
   id: string;
@@ -128,45 +127,34 @@ export type SellerInboxOrderItem = {
 
 export const sellerOrderRef = { current: null as SellerInboxOrderItem | null };
 
+// Threads the inventory row a seller tapped "Edit" on through to the edit
+// screen (the SPA router renders screens by id and can't carry props itself).
+// Mirrors `sellerOrderRef`. Holds the inventory item for stock/variant prefill;
+// the full product (description, category, specs) is fetched by id on the screen.
+export const editProductRef = { current: null as SellerInventoryItem | null };
+
 export const SELLER_NAV = [
   {
-    group: "Daily work",
+    group: "My shop · मेरो पसल",
     items: [
       { id: "s-dashboard", icon: "home", en: "Home", ne: "गृह" },
-      { id: "s-inbox", icon: "package", en: "Orders", ne: "अर्डर", badgeKey: "orders" },
-      { id: "s-chat", icon: "message", en: "Messages", ne: "च्याट", badgeKey: "chat" },
       { id: "s-add", icon: "plus", en: "Add product", ne: "सामान थप्नुहोस्" },
-    ],
-  },
-  {
-    group: "My shop",
-    items: [
+      { id: "s-inbox", icon: "package", en: "Orders", ne: "अर्डर", badgeKey: "orders" },
       { id: "s-products", icon: "store", en: "My products", ne: "मेरो सामान" },
+      { id: "s-chat", icon: "message", en: "Messages", ne: "च्याट", badgeKey: "chat" },
       { id: "s-videos", icon: "video", en: "Videos", ne: "भिडियो" },
-      { id: "s-storefront", icon: "layout", en: "Shop design", ne: "पसल सजावट" },
     ],
   },
   {
-    group: "Sell more",
+    group: "More · थप",
     items: [
-      { id: "s-promos", icon: "megaphone", en: "Offers", ne: "छुट" },
       { id: "s-bargain", icon: "bargain", en: "Bargaining", ne: "मोलतोल", badgeKey: "bargain" },
-      { id: "s-reviews", icon: "star", en: "Reviews", ne: "समीक्षा" },
-    ],
-  },
-  {
-    group: "Money & growth",
-    items: [
+      { id: "s-promos", icon: "megaphone", en: "Offers", ne: "छुट" },
       { id: "s-ledger", icon: "wallet", en: "My money", ne: "भुक्तानी" },
-      { id: "s-analytics", icon: "trendingUp", en: "My shop", ne: "मेरो पसल" },
-      { id: "s-reports", icon: "file", en: "What to do", ne: "के गर्ने" },
-    ],
-  },
-  {
-    group: "Account",
-    items: [
+      { id: "s-analytics", icon: "trendingUp", en: "Analytics", ne: "तथ्याङ्क" },
+      { id: "s-reviews", icon: "star", en: "Reviews", ne: "समीक्षा" },
+      { id: "s-verification", icon: "shieldCheck", en: "KYC", ne: "केवाईसी" },
       { id: "s-settings", icon: "settings", en: "Settings", ne: "सेटिङ" },
-      { id: "s-profile", icon: "user", en: "My profile", ne: "प्रोफाइल" },
     ],
   },
 ];
@@ -520,12 +508,11 @@ export function SellerOnboarding() {
   const setupOrganization = useSetupSellerOrganization();
   const submitVerification = useSubmitSellerVerification();
   const docInputRef = useRef(null);
-  const [stage, setStage] = useState("hero"); // hero | docPick | docUpload | review | bank | done
+  const [stage, setStage] = useState("hero"); // hero | docPick | docUpload | review | done
   const [docType, setDocType] = useState(null); // pan | nid
   const [docFile, setDocFile] = useState(null);
   const [docPreview, setDocPreview] = useState(null);
   const [scanned, setScanned] = useState(null);
-  const [wallet, setWallet] = useState(null);
   const [shopName, setShopName] = useState("");
 
   const finishSetup = async () => {
@@ -1099,130 +1086,8 @@ export function SellerOnboarding() {
                 variant="primary"
                 full
                 size="lg"
-                onClick={() => {
-                  const okStore = (scanned?.shop || shopName || "").trim().length >= 2;
-                  const okOwner = (scanned?.name || "").trim().length >= 2;
-                  if (!okStore) return toast("Enter your store name to continue");
-                  if (!okOwner) return toast("Enter the owner name to continue");
-                  setStage("bank");
-                }}
-              >
-                Looks right — continue · ठीक छ
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {stage === "bank" && (
-          <div>
-            <h2 style={{ margin: "0 0 6px", fontSize: "1.25rem", fontWeight: 800 }}>
-              How would you like to be paid?
-            </h2>
-            <p className="ne" style={{ color: "var(--ink-500)", marginTop: 0, marginBottom: 18 }}>
-              पैसा कुन वालेटमा चाहिन्छ?
-            </p>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
-              {[
-                { id: "esewa", name: "eSewa", src: "/payment/esewa.webp" },
-                { id: "khalti", name: "Khalti", src: "/payment/khalti.jpg" },
-                { id: "fonepay", name: "Fonepay", src: "/payment/fonepay.png" },
-                { id: "ime", name: "IME Pay", src: "/payment/ime.png" },
-              ].map((w) => {
-                const active = wallet === w.id;
-                return (
-                  <button
-                    key={w.id}
-                    onClick={() => setWallet(w.id)}
-                    style={{
-                      background: active ? "var(--tint-blue-50)" : "#fff",
-                      border: `2px solid ${active ? "var(--blue)" : "var(--line-200)"}`,
-                      borderRadius: "var(--r-lg)",
-                      padding: 18,
-                      cursor: "pointer",
-                      textAlign: "center",
-                    }}
-                  >
-                    {/* Real wallet logo — fixed height, contained so wide wordmarks
-                        (eSewa/Khalti/Fonepay) and the square IME app icon align. */}
-                    <span
-                      style={{
-                        height: 48,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <img
-                        src={w.src}
-                        alt={w.name}
-                        style={{ maxHeight: 44, maxWidth: "85%", objectFit: "contain" }}
-                      />
-                    </span>
-                    {active && (
-                      <div
-                        style={{
-                          marginTop: 10,
-                          color: "var(--blue)",
-                          fontSize: ".75rem",
-                          fontWeight: 700,
-                        }}
-                      >
-                        ✓ Selected
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {wallet && (
-              <div style={{ marginTop: 16 }}>
-                <label
-                  style={{
-                    fontSize: ".8125rem",
-                    fontWeight: 700,
-                    color: "var(--ink-700)",
-                    display: "block",
-                    marginBottom: 6,
-                  }}
-                >
-                  Your {wallet} number · वालेट नम्बर
-                </label>
-                <input
-                  inputMode="numeric"
-                  placeholder="98XXXXXXXX"
-                  className="tnum"
-                  style={{
-                    width: "100%",
-                    height: 56,
-                    border: "1.5px solid var(--line-200)",
-                    borderRadius: "var(--r-md)",
-                    padding: "0 16px",
-                    fontSize: "1.125rem",
-                    fontWeight: 700,
-                    outline: "none",
-                    fontFamily: "var(--font-sans)",
-                  }}
-                />
-              </div>
-            )}
-
-            <div style={{ marginTop: 22 }}>
-              <Button
-                variant="primary"
-                full
-                size="lg"
-                disabled={!wallet || setupOrganization.isPending || submitVerification.isPending}
+                disabled={setupOrganization.isPending || submitVerification.isPending}
                 onClick={() => void finishSetup()}
-                style={{
-                  height: "auto",
-                  minHeight: 52,
-                  padding: "12px 20px",
-                  whiteSpace: "normal",
-                  lineHeight: 1.3,
-                  textAlign: "center",
-                }}
               >
                 {setupOrganization.isPending || submitVerification.isPending
                   ? "Submitting for review…"
@@ -1519,91 +1384,6 @@ export function SellerDonut({ slices, size = 160 }) {
   );
 }
 
-const HOUR_HEAT_HOURS = 24;
-const HOUR_HEAT_DAYS = 7;
-const HOUR_HEAT_DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
-
-function emptyHourRow(): number[] {
-  return Array.from({ length: HOUR_HEAT_HOURS }, () => 0);
-}
-
-function normalizeHourHeat(raw: unknown): number[][] {
-  const rows: number[][] = [];
-  for (let di = 0; di < HOUR_HEAT_DAYS; di += 1) {
-    const source = Array.isArray(raw) ? raw[di] : undefined;
-    if (!Array.isArray(source)) {
-      rows.push(emptyHourRow());
-      continue;
-    }
-    rows.push(
-      Array.from({ length: HOUR_HEAT_HOURS }, (_, hi) => {
-        const v = Number(source[hi]);
-        return Number.isFinite(v) ? v : 0;
-      }),
-    );
-  }
-  return rows;
-}
-
-export function SellerFunnel({ rows }) {
-  const max = Math.max(...rows.map((r) => r.value), 1);
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      {rows.map((r, i) => {
-        const pct = (r.value / max) * 100;
-        const drop =
-          i > 0 ? Math.round(((rows[i - 1].value - r.value) / rows[i - 1].value) * 100) : null;
-        return (
-          <div key={r.label}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 4,
-              }}
-            >
-              <span
-                style={{
-                  fontWeight: 700,
-                  fontSize: ".875rem",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
-                <Icon name={r.icon} size={16} color={r.color} /> {r.label}
-              </span>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <span className="tnum" style={{ fontWeight: 800 }}>
-                  {r.value.toLocaleString()}
-                </span>
-                {drop !== null && (
-                  <span style={{ fontSize: ".7rem", color: "var(--danger)", fontWeight: 700 }}>
-                    −{drop}%
-                  </span>
-                )}
-              </span>
-            </div>
-            <div
-              style={{
-                height: 10,
-                borderRadius: 999,
-                background: "var(--line-100)",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{ width: `${pct}%`, height: "100%", background: r.color, borderRadius: 999 }}
-              />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 export function SellerDashboard() {
   const { nav, toast } = useBz();
   const user = useBazaarStore((s) => s.user);
@@ -1646,7 +1426,6 @@ export function SellerDashboard() {
     avgGiven: 0,
     marginGiven: 0,
   };
-  const hourHeat = normalizeHourHeat(dashboard?.hourHeat);
   // Store trust strip — real numbers from the backend snapshot. A brand-new
   // seller has no orders/reviews/shipments yet, so we show calm placeholders
   // ("New", "—") instead of fabricated stats.
@@ -2289,7 +2068,7 @@ export function SellerDashboard() {
           </div>
         </div>
 
-        {/* Hour-of-day heatmap — when buyers visit your store */}
+        {/* Recent activity */}
         <div
           style={{
             background: "#fff",
@@ -2299,247 +2078,60 @@ export function SellerDashboard() {
             marginBottom: 18,
           }}
         >
+          <h3
+            style={{
+              margin: "0 0 14px",
+              fontSize: "1rem",
+              fontWeight: 800,
+              color: "var(--blue-deep)",
+            }}
+          >
+            Recent activity · हालैको
+          </h3>
           <div
             style={{
               display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-end",
-              marginBottom: 14,
-              flexWrap: "wrap",
-              gap: 10,
+              flexDirection: "column",
+              gap: 0,
+              maxHeight: 320,
+              overflowY: "auto",
             }}
           >
-            <div>
-              <h3
-                style={{ margin: 0, fontSize: "1rem", fontWeight: 800, color: "var(--blue-deep)" }}
+            {activity.map((a, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  gap: 12,
+                  padding: "10px 0",
+                  borderBottom: i < activity.length - 1 ? "1px dashed var(--line-200)" : "none",
+                }}
               >
-                Best time to post
-              </h3>
-              <p style={{ margin: "2px 0 0", fontSize: ".75rem", color: "var(--ink-500)" }}>
-                When visitors check your store. Darker = more visitors.
-              </p>
-            </div>
-            <div
-              style={{
-                fontSize: ".75rem",
-                color: "var(--ink-500)",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              Low{" "}
-              <span style={{ display: "inline-flex", gap: 2 }}>
-                {[0, 0.25, 0.5, 0.75, 1].map((o) => (
-                  <span
-                    key={o}
-                    style={{
-                      width: 14,
-                      height: 12,
-                      background: `rgba(29,78,216,${0.08 + o * 0.7})`,
-                      borderRadius: 2,
-                    }}
-                  />
-                ))}
-              </span>{" "}
-              High
-            </div>
-          </div>
-          <div style={{ overflowX: "auto" }}>
-            <div
-              style={{
-                display: "inline-grid",
-                gridTemplateColumns: "auto repeat(24, minmax(20px, 1fr))",
-                gap: 3,
-                minWidth: "100%",
-              }}
-            >
-              <div></div>
-              {Array.from({ length: 24 }).map((_, h) => (
-                <div
-                  key={h}
+                <span
                   style={{
-                    fontSize: ".6rem",
-                    color: "var(--ink-400)",
-                    textAlign: "center",
-                    fontWeight: 700,
-                  }}
-                >
-                  {h % 6 === 0 ? `${h}` : ""}
-                </div>
-              ))}
-              {hourHeat.map((row, di) => {
-                const d = HOUR_HEAT_DAY_LABELS[di] ?? `Day ${di}`;
-                const cells = Array.isArray(row) ? row : emptyHourRow();
-                return (
-                  <Fragment key={d}>
-                    <div
-                      style={{
-                        fontSize: ".7rem",
-                        color: "var(--ink-500)",
-                        fontWeight: 700,
-                        paddingRight: 6,
-                        alignSelf: "center",
-                      }}
-                    >
-                      {d}
-                    </div>
-                    {cells.map((v, hi) => {
-                      const o = Math.min(v / 18, 1);
-                      return (
-                        <div
-                          key={hi}
-                          title={`${d} ${hi}:00 — ${v} visits`}
-                          style={{
-                            height: 18,
-                            background: `rgba(29,78,216,${0.08 + o * 0.7})`,
-                            borderRadius: 2,
-                          }}
-                        />
-                      );
-                    })}
-                  </Fragment>
-                );
-              })}
-            </div>
-          </div>
-          <p
-            style={{
-              marginTop: 12,
-              fontSize: ".8125rem",
-              color: "var(--blue-deep)",
-              background: "var(--tint-blue-50)",
-              padding: "8px 12px",
-              borderRadius: "var(--r-md)",
-            }}
-          >
-            <Icon
-              name="badgeCheck"
-              size={14}
-              color="var(--blue)"
-              style={{ verticalAlign: "middle", marginRight: 6 }}
-            />
-            {hourHeat.flat().some((v) => v > 0)
-              ? "Darker cells show when more visitors browse your store."
-              : "Visitor activity will appear here once buyers start viewing your shop."}
-          </p>
-        </div>
-
-        {/* Funnel + activity */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
-            gap: 18,
-            marginBottom: 18,
-          }}
-          className="bz-seller-grid"
-        >
-          <div
-            style={{
-              background: "#fff",
-              border: "1.5px solid var(--line-200)",
-              borderRadius: "var(--r-lg)",
-              padding: 22,
-            }}
-          >
-            <h3
-              style={{
-                margin: "0 0 4px",
-                fontSize: "1rem",
-                fontWeight: 800,
-                color: "var(--blue-deep)",
-              }}
-            >
-              Buyer journey
-            </h3>
-            <p style={{ margin: "0 0 16px", fontSize: ".75rem", color: "var(--ink-500)" }}>
-              This week — where buyers drop off
-            </p>
-            <SellerFunnel rows={funnel} />
-            <div
-              style={{
-                marginTop: 14,
-                background: "var(--tint-blue-50)",
-                borderRadius: "var(--r-md)",
-                padding: 10,
-                fontSize: ".8125rem",
-                color: "var(--blue-deep)",
-              }}
-            >
-              <Icon
-                name="badgeCheck"
-                size={14}
-                color="var(--blue)"
-                style={{ verticalAlign: "middle", marginRight: 4 }}
-              />
-              55% of carts don't reach checkout — add video to top products to lift this.
-            </div>
-          </div>
-
-          <div
-            style={{
-              background: "#fff",
-              border: "1.5px solid var(--line-200)",
-              borderRadius: "var(--r-lg)",
-              padding: 22,
-            }}
-          >
-            <h3
-              style={{
-                margin: "0 0 14px",
-                fontSize: "1rem",
-                fontWeight: 800,
-                color: "var(--blue-deep)",
-              }}
-            >
-              Recent activity · हालैको
-            </h3>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 0,
-                maxHeight: 320,
-                overflowY: "auto",
-              }}
-            >
-              {activity.map((a, i) => (
-                <div
-                  key={i}
-                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "50%",
+                    background: "var(--line-100)",
+                    color: a.color,
                     display: "flex",
-                    gap: 12,
-                    padding: "10px 0",
-                    borderBottom: i < activity.length - 1 ? "1px dashed var(--line-200)" : "none",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
                   }}
                 >
-                  <span
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: "50%",
-                      background: "var(--line-100)",
-                      color: a.color,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <Icon name={a.icon} size={16} color={a.color} />
-                  </span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: ".875rem", color: "var(--ink-900)", lineHeight: 1.4 }}>
-                      {a.text}
-                    </div>
-                    <div style={{ fontSize: ".7rem", color: "var(--ink-400)", marginTop: 2 }}>
-                      {a.t}
-                    </div>
+                  <Icon name={a.icon} size={16} color={a.color} />
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: ".875rem", color: "var(--ink-900)", lineHeight: 1.4 }}>
+                    {a.text}
+                  </div>
+                  <div style={{ fontSize: ".7rem", color: "var(--ink-400)", marginTop: 2 }}>
+                    {a.t}
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -3768,8 +3360,15 @@ export const attrFilled = (f: { t: string }, v: unknown) => {
   return !!v && (typeof v !== "string" || v.trim() !== "");
 };
 
-/* ---------- 4.4 Add Product — Three-Tap Listing ---------- */
-export function SellerAddProduct() {
+/* ---------- 4.4 Add / Edit Product — Three-Tap Listing ---------- */
+// One form for both create and edit. In edit mode (`editing` set, threaded via
+// `editProductRef`) the screen prefills from the existing product, locks the
+// category and photos (the update endpoint changes neither — recategorizing is
+// unsupported and media has its own flow), and PATCHes instead of POSTing.
+export function SellerAddProduct({
+  editing = null,
+}: { editing?: SellerInventoryItem | null } = {}) {
+  const isEdit = Boolean(editing);
   const { nav, toast } = useBz();
   const { data: organization } = useSellerOrganization();
   const verification = organization?.verification;
@@ -3778,6 +3377,14 @@ export function SellerAddProduct() {
   const { data: categories = [] } = useCategories();
   const uploadImage = useUploadImage();
   const createProduct = useCreateProduct();
+  const updateProduct = useUpdateProduct();
+  // Full product (description, category, specs) — only fetched when editing.
+  const {
+    data: editingProduct,
+    isLoading: editingLoading,
+    isError: editingError,
+    error: editingErr,
+  } = useProduct(isEdit ? (editing?.id ?? null) : null);
   const [productPhotos, setProductPhotos] = useState<ProductPhoto[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -3785,14 +3392,49 @@ export function SellerAddProduct() {
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("");
   const [hasVariants, setHasVariants] = useState(false);
-  const [variants, setVariants] = useState([
+  const [variants, setVariants] = useState<
+    Array<{ id: string | number; name: string; price: string; stock: string }>
+  >([
     { id: 1, name: "Small", price: "", stock: "" },
     { id: 2, name: "Medium", price: "", stock: "" },
     { id: 3, name: "Large", price: "", stock: "" },
   ]);
   const [bargainOk, setBargainOk] = useState(true);
   const [bargainPct, setBargainPct] = useState(10);
-  const [attrs, setAttrs] = useState({});
+  const [attrs, setAttrs] = useState<Record<string, unknown>>({});
+
+  // Prefill once from the existing product when editing. The inventory row
+  // (`editing`) carries the authoritative stock + variants; the fetched product
+  // carries everything else. Strip a stray `stock` key out of metadata so it
+  // can't shadow the real stock field the server tracks separately.
+  const prefilled = useRef(false);
+  useEffect(() => {
+    if (!isEdit || prefilled.current || !editingProduct) return;
+    prefilled.current = true;
+    setTitle(editingProduct.name ?? "");
+    setDescription(editingProduct.description ?? "");
+    setCategory(editingProduct.cat ?? "");
+    const meta = { ...((editingProduct.metadata as Record<string, unknown>) ?? {}) };
+    delete meta.stock;
+    setAttrs(meta);
+    setBargainOk(editingProduct.allowBargaining ?? false);
+    setBargainPct(editingProduct.maxDiscountPct ?? 10);
+    if (editing?.hasVariants && editing.variants?.length) {
+      setHasVariants(true);
+      setVariants(
+        editing.variants.map((v) => ({
+          id: v.id,
+          name: v.name,
+          price: String(v.price),
+          stock: String(v.stock),
+        })),
+      );
+    } else {
+      setHasVariants(false);
+      setPrice(String(editingProduct.price ?? editing?.price ?? ""));
+      setStock(String(editing?.stock ?? ""));
+    }
+  }, [isEdit, editingProduct, editing]);
 
   // New category → start its attributes fresh (never carry the wrong category's fields).
   const pickCategory = (id) => {
@@ -3812,7 +3454,8 @@ export function SellerAddProduct() {
       ? requiredAttrFields.every((f) => attrFilled(f, attrs[f.k]))
       : attrFields.some((f) => attrFilled(f, attrs[f.k])));
   const variantsOk = !hasVariants || variants.every((v) => v.price && v.stock);
-  const photosOk = productPhotos.length >= 3 && productPhotos.length <= 5;
+  // Editing keeps the existing gallery — the update endpoint never touches images.
+  const photosOk = isEdit ? true : productPhotos.length >= 3 && productPhotos.length <= 5;
   const canPublish =
     photosOk &&
     titleOk &&
@@ -3845,12 +3488,46 @@ export function SellerAddProduct() {
     setVariants((arr) => [...arr, { id: Date.now(), name: "", price: "", stock: "" }]);
   const removeVariant = (id) => setVariants((arr) => arr.filter((v) => v.id !== id));
 
+  // Variants the seller actually filled, in the API's shape. Shared by create
+  // and edit so both paths agree on what a "complete" variant is.
+  const buildVariants = () =>
+    hasVariants
+      ? variants
+          .filter((v) => v.name && v.price && v.stock)
+          .map((v) => ({
+            id: String(v.id),
+            name: v.name.trim(),
+            price: Number(v.price),
+            stock: Number(v.stock),
+          }))
+      : undefined;
+
   // Publish: upload every photo (3–5, cover first), then create the product.
-  // Postgres is the source of truth; the server indexes it into search in the
-  // background.
-  const publishing = uploadImage.isPending || createProduct.isPending;
+  // Edit: PATCH the changed fields (images/category are never sent). Postgres is
+  // the source of truth; the server re-indexes it into search in the background.
+  const publishing = uploadImage.isPending || createProduct.isPending || updateProduct.isPending;
   const handlePublish = async () => {
     if (!canPublish || publishing) return;
+    if (isEdit && editing) {
+      try {
+        await updateProduct.mutateAsync({
+          id: editing.id,
+          name: title.trim(),
+          description: description.trim(),
+          price: Number(price || displayPrice || 0),
+          metadata: attrs,
+          stock: hasVariants ? undefined : Number(stock) || 0,
+          variants: buildVariants(),
+          allowBargaining: bargainOk,
+          maxDiscountPct: bargainOk ? bargainPct : 0,
+        });
+        toast("Product updated · अपडेट भयो");
+        nav("s-products");
+      } catch (err) {
+        toast(err instanceof Error ? err.message : "Could not save changes. Please try again.");
+      }
+      return;
+    }
     try {
       const uploaded = await Promise.all(
         productPhotos.map((photo) => uploadImage.mutateAsync({ file: photo.file })),
@@ -3865,16 +3542,7 @@ export function SellerAddProduct() {
         img: images[0],
         metadata: attrs,
         stock: hasVariants ? undefined : Number(stock) || 0,
-        variants: hasVariants
-          ? variants
-              .filter((v) => v.name && v.price && v.stock)
-              .map((v) => ({
-                id: String(v.id),
-                name: v.name.trim(),
-                price: Number(v.price),
-                stock: Number(v.stock),
-              }))
-          : undefined,
+        variants: buildVariants(),
         allowBargaining: bargainOk,
         maxDiscountPct: bargainOk ? bargainPct : 0,
       });
@@ -3899,6 +3567,37 @@ export function SellerAddProduct() {
     );
   }
 
+  // Editing: wait for the product before showing the form, so fields don't flash
+  // empty then fill in. If it can't be loaded, send the seller back with a note.
+  if (isEdit && !editingProduct) {
+    if (editingError) {
+      return (
+        <div className="bz-seller-page">
+          <SellerHelpBar />
+          <EmptyState
+            title="Couldn't load this product"
+            message={
+              editingErr instanceof Error
+                ? editingErr.message
+                : "It may have been removed. Go back to your products and try again."
+            }
+            cta="Back to my products"
+            onCta={() => nav("s-products")}
+          />
+        </div>
+      );
+    }
+    if (editingLoading || !editingProduct) {
+      return (
+        <div className="bz-seller-page">
+          <div style={{ display: "flex", justifyContent: "center", padding: "96px 24px" }}>
+            <Spinner />
+          </div>
+        </div>
+      );
+    }
+  }
+
   return (
     <div className="bz-seller-page">
       <div className="bz-seller-add-layout">
@@ -3906,7 +3605,7 @@ export function SellerAddProduct() {
           <SellerHelpBar />
 
           <AppLink
-            href={pathFromScreen("s-dashboard")}
+            href={pathFromScreen(isEdit ? "s-products" : "s-dashboard")}
             style={{
               background: "none",
               border: "none",
@@ -3921,14 +3620,15 @@ export function SellerAddProduct() {
               textDecoration: "none",
             }}
           >
-            <Icon name="chevronLeft" size={16} /> Back to dashboard
+            <Icon name="chevronLeft" size={16} />{" "}
+            {isEdit ? "Back to my products" : "Back to dashboard"}
           </AppLink>
 
           <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-            Add a product
+            {isEdit ? "Edit product" : "Add a product"}
           </h1>
           <p className="ne" style={{ color: "var(--ink-500)", margin: "4px 0 12px" }}>
-            ३ ट्यापमा सामान थप्नुहोस्
+            {isEdit ? "सामान सम्पादन गर्नुहोस्" : "३ ट्यापमा सामान थप्नुहोस्"}
           </p>
 
           {/* Progress */}
@@ -3979,22 +3679,50 @@ export function SellerAddProduct() {
               </span>
               <div>
                 <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>
-                  Add photos{" "}
+                  {isEdit ? "Photos" : "Add photos"}{" "}
                   <span style={{ fontSize: ".75rem", color: "var(--ink-400)", fontWeight: 600 }}>
-                    3 required · up to 5
+                    {isEdit ? "can't be changed here" : "3 required · up to 5"}
                   </span>
                 </h3>
                 <div className="ne" style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
-                  ३ फोटो अनिवार्य · ५ सम्म
+                  {isEdit ? "फोटो यहाँ परिवर्तन गर्न मिल्दैन" : "३ फोटो अनिवार्य · ५ सम्म"}
                 </div>
               </div>
             </div>
-            <ProductPhotoPicker
-              photos={productPhotos}
-              onChange={setProductPhotos}
-              min={3}
-              max={5}
-            />
+            {isEdit ? (
+              <>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {(editingProduct?.images?.length
+                    ? editingProduct.images
+                    : [editing?.img, ...(editing?.images ?? [])].filter(Boolean)
+                  ).map((src, i) => (
+                    <img
+                      key={`${src}-${i}`}
+                      src={src as string}
+                      alt=""
+                      style={{
+                        width: 72,
+                        height: 72,
+                        objectFit: "cover",
+                        borderRadius: "var(--r-md)",
+                        border: "1px solid var(--line-200)",
+                        background: "var(--line-100)",
+                      }}
+                    />
+                  ))}
+                </div>
+                <p style={{ fontSize: ".75rem", color: "var(--ink-400)", margin: "10px 0 0" }}>
+                  To change photos, remove this product and list it again.
+                </p>
+              </>
+            ) : (
+              <ProductPhotoPicker
+                photos={productPhotos}
+                onChange={setProductPhotos}
+                min={3}
+                max={5}
+              />
+            )}
           </div>
 
           {/* Step 2 — Describe */}
@@ -4116,6 +3844,7 @@ export function SellerAddProduct() {
             <select
               value={category}
               onChange={(e) => pickCategory(e.target.value)}
+              disabled={isEdit}
               style={{
                 width: "100%",
                 height: 56,
@@ -4124,10 +3853,11 @@ export function SellerAddProduct() {
                 borderRadius: "var(--r-md)",
                 padding: "0 14px",
                 outline: "none",
-                background: "#fff",
+                background: isEdit ? "var(--line-100)" : "#fff",
                 fontFamily: "var(--font-sans)",
                 color: category ? "var(--ink-900)" : "var(--ink-400)",
                 fontWeight: category ? 600 : 400,
+                cursor: isEdit ? "not-allowed" : "pointer",
               }}
             >
               <option value="">Pick a category</option>
@@ -4138,7 +3868,9 @@ export function SellerAddProduct() {
               ))}
             </select>
             <p style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 6 }}>
-              Picking the right category shows buyers the right details — and helps them find you.
+              {isEdit
+                ? "Category can't be changed after a product is listed."
+                : "Picking the right category shows buyers the right details — and helps them find you."}
             </p>
           </div>
 
@@ -4507,7 +4239,13 @@ export function SellerAddProduct() {
             loading={publishing}
             onClick={handlePublish}
           >
-            {publishing ? "Publishing…" : "Publish · प्रकाशित गर्नुहोस्"}
+            {isEdit
+              ? publishing
+                ? "Saving…"
+                : "Save changes · सेभ गर्नुहोस्"
+              : publishing
+                ? "Publishing…"
+                : "Publish · प्रकाशित गर्नुहोस्"}
           </Button>
           {!canPublish && !publishing && (
             <p
@@ -4553,9 +4291,16 @@ export function SellerAddProduct() {
             >
               Buyer preview
             </div>
-            {productPhotos.length > 0 ? (
+            {(productPhotos[0]?.previewUrl ??
+            (isEdit ? (editingProduct?.img ?? editing?.img ?? editing?.images?.[0]) : null)) ? (
               <img
-                src={productPhotos[0].previewUrl}
+                src={
+                  productPhotos[0]?.previewUrl ??
+                  editingProduct?.img ??
+                  editing?.img ??
+                  editing?.images?.[0] ??
+                  ""
+                }
                 alt=""
                 className="bz-seller-preview-card__img"
                 style={{ marginBottom: 12 }}
@@ -4625,7 +4370,7 @@ export function SellerAddProduct() {
               }}
             >
               {[
-                { done: productPhotos.length > 0, label: "Photos" },
+                { done: isEdit ? true : productPhotos.length > 0, label: "Photos" },
                 { done: titleOk, label: "Title & category" },
                 { done: hasVariants ? variantsOk : !!(price && stock), label: "Price & stock" },
               ].map((step) => (
@@ -5280,6 +5025,36 @@ export function SellerInventory() {
                               Save price
                             </Button>
                           </div>
+                        </div>
+                        <div
+                          style={{
+                            marginTop: 14,
+                            borderTop: "1px dashed var(--line-200)",
+                            paddingTop: 14,
+                          }}
+                        >
+                          <Button
+                            variant="secondary"
+                            full
+                            icon="edit"
+                            disabled={savingId === it.id}
+                            onClick={() => {
+                              editProductRef.current = it;
+                              nav("s-edit");
+                            }}
+                          >
+                            Edit full details · पूरा विवरण सम्पादन
+                          </Button>
+                          <p
+                            style={{
+                              margin: "8px 0 0",
+                              fontSize: ".75rem",
+                              color: "var(--ink-400)",
+                              textAlign: "center",
+                            }}
+                          >
+                            Change name, description, specs, variants &amp; bargaining.
+                          </p>
                         </div>
                       </div>
                     )}
@@ -7271,6 +7046,283 @@ export const NOTIF_CHANNELS = [
   { en: "Email", icon: "file" },
 ];
 
+/* ---------- KYC verification timeline ----------
+   Always reachable from the sidebar so sellers who deferred KYC ("verify
+   later") can come back and finish / track it. Renders the verification
+   journey as a vertical timeline with event names + timestamps. */
+export function SellerVerificationTimeline() {
+  const { nav } = useBz();
+  const { data: organization, isLoading, isError, error } = useSellerOrganization();
+  const verification = organization?.verification;
+  const status = verification?.status ?? "none";
+
+  const formatWhen = (iso) => {
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toLocaleString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
+
+  const submitted = status !== "none";
+  const reviewed = status === "approved" || status === "rejected";
+
+  const STATUS_META = {
+    none: { label: "Not started", bg: "var(--line-200)", fg: "var(--ink-600)" },
+    pending: { label: "Under review", bg: "rgba(247,127,0,.14)", fg: "var(--saffron)" },
+    approved: { label: "Approved", bg: "rgba(22,163,74,.14)", fg: "var(--success)" },
+    rejected: { label: "Not approved", bg: "var(--tint-red-50)", fg: "var(--red)" },
+  };
+  const meta = STATUS_META[status] ?? STATUS_META.none;
+
+  const milestones = [
+    {
+      key: "submitted",
+      icon: "file",
+      en: "KYC application submitted",
+      ne: "केवाईसी कागजात पेश गरियो",
+      at: verification?.submittedAt,
+      state: submitted ? "done" : "todo",
+      hint: submitted ? null : "You haven't sent your document yet.",
+    },
+    {
+      key: "review",
+      icon: reviewed ? "shieldCheck" : "clock",
+      en: reviewed ? "Reviewed by BazaarCo" : "Under review by BazaarCo",
+      ne: reviewed ? "BazaarCo ले जाँच गर्‍यो" : "BazaarCo ले जाँच गर्दैछ",
+      at: reviewed ? verification?.reviewedAt : null,
+      state: reviewed ? "done" : submitted ? "current" : "todo",
+      hint: status === "pending" ? "Usually decided within 1–2 working days." : null,
+    },
+    {
+      key: "decision",
+      icon: status === "rejected" ? "x" : "badgeCheck",
+      en:
+        status === "approved"
+          ? "Approved — you can sell"
+          : status === "rejected"
+            ? "Not approved"
+            : "Approval",
+      ne:
+        status === "approved"
+          ? "स्वीकृत — अब बेच्न सक्नुहुन्छ"
+          : status === "rejected"
+            ? "अस्वीकृत भयो"
+            : "स्वीकृति",
+      at: reviewed ? verification?.reviewedAt : null,
+      state: status === "approved" ? "done" : status === "rejected" ? "done-red" : "todo",
+      note: status === "rejected" ? verification?.note : null,
+    },
+  ];
+
+  const dotFor = (state) => {
+    switch (state) {
+      case "done":
+        return { bg: "rgba(22,163,74,.12)", fg: "var(--success)" };
+      case "done-red":
+        return { bg: "var(--tint-red-50)", fg: "var(--red)" };
+      case "current":
+        return { bg: "rgba(247,127,0,.14)", fg: "var(--saffron)" };
+      default:
+        return { bg: "var(--line-200)", fg: "var(--ink-400)" };
+    }
+  };
+
+  return (
+    <ApiState isLoading={isLoading} isError={isError} error={error}>
+      <div className="bz-seller-page" style={{ maxWidth: "var(--container)", margin: "0 auto" }}>
+        <SellerHelpBar />
+        <div style={{ maxWidth: 640 }}>
+          {/* Header — title + live status pill, wraps on narrow screens */}
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: "1.5rem",
+                  fontWeight: 800,
+                  color: "var(--blue-deep)",
+                }}
+              >
+                KYC verification{" "}
+                <span
+                  className="ne"
+                  style={{ fontSize: "1rem", color: "var(--ink-500)", fontWeight: 600 }}
+                >
+                  · केवाईसी
+                </span>
+              </h1>
+              <p style={{ margin: "4px 0 0", fontSize: ".875rem", color: "var(--ink-500)" }}>
+                Track your document verification status.
+              </p>
+            </div>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                background: meta.bg,
+                color: meta.fg,
+                fontWeight: 800,
+                fontSize: ".8125rem",
+                padding: "6px 12px",
+                borderRadius: 999,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {meta.label}
+            </span>
+          </div>
+
+          {/* Vertical timeline */}
+          <div
+            style={{
+              marginTop: 18,
+              background: "#fff",
+              border: "1.5px solid var(--line-200)",
+              borderRadius: "var(--r-lg)",
+              padding: "22px 20px",
+            }}
+          >
+            {milestones.map((m, i) => {
+              const dot = dotFor(m.state);
+              const last = i === milestones.length - 1;
+              const when = formatWhen(m.at);
+              const dim = m.state === "todo";
+              return (
+                <div key={m.key} style={{ display: "flex", gap: 14 }}>
+                  {/* rail: dot + connector line */}
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: "50%",
+                        background: dot.bg,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Icon name={m.icon} size={19} color={dot.fg} />
+                    </div>
+                    {!last && (
+                      <div
+                        style={{
+                          flex: 1,
+                          width: 2,
+                          minHeight: 26,
+                          margin: "4px 0",
+                          background:
+                            m.state === "todo" ? "var(--line-200)" : "rgba(22,163,74,.35)",
+                        }}
+                      />
+                    )}
+                  </div>
+                  {/* content */}
+                  <div style={{ flex: 1, minWidth: 0, paddingBottom: last ? 0 : 20 }}>
+                    <div
+                      style={{
+                        fontWeight: 800,
+                        fontSize: ".9375rem",
+                        color: dim ? "var(--ink-500)" : "var(--ink-900)",
+                      }}
+                    >
+                      {m.en}
+                    </div>
+                    <div
+                      className="ne"
+                      style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 1 }}
+                    >
+                      {m.ne}
+                    </div>
+                    {when ? (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          marginTop: 6,
+                          fontSize: ".8125rem",
+                          color: "var(--ink-600)",
+                          fontWeight: 600,
+                        }}
+                      >
+                        <Icon name="clock" size={13} color="var(--ink-400)" />
+                        <span className="tnum">{when}</span>
+                      </div>
+                    ) : m.state === "current" ? (
+                      <div
+                        style={{
+                          marginTop: 6,
+                          fontSize: ".8125rem",
+                          color: "var(--saffron)",
+                          fontWeight: 700,
+                        }}
+                      >
+                        In progress
+                      </div>
+                    ) : null}
+                    {m.hint && (
+                      <div style={{ marginTop: 4, fontSize: ".8125rem", color: "var(--ink-500)" }}>
+                        {m.hint}
+                      </div>
+                    )}
+                    {m.note && (
+                      <div
+                        style={{
+                          marginTop: 8,
+                          padding: "10px 12px",
+                          background: "var(--tint-red-50)",
+                          border: "1px solid rgba(230,57,70,.25)",
+                          borderRadius: "var(--r-md)",
+                          fontSize: ".8125rem",
+                          color: "var(--red)",
+                        }}
+                      >
+                        <strong>Reason:</strong> {m.note}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Action — finish or re-submit depending on status */}
+          {(status === "none" || status === "rejected") && (
+            <div style={{ marginTop: 18 }}>
+              <Button variant="primary" size="lg" full onClick={() => nav("s-onboarding")}>
+                {status === "rejected"
+                  ? "Re-upload document · कागजात फेरि पठाउनुहोस्"
+                  : "Start verification · प्रमाणीकरण सुरु गर्नुहोस्"}
+              </Button>
+            </div>
+          )}
+          {status === "approved" && (
+            <div style={{ marginTop: 18 }}>
+              <Button variant="primary" size="lg" full onClick={() => nav("s-dashboard")}>
+                Open dashboard · ड्यासबोर्ड
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    </ApiState>
+  );
+}
+
 export function SellerSettings() {
   const { toast, nav } = useBz();
   const user = useBazaarStore((s) => s.user);
@@ -7283,34 +7335,20 @@ export function SellerSettings() {
     error,
   } = useSellerSettings(organization?.linked === true);
   const updateSettings = useUpdateSellerSettings();
-  const [tab, setTab] = useState("shop");
-  const [shopRules, setShopRules] = useState(null);
+  const [tab, setTab] = useState("account");
   const [notif, setNotif] = useState(null);
   const [language, setLanguage] = useState("both");
 
   useEffect(() => {
     if (!settings) return;
-    setShopRules({ ...settings.shopRules });
     setNotif(settings.alertMatrix.map((row) => [...row]));
     setLanguage(settings.account.language);
   }, [settings]);
 
-  const toggleZone = (zone) => {
-    setShopRules((prev) => {
-      if (!prev) return prev;
-      const has = prev.shippingZones.includes(zone);
-      const next = has
-        ? prev.shippingZones.filter((z) => z !== zone)
-        : [...prev.shippingZones, zone];
-      return { ...prev, shippingZones: next.length > 0 ? next : [zone] };
-    });
-  };
-
   const handleSave = async () => {
-    if (!shopRules || !notif) return;
+    if (!notif) return;
     try {
       await updateSettings.mutateAsync({
-        shopRules,
         alertMatrix: notif,
         account: { language },
       });
@@ -7320,14 +7358,12 @@ export function SellerSettings() {
     }
   };
 
-  const ready = shopRules && notif;
-
   if (organization && !organization.linked) {
     return (
       <div className="bz-seller-page">
         <SellerHelpBar />
         <p style={{ color: "var(--ink-600)" }}>
-          Complete seller onboarding to configure shop rules and alerts.
+          Complete seller onboarding to configure notifications and account settings.
         </p>
         <Button variant="primary" href={pathFromScreen("s-onboarding")}>
           Go to onboarding
@@ -7349,264 +7385,51 @@ export function SellerSettings() {
             · सेटिङ
           </span>
         </h1>
-        <p style={{ margin: "4px 0 18px", fontSize: ".875rem", color: "var(--ink-500)" }}>
-          Set up your shop rules and how we send you alerts.
-        </p>
-
-        {/* Big icon-tab switcher */}
+        {/* Tab bar — same underline pattern as PDP description/specs */}
         <div
+          role="tablist"
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 8,
-            marginBottom: 18,
+            display: "flex",
+            gap: 0,
+            borderBottom: "2px solid var(--line-200)",
+            marginBottom: 20,
+            marginTop: 8,
           }}
         >
           {[
-            { id: "shop", icon: "store", en: "Shop rules", ne: "पसलका नियम" },
-            { id: "alerts", icon: "bell", en: "Alerts", ne: "सूचना" },
-            { id: "account", icon: "lock", en: "Account", ne: "खाता" },
+            { id: "account", en: "Account", ne: "खाता" },
+            { id: "alerts", en: "Alerts", ne: "सूचना" },
           ].map((t) => {
             const active = tab === t.id;
             return (
               <button
                 key={t.id}
+                role="tab"
+                aria-selected={active}
                 onClick={() => setTab(t.id)}
                 style={{
-                  background: active ? "var(--tint-red-50)" : "#fff",
-                  border: `1.5px solid ${active ? "var(--red)" : "var(--line-200)"}`,
-                  color: active ? "var(--red)" : "var(--ink-700)",
-                  borderRadius: "var(--r-md)",
-                  padding: "14px 10px",
+                  background: "none",
+                  border: "none",
+                  borderBottom: `2px solid ${active ? "var(--red)" : "transparent"}`,
+                  marginBottom: -2,
+                  padding: "12px 18px",
                   cursor: "pointer",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 6,
-                  fontWeight: 700,
+                  fontWeight: active ? 800 : 600,
+                  fontSize: ".9375rem",
+                  color: active ? "var(--red)" : "var(--ink-500)",
+                  fontFamily: "var(--font-sans)",
+                  transition:
+                    "color var(--dur-standard) var(--ease), border-color var(--dur-standard) var(--ease)",
                 }}
               >
-                <Icon name={t.icon} size={22} color={active ? "var(--red)" : "var(--ink-700)"} />
-                <div style={{ fontSize: ".875rem" }}>{t.en}</div>
-                <div
-                  className="ne"
-                  style={{ fontSize: ".7rem", color: "var(--ink-500)", fontWeight: 600 }}
-                >
+                {t.en}{" "}
+                <span className="ne" style={{ fontSize: ".75rem", marginLeft: 4, fontWeight: 600 }}>
                   {t.ne}
-                </div>
+                </span>
               </button>
             );
           })}
         </div>
-
-        {tab === "shop" && ready && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div
-              style={{
-                background: "#fff",
-                border: "1.5px solid var(--line-200)",
-                borderRadius: "var(--r-lg)",
-                padding: 18,
-              }}
-            >
-              <h3 style={{ margin: "0 0 12px", fontSize: ".9375rem", fontWeight: 800 }}>
-                Shop hours · खुल्ने समय
-              </h3>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                <div>
-                  <label
-                    style={{
-                      fontSize: ".75rem",
-                      color: "var(--ink-500)",
-                      fontWeight: 700,
-                      display: "block",
-                      marginBottom: 4,
-                    }}
-                  >
-                    Open
-                  </label>
-                  <input
-                    type="time"
-                    value={shopRules.openTime}
-                    onChange={(e) => setShopRules((s) => ({ ...s, openTime: e.target.value }))}
-                    style={{
-                      width: "100%",
-                      height: 44,
-                      padding: "0 12px",
-                      border: "1.5px solid var(--line-200)",
-                      borderRadius: "var(--r-md)",
-                      fontFamily: "var(--font-sans)",
-                    }}
-                  />
-                </div>
-                <div>
-                  <label
-                    style={{
-                      fontSize: ".75rem",
-                      color: "var(--ink-500)",
-                      fontWeight: 700,
-                      display: "block",
-                      marginBottom: 4,
-                    }}
-                  >
-                    Close
-                  </label>
-                  <input
-                    type="time"
-                    value={shopRules.closeTime}
-                    onChange={(e) => setShopRules((s) => ({ ...s, closeTime: e.target.value }))}
-                    style={{
-                      width: "100%",
-                      height: 44,
-                      padding: "0 12px",
-                      border: "1.5px solid var(--line-200)",
-                      borderRadius: "var(--r-md)",
-                      fontFamily: "var(--font-sans)",
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div
-              style={{
-                background: "#fff",
-                border: "1.5px solid var(--line-200)",
-                borderRadius: "var(--r-lg)",
-                padding: 18,
-              }}
-            >
-              <h3 style={{ margin: "0 0 12px", fontSize: ".9375rem", fontWeight: 800 }}>
-                Return policy · फिर्ता नीति
-              </h3>
-              <select
-                value={String(shopRules.returnDays)}
-                onChange={(e) =>
-                  setShopRules((s) => ({ ...s, returnDays: parseInt(e.target.value, 10) }))
-                }
-                style={{
-                  width: "100%",
-                  height: 44,
-                  padding: "0 12px",
-                  border: "1.5px solid var(--line-200)",
-                  borderRadius: "var(--r-md)",
-                  fontFamily: "var(--font-sans)",
-                  marginBottom: 10,
-                  color: "var(--ink-900)",
-                  fontWeight: 600,
-                }}
-              >
-                <option value="0">No returns</option>
-                <option value="3">3-day return</option>
-                <option value="7">7-day return (recommended)</option>
-                <option value="14">14-day return</option>
-              </select>
-              <textarea
-                value={shopRules.returnNotes}
-                onChange={(e) => setShopRules((s) => ({ ...s, returnNotes: e.target.value }))}
-                placeholder="Notes for buyers about returns…"
-                style={{
-                  width: "100%",
-                  minHeight: 60,
-                  padding: 10,
-                  border: "1.5px solid var(--line-200)",
-                  borderRadius: "var(--r-md)",
-                  fontFamily: "var(--font-sans)",
-                  fontSize: ".875rem",
-                  outline: "none",
-                  resize: "vertical",
-                }}
-              />
-            </div>
-
-            <div
-              style={{
-                background: "#fff",
-                border: "1.5px solid var(--line-200)",
-                borderRadius: "var(--r-lg)",
-                padding: 18,
-              }}
-            >
-              <h3 style={{ margin: "0 0 12px", fontSize: ".9375rem", fontWeight: 800 }}>
-                Where you ship · डेलिभरी क्षेत्र
-              </h3>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-                  gap: 8,
-                }}
-              >
-                {SHIPPING_ZONES.map((z) => (
-                  <label
-                    key={z}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      padding: 10,
-                      border: "1px solid var(--line-200)",
-                      borderRadius: "var(--r-md)",
-                      cursor: "pointer",
-                      fontSize: ".875rem",
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={shopRules.shippingZones.includes(z)}
-                      onChange={() => toggleZone(z)}
-                      style={{ width: 18, height: 18, accentColor: "var(--red)" }}
-                    />
-                    {z}
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div
-              style={{
-                background: "#fff",
-                border: "1.5px solid var(--line-200)",
-                borderRadius: "var(--r-lg)",
-                padding: 18,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-                flexWrap: "wrap",
-              }}
-            >
-              <div>
-                <h3 style={{ margin: 0, fontSize: ".9375rem", fontWeight: 800 }}>
-                  Shop on holiday · बिदामा
-                </h3>
-                <p style={{ margin: "2px 0 0", fontSize: ".8125rem", color: "var(--ink-500)" }}>
-                  Hide all listings without losing data. Switch back anytime.
-                </p>
-              </div>
-              <label
-                style={{ position: "relative", width: 52, height: 30, display: "inline-block" }}
-              >
-                <input
-                  type="checkbox"
-                  checked={shopRules.holidayMode}
-                  onChange={(e) => setShopRules((s) => ({ ...s, holidayMode: e.target.checked }))}
-                  style={{ opacity: 0, width: 0, height: 0, position: "absolute" }}
-                />
-                <span
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    background: shopRules.holidayMode ? "var(--red)" : "var(--line-200)",
-                    borderRadius: 999,
-                    cursor: "pointer",
-                    transition: "background .2s",
-                  }}
-                />
-              </label>
-            </div>
-          </div>
-        )}
 
         {tab === "alerts" && notif && (
           <div>
@@ -7796,7 +7619,7 @@ export function SellerSettings() {
           variant="primary"
           size="lg"
           full
-          disabled={!ready || updateSettings.isPending}
+          disabled={!notif || updateSettings.isPending}
           onClick={() => void handleSave()}
           style={{ marginTop: 18 }}
         >
@@ -7817,7 +7640,6 @@ export function SellerProfile() {
   const { data: storefront } = useSellerStorefront();
   const shopName = (storefront as { shopName?: string })?.shopName?.trim() || "Your shop";
   const sellerName = displayName(user, "Seller");
-  const kycItems: Array<{ en: string; ne: string; status: string; note: string }> = [];
 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteText, setDeleteText] = useState("");
@@ -7878,9 +7700,6 @@ export function SellerProfile() {
           · प्रोफाइल
         </span>
       </h1>
-      <p style={{ margin: "4px 0 18px", fontSize: ".875rem", color: "var(--ink-500)" }}>
-        Your info, your shop documents, and the log-out button.
-      </p>
 
       {/* Owner card */}
       <div
@@ -7970,84 +7789,6 @@ export function SellerProfile() {
             </div>
             <Icon name="chevronRight" size={18} color="var(--ink-400)" />
           </button>
-        ))}
-      </div>
-
-      {/* Shop documents (KYC) */}
-      <h2
-        style={{
-          margin: "10px 0 8px",
-          fontSize: ".9375rem",
-          fontWeight: 800,
-          color: "var(--blue-deep)",
-        }}
-      >
-        <Icon
-          name="shieldCheck"
-          size={18}
-          color="var(--success)"
-          style={{ verticalAlign: "middle", marginRight: 6 }}
-        />
-        Shop documents · पसलका कागजात
-      </h2>
-      <p style={{ margin: "0 0 10px", fontSize: ".8125rem", color: "var(--ink-500)" }}>
-        These prove your shop is real. Buyers see your verified badge.
-      </p>
-      <div
-        style={{
-          background: "#fff",
-          border: "1.5px solid var(--line-200)",
-          borderRadius: "var(--r-lg)",
-          overflow: "hidden",
-          marginBottom: 16,
-        }}
-      >
-        {kycItems.length === 0 && (
-          <div
-            style={{
-              padding: 24,
-              textAlign: "center",
-              color: "var(--ink-500)",
-              fontSize: ".875rem",
-            }}
-          >
-            No documents uploaded yet.
-          </div>
-        )}
-        {kycItems.map((it, i) => (
-          <div
-            key={it.en}
-            style={{
-              padding: 14,
-              borderBottom: i < kycItems.length - 1 ? "1px solid var(--line-200)" : "none",
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-            }}
-          >
-            <Icon
-              name={it.status === "verified" ? "check" : "clock"}
-              size={22}
-              color={it.status === "verified" ? "var(--success)" : "var(--saffron)"}
-            />
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: ".9375rem" }}>
-                {it.en}{" "}
-                <span
-                  className="ne"
-                  style={{ fontWeight: 600, color: "var(--ink-500)", fontSize: ".75rem" }}
-                >
-                  · {it.ne}
-                </span>
-              </div>
-              <div style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 1 }}>
-                {it.note}
-              </div>
-            </div>
-            <Button variant="ghost" size="sm" icon="edit" onClick={() => toast(`Update ${it.en}`)}>
-              Update
-            </Button>
-          </div>
         ))}
       </div>
 
@@ -8583,236 +8324,6 @@ export function SellerAnalytics() {
               ))}
             </div>
           </div>
-
-          <p
-            className="bz-seller-analytics-span-12"
-            style={{ textAlign: "center", color: "var(--ink-500)", fontSize: ".875rem", margin: 0 }}
-          >
-            Want to know what to fix? Open <b>What to do · के गर्ने</b> in the sidebar.
-          </p>
-        </div>
-      </div>
-    </ApiState>
-  );
-}
-
-/* ---------- NEW: Reports ("What to do") ---------- */
-
-export function SellerReports() {
-  const { toast, nav } = useBz();
-  const { data: reports, isLoading, isError, error } = useSellerReports();
-  const cards = reports?.cards ?? [];
-  const downloads = reports?.downloads ?? [];
-
-  return (
-    <ApiState isLoading={isLoading} isError={isError} error={error}>
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "20px 28px 100px" }}>
-        <SellerHelpBar />
-        <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-          What to do this week
-        </h1>
-        <p
-          className="ne"
-          style={{ margin: "4px 0 4px", color: "var(--ink-500)", fontSize: ".95rem" }}
-        >
-          यो हप्ता के गर्ने
-        </p>
-        <p style={{ margin: "0 0 18px", color: "var(--ink-500)", fontSize: ".9rem" }}>
-          Things to act on, and your reports to save or share.
-        </p>
-
-        {/* Downloads moved TO TOP — visible without scrolling */}
-        <div
-          style={{
-            background: "linear-gradient(135deg, var(--tint-blue-50) 0%, rgba(22,163,74,.06) 100%)",
-            border: "1.5px solid var(--blue)",
-            borderRadius: "var(--r-lg)",
-            padding: 18,
-            marginBottom: 22,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              marginBottom: 12,
-              flexWrap: "wrap",
-            }}
-          >
-            <span
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: "var(--r-md)",
-                background: "var(--blue)",
-                color: "#fff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Icon name="download" size={22} color="#fff" />
-            </span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <h2
-                style={{
-                  margin: 0,
-                  fontSize: "1.125rem",
-                  fontWeight: 800,
-                  color: "var(--blue-deep)",
-                }}
-              >
-                Get my reports
-              </h2>
-              <p
-                className="ne"
-                style={{ margin: "2px 0 0", color: "var(--ink-500)", fontSize: ".8125rem" }}
-              >
-                रिपोर्ट निकाल्नुहोस् — Tap one, we send it to your WhatsApp.
-              </p>
-            </div>
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: 10,
-            }}
-          >
-            {downloads.map((d) => (
-              <button
-                key={d.en}
-                onClick={() => toast(`${d.en} sent to WhatsApp · प्राप्त भयो`)}
-                style={{
-                  background: "#fff",
-                  border: "1.5px solid var(--blue)",
-                  borderRadius: "var(--r-md)",
-                  padding: 14,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  cursor: "pointer",
-                  textAlign: "left",
-                }}
-              >
-                <Icon name={d.icon} size={22} color="var(--blue)" />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 800, fontSize: ".9rem", color: "var(--ink-900)" }}>
-                    {d.en}
-                  </div>
-                  <div className="ne" style={{ fontSize: ".7rem", color: "var(--ink-500)" }}>
-                    {d.ne}
-                  </div>
-                </div>
-                <Icon name="download" size={18} color="var(--blue)" />
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Actions */}
-        <h2
-          style={{
-            margin: "0 0 4px",
-            fontSize: "1.125rem",
-            fontWeight: 800,
-            color: "var(--blue-deep)",
-          }}
-        >
-          Things to act on
-        </h2>
-        <p
-          className="ne"
-          style={{ margin: "0 0 14px", color: "var(--ink-500)", fontSize: ".8125rem" }}
-        >
-          के-के गर्ने
-        </p>
-
-        <div style={{ display: "grid", gap: 12 }}>
-          {cards.length === 0 && (
-            <div
-              style={{
-                padding: 28,
-                textAlign: "center",
-                background: "#fff",
-                border: "1.5px solid var(--line-200)",
-                borderRadius: "var(--r-lg)",
-                color: "var(--ink-500)",
-              }}
-            >
-              Nothing to act on right now. Suggestions appear when you have orders and inventory.
-            </div>
-          )}
-          {cards.map((c) => (
-            <div
-              key={c.title}
-              style={{
-                background: "#fff",
-                border: "1.5px solid var(--line-200)",
-                borderRadius: "var(--r-lg)",
-                padding: 18,
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-                <span
-                  style={{
-                    width: 52,
-                    height: 52,
-                    borderRadius: "var(--r-md)",
-                    background: "var(--line-100)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  <Icon name={c.icon} size={26} color={c.color} />
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <h3
-                    style={{
-                      margin: 0,
-                      fontSize: "1.0625rem",
-                      fontWeight: 800,
-                      color: "var(--ink-900)",
-                    }}
-                  >
-                    {c.title}
-                  </h3>
-                  <div
-                    className="ne"
-                    style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 2 }}
-                  >
-                    {c.ne}
-                  </div>
-                  <p style={{ margin: "8px 0 0", color: "var(--ink-700)", fontSize: ".9rem" }}>
-                    {c.sub}
-                  </p>
-                  {c.items.length > 0 && (
-                    <ul
-                      style={{
-                        margin: "10px 0 0",
-                        paddingLeft: 20,
-                        color: "var(--ink-700)",
-                        fontSize: ".875rem",
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      {c.items.map((i) => (
-                        <li key={i}>{i}</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </div>
-              <div style={{ marginTop: 14 }}>
-                <Button variant="primary" size="lg" full icon={c.icon} href={pathFromScreen(c.to)}>
-                  {c.action}
-                </Button>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     </ApiState>

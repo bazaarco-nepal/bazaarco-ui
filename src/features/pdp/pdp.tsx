@@ -398,6 +398,172 @@ function BargainModal({ p, onClose }) {
   );
 }
 
+/* ------------------------------------------------------------------
+   Buy-Now option sheet (mobile)
+   When an older shopper taps "Buy Now" on a product that has options
+   (size / colour), we don't drop them on a blank cart. We slide up a
+   focused sheet to confirm the choice, then send them straight to
+   checkout. Shows only the item price — never the summed total.
+   ------------------------------------------------------------------ */
+function BuyNowSheet({ p, variants, variantSel, onPick, onConfirm, onClose }) {
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Confirm your choice"
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 95,
+        background: "rgba(11,18,32,.5)",
+        display: "flex",
+        alignItems: "flex-end",
+      }}
+    >
+      <div
+        className="fade-up"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "100%",
+          background: "#fff",
+          borderTopLeftRadius: "var(--r-xl)",
+          borderTopRightRadius: "var(--r-xl)",
+          padding: "16px 18px calc(18px + env(safe-area-inset-bottom))",
+          boxShadow: "0 -6px 24px rgba(15,23,42,.18)",
+          maxHeight: "85vh",
+          overflowY: "auto",
+        }}
+      >
+        {/* grab handle */}
+        <div
+          aria-hidden
+          style={{
+            width: 40,
+            height: 4,
+            borderRadius: 999,
+            background: "var(--line-200)",
+            margin: "0 auto 16px",
+          }}
+        />
+        {/* product summary — image, name, item price (no delivery / total) */}
+        <div style={{ display: "flex", gap: 14, alignItems: "center", marginBottom: 18 }}>
+          {p.img ? (
+            <img
+              src={p.img}
+              alt={p.name}
+              style={{ width: 72, height: 72, objectFit: "cover", borderRadius: "var(--r-md)" }}
+            />
+          ) : (
+            <Placeholder
+              icon={p.icon}
+              tint={p.tint}
+              style={{ width: 72, height: 72 }}
+              radius="var(--r-md)"
+            />
+          )}
+          <div style={{ minWidth: 0 }}>
+            <div
+              style={{
+                fontWeight: 700,
+                fontSize: "1rem",
+                color: "var(--ink-900)",
+                lineHeight: 1.3,
+              }}
+            >
+              {p.name}
+            </div>
+            <div style={{ marginTop: 6 }}>
+              <Price value={p.price} original={p.original} size="md" />
+            </div>
+          </div>
+        </div>
+
+        {/* variant pickers — large, tappable */}
+        {variants.map((v) => {
+          const sel = variantSel[v.name] ?? 0;
+          const isColor = v.kind === "swatch";
+          return (
+            <div key={v.name} style={{ marginBottom: 18 }}>
+              <div
+                style={{
+                  fontSize: ".9375rem",
+                  fontWeight: 700,
+                  color: "var(--ink-900)",
+                  marginBottom: 10,
+                }}
+              >
+                Choose {v.name}:{" "}
+                <span style={{ color: "var(--ink-500)", fontWeight: 600 }}>
+                  {isColor ? v.options[sel]?.label : v.options[sel]}
+                </span>
+              </div>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                {v.options.map((opt, i) =>
+                  isColor ? (
+                    <button
+                      key={i}
+                      type="button"
+                      aria-label={opt.label}
+                      onClick={() => onPick(v.name, i)}
+                      style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: "50%",
+                        cursor: "pointer",
+                        border: `2.5px solid ${sel === i ? "var(--ink-900)" : "var(--line-200)"}`,
+                        padding: 4,
+                        background: "#fff",
+                      }}
+                    >
+                      <span
+                        style={{
+                          display: "block",
+                          width: "100%",
+                          height: "100%",
+                          borderRadius: "50%",
+                          background: TINTS[opt.tint][2],
+                        }}
+                      />
+                    </button>
+                  ) : (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => onPick(v.name, i)}
+                      style={{
+                        minWidth: 60,
+                        height: 50,
+                        padding: "0 18px",
+                        borderRadius: "var(--r-md)",
+                        cursor: "pointer",
+                        border: `2px solid ${sel === i ? "var(--ink-900)" : "var(--line-200)"}`,
+                        background: sel === i ? "var(--ink-900)" : "#fff",
+                        color: sel === i ? "#fff" : "var(--ink-800)",
+                        fontWeight: 700,
+                        fontSize: "1rem",
+                      }}
+                    >
+                      {opt}
+                    </button>
+                  ),
+                )}
+              </div>
+            </div>
+          );
+        })}
+
+        <Button variant="primary" full size="lg" onClick={onConfirm}>
+          Buy Now
+          <span className="ne" style={{ fontWeight: 600, opacity: 0.92 }}>
+            · तुरुन्तै किन्नुहोस्
+          </span>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function PDP({ p: pProp }: PdpProps) {
   const {
     addToCart,
@@ -469,6 +635,7 @@ export function PDP({ p: pProp }: PdpProps) {
     if (gallery.length > 0) setLightboxOpen(true);
   };
   const [qty, setQty] = useState(1);
+  const [buyNowSheet, setBuyNowSheet] = useState(false);
   const [bargain, setBargain] = useState(false);
   const bargainingAvailable = Boolean(p.allowBargaining);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -482,6 +649,7 @@ export function PDP({ p: pProp }: PdpProps) {
     setDescOpen(false);
     setQty(1);
     setBargain(false);
+    setBuyNowSheet(false);
     setLightboxOpen(false);
     setDeliverOpen(false);
   }, [productId]);
@@ -845,8 +1013,8 @@ export function PDP({ p: pProp }: PdpProps) {
               >
                 <div
                   style={{
-                    width: 44,
-                    height: 44,
+                    width: 36,
+                    height: 36,
                     borderRadius: "50%",
                     overflow: "hidden",
                     flexShrink: 0,
@@ -864,7 +1032,7 @@ export function PDP({ p: pProp }: PdpProps) {
                       style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />
                   ) : (
-                    <Icon name="store" size={20} color="var(--ink-500)" />
+                    <Icon name="store" size={17} color="var(--ink-500)" />
                   )}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -880,19 +1048,23 @@ export function PDP({ p: pProp }: PdpProps) {
                   >
                     {s.name}
                   </div>
-                  <div
-                    style={{
-                      fontSize: ".75rem",
-                      color: "var(--ink-500)",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                      marginTop: 2,
-                    }}
-                  >
-                    <Icon name="star" size={11} color="var(--gold)" fill="var(--gold)" />
-                    {(s.rating ?? 0).toFixed(1)} · {s.reviews ?? 0} reviews
-                  </div>
+                  {/* Hide the rating until the seller has real reviews — a "0.0"
+                      reads as broken / untrustworthy to an older buyer. */}
+                  {(s.reviews ?? 0) > 0 && (
+                    <div
+                      style={{
+                        fontSize: ".75rem",
+                        color: "var(--ink-500)",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                        marginTop: 2,
+                      }}
+                    >
+                      <Icon name="star" size={11} color="var(--gold)" fill="var(--gold)" />
+                      {(s.rating ?? 0).toFixed(1)} · {s.reviews} reviews
+                    </div>
+                  )}
                 </div>
                 <AppLink
                   href={pathFromScreen("store", s.id)}
@@ -1616,7 +1788,10 @@ export function PDP({ p: pProp }: PdpProps) {
                   label: "Specifications",
                   content:
                     specs.length > 0 ? (
-                      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <table
+                        className="bz-spec-table"
+                        style={{ width: "100%", borderCollapse: "collapse" }}
+                      >
                         <tbody>
                           {specs.map(([k, v], i) => (
                             <tr key={i} style={{ borderBottom: "1px solid var(--line-200)" }}>
@@ -1705,12 +1880,26 @@ export function PDP({ p: pProp }: PdpProps) {
           />
         )}
 
-        {/* Mobile sticky buy bar */}
+        {/* Mobile sticky buy bar — Buy Now opens an option sheet when the
+            product has choices; otherwise it goes straight to checkout. */}
         <MobileBuyBar
           onAdd={() => void addToCart(p, qty)}
-          onBuy={() => void buyNow(p, qty)}
-          total={p.price * qty + DELIVERY_FEE}
+          onBuy={() => (variants.length > 0 ? setBuyNowSheet(true) : void buyNow(p, qty))}
         />
+
+        {buyNowSheet && (
+          <BuyNowSheet
+            p={p}
+            variants={variants}
+            variantSel={variantSel}
+            onPick={pickVariant}
+            onConfirm={() => {
+              setBuyNowSheet(false);
+              void buyNow(p, qty);
+            }}
+            onClose={() => setBuyNowSheet(false)}
+          />
+        )}
 
         {/* Delivery-location picker (opened from the delivery line) */}
         <DeliverToModal

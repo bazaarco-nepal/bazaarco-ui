@@ -566,30 +566,39 @@ function isValidNpPhone(digits) {
 export function Checkout() {
   const { cart, nav, placeOrder, toast } = useBz();
   const authed = useBazaarStore((s) => s.authed);
+  const buyerPhone = useBazaarStore((s) => s.buyerPhone);
+  const setBuyerPhone = useBazaarStore((s) => s.setBuyerPhone);
   const { data: savedAddresses = [] } = useAddresses(authed);
   const createAddress = useCreateAddress();
   const [openSec, setOpenSec] = useState(0);
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState({
-    ...DEFAULT_DELIVERY,
-    city: "Kathmandu",
-    area: "Chabahil",
-    landmark: "Next to Bhatbhateni, opposite petrol pump",
-    postal: "44600",
-  });
+  // Phone is shared with the profile — prefill from there, and saving the order
+  // writes it back so the profile stays in sync.
+  const [phone, setPhone] = useState(buyerPhone);
+  // No fake prefill: the buyer must enter / pick a real address, never a guessed one.
+  const [address, setAddress] = useState({ ...DEFAULT_DELIVERY, landmark: "" });
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [useNewAddress, setUseNewAddress] = useState(false);
-  const [saveNewAddress, setSaveNewAddress] = useState(false);
+  // First-ever address auto-saves to the book; an extra address defaults to save too.
+  const [saveNewAddress, setSaveNewAddress] = useState(true);
   const [newAddressLabel, setNewAddressLabel] = useState("Home");
   const [loading, setLoading] = useState(false);
   const bd = priceBreakdown(cart);
   const total = bd.total;
   const pay = "cod";
 
+  // When there are no saved addresses, the buyer is entering their first one.
+  const enteringNewAddress = useNewAddress || !savedAddresses.length;
+
   const phoneDigits = phone.replace(/\D/g, "");
   const phoneComplete = isValidNpPhone(phoneDigits);
   const addressComplete = isAddressComplete(address);
   const canPlaceOrder = phoneComplete && addressComplete;
+
+  // Late hydration of the saved phone — prefill only while the field is untouched.
+  useEffect(() => {
+    if (buyerPhone && !phone) setPhone(buyerPhone);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [buyerPhone]);
 
   useEffect(() => {
     if (!authed || !savedAddresses.length || selectedAddressId || useNewAddress) return;
@@ -604,10 +613,17 @@ export function Checkout() {
     if (!canPlaceOrder) return;
     setLoading(true);
     try {
-      if (saveNewAddress && useNewAddress && authed) {
+      // Persist the phone back to the shared store so it shows up in the profile.
+      setBuyerPhone(phoneDigits);
+      // Save a freshly-entered address to the book (first one becomes default).
+      if (authed && enteringNewAddress && saveNewAddress) {
         try {
           await createAddress.mutateAsync(
-            deliveryToSavePayload(address, newAddressLabel, savedAddresses.length === 0),
+            deliveryToSavePayload(
+              address,
+              newAddressLabel.trim() || "Home",
+              savedAddresses.length === 0,
+            ),
           );
         } catch (e) {
           const msg = e instanceof ApiRequestError ? e.message : "Could not save address";
@@ -734,7 +750,15 @@ export function Checkout() {
             Used for order updates and delivery calls. We will not share it with sellers.
           </p>
           <div style={{ marginTop: 14 }}>
-            <Button variant="primary" full onClick={() => setOpenSec(1)} disabled={!phoneComplete}>
+            <Button
+              variant="primary"
+              full
+              onClick={() => {
+                setBuyerPhone(phoneDigits);
+                setOpenSec(1);
+              }}
+              disabled={!phoneComplete}
+            >
               Continue
             </Button>
           </div>
@@ -772,10 +796,23 @@ export function Checkout() {
             />
           )}
 
-          {(useNewAddress || !savedAddresses.length || !authed) && (
+          {(enteringNewAddress || !authed) && (
             <>
+              {authed && !savedAddresses.length && (
+                <p
+                  style={{
+                    margin: "0 0 12px",
+                    fontSize: ".8125rem",
+                    color: "var(--ink-500)",
+                    lineHeight: 1.45,
+                  }}
+                >
+                  Add at least one delivery address to continue. We&apos;ll save it to your profile
+                  so next time it&apos;s one tap.
+                </p>
+              )}
               <LandmarkAddress value={address} onChange={setAddress} />
-              {authed && useNewAddress && (
+              {authed && enteringNewAddress && (
                 <label
                   style={{
                     display: "flex",
@@ -1000,30 +1037,18 @@ function refundWindow(pay) {
 }
 function PolicyDisclosure({ pay }) {
   const rows = [
-    {
-      icon: "x",
-      en: "Free cancellation before your order ships",
-      ne: "ढुवानी हुनुअघि निःशुल्क रद्द",
-    },
-    {
-      icon: "returns",
-      en: "7-day returns if the item is damaged, wrong, or not as described",
-      ne: "७ दिनभित्र फिर्ता — बिग्रेको वा गलत भए",
-    },
-    {
-      icon: "refresh",
-      en: `Refunds after the return is approved — ${refundWindow(pay)}`,
-      ne: "फिर्ता स्वीकृत भएपछि रिफन्ड",
-    },
+    "Free cancellation before your order ships",
+    "7-day returns for damaged, wrong, or not-as-described items",
+    `Refunds once approved — ${refundWindow(pay)}`,
   ];
   return (
     <div
       style={{
-        marginTop: 22,
+        marginTop: 16,
         background: "#fff",
         border: "1px solid var(--line-200)",
         borderRadius: "var(--r-lg)",
-        padding: 20,
+        padding: "16px 18px",
       }}
     >
       <div
@@ -1032,59 +1057,34 @@ function PolicyDisclosure({ pay }) {
           alignItems: "center",
           gap: 8,
           fontWeight: 700,
-          fontSize: "1rem",
+          fontSize: ".9375rem",
           color: "var(--ink-900)",
-          marginBottom: 4,
+          marginBottom: 12,
         }}
       >
-        <Icon name="shieldCheck" size={18} color="var(--blue)" /> Cancellation &amp; refunds
-        <span
-          className="ne"
-          style={{ fontWeight: 600, color: "var(--ink-400)", fontSize: ".8125rem" }}
-        >
-          · रद्द र फिर्ता
-        </span>
+        <Icon name="shieldCheck" size={16} color="var(--blue)" /> Cancellation &amp; refunds
       </div>
-      <p style={{ margin: "0 0 14px", color: "var(--ink-500)", fontSize: ".8125rem" }}>
-        Know your rights before you pay. No fine print.
-      </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {rows.map((r, i) => (
-          <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-            <span
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: "var(--r-sm)",
-                background: "var(--tint-blue-50)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              <Icon name={r.icon} size={16} color="var(--blue)" />
+          <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+            <Icon
+              name="check"
+              size={15}
+              color="var(--success)"
+              style={{ flexShrink: 0, marginTop: 2 }}
+            />
+            <span style={{ fontSize: ".8125rem", color: "var(--ink-600)", lineHeight: 1.4 }}>
+              {r}
             </span>
-            <div>
-              <div style={{ fontSize: ".875rem", color: "var(--ink-800)", fontWeight: 500 }}>
-                {r.en}
-              </div>
-              <div
-                className="ne"
-                style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 1 }}
-              >
-                {r.ne}
-              </div>
-            </div>
           </div>
         ))}
       </div>
-      <details style={{ marginTop: 14, borderTop: "1px solid var(--line-200)", paddingTop: 12 }}>
+      <details style={{ marginTop: 12 }}>
         <summary
           style={{
             cursor: "pointer",
             color: "var(--blue)",
-            fontWeight: 700,
+            fontWeight: 600,
             fontSize: ".8125rem",
             listStyle: "none",
           }}

@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Icon,
   Logo,
@@ -36,16 +37,16 @@ import {
   BackToTop,
 } from "@/components/ui";
 import { useCatalog } from "@/hooks/use-catalog";
-import { useAddresses, useCreateAddress, pickDefaultAddress } from "@/hooks/use-addresses";
+import { useAddresses, pickDefaultAddress } from "@/hooks/use-addresses";
 import { SavedAddressPicker } from "@/features/profile/addresses";
 import {
-  deliveryToSavePayload,
+  ADDRESS_LABEL_PRESETS,
   isAddressComplete,
   savedAddressToDelivery,
 } from "@/lib/saved-address";
 import { DEFAULT_DELIVERY } from "@/lib/delivery-location";
 import { useBazaarStore } from "@/store/bazaar-store";
-import { ApiRequestError } from "@/services/api/http";
+import { queryKeys } from "@/services/api/query-keys";
 import {
   BazaarCtx,
   useBz,
@@ -564,12 +565,12 @@ function isValidNpPhone(digits) {
 
 /* ---------- CHECKOUT (single page, 3 collapsed sections) ---------- */
 export function Checkout() {
-  const { cart, nav, placeOrder, toast } = useBz();
+  const { cart, nav, placeOrder } = useBz();
+  const queryClient = useQueryClient();
   const authed = useBazaarStore((s) => s.authed);
   const buyerPhone = useBazaarStore((s) => s.buyerPhone);
   const setBuyerPhone = useBazaarStore((s) => s.setBuyerPhone);
   const { data: savedAddresses = [] } = useAddresses(authed);
-  const createAddress = useCreateAddress();
   const [openSec, setOpenSec] = useState(0);
   // Phone is shared with the profile — prefill from there, and saving the order
   // writes it back so the profile stays in sync.
@@ -588,6 +589,8 @@ export function Checkout() {
 
   // When there are no saved addresses, the buyer is entering their first one.
   const enteringNewAddress = useNewAddress || !savedAddresses.length;
+  const mustSaveNewAddress = authed && !savedAddresses.length;
+  const shouldSaveNewAddress = mustSaveNewAddress || saveNewAddress;
 
   const phoneDigits = phone.replace(/\D/g, "");
   const phoneComplete = isValidNpPhone(phoneDigits);
@@ -615,32 +618,27 @@ export function Checkout() {
     try {
       // Persist the phone back to the shared store so it shows up in the profile.
       setBuyerPhone(phoneDigits);
-      // Save a freshly-entered address to the book (first one becomes default).
-      if (authed && enteringNewAddress && saveNewAddress) {
-        try {
-          await createAddress.mutateAsync(
-            deliveryToSavePayload(
-              address,
-              newAddressLabel.trim() || "Home",
-              savedAddresses.length === 0,
-            ),
-          );
-        } catch (e) {
-          const msg = e instanceof ApiRequestError ? e.message : "Could not save address";
-          toast(msg);
-          setLoading(false);
-          return;
-        }
-      }
-      await placeOrder({
+      const payload = {
         phone: phoneDigits,
         paymentMethod: "cod",
+        addressId: !enteringNewAddress && selectedAddressId ? selectedAddressId : undefined,
         deliveryAddress: {
           city: address.city.trim(),
           area: address.area.trim(),
           landmark: (address.landmark ?? "").trim(),
         },
-      });
+        saveAddress:
+          authed && enteringNewAddress && shouldSaveNewAddress
+            ? {
+                label: newAddressLabel.trim() || "Home",
+                isDefault: savedAddresses.length === 0,
+              }
+            : undefined,
+      } as const;
+      await placeOrder(payload);
+      if (payload.saveAddress) {
+        await queryClient.invalidateQueries({ queryKey: queryKeys.addresses.all });
+      }
     } catch {
       /* toast shown in provider */
     } finally {
@@ -826,14 +824,43 @@ export function Checkout() {
                 >
                   <input
                     type="checkbox"
-                    checked={saveNewAddress}
+                    checked={shouldSaveNewAddress}
+                    disabled={mustSaveNewAddress}
                     onChange={(e) => setSaveNewAddress(e.target.checked)}
                     style={{ marginTop: 3, width: 18, height: 18, accentColor: "var(--blue)" }}
                   />
                   <span>
-                    Save to my addresses for next time
-                    {saveNewAddress && (
-                      <span style={{ display: "block", marginTop: 8 }}>
+                    {mustSaveNewAddress
+                      ? "Save this first address to my profile"
+                      : "Save to my addresses for next time"}
+                    {shouldSaveNewAddress && (
+                      <span style={{ display: "grid", gap: 8, marginTop: 8 }}>
+                        <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                          {ADDRESS_LABEL_PRESETS.map((label) => {
+                            const active = newAddressLabel === label;
+                            return (
+                              <button
+                                key={label}
+                                type="button"
+                                onClick={() => setNewAddressLabel(label)}
+                                style={{
+                                  border: `1.5px solid ${
+                                    active ? "var(--blue)" : "var(--line-200)"
+                                  }`,
+                                  background: active ? "var(--tint-blue-50)" : "#fff",
+                                  color: active ? "var(--blue)" : "var(--ink-600)",
+                                  borderRadius: "999px",
+                                  padding: "7px 12px",
+                                  fontSize: ".8125rem",
+                                  fontWeight: 800,
+                                  cursor: "pointer",
+                                }}
+                              >
+                                {label}
+                              </button>
+                            );
+                          })}
+                        </span>
                         <input
                           value={newAddressLabel}
                           onChange={(e) => setNewAddressLabel(e.target.value)}

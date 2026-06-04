@@ -14,7 +14,12 @@ export interface DeliveryAddress {
 export interface CheckoutPayload {
   phone: string;
   paymentMethod: "cod";
-  deliveryAddress: DeliveryAddress;
+  addressId?: string;
+  deliveryAddress?: DeliveryAddress;
+  saveAddress?: {
+    label: string;
+    isDefault?: boolean;
+  };
 }
 
 export interface Order {

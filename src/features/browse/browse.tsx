@@ -121,9 +121,6 @@ function DidYouMean({ q, suggestions, onPick, onReset }) {
         </button>
         ?
       </p>
-      <div className="ne" style={{ color: "var(--ink-400)", fontSize: ".875rem" }}>
-        के यो खोज्दै हुनुहुन्थ्यो?
-      </div>
       <div
         style={{
           display: "flex",
@@ -276,7 +273,7 @@ export function Browse() {
     : PRODUCTS.filter((p) => {
         if (
           effectiveQuery &&
-          !`${p.name} ${p.ne} ${sellerOf(p)?.name ?? ""}`
+          !`${p.name} ${sellerOf(p)?.name ?? ""}`
             .toLowerCase()
             .includes(effectiveQuery.toLowerCase())
         )
@@ -1121,7 +1118,7 @@ export function Browse() {
                     <span
                       style={{ fontSize: ".8125rem", fontWeight: 700, color: "var(--ink-500)" }}
                     >
-                      Coming Soon · चाँडै आउँदै
+                      Coming Soon
                     </span>
                     <span style={{ flex: 1, height: 1, background: "var(--line-200)" }} />
                   </div>

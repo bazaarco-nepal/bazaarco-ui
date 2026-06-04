@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Mukta, Plus_Jakarta_Sans } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { AppProviders } from "@/providers/app-providers";
 import "@/styles/globals.css";
 
@@ -15,13 +15,6 @@ const inter = Inter({
   display: "swap",
 });
 
-const mukta = Mukta({
-  subsets: ["devanagari", "latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-ne-loaded",
-  display: "swap",
-});
-
 export const metadata: Metadata = {
   title: "BazaarCo - Shop",
   description: "Nepal's fair marketplace",
@@ -29,7 +22,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${plusJakarta.variable} ${inter.variable} ${mukta.variable}`}>
+    <html lang="en" className={`${plusJakarta.variable} ${inter.variable}`}>
       {/* Browser extensions (ColorZilla, Grammarly, etc.) inject attributes like
           `cz-shortcut-listen` onto <body> before React hydrates. Suppress the
           resulting attribute-only mismatch — it's external and not a real bug. */}

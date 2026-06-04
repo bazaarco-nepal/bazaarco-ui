@@ -100,12 +100,6 @@ export function SellerVerificationBlocked({
           : isRejected
             ? "Verification not approved"
             : "Verification required"}
-        <span
-          className="ne"
-          style={{ fontWeight: 600, color: "var(--ink-500)", marginLeft: 8, fontSize: ".8125rem" }}
-        >
-          {isPending ? "जाँच हुँदैछ" : isRejected ? "अस्वीकृत" : "कागजात चाहिन्छ"}
-        </span>
       </h2>
       <p
         style={{
@@ -126,7 +120,7 @@ export function SellerVerificationBlocked({
       {showAction && (
         <div style={{ marginTop: 18 }}>
           <Button variant="secondary" onClick={onAction}>
-            {isRejected ? "Re-upload · पुन: अपलोड" : "Verify · प्रमाणीकरण"}
+            {isRejected ? "Re-upload" : "Verify"}
           </Button>
         </div>
       )}

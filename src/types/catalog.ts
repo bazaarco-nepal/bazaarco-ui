@@ -7,7 +7,6 @@ export type CategoryAttributeType = "select" | "multi" | "text" | "num" | "toggl
 export interface CategoryAttributeField {
   k: string;
   en: string;
-  ne: string;
   t: CategoryAttributeType;
   req?: boolean;
   o?: string[];
@@ -18,7 +17,6 @@ export interface CategoryAttributeField {
 export interface Category {
   id: string;
   en: string;
-  ne: string;
   // Icon is resolved from a code map by id (see CATEGORY_ICON in
   // components/common/marketplace.tsx), not served by the API.
   tint: Tint;

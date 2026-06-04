@@ -555,9 +555,6 @@ function BuyNowSheet({ p, variants, variantSel, onPick, onConfirm, onClose }) {
 
         <Button variant="primary" full size="lg" onClick={onConfirm}>
           Buy Now
-          <span className="ne" style={{ fontWeight: 600, opacity: 0.92 }}>
-            · तुरुन्तै किन्नुहोस्
-          </span>
         </Button>
       </div>
     </div>

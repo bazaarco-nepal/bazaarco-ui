@@ -107,13 +107,13 @@ const ORDER_STATUS_META = {
   out_for_delivery: {
     tone: "saffron",
     label: "Out for delivery",
-    action: "Call rider · राइडरलाई फोन गर्नुहोस्",
+    action: "Call rider",
     actionVariant: "primary",
   },
   shipped: {
     tone: "saffron",
     label: "On the way",
-    action: "Call rider · राइडरलाई फोन गर्नुहोस्",
+    action: "Call rider",
     actionVariant: "primary",
   },
   delivered: {
@@ -170,13 +170,7 @@ export function Orders() {
             color: "var(--blue-deep)",
           }}
         >
-          My orders{" "}
-          <span
-            className="ne"
-            style={{ color: "var(--ink-500)", fontWeight: 600, fontSize: "1rem" }}
-          >
-            · मेरा अर्डर
-          </span>
+          My orders
         </h1>
 
         <div style={{ marginBottom: 24 }}>
@@ -870,7 +864,7 @@ export function WriteReview({ productId }: WriteReviewProps) {
             marginBottom: 14,
           }}
         >
-          Tap the stars · ताराहरूमा थिच्नुहोस्
+          Tap the stars
         </div>
         <div style={{ display: "inline-flex", gap: 10 }}>
           {[1, 2, 3, 4, 5].map((s) => (
@@ -915,7 +909,7 @@ export function WriteReview({ productId }: WriteReviewProps) {
       >
         <Icon name="image" size={22} color="var(--saffron)" />
         {photos === 0
-          ? "Add photos · फोटो थप्नुहोस्"
+          ? "Add photos"
           : `${photos} photo${photos > 1 ? "s" : ""} added · tap to add more`}
       </button>
       {photos > 0 && (
@@ -961,7 +955,7 @@ export function WriteReview({ productId }: WriteReviewProps) {
 
       <div style={{ marginTop: 20 }}>
         <Button variant="primary" size="lg" full disabled={rating === 0} onClick={submit}>
-          Post review · प्रकाशित गर्नुहोस्
+          Post review
         </Button>
       </div>
     </div>
@@ -1016,7 +1010,7 @@ export function ProfileEdit() {
     setBuyerPhone(form.phone);
     try {
       await updateProfile.mutateAsync({ name: currentName(), avatarUrl });
-      toast?.("Profile saved · प्रोफाइल सुरक्षित");
+      toast?.("Profile saved");
       nav("profile");
     } catch (error) {
       toast?.(error instanceof Error ? error.message : "Could not save profile");

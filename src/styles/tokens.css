@@ -39,7 +39,6 @@
 
   /* Type */
   --font-sans: "Plus Jakarta Sans", Inter, system-ui, sans-serif;
-  --font-ne: "Mukta", "Noto Sans Devanagari", sans-serif;
   --fs-h1: 2.25rem;
   --fs-h2: 1.875rem;
   --fs-h3: 1.5rem;
@@ -114,9 +113,6 @@ body {
   line-height: var(--lh-normal);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-}
-.ne {
-  font-family: var(--font-ne);
 }
 .tnum {
   font-variant-numeric: tabular-nums;
@@ -590,13 +586,11 @@ body {
   width: 72px;
 }
 .bz-seller-side .bz-side-label,
-.bz-seller-side .bz-side-group,
-.bz-seller-side .bz-side-sub {
+.bz-seller-side .bz-side-group {
   transition: opacity 0.15s var(--ease);
 }
 .bz-seller-side.collapsed .bz-side-label,
 .bz-seller-side.collapsed .bz-side-group,
-.bz-seller-side.collapsed .bz-side-sub,
 .bz-seller-side.collapsed .bz-side-brand-text {
   display: none;
 }
@@ -644,20 +638,6 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.bz-side-sub {
-  display: block;
-  font-size: 0.68rem;
-  color: var(--ink-400);
-  font-weight: 600;
-  line-height: 1.5;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.bz-side-item.active .bz-side-sub {
-  color: var(--red);
-  opacity: 0.8;
-}
 .bz-side-item:hover {
   background: var(--line-100);
 }
@@ -667,10 +647,6 @@ body {
 }
 .bz-side-logout {
   color: var(--red);
-}
-.bz-side-logout .bz-side-sub {
-  color: var(--red);
-  opacity: 0.7;
 }
 .bz-side-logout:hover {
   background: var(--tint-red-50);
@@ -714,6 +690,10 @@ body {
   align-items: center;
   justify-content: center;
   margin-left: auto;
+}
+.bz-side-scroll {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 .bz-side-content {
   flex: 1;
@@ -819,6 +799,9 @@ body {
     transform: translateX(-100%);
     transition: transform 0.22s var(--ease);
     box-shadow: 0 0 30px rgba(11, 18, 32, 0.18);
+    height: calc(100dvh - 53px - env(safe-area-inset-bottom, 0px));
+    overflow: hidden;
+    overscroll-behavior: contain;
   }
   .bz-seller-side.open {
     transform: translateX(0);
@@ -829,12 +812,8 @@ body {
   .bz-side-mobile-bar {
     display: flex;
   }
-  /* reserve space for fixed bottom navbar so last item isn't hidden */
-  .bz-side-scroll {
-    padding-bottom: 76px;
-  }
   .bz-side-foot {
-    padding-bottom: 72px;
+    padding-bottom: 8px;
   }
 }
 
@@ -1570,12 +1549,6 @@ body {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 28px 12px;
-}
-/* Home category row is English-only on every viewport — drop Nepali line for a
-   cleaner, breathable look. Browse uses its own grid (not .bz-cat-row) so it
-   keeps bilingual labels. */
-.bz-cat-row .bz-cat__ne {
-  display: none;
 }
 /* Category tile (clickable cell). Base/mobile = transparent, no box — keeps the
    mobile layout identical to before. Desktop layers a real tile + hover state. */

@@ -268,11 +268,6 @@ a {
     font-size: 11px !important;
     line-height: 14px !important;
   }
-  .bz-cat__ne {
-    font-size: 10px !important;
-    font-weight: 500 !important;
-    color: var(--ink-300) !important;
-  }
 
   /* Lighter section headers on mobile — large bold type reads heavy on a phone */
   .bz-sec-head {

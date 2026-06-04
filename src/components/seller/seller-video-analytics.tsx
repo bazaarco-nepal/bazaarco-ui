@@ -292,13 +292,7 @@ export function SellerVideoAnalyticsPanel({ analytics }: { analytics: SellerVide
           color: "var(--blue-deep)",
         }}
       >
-        Video analytics{" "}
-        <span
-          className="ne"
-          style={{ fontWeight: 600, color: "var(--ink-500)", fontSize: ".875rem" }}
-        >
-          · भिडियो विश्लेषण
-        </span>
+        Video analytics
       </h2>
 
       <div

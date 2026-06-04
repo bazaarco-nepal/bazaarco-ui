@@ -5,7 +5,6 @@ export const CATEGORIES = [
   {
     id: "fashion",
     en: "Fashion",
-    ne: "पोशाक",
     icon: "shirt",
     tint: "red",
     img: "https://picsum.photos/seed/cat-fashion/300/300",
@@ -13,7 +12,6 @@ export const CATEGORIES = [
   {
     id: "home",
     en: "Home & Living",
-    ne: "घरायसी",
     icon: "home",
     tint: "blue",
     img: "https://picsum.photos/seed/cat-home/300/300",
@@ -21,7 +19,6 @@ export const CATEGORIES = [
   {
     id: "handicraft",
     en: "Handicrafts",
-    ne: "हस्तकला",
     icon: "palette",
     tint: "saffron",
     img: "https://picsum.photos/seed/cat-handicraft/300/300",
@@ -29,7 +26,6 @@ export const CATEGORIES = [
   {
     id: "beauty",
     en: "Beauty",
-    ne: "सौन्दर्य",
     icon: "sparkles",
     tint: "purple",
     img: "https://picsum.photos/seed/cat-beauty/300/300",
@@ -37,7 +33,6 @@ export const CATEGORIES = [
   {
     id: "electronics",
     en: "Electronics",
-    ne: "इलेक्ट्रोनिक्स",
     icon: "phone",
     tint: "slate",
     img: "https://picsum.photos/seed/cat-electronics/300/300",
@@ -45,7 +40,6 @@ export const CATEGORIES = [
   {
     id: "grocery",
     en: "Groceries",
-    ne: "किराना",
     icon: "basket",
     tint: "green",
     img: "https://picsum.photos/seed/cat-grocery/300/300",
@@ -53,7 +47,6 @@ export const CATEGORIES = [
   {
     id: "books",
     en: "Books",
-    ne: "किताब",
     icon: "book",
     tint: "gold",
     img: "https://picsum.photos/seed/cat-books/300/300",
@@ -61,7 +54,6 @@ export const CATEGORIES = [
   {
     id: "sports",
     en: "Sports",
-    ne: "खेलकुद",
     icon: "dumbbell",
     tint: "teal",
     img: "https://picsum.photos/seed/cat-sports/300/300",
@@ -77,18 +69,18 @@ export const CATEGORIES = [
    Options stay English (sizes/standards/proper nouns); labels bilingual.
    ============================================================ */
 export const ATTR_CATEGORIES = [
-  { id: "clothing", en: "Fashion & Clothing", ne: "लुगाफाटा", icon: "shirt" },
-  { id: "footwear", en: "Shoes & Footwear", ne: "जुत्ता", icon: "tag" },
-  { id: "beauty", en: "Beauty & Cosmetics", ne: "सौन्दर्य", icon: "sparkles" },
-  { id: "electronics", en: "Electronics", ne: "इलेक्ट्रोनिक्स", icon: "phone" },
-  { id: "accessories", en: "Accessories", ne: "सहायक सामान", icon: "watch" },
-  { id: "home", en: "Home & Kitchen", ne: "घर र भान्सा", icon: "home" },
-  { id: "furniture", en: "Furniture", ne: "फर्निचर", icon: "home" },
-  { id: "grocery", en: "Groceries", ne: "किराना", icon: "basket" },
-  { id: "books", en: "Books & Stationery", ne: "किताब र स्टेसनरी", icon: "book" },
-  { id: "handicraft", en: "Nepali Handmade", ne: "नेपाली हस्तकला", icon: "palette" },
-  { id: "baby", en: "Baby Products", ne: "बच्चाका सामान", icon: "sparkles" },
-  { id: "sports", en: "Sports & Fitness", ne: "खेलकुद", icon: "dumbbell" },
+  { id: "clothing", en: "Fashion & Clothing", icon: "shirt" },
+  { id: "footwear", en: "Shoes & Footwear", icon: "tag" },
+  { id: "beauty", en: "Beauty & Cosmetics", icon: "sparkles" },
+  { id: "electronics", en: "Electronics", icon: "phone" },
+  { id: "accessories", en: "Accessories", icon: "watch" },
+  { id: "home", en: "Home & Kitchen", icon: "home" },
+  { id: "furniture", en: "Furniture", icon: "home" },
+  { id: "grocery", en: "Groceries", icon: "basket" },
+  { id: "books", en: "Books & Stationery", icon: "book" },
+  { id: "handicraft", en: "Nepali Handmade", icon: "palette" },
+  { id: "baby", en: "Baby Products", icon: "sparkles" },
+  { id: "sports", en: "Sports & Fitness", icon: "dumbbell" },
 ];
 
 export const CATEGORY_ATTRIBUTES = {
@@ -96,7 +88,6 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "department",
       en: "For whom",
-      ne: "कसको लागि",
       t: "select",
       req: true,
       o: ["Men", "Women", "Kids", "Unisex"],
@@ -104,7 +95,6 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "size",
       en: "Size",
-      ne: "साइज",
       t: "multi",
       req: true,
       o: ["XS", "S", "M", "L", "XL", "XXL", "Free size"],
@@ -112,14 +102,12 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "sizeFormat",
       en: "Size standard",
-      ne: "साइज मानक",
       t: "select",
       o: ["IND", "UK", "US", "EU"],
     },
     {
       k: "color",
       en: "Colour",
-      ne: "रङ",
       t: "multi",
       req: true,
       o: [
@@ -139,44 +127,38 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "fabric",
       en: "Fabric",
-      ne: "कपडा",
       t: "select",
       req: true,
       o: ["Cotton", "Silk", "Pashmina", "Wool", "Polyester", "Denim", "Linen", "Hemp/Allo"],
     },
-    { k: "fit", en: "Fit", ne: "फिट", t: "select", o: ["Slim", "Regular", "Relaxed", "Oversized"] },
+    { k: "fit", en: "Fit", t: "select", o: ["Slim", "Regular", "Relaxed", "Oversized"] },
     {
       k: "sleeve",
       en: "Sleeve",
-      ne: "बाहुला",
       t: "select",
       o: ["Short", "Long", "Sleeveless", "3/4 sleeve"],
     },
     {
       k: "pattern",
       en: "Pattern",
-      ne: "बुट्टा",
       t: "select",
       o: ["Solid", "Striped", "Floral", "Checked", "Printed"],
     },
     {
       k: "occasion",
       en: "Occasion",
-      ne: "अवसर",
       t: "select",
       o: ["Casual", "Formal", "Party", "Office", "Festive"],
     },
     {
       k: "care",
       en: "Wash care",
-      ne: "धुने तरिका",
       t: "select",
       o: ["Machine wash", "Hand wash", "Dry clean"],
     },
     {
       k: "season",
       en: "Season",
-      ne: "मौसम",
       t: "select",
       o: ["Summer", "Winter", "Spring", "Autumn", "All season"],
     },
@@ -185,7 +167,6 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "department",
       en: "For whom",
-      ne: "कसको लागि",
       t: "select",
       req: true,
       o: ["Men", "Women", "Kids", "Unisex"],
@@ -193,7 +174,6 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "size",
       en: "Size",
-      ne: "साइज",
       t: "multi",
       req: true,
       o: [
@@ -214,7 +194,6 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "color",
       en: "Colour",
-      ne: "रङ",
       t: "multi",
       req: true,
       o: ["Black", "White", "Brown", "Tan", "Blue", "Grey", "Red", "Multi"],
@@ -222,7 +201,6 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "upper",
       en: "Upper material",
-      ne: "माथिल्लो सामग्री",
       t: "select",
       req: true,
       o: ["Leather", "Suede", "Mesh", "Canvas", "Synthetic"],
@@ -230,35 +208,30 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "sole",
       en: "Sole material",
-      ne: "सोल सामग्री",
       t: "select",
       o: ["Rubber", "EVA", "Leather", "PU", "Synthetic"],
     },
     {
       k: "closure",
       en: "Closure",
-      ne: "बन्द गर्ने",
       t: "select",
       o: ["Lace-up", "Slip-on", "Buckle", "Zipper", "Velcro"],
     },
     {
       k: "heel",
       en: "Heel height",
-      ne: "हिल उचाइ",
       t: "select",
       o: ["Flat (0–2cm)", "Low (2–5cm)", "Medium (5–7cm)", "High (7cm+)"],
     },
     {
       k: "occasion",
       en: "Occasion",
-      ne: "अवसर",
       t: "select",
       o: ["Casual", "Sports", "Formal", "Hiking", "Party"],
     },
     {
       k: "water",
       en: "Water resistance",
-      ne: "पानी प्रतिरोध",
       t: "select",
       o: ["Waterproof", "Water-resistant", "Not waterproof"],
     },
@@ -267,7 +240,6 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "type",
       en: "Product type",
-      ne: "प्रकार",
       t: "select",
       req: true,
       o: ["Skincare", "Makeup", "Hair care", "Fragrance", "Personal care"],
@@ -275,7 +247,6 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "volume",
       en: "Net volume / weight",
-      ne: "मात्रा / तौल",
       t: "text",
       req: true,
       u: "ml / g",
@@ -284,7 +255,6 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "expiry",
       en: "Expiry / best before",
-      ne: "म्याद सकिने मिति",
       t: "date",
       req: true,
       help: "Required for anything applied to skin.",
@@ -292,84 +262,73 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "skinType",
       en: "Skin type",
-      ne: "छालाको प्रकार",
       t: "select",
       o: ["Normal", "Dry", "Oily", "Combination", "Sensitive", "All"],
     },
     {
       k: "form",
       en: "Form",
-      ne: "रूप",
       t: "select",
       o: ["Liquid", "Cream", "Powder", "Gel", "Stick", "Spray"],
     },
-    { k: "spf", en: "SPF", ne: "एसपीएफ", t: "text", help: "Leave blank if none." },
+    { k: "spf", en: "SPF", t: "text", help: "Leave blank if none." },
     {
       k: "ingredients",
       en: "Key ingredients",
-      ne: "मुख्य सामग्री",
       t: "text",
       req: true,
       help: "List main ingredients — buyers with allergies check this.",
     },
-    { k: "crueltyFree", en: "Cruelty-free / vegan", ne: "क्रुअल्टी-फ्री", t: "toggle" },
+    { k: "crueltyFree", en: "Cruelty-free / vegan", t: "toggle" },
     {
       k: "benefits",
       en: "Benefits",
-      ne: "फाइदा",
       t: "multi",
       o: ["Hydrating", "Anti-aging", "Brightening", "Oil-control", "Soothing"],
     },
   ],
   electronics: [
-    { k: "brand", en: "Brand & model", ne: "ब्रान्ड र मोडेल", t: "text", req: true },
+    { k: "brand", en: "Brand & model", t: "text", req: true },
     {
       k: "color",
       en: "Colour",
-      ne: "रङ",
       t: "select",
       o: ["Black", "White", "Silver", "Blue", "Gold", "Grey"],
     },
     {
       k: "ram",
       en: "RAM",
-      ne: "र्‍याम",
       t: "select",
       o: ["2GB", "4GB", "6GB", "8GB", "12GB", "16GB", "N/A"],
     },
     {
       k: "storage",
       en: "Storage",
-      ne: "भण्डारण",
       t: "select",
       o: ["32GB", "64GB", "128GB", "256GB", "512GB", "1TB", "N/A"],
     },
     {
       k: "display",
       en: "Display size",
-      ne: "स्क्रिन साइज",
       t: "text",
       help: "e.g. 6.5 inch AMOLED",
     },
     {
       k: "os",
       en: "Operating system",
-      ne: "अपरेटिङ सिस्टम",
       t: "text",
       help: "e.g. Android 14, iOS 18",
     },
-    { k: "battery", en: "Battery", ne: "ब्याट्री", t: "text", u: "mAh" },
+    { k: "battery", en: "Battery", t: "text", u: "mAh" },
     {
       k: "connectivity",
       en: "Connectivity",
-      ne: "कनेक्टिभिटी",
       t: "multi",
       o: ["5G", "4G", "Wi-Fi", "Bluetooth", "NFC"],
     },
     {
       k: "warranty",
       en: "Warranty",
-      ne: "वारेन्टी",
       t: "select",
       req: true,
       o: ["No warranty", "3 months", "6 months", "1 year", "2 years"],
@@ -378,7 +337,6 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "inBox",
       en: "What's in the box",
-      ne: "बक्समा के छ",
       t: "text",
       help: "e.g. Charger, cable, earphones",
     },
@@ -387,7 +345,6 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "type",
       en: "Type",
-      ne: "प्रकार",
       t: "select",
       req: true,
       o: ["Watch", "Bag", "Sunglasses", "Belt", "Hat", "Jewellery", "Scarf"],
@@ -395,7 +352,6 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "material",
       en: "Main material",
-      ne: "मुख्य सामग्री",
       t: "select",
       req: true,
       o: ["Leather", "Metal", "Plastic", "Acetate", "Fabric", "Wood"],
@@ -403,32 +359,28 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "color",
       en: "Colour",
-      ne: "रङ",
       t: "multi",
       o: ["Black", "Brown", "Gold", "Silver", "Tan", "Multi"],
     },
-    { k: "dimensions", en: "Size (L×W×H)", ne: "नाप", t: "text", help: "For bags & boxes." },
+    { k: "dimensions", en: "Size (L×W×H)", t: "text", help: "For bags & boxes." },
     {
       k: "movement",
       en: "Watch movement",
-      ne: "घडी मुभमेन्ट",
       t: "select",
       o: ["Quartz", "Automatic", "Mechanical", "Digital", "N/A"],
     },
     {
       k: "uv",
       en: "UV protection",
-      ne: "यूभी सुरक्षा",
       t: "select",
       o: ["UV400", "Polarised", "Anti-glare", "None", "N/A"],
     },
-    { k: "adjustable", en: "Adjustable", ne: "समायोजन योग्य", t: "toggle" },
+    { k: "adjustable", en: "Adjustable", t: "toggle" },
   ],
   home: [
     {
       k: "type",
       en: "Product type",
-      ne: "प्रकार",
       t: "select",
       req: true,
       o: ["Cookware", "Bakeware", "Dinnerware", "Storage", "Cleaning", "Decor"],
@@ -436,7 +388,6 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "material",
       en: "Material",
-      ne: "सामग्री",
       t: "select",
       req: true,
       o: [
@@ -451,36 +402,32 @@ export const CATEGORY_ATTRIBUTES = {
         "Copper",
       ],
     },
-    { k: "dimensions", en: "Size (L×W×H)", ne: "नाप", t: "text" },
-    { k: "capacity", en: "Capacity", ne: "क्षमता", t: "text", u: "litre / ml" },
+    { k: "dimensions", en: "Size (L×W×H)", t: "text" },
+    { k: "capacity", en: "Capacity", t: "text", u: "litre / ml" },
     {
       k: "color",
       en: "Colour",
-      ne: "रङ",
       t: "select",
       o: ["Silver", "Black", "White", "Gold", "Multi"],
     },
     {
       k: "care",
       en: "Care",
-      ne: "हेरचाह",
       t: "multi",
       o: ["Dishwasher safe", "Hand wash", "Microwave safe", "Oven safe"],
     },
     {
       k: "compat",
       en: "Works with (cookware)",
-      ne: "मिल्ने चुलो",
       t: "multi",
       o: ["Gas", "Induction", "Ceramic", "Halogen"],
     },
-    { k: "setPieces", en: "Pieces in set", ne: "सेटका टुक्रा", t: "num" },
+    { k: "setPieces", en: "Pieces in set", t: "num" },
   ],
   furniture: [
     {
       k: "room",
       en: "Room",
-      ne: "कोठा",
       t: "select",
       req: true,
       o: ["Living room", "Bedroom", "Dining", "Office", "Outdoor"],
@@ -488,7 +435,6 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "type",
       en: "Type",
-      ne: "प्रकार",
       t: "select",
       req: true,
       o: ["Sofa", "Chair", "Table", "Bed", "Cabinet", "Shelf"],
@@ -496,54 +442,48 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "material",
       en: "Main material",
-      ne: "मुख्य सामग्री",
       t: "select",
       req: true,
       o: ["Solid wood", "Engineered wood", "Metal", "Glass", "Rattan", "Fabric"],
     },
-    { k: "dimensions", en: "Size (W×D×H)", ne: "नाप", t: "text", req: true, u: "cm" },
-    { k: "color", en: "Colour / finish", ne: "रङ / फिनिश", t: "text" },
-    { k: "assembly", en: "Needs assembly", ne: "जोड्नुपर्ने", t: "toggle" },
+    { k: "dimensions", en: "Size (W×D×H)", t: "text", req: true, u: "cm" },
+    { k: "color", en: "Colour / finish", t: "text" },
+    { k: "assembly", en: "Needs assembly", t: "toggle" },
     {
       k: "wallFix",
       en: "Must fix to wall",
-      ne: "भित्तामा कस्नुपर्ने",
       t: "toggle",
       help: "Show for tall cabinets/shelves — safety.",
     },
-    { k: "weightCap", en: "Weight it can hold", ne: "थेग्ने तौल", t: "text", u: "kg" },
+    { k: "weightCap", en: "Weight it can hold", t: "text", u: "kg" },
   ],
   grocery: [
     {
       k: "foodType",
       en: "Food type",
-      ne: "खानाको प्रकार",
       t: "select",
       req: true,
       o: ["Staples", "Snacks", "Beverages", "Dairy", "Spices", "Oil & ghee"],
     },
-    { k: "brand", en: "Brand", ne: "ब्रान्ड", t: "text" },
+    { k: "brand", en: "Brand", t: "text" },
     {
       k: "weight",
       en: "Net weight / volume",
-      ne: "तौल / मात्रा",
       t: "text",
       req: true,
       u: "kg / g / L / ml",
     },
-    { k: "mfgDate", en: "Made on", ne: "उत्पादन मिति", t: "date", req: true },
-    { k: "expiry", en: "Best before / expiry", ne: "म्याद", t: "date", req: true },
+    { k: "mfgDate", en: "Made on", t: "date", req: true },
+    { k: "expiry", en: "Best before / expiry", t: "date", req: true },
     {
       k: "storage",
       en: "How to store",
-      ne: "भण्डारण",
       t: "select",
       o: ["Cool & dry place", "Refrigerate", "Refrigerate after opening"],
     },
     {
       k: "ingredients",
       en: "Ingredients",
-      ne: "सामग्री",
       t: "text",
       req: true,
       help: "Mark major allergens.",
@@ -551,21 +491,18 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "diet",
       en: "Dietary",
-      ne: "आहार",
       t: "multi",
       o: ["Organic", "Gluten-free", "Sugar-free", "Vegan"],
     },
     {
       k: "origin",
       en: "Country of origin",
-      ne: "उत्पादन देश",
       t: "text",
       help: "Needed for imported goods.",
     },
     {
       k: "license",
       en: "Food licence no.",
-      ne: "खाद्य इजाजत नं.",
       t: "text",
       help: "Required to sell packaged food in Nepal.",
     },
@@ -574,40 +511,35 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "type",
       en: "Type",
-      ne: "प्रकार",
       t: "select",
       req: true,
       o: ["Book", "Notebook", "Pen", "Art supply", "Office supply"],
     },
-    { k: "title", en: "Title", ne: "शीर्षक", t: "text", help: "For books." },
-    { k: "author", en: "Author", ne: "लेखक", t: "text" },
-    { k: "publisher", en: "Publisher", ne: "प्रकाशक", t: "text" },
+    { k: "title", en: "Title", t: "text", help: "For books." },
+    { k: "author", en: "Author", t: "text" },
+    { k: "publisher", en: "Publisher", t: "text" },
     {
       k: "language",
       en: "Language",
-      ne: "भाषा",
       t: "select",
       o: ["Nepali", "English", "Hindi", "Maithili", "Newari", "Other"],
     },
     {
       k: "isbn",
       en: "ISBN",
-      ne: "आईएसबीएन",
       t: "text",
       help: "Required for books (10 or 13 digit).",
     },
     {
       k: "format",
       en: "Format",
-      ne: "ढाँचा",
       t: "select",
       o: ["Paperback", "Hardcover", "eBook", "Audiobook"],
     },
-    { k: "pages", en: "Pages", ne: "पृष्ठ", t: "num" },
+    { k: "pages", en: "Pages", t: "num" },
     {
       k: "genre",
       en: "Genre / subject",
-      ne: "विधा",
       t: "select",
       o: ["Fiction", "Non-fiction", "Biography", "Academic", "Children's", "Cookbook"],
     },
@@ -616,7 +548,6 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "craft",
       en: "Craft type",
-      ne: "शिल्प प्रकार",
       t: "select",
       req: true,
       o: [
@@ -631,23 +562,20 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "material",
       en: "Main material",
-      ne: "मुख्य सामग्री",
       t: "select",
       req: true,
       o: ["Wool", "Lokta fibre", "Clay", "Wood", "Brass", "Cotton"],
     },
-    { k: "handmade", en: "Fully handmade", ne: "पूर्ण हस्तनिर्मित", t: "toggle", req: true },
+    { k: "handmade", en: "Fully handmade", t: "toggle", req: true },
     {
       k: "method",
       en: "How it's made",
-      ne: "बनाउने तरिका",
       t: "select",
       o: ["Hand-woven", "Hand-knotted", "Hand-carved", "Hand-painted", "Hand-thrown"],
     },
     {
       k: "community",
       en: "Made in (district)",
-      ne: "बनेको जिल्ला",
       t: "text",
       req: true,
       help: "e.g. Bhaktapur, Pokhara — buyers love local origin.",
@@ -655,15 +583,13 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "story",
       en: "Artisan story",
-      ne: "कालिगढको कथा",
       t: "text",
       help: "A line about the maker builds trust.",
     },
-    { k: "dye", en: "Dye", ne: "रङ", t: "select", o: ["Natural dye", "Chemical dye"] },
+    { k: "dye", en: "Dye", t: "select", o: ["Natural dye", "Chemical dye"] },
     {
       k: "leadTime",
       en: "Days to make (custom)",
-      ne: "बनाउन लाग्ने दिन",
       t: "num",
       help: "For made-to-order items.",
     },
@@ -672,7 +598,6 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "type",
       en: "Product type",
-      ne: "प्रकार",
       t: "select",
       req: true,
       o: ["Diapers", "Feeding bottle", "Baby gear", "Clothing", "Toys", "Skincare"],
@@ -680,7 +605,6 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "ageRange",
       en: "Baby age",
-      ne: "बच्चाको उमेर",
       t: "select",
       req: true,
       o: ["Newborn (0–3m)", "3–6m", "6–12m", "12–18m", "18–24m", "2–4 yr"],
@@ -688,24 +612,21 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "material",
       en: "Material",
-      ne: "सामग्री",
       t: "select",
       o: ["Cotton", "Silicone", "BPA-free plastic", "Wood", "Fabric"],
     },
     {
       k: "safetyCert",
       en: "Safety certificate",
-      ne: "सुरक्षा प्रमाणपत्र",
       t: "text",
       req: true,
       help: "BIS / ISO / CE — required for child safety.",
     },
-    { k: "bpaFree", en: "BPA-free", ne: "बीपीए-मुक्त", t: "toggle" },
-    { k: "hypoallergenic", en: "Hypoallergenic", ne: "एलर्जी-रहित", t: "toggle" },
+    { k: "bpaFree", en: "BPA-free", t: "toggle" },
+    { k: "hypoallergenic", en: "Hypoallergenic", t: "toggle" },
     {
       k: "care",
       en: "Cleaning",
-      ne: "सफा गर्ने",
       t: "select",
       o: ["Machine wash gentle", "Sterilise", "Hand wash"],
     },
@@ -714,7 +635,6 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "activity",
       en: "Sport / activity",
-      ne: "खेल",
       t: "select",
       req: true,
       o: ["Football", "Cricket", "Basketball", "Yoga", "Running", "Gym", "Swimming", "Trekking"],
@@ -722,7 +642,6 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "type",
       en: "Type",
-      ne: "प्रकार",
       t: "select",
       req: true,
       o: ["Ball", "Shoes", "Clothing", "Racket", "Mat", "Weights", "Bottle", "Tracker"],
@@ -730,36 +649,31 @@ export const CATEGORY_ATTRIBUTES = {
     {
       k: "gender",
       en: "For whom",
-      ne: "कसको लागि",
       t: "select",
       o: ["Men", "Women", "Unisex", "Kids"],
     },
     {
       k: "size",
       en: "Size / weight",
-      ne: "साइज / तौल",
       t: "text",
       help: "e.g. 5kg dumbbell, Size 5 ball",
     },
     {
       k: "material",
       en: "Material",
-      ne: "सामग्री",
       t: "select",
       o: ["Leather", "Synthetic", "Rubber", "Cotton", "Nylon", "Neoprene", "EVA"],
     },
-    { k: "brand", en: "Brand", ne: "ब्रान्ड", t: "text" },
+    { k: "brand", en: "Brand", t: "text" },
     {
       k: "skill",
       en: "Skill level",
-      ne: "स्तर",
       t: "select",
       o: ["Beginner", "Intermediate", "Advanced", "Professional"],
     },
     {
       k: "warranty",
       en: "Warranty (equipment)",
-      ne: "वारेन्टी",
       t: "select",
       o: ["No warranty", "6 months", "1 year", "2 years"],
     },
@@ -829,7 +743,6 @@ export const P = (o) => ({ id: "bz-" + ++_id, reviews: 120, rating: 4.6, ...o })
 export const PRODUCTS = [
   P({
     name: "Handmade Pashmina Shawl",
-    ne: "हस्तनिर्मित पस्मिना",
     price: 2450,
     original: 3200,
     cat: "fashion",
@@ -846,7 +759,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Thimi Ceramic Tea Set",
-    ne: "माटोको चिया सेट",
     price: 1800,
     original: 2400,
     cat: "home",
@@ -862,7 +774,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Tibetan Singing Bowl",
-    ne: "गाउने कचौरा",
     price: 2900,
     cat: "handicraft",
     seller: "lumbini",
@@ -878,7 +789,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Lokta Paper Journal",
-    ne: "लोक्ता कागज डायरी",
     price: 650,
     original: 850,
     cat: "books",
@@ -892,7 +802,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Dhaka Topi — Classic",
-    ne: "ढाका टोपी",
     price: 850,
     cat: "fashion",
     seller: "himalayan",
@@ -905,7 +814,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Himalayan Wool Socks (3 pk)",
-    ne: "ऊनी मोजा",
     price: 450,
     original: 600,
     cat: "fashion",
@@ -919,7 +827,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Allo Nettle Fibre Scarf",
-    ne: "अल्लोको स्कार्फ",
     price: 1200,
     cat: "handicraft",
     seller: "himalayan",
@@ -934,7 +841,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Wild Mountain Honey 500g",
-    ne: "जंगली मह",
     price: 720,
     cat: "grocery",
     seller: "pokhara",
@@ -948,7 +854,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Hemp Crossbody Backpack",
-    ne: "भांगो ब्याग",
     price: 1650,
     original: 2100,
     cat: "fashion",
@@ -964,7 +869,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Handcrafted Khukuri (decor)",
-    ne: "खुकुरी",
     price: 3200,
     cat: "handicraft",
     seller: "everest",
@@ -977,7 +881,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Yak Cheese Wheel 250g",
-    ne: "याक चीज",
     price: 980,
     cat: "grocery",
     seller: "pokhara",
@@ -990,7 +893,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Thanka Painting — Mandala",
-    ne: "थान्का चित्र",
     price: 5500,
     original: 7000,
     cat: "handicraft",
@@ -1007,7 +909,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Organic Argan Hair Serum",
-    ne: "आर्गन सिरम",
     price: 1250,
     original: 1600,
     cat: "beauty",
@@ -1021,7 +922,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Polarised Sunglasses",
-    ne: "चस्मा",
     price: 1450,
     original: 1900,
     cat: "fashion",
@@ -1037,7 +937,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Everyday Canvas Sneakers",
-    ne: "स्निकर्स",
     price: 2100,
     original: 2800,
     cat: "fashion",
@@ -1054,7 +953,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Brass Diyo Oil Lamp (pair)",
-    ne: "पित्तलको दियो",
     price: 1350,
     cat: "home",
     seller: "thimi",
@@ -1067,7 +965,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Bluetooth Earbuds Pro",
-    ne: "इयरबड्स",
     price: 2990,
     original: 4200,
     cat: "electronics",
@@ -1084,7 +981,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Stainless Steel Water Bottle",
-    ne: "पानी बोतल",
     price: 780,
     original: 1050,
     cat: "sports",
@@ -1098,7 +994,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Leather Sling Bag",
-    ne: "छालाको झोला",
     price: 2350,
     original: 3100,
     cat: "fashion",
@@ -1114,7 +1009,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Felt Wool Slippers",
-    ne: "ऊनी चप्पल",
     price: 690,
     cat: "fashion",
     seller: "himalayan",
@@ -1127,7 +1021,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Ceramic Planter — Glazed",
-    ne: "गमला",
     price: 920,
     original: 1200,
     cat: "home",
@@ -1141,7 +1034,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Himalayan Herbal Soap (4 pk)",
-    ne: "जडिबुटी साबुन",
     price: 540,
     cat: "beauty",
     seller: "pokhara",
@@ -1154,7 +1046,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Smart Fitness Watch",
-    ne: "स्मार्ट घडी",
     price: 3490,
     original: 4990,
     cat: "electronics",
@@ -1171,7 +1062,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Handwoven Dhaka Cushion",
-    ne: "ढाका कुसन",
     price: 1100,
     original: 1450,
     cat: "home",
@@ -1185,7 +1075,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Pure Mustard Oil 1L",
-    ne: "तोरीको तेल",
     price: 420,
     cat: "grocery",
     seller: "pokhara",
@@ -1198,7 +1087,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Cotton Daura Suruwal",
-    ne: "दौरा सुरुवाल",
     price: 3200,
     original: 3900,
     cat: "fashion",
@@ -1213,7 +1101,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Copper Water Jug 1.5L",
-    ne: "तामाको गाग्री",
     price: 1480,
     original: 1850,
     cat: "home",
@@ -1227,7 +1114,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Nepali Tea Sampler (5 pk)",
-    ne: "चिया सेट",
     price: 980,
     original: 1300,
     cat: "grocery",
@@ -1242,7 +1128,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Woollen Pashmina Beanie",
-    ne: "ऊनी टोपी",
     price: 690,
     cat: "fashion",
     seller: "everest",
@@ -1255,7 +1140,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Hand-carved Wooden Mask",
-    ne: "काठको मुकुन्डो",
     price: 2750,
     cat: "handicraft",
     seller: "lumbini",
@@ -1268,7 +1152,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Aloe Vera Face Gel 200ml",
-    ne: "एलोभेरा जेल",
     price: 560,
     original: 720,
     cat: "beauty",
@@ -1282,7 +1165,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Portable Bluetooth Speaker",
-    ne: "स्पिकर",
     price: 2290,
     original: 2990,
     cat: "electronics",
@@ -1299,7 +1181,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Yoga Mat — Anti-slip",
-    ne: "योग म्याट",
     price: 1150,
     original: 1500,
     cat: "sports",
@@ -1313,7 +1194,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Folk Tales of Nepal (book)",
-    ne: "नेपाली लोककथा",
     price: 480,
     cat: "books",
     seller: "lumbini",
@@ -1326,7 +1206,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Brass Singing Bell",
-    ne: "पित्तलको घण्टी",
     price: 1650,
     cat: "handicraft",
     seller: "lumbini",
@@ -1339,7 +1218,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Linen Kurta — Summer",
-    ne: "लिनेन कुर्ता",
     price: 1850,
     original: 2400,
     cat: "fashion",
@@ -1355,7 +1233,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Ceramic Coffee Mug Set (2)",
-    ne: "कफी मग सेट",
     price: 880,
     original: 1100,
     cat: "home",
@@ -1369,7 +1246,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Himalayan Pink Salt 1kg",
-    ne: "गुलाबी नुन",
     price: 320,
     cat: "grocery",
     seller: "pokhara",
@@ -1382,7 +1258,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "USB-C Fast Charger 30W",
-    ne: "चार्जर",
     price: 1290,
     original: 1690,
     cat: "electronics",
@@ -1396,7 +1271,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Beaded Tribal Necklace",
-    ne: "गहना",
     price: 1450,
     cat: "fashion",
     seller: "stylenp",
@@ -1409,7 +1283,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Bamboo Cutting Board",
-    ne: "बाँसको चपिङ बोर्ड",
     price: 740,
     original: 950,
     cat: "home",
@@ -1423,7 +1296,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Trekking Day Pack 25L",
-    ne: "ट्रेकिङ ब्याग",
     price: 2650,
     original: 3400,
     cat: "sports",
@@ -1440,7 +1312,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Sandalwood Incense (50 pc)",
-    ne: "धूप",
     price: 290,
     cat: "handicraft",
     seller: "lumbini",
@@ -1453,7 +1324,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Matte Lipstick — Tihar Red",
-    ne: "लिपस्टिक",
     price: 650,
     original: 850,
     cat: "beauty",
@@ -1467,7 +1337,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Wireless Mouse — Silent",
-    ne: "माउस",
     price: 890,
     original: 1200,
     cat: "electronics",
@@ -1481,7 +1350,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Cotton Bedsheet — Queen",
-    ne: "तन्ना",
     price: 1980,
     original: 2600,
     cat: "home",
@@ -1495,7 +1363,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Roasted Soybean Snack 200g",
-    ne: "भटमास",
     price: 240,
     cat: "grocery",
     seller: "pokhara",
@@ -1508,7 +1375,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Leather Wallet — Bifold",
-    ne: "वालेट",
     price: 1350,
     original: 1750,
     cat: "fashion",
@@ -1522,7 +1388,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Kids' Story Picture Book",
-    ne: "बाल किताब",
     price: 380,
     cat: "books",
     seller: "lumbini",
@@ -1535,7 +1400,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Stainless Steel Lunch Box",
-    ne: "खाजा बाकस",
     price: 920,
     original: 1200,
     cat: "home",
@@ -1549,7 +1413,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Resistance Band Set (5)",
-    ne: "ब्यान्ड सेट",
     price: 850,
     original: 1100,
     cat: "sports",
@@ -1563,7 +1426,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Handmade Felt Coasters (6)",
-    ne: "फेल्ट कोस्टर",
     price: 540,
     cat: "handicraft",
     seller: "himalayan",
@@ -1578,7 +1440,6 @@ export const PRODUCTS = [
   // Books — topped up so the 5-up "Customers also bought" rail and 4-up browse row fill.
   P({
     name: "Everest Base Camp Trek Guide",
-    ne: "ट्रेक गाइड किताब",
     price: 720,
     original: 950,
     cat: "books",
@@ -1592,7 +1453,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Learn Nepali Script Workbook",
-    ne: "नेपाली लिपि अभ्यास",
     price: 350,
     cat: "books",
     seller: "lumbini",
@@ -1605,7 +1465,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Newari Kitchen Cookbook",
-    ne: "नेवारी भान्सा किताब",
     price: 890,
     original: 1150,
     cat: "books",
@@ -1622,7 +1481,6 @@ export const PRODUCTS = [
   // Beauty — topped up to fill the related rail.
   P({
     name: "Yak Milk Body Butter 150g",
-    ne: "याक दूध बडी बटर",
     price: 780,
     original: 980,
     cat: "beauty",
@@ -1636,7 +1494,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Bamboo Charcoal Face Wash",
-    ne: "बाँस चारकोल फेसवास",
     price: 490,
     cat: "beauty",
     seller: "stylenp",
@@ -1651,7 +1508,6 @@ export const PRODUCTS = [
   // Sports — topped up to fill the related rail.
   P({
     name: "Adjustable Dumbbell 5kg",
-    ne: "डम्बल ५ केजी",
     price: 1980,
     original: 2500,
     cat: "sports",
@@ -1665,7 +1521,6 @@ export const PRODUCTS = [
   }),
   P({
     name: "Insulated Trek Flask 750ml",
-    ne: "ट्रेक फ्लास्क",
     price: 1150,
     original: 1450,
     cat: "sports",

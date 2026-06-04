@@ -3,7 +3,6 @@ import type { ApiSuccessResponse } from "./types";
 
 export interface ChatQuickReply {
   en: string;
-  ne: string;
 }
 
 export interface ChatThread {

@@ -1,7 +1,7 @@
 // @ts-nocheck — legacy design prototype; typed incrementally
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Icon,
   Logo,
@@ -38,7 +38,8 @@ import {
   PasswordInput,
 } from "@/components/ui";
 import { useCatalog } from "@/hooks/use-catalog";
-import { useDeleteAccount, useLogout } from "@/hooks/use-auth";
+import { useDeleteAccount, useLogout, useUpdateProfile } from "@/hooks/use-auth";
+import { useUploadImage } from "@/hooks/use-media-upload";
 import { useBargains } from "@/hooks/use-bargains";
 import { useAddresses } from "@/hooks/use-addresses";
 import { useCancelOrder, useOrders } from "@/hooks/use-orders";
@@ -46,7 +47,7 @@ import { canCancelOrder } from "@/lib/order-utils";
 import { ConfirmModal } from "@/features/checkout/checkout";
 import { useChatInbox } from "@/hooks/use-chat";
 import { useBazaarStore } from "@/store/bazaar-store";
-import { displayName, userInitial } from "@/lib/display";
+import { displayName } from "@/lib/display";
 import {
   BazaarCtx,
   useBz,
@@ -58,6 +59,7 @@ import {
   Navbar,
   Footer,
   DevViewSwitcher,
+  BuyerAvatar,
 } from "@/components/common";
 import { pathFromScreen } from "@/config/routes";
 import type { WriteReviewProps } from "@/types";
@@ -506,23 +508,7 @@ export function Profile() {
         <div className="bz-profile__card">
           {/* Identity */}
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <span
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: "50%",
-                background: "var(--blue-deep)",
-                color: "#fff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: 800,
-                fontSize: "1.5rem",
-                flexShrink: 0,
-              }}
-            >
-              {userInitial(user)}
-            </span>
+            <BuyerAvatar user={user} size={64} fontSize="1.5rem" />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: "1.125rem", fontWeight: 800 }}>
                 {displayName(user, "Guest")}
@@ -1007,10 +993,16 @@ export function ProfileEdit() {
   const user = useBazaarStore((s) => s.user);
   const buyerPhone = useBazaarStore((s) => s.buyerPhone);
   const setBuyerPhone = useBazaarStore((s) => s.setBuyerPhone);
+  const updateProfile = useUpdateProfile();
+  const uploadImage = useUploadImage();
+  const fileInputRef = useRef(null);
   const [form, setForm] = useState(() => ({ ...profileFormFromUser(user), phone: buyerPhone }));
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   useEffect(() => {
     // Preserve the shared phone across user refreshes.
     setForm({ ...profileFormFromUser(user), phone: useBazaarStore.getState().buyerPhone });
+    setAvatarUrl(user?.avatarUrl ?? null);
   }, [user]);
   useEffect(() => {
     setForm((f) => ({ ...f, phone: buyerPhone }));
@@ -1019,10 +1011,44 @@ export function ProfileEdit() {
   const [otpDigits, setOtpDigits] = useState("");
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-  const save = () => {
+  const currentName = () => `${form.firstName} ${form.lastName}`.trim() || user?.name || "Buyer";
+  const save = async () => {
     setBuyerPhone(form.phone);
-    toast?.("Profile saved · प्रोफाइल सुरक्षित");
-    nav("profile");
+    try {
+      await updateProfile.mutateAsync({ name: currentName(), avatarUrl });
+      toast?.("Profile saved · प्रोफाइल सुरक्षित");
+      nav("profile");
+    } catch (error) {
+      toast?.(error instanceof Error ? error.message : "Could not save profile");
+    }
+  };
+  const changePhoto = () => fileInputRef.current?.click();
+  const uploadPhoto = async (file) => {
+    setUploadProgress(0);
+    try {
+      const uploaded = await uploadImage.mutateAsync({
+        file,
+        onProgress: (pct) => setUploadProgress(pct),
+      });
+      setAvatarUrl(uploaded.url);
+      await updateProfile.mutateAsync({ name: currentName(), avatarUrl: uploaded.url });
+      toast?.("Profile photo updated");
+    } catch (error) {
+      toast?.(error instanceof Error ? error.message : "Could not upload photo");
+    } finally {
+      setUploadProgress(0);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+  const removePhoto = async () => {
+    try {
+      setAvatarUrl(null);
+      await updateProfile.mutateAsync({ name: currentName(), avatarUrl: null });
+      toast?.("Profile photo removed");
+    } catch (error) {
+      setAvatarUrl(user?.avatarUrl ?? null);
+      toast?.(error instanceof Error ? error.message : "Could not remove photo");
+    }
   };
 
   const fieldStyle = {
@@ -1092,28 +1118,36 @@ export function ProfileEdit() {
           Profile photo
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <span
-            style={{
-              width: 72,
-              height: 72,
-              borderRadius: "50%",
-              background: "var(--blue-deep)",
-              color: "#fff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: 800,
-              fontSize: "1.5rem",
-              flexShrink: 0,
-            }}
-          >
-            {userInitial(user)}
-          </span>
+          <BuyerAvatar user={{ ...user, avatarUrl }} size={72} fontSize="1.5rem" />
           <div style={{ display: "flex", gap: 8 }}>
-            <Button variant="secondary" size="sm" onClick={() => toast?.("Open camera or gallery")}>
-              Change photo
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) uploadPhoto(file);
+              }}
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={uploadImage.isPending || updateProfile.isPending}
+              onClick={changePhoto}
+            >
+              {uploadImage.isPending
+                ? uploadProgress
+                  ? `Uploading ${uploadProgress}%`
+                  : "Uploading..."
+                : "Change photo"}
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => toast?.("Photo removed")}>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={!avatarUrl || uploadImage.isPending || updateProfile.isPending}
+              onClick={removePhoto}
+            >
               Remove
             </Button>
           </div>
@@ -1403,8 +1437,8 @@ export function ProfileEdit() {
         <Button variant="secondary" full href={pathFromScreen("profile")}>
           Cancel
         </Button>
-        <Button variant="primary" full onClick={save}>
-          Save changes
+        <Button variant="primary" full disabled={updateProfile.isPending} onClick={save}>
+          {updateProfile.isPending ? "Saving..." : "Save changes"}
         </Button>
       </div>
 

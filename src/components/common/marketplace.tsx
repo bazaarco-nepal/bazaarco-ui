@@ -18,10 +18,11 @@ import {
 } from "@/components/ui";
 import { pathFromScreen } from "@/config/routes";
 import { useLogout } from "@/hooks/use-auth";
-import { displayName, userInitial } from "@/lib/display";
+import { displayName } from "@/lib/display";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { formatDeliverToLabel } from "@/lib/delivery-location";
 import { ASSETS } from "@/config/assets";
+import { BuyerAvatar } from "@/components/common/buyer-avatar";
 
 import type { BazaarContextValue } from "@/types/bazaar";
 
@@ -624,7 +625,7 @@ export function NavMenuItem({ icon, label, danger, onClick, href, onNavigate }) 
   );
 }
 
-function AccountMenuPanel({ navLabel, navInitial, authed, goAndClose, logoutMutation }) {
+function AccountMenuPanel({ navLabel, user, authed, goAndClose, logoutMutation }) {
   return (
     <>
       <AppLink
@@ -646,22 +647,7 @@ function AccountMenuPanel({ navLabel, navInitial, authed, goAndClose, logoutMuta
           textDecoration: "none",
         }}
       >
-        <span
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: "50%",
-            background: "var(--blue-deep)",
-            color: "#fff",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontWeight: 700,
-            fontSize: 13,
-          }}
-        >
-          {navInitial}
-        </span>
+        <BuyerAvatar user={user} size={32} fontSize={13} />
         <span style={{ flex: 1, minWidth: 0 }}>
           <span
             style={{
@@ -736,7 +722,6 @@ export function Navbar() {
   const authed = useBazaarStore((s) => s.authed);
   const logoutMutation = useLogout();
   const navLabel = displayName(user, "Account");
-  const navInitial = userInitial(user);
   const [hint, setHint] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [deliverOpen, setDeliverOpen] = useState(false);
@@ -912,22 +897,7 @@ export function Navbar() {
               aria-expanded={menuOpen}
               className={`bz-navbar__account-btn${menuOpen ? " is-open" : ""}`}
             >
-              <span
-                style={{
-                  width: 26,
-                  height: 26,
-                  borderRadius: "50%",
-                  background: "var(--blue-deep)",
-                  color: "#fff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontWeight: 700,
-                  fontSize: 12,
-                }}
-              >
-                {navInitial}
-              </span>
+              <BuyerAvatar user={user} size={26} fontSize={12} />
               <span
                 className="bz-hide-mobile"
                 style={{ fontSize: ".8125rem", fontWeight: 600, color: "var(--ink-700)" }}
@@ -940,7 +910,7 @@ export function Navbar() {
               <div role="menu" className="bz-navbar__menu bz-hide-mobile">
                 <AccountMenuPanel
                   navLabel={navLabel}
-                  navInitial={navInitial}
+                  user={user}
                   authed={authed}
                   goAndClose={goAndClose}
                   logoutMutation={logoutMutation}
@@ -989,7 +959,7 @@ export function Navbar() {
             <div role="menu">
               <AccountMenuPanel
                 navLabel={navLabel}
-                navInitial={navInitial}
+                user={user}
                 authed={authed}
                 goAndClose={goAndClose}
                 logoutMutation={logoutMutation}

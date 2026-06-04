@@ -10,6 +10,7 @@ export interface ChatThread {
   id: string;
   buyer: string;
   avatar: string;
+  avatarUrl: string | null;
   city: string;
   time: string;
   last: string;

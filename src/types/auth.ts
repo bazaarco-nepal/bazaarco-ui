@@ -43,6 +43,7 @@ export interface LoginPayload {
 
 export interface UpdateProfilePayload {
   name: string;
+  avatarUrl?: string | null;
 }
 
 export interface AuthSessionResponse {

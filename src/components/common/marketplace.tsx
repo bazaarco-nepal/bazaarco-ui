@@ -527,14 +527,6 @@ export function CategoryTile({ c, onClick, compact = false, href }) {
         <div className="bz-cat__en" style={{ fontSize: ".8125rem", fontWeight: 600 }}>
           {label}
         </div>
-        {!compact && c.ne && (
-          <div
-            className="ne bz-cat__ne"
-            style={{ fontSize: ".6875rem", fontWeight: 600, color: "var(--ink-400)", marginTop: 2 }}
-          >
-            {c.ne}
-          </div>
-        )}
       </div>
     </Tag>
   );
@@ -542,9 +534,9 @@ export function CategoryTile({ c, onClick, compact = false, href }) {
 
 /* ---------- Navbar ---------- */
 export const SEARCH_HINTS = [
-  "Search · खोज्नुहोस्",
+  "Search",
   'Try "Pashmina shawl"',
-  'Try "ढाका टोपी"',
+  'Try "Dhaka topi"',
   'Try "earbuds"',
   'Try "honey"',
 ];
@@ -883,7 +875,7 @@ export function Navbar() {
           <AppLink
             href={pathFromScreen("bargains")}
             ariaLabel="Bargain"
-            title="Bargain · मोलतोल"
+            title="Bargain"
             className="bz-navbar__link bz-navbar__link--bargain"
           >
             <Icon name="bargain" size={19} color="#fff" /> Bargain

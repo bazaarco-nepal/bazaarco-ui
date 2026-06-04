@@ -6,12 +6,11 @@ import { pathFromScreen } from "@/config/routes";
 
 type InfoPageProps = {
   title: string;
-  subtitle?: string;
   children: React.ReactNode;
   showBrowse?: boolean;
 };
 
-function InfoPageShell({ title, subtitle, children, showBrowse = true }: InfoPageProps) {
+function InfoPageShell({ title, children, showBrowse = true }: InfoPageProps) {
   return (
     <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "28px 28px 80px" }}>
       <AppLink
@@ -32,11 +31,6 @@ function InfoPageShell({ title, subtitle, children, showBrowse = true }: InfoPag
       <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 800, color: "var(--blue-deep)" }}>
         {title}
       </h1>
-      {subtitle && (
-        <p className="ne" style={{ color: "var(--ink-500)", margin: "8px 0 24px" }}>
-          {subtitle}
-        </p>
-      )}
       <div
         style={{
           color: "var(--ink-700)",
@@ -59,7 +53,7 @@ function InfoPageShell({ title, subtitle, children, showBrowse = true }: InfoPag
 
 export function HelpSupportPage() {
   return (
-    <InfoPageShell title="Help & support" subtitle="मद्दत र सहयोग" showBrowse={false}>
+    <InfoPageShell title="Help & support" showBrowse={false}>
       <p>
         Need help with an order, payment, or seller? We&apos;re here for shoppers and sellers across
         Nepal.
@@ -101,7 +95,7 @@ export function HelpSupportPage() {
 
 export function PrivacyPolicyPage() {
   return (
-    <InfoPageShell title="Privacy policy" subtitle="गोपनीयता नीति" showBrowse={false}>
+    <InfoPageShell title="Privacy policy" showBrowse={false}>
       <p>
         BazaarCo Nepal Pvt. Ltd. (&quot;BazaarCo&quot;, &quot;we&quot;) respects your privacy. This
         policy explains what we collect, why, and your choices.
@@ -138,7 +132,7 @@ export function PrivacyPolicyPage() {
 
 export function TermsPage() {
   return (
-    <InfoPageShell title="Terms & conditions" subtitle="नियम तथा सर्तहरू">
+    <InfoPageShell title="Terms & conditions">
       <p>
         By using BazaarCo you agree to these terms. If you do not agree, please do not use the
         marketplace.
@@ -182,7 +176,7 @@ export function TermsPage() {
 
 export function AboutPage() {
   return (
-    <InfoPageShell title="About BazaarCo" subtitle="बजारको बारेमा">
+    <InfoPageShell title="About BazaarCo">
       <p>
         BazaarCo is a low-commission, video-first marketplace built for how Nepal shops —
         bargaining, cash on delivery, and trusted local sellers.

@@ -458,13 +458,7 @@ export function SellerVideoLibrary({
         }}
       >
         <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-          Videos{" "}
-          <span
-            className="ne"
-            style={{ fontSize: "1rem", color: "var(--ink-500)", fontWeight: 600 }}
-          >
-            · भिडियो
-          </span>
+          Videos
         </h1>
         <Button variant="primary" icon="plus" onClick={onToggleUpload}>
           {showUpload ? "Close" : "Add video"}

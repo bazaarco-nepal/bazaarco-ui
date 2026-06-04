@@ -1743,7 +1743,6 @@ export function usePages(items, perPage = 10, resetKey) {
 export function LoadMore({
   paged,
   noun = "products",
-  nounNe = "सामानहरू",
   onTop,
   onClear,
   pageBar,
@@ -1795,9 +1794,6 @@ export function LoadMore({
             }}
           >
             You've seen all {total} {noun}
-            <span className="ne" style={{ color: "var(--ink-400)", fontWeight: 500 }}>
-              &nbsp;· सबै {nounNe} हेरिसक्नुभयो
-            </span>
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
             <Button variant="ghost" icon="chevronUp" onClick={scrollTop}>
@@ -1896,8 +1892,8 @@ export function BackToTop({ threshold = 1200 }) {
   return (
     <button
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-      aria-label="Back to top · माथि जानुहोस्"
-      title="Back to top · माथि"
+      aria-label="Back to top"
+      title="Back to top"
       style={{
         position: "fixed",
         right: 22,
@@ -2095,9 +2091,6 @@ export function MobileBuyBar({ onAdd, onBuy }) {
         </Button>
         <Button variant="primary" size="lg" full onClick={onBuy}>
           Buy Now
-          <span className="ne" style={{ fontWeight: 600, opacity: 0.92 }}>
-            · तुरुन्तै
-          </span>
         </Button>
       </div>
     </div>
@@ -2271,7 +2264,7 @@ export function LandmarkAddress({ value, onChange }) {
             marginBottom: 6,
           }}
         >
-          City · सहर
+          City
         </label>
         <select
           value={v.city}
@@ -2326,7 +2319,7 @@ export function LandmarkAddress({ value, onChange }) {
             marginBottom: 6,
           }}
         >
-          Area / Ward · क्षेत्र
+          Area / Ward
         </label>
         <input
           list={v.city ? `bz-areas-${v.city}` : undefined}
@@ -2363,7 +2356,7 @@ export function LandmarkAddress({ value, onChange }) {
             marginBottom: 6,
           }}
         >
-          Landmark · नजिकको चिनो
+          Landmark
         </label>
         <input
           value={v.landmark}
@@ -2652,7 +2645,7 @@ export function VoiceMicButton({ onClick, size = 36 }) {
   return (
     <button
       onClick={onClick}
-      aria-label="Voice search · आवाज खोज"
+      aria-label="Voice search"
       style={{
         width: size,
         height: size,

@@ -306,7 +306,7 @@ function TrackingSidebar({ nav, cart }) {
           <Icon name="phone" size={22} color="#fff" />
         </span>
         <div style={{ textAlign: "left", flex: 1 }}>
-          <div style={{ fontWeight: 800, fontSize: "1rem" }}>Call rider · राइडरलाई फोन</div>
+          <div style={{ fontWeight: 800, fontSize: "1rem" }}>Call rider</div>
           <div style={{ fontSize: ".8125rem", opacity: 0.9 }}>
             Ramesh K. · arrives in about 25 min
           </div>
@@ -527,7 +527,7 @@ export function Wishlist() {
                 <ProductCard key={p.id} p={p} onClick={openProduct} />
               ))}
             </div>
-            <LoadMore paged={productPaged} noun="saved items" nounNe="सेभ गरिएका सामान" />
+            <LoadMore paged={productPaged} noun="saved items" />
           </section>
         )}
       </div>
@@ -577,13 +577,7 @@ export function Bargains() {
                 color: "var(--blue-deep)",
               }}
             >
-              Bargain ·{" "}
-              <span
-                className="ne"
-                style={{ color: "var(--ink-500)", fontWeight: 600, fontSize: "1rem" }}
-              >
-                मोलतोल
-              </span>
+              Bargain
             </h1>
             <p style={{ margin: "2px 0 0", color: "var(--ink-500)", fontSize: ".875rem" }}>
               Your offers and seller responses.

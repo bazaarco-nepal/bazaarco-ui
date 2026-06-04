@@ -141,27 +141,27 @@ export const editProductRef = { current: null as SellerInventoryItem | null };
 
 export const SELLER_NAV = [
   {
-    group: "My shop · मेरो पसल",
+    group: "My shop",
     items: [
-      { id: "s-dashboard", icon: "home", en: "Home", ne: "गृह" },
-      { id: "s-add", icon: "plus", en: "Add product", ne: "सामान थप्नुहोस्" },
-      { id: "s-inbox", icon: "package", en: "Orders", ne: "अर्डर", badgeKey: "orders" },
-      { id: "s-products", icon: "store", en: "My products", ne: "मेरो सामान" },
-      { id: "s-chat", icon: "message", en: "Messages", ne: "च्याट", badgeKey: "chat" },
-      { id: "s-videos", icon: "video", en: "Videos", ne: "भिडियो" },
+      { id: "s-dashboard", icon: "home", en: "Home" },
+      { id: "s-add", icon: "plus", en: "Add product" },
+      { id: "s-inbox", icon: "package", en: "Orders", badgeKey: "orders" },
+      { id: "s-products", icon: "store", en: "My products" },
+      { id: "s-chat", icon: "message", en: "Messages", badgeKey: "chat" },
+      { id: "s-videos", icon: "video", en: "Videos" },
     ],
   },
   {
-    group: "More · थप",
+    group: "More",
     items: [
-      { id: "s-storefront", icon: "palette", en: "My Store", ne: "मेरो पसल" },
-      { id: "s-bargain", icon: "bargain", en: "Bargaining", ne: "मोलतोल", badgeKey: "bargain" },
-      { id: "s-promos", icon: "megaphone", en: "Offers", ne: "छुट" },
-      { id: "s-ledger", icon: "wallet", en: "My money", ne: "भुक्तानी" },
-      { id: "s-analytics", icon: "trendingUp", en: "Analytics", ne: "तथ्याङ्क" },
-      { id: "s-reviews", icon: "star", en: "Reviews", ne: "समीक्षा" },
-      { id: "s-verification", icon: "shieldCheck", en: "KYC", ne: "केवाईसी" },
-      { id: "s-settings", icon: "settings", en: "Settings", ne: "सेटिङ" },
+      { id: "s-storefront", icon: "palette", en: "My Store" },
+      { id: "s-bargain", icon: "bargain", en: "Bargaining", badgeKey: "bargain" },
+      { id: "s-promos", icon: "megaphone", en: "Offers" },
+      { id: "s-ledger", icon: "wallet", en: "My money" },
+      { id: "s-analytics", icon: "trendingUp", en: "Analytics" },
+      { id: "s-reviews", icon: "star", en: "Reviews" },
+      { id: "s-verification", icon: "shieldCheck", en: "KYC" },
+      { id: "s-settings", icon: "settings", en: "Settings" },
     ],
   },
 ];
@@ -278,7 +278,6 @@ export function SellerSidebar({
                     />
                     <span className="bz-side-label">
                       <span className="bz-side-en">{it.en}</span>
-                      <span className="bz-side-sub ne">{it.ne}</span>
                     </span>
                     {showBadge ? <span className="bz-side-badge">{badge}</span> : null}
                   </button>
@@ -303,7 +302,6 @@ export function SellerSidebar({
               <span className="bz-side-en">
                 {logoutMutation.isPending ? "Logging out…" : "Log out"}
               </span>
-              <span className="bz-side-sub ne">लग आउट</span>
             </span>
           </button>
         </div>
@@ -347,6 +345,36 @@ export function SellerShell({ screen, children }) {
     window.addEventListener("bz-seller-menu", h);
     return () => window.removeEventListener("bz-seller-menu", h);
   }, []);
+
+  useEffect(() => {
+    if (!openMobile) return;
+
+    const scrollY = window.scrollY;
+    const body = document.body;
+    const appScroll = document.getElementById("app-scroll");
+    const previousBody = {
+      overflow: body.style.overflow,
+      position: body.style.position,
+      top: body.style.top,
+      width: body.style.width,
+    };
+    const previousAppOverscroll = appScroll?.style.overscrollBehavior;
+
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.width = "100%";
+    if (appScroll) appScroll.style.overscrollBehavior = "none";
+
+    return () => {
+      body.style.overflow = previousBody.overflow;
+      body.style.position = previousBody.position;
+      body.style.top = previousBody.top;
+      body.style.width = previousBody.width;
+      if (appScroll) appScroll.style.overscrollBehavior = previousAppOverscroll ?? "";
+      window.scrollTo(0, scrollY);
+    };
+  }, [openMobile]);
 
   useEffect(() => {
     if (orgLoading || screen === "s-onboarding") return;
@@ -652,12 +680,9 @@ export function SellerOnboarding() {
               <Icon name="badgeCheck" size={42} color="var(--success)" />
             </div>
             <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800 }}>You&apos;re verified</h1>
-            <p className="ne" style={{ color: "var(--ink-500)", marginTop: 6 }}>
-              तपाईंको पसल प्रमाणित भयो — सामान र भिडियो थप्न सक्नुहुन्छ
-            </p>
             <div style={{ marginTop: 24 }}>
               <Button variant="primary" size="lg" full href={pathFromScreen("s-dashboard")}>
-                Open dashboard · ड्यासबोर्ड
+                Open dashboard
               </Button>
             </div>
           </div>
@@ -694,10 +719,6 @@ export function SellerOnboarding() {
               Your {submittedDoc} is submitted. Keep using your dashboard as usual — our team is
               checking your KYC and will update you soon. No need to upload anything again.
             </p>
-            <p className="ne" style={{ color: "var(--ink-500)", marginTop: 6 }}>
-              ड्यासबोर्ड चलाउँदै गर्नुहोस् — KYC जाँच भइरहेको छ, चाँडै जानकारी दिनेछौं। फेरि अपलोड
-              गर्नु पर्दैन।
-            </p>
             <div
               style={{
                 marginTop: 16,
@@ -720,7 +741,7 @@ export function SellerOnboarding() {
             </div>
             <div style={{ marginTop: 24 }}>
               <Button variant="primary" size="lg" full href={pathFromScreen("s-dashboard")}>
-                Open dashboard · ड्यासबोर्ड
+                Open dashboard
               </Button>
             </div>
           </div>
@@ -746,9 +767,6 @@ export function SellerOnboarding() {
             >
               Open your shop on <span style={{ color: "var(--red)" }}>BazaarCo</span>
             </h1>
-            <p className="ne" style={{ color: "var(--ink-500)", marginTop: 6 }}>
-              आफ्नो पसल बजारकोमा खोल्नुहोस्
-            </p>
 
             <div
               style={{
@@ -765,19 +783,16 @@ export function SellerOnboarding() {
               <Icon name="play" size={26} color="var(--blue)" />
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 800, color: "var(--blue-deep)" }}>Watch 60-sec guide</div>
-                <div className="ne" style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}>
-                  ३ मिनेटमा पसल खोल्न सिक्नुहोस्
-                </div>
               </div>
               <Icon name="chevronRight" size={20} color="var(--blue)" />
             </div>
 
             <div style={{ marginTop: 22, textAlign: "left", padding: "0 4px" }}>
               {[
-                ["Low commission marketplace", "कम कमिसन बजार", "percent"],
-                ["Add a product in 3 taps", "३ ट्यापमा सामान थप्नुहोस्", "plus"],
-                ["Daily payouts to eSewa / Khalti", "दैनिक भुक्तानी eSewa / Khalti", "wallet"],
-              ].map(([t, ne, i], idx, arr) => (
+                ["Low commission marketplace", "percent"],
+                ["Add a product in 3 taps", "plus"],
+                ["Daily payouts to eSewa / Khalti", "wallet"],
+              ].map(([t, i], idx, arr) => (
                 <div
                   key={t}
                   style={{
@@ -791,9 +806,6 @@ export function SellerOnboarding() {
                   <Icon name={i} size={22} color="var(--blue)" />
                   <div>
                     <div style={{ fontWeight: 700, color: "var(--ink-900)" }}>{t}</div>
-                    <div className="ne" style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}>
-                      {ne}
-                    </div>
                   </div>
                 </div>
               ))}
@@ -810,7 +822,7 @@ export function SellerOnboarding() {
                   setStage("docPick");
                 }}
               >
-                Register your shop · पसल दर्ता गर्नुहोस्
+                Register your shop
               </Button>
               <Button
                 variant="ghost"
@@ -821,7 +833,7 @@ export function SellerOnboarding() {
                   nav("s-dashboard");
                 }}
               >
-                I'll do this later · पछि गर्छु
+                I'll do this later
               </Button>
             </div>
           </div>
@@ -855,23 +867,18 @@ export function SellerOnboarding() {
             >
               Which document do you have?
             </h2>
-            <p className="ne" style={{ color: "var(--ink-500)", margin: "4px 0 18px" }}>
-              कुन कागजात छ?
-            </p>
 
             {[
               {
                 id: "pan",
                 icon: "package",
                 title: "PAN Card",
-                ne: "प्यान कार्ड",
                 sub: "Registered business · sell any volume",
               },
               {
                 id: "nid",
                 icon: "user",
                 title: "NID Card",
-                ne: "राष्ट्रिय परिचयपत्र",
                 sub: "Individual seller · PAN required once sales cross IRD limit",
               },
             ].map((d) => (
@@ -907,9 +914,6 @@ export function SellerOnboarding() {
                 </span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 800, fontSize: "1rem" }}>{d.title}</div>
-                  <div className="ne" style={{ fontSize: ".8125rem", color: "var(--ink-700)" }}>
-                    {d.ne}
-                  </div>
                   <div style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 2 }}>
                     {d.sub}
                   </div>
@@ -963,9 +967,6 @@ export function SellerOnboarding() {
             <h2 style={{ margin: "0 0 6px", fontSize: "1.25rem", fontWeight: 800 }}>
               Upload your {docType === "pan" ? "PAN" : "NID"} photo
             </h2>
-            <p className="ne" style={{ color: "var(--ink-500)", marginTop: 0, marginBottom: 16 }}>
-              फोटो अपलोड गर्नुहोस् — BazaarCo admin ले जाँच गर्नेछ
-            </p>
             <input
               ref={docInputRef}
               type="file"
@@ -1004,7 +1005,7 @@ export function SellerOnboarding() {
                 disabled={!docFile}
                 onClick={() => setStage("review")}
               >
-                Continue · अगाडि बढ्नुहोस्
+                Continue
               </Button>
             </div>
           </div>
@@ -1022,7 +1023,7 @@ export function SellerOnboarding() {
                 marginBottom: 12,
               }}
             >
-              <Icon name="check" size={20} color="var(--success)" /> Document uploaded · अपलोड भयो
+              <Icon name="check" size={20} color="var(--success)" /> Document uploaded
             </div>
             <h2 style={{ margin: "0 0 16px", fontSize: "1.25rem", fontWeight: 800 }}>
               Confirm your details
@@ -1045,7 +1046,7 @@ export function SellerOnboarding() {
                   marginBottom: 8,
                 }}
               >
-                Store name · पसलको नाम (required)
+                Store name (required)
               </label>
               <input
                 value={scanned.shop || shopName}
@@ -1084,7 +1085,7 @@ export function SellerOnboarding() {
                   marginBottom: 8,
                 }}
               >
-                Owner name · मालिकको नाम (required)
+                Owner name (required)
               </label>
               <input
                 value={scanned.name ?? ""}
@@ -1103,7 +1104,7 @@ export function SellerOnboarding() {
             </div>
             {[
               [`${scanned.docLabel} no.`, "docId"],
-              ["Address · ठेगाना", "address"],
+              ["Address", "address"],
             ].map(([label, key]) => (
               <div key={key} style={{ marginBottom: 10 }}>
                 <label
@@ -1142,7 +1143,7 @@ export function SellerOnboarding() {
               >
                 {setupOrganization.isPending || submitVerification.isPending
                   ? "Submitting for review…"
-                  : "Submit for admin review · जाँचको लागि पठाउनुहोस्"}
+                  : "Submit for admin review"}
               </Button>
             </div>
           </div>
@@ -1165,7 +1166,7 @@ export function SellerOnboarding() {
               <Icon name="check" size={42} color="var(--success)" />
             </div>
             <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800 }}>Submitted for review</h1>
-            <p className="ne" style={{ color: "var(--ink-500)", marginTop: 6 }}>
+            <p style={{ color: "var(--ink-500)", marginTop: 6 }}>
               BazaarCo admin will verify your {docType === "pan" ? "PAN" : "NID"}. You can use the
               dashboard meanwhile.
             </p>
@@ -1190,10 +1191,10 @@ export function SellerOnboarding() {
             </div>
             <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 10 }}>
               <Button variant="primary" size="lg" full href={pathFromScreen("s-dashboard")}>
-                Open dashboard · ड्यासबोर्ड
+                Open dashboard
               </Button>
               <Button variant="ghost" full href={pathFromScreen("s-onboarding")}>
-                Re-upload document · कागजात फेरि पठाउनुहोस्
+                Re-upload document
               </Button>
             </div>
           </div>
@@ -1533,7 +1534,6 @@ export function SellerDashboard() {
       icon: "package",
       tint: "red",
       label: `Accept ${pendingOrders} new order${pendingOrders > 1 ? "s" : ""}`,
-      ne: "नयाँ अर्डर",
       to: "s-inbox",
       urgent: true,
       action: { label: "View orders", onAct: () => nav("s-inbox") },
@@ -1542,7 +1542,6 @@ export function SellerDashboard() {
       icon: "zap",
       tint: "saffron",
       label: `${lowStock} item${lowStock > 1 ? "s" : ""} running low`,
-      ne: "स्टक कम",
       to: "s-products",
       urgent: false,
       action: { label: "Restock", onAct: () => nav("s-products") },
@@ -1572,7 +1571,7 @@ export function SellerDashboard() {
               Namaste, {sellerName} <span style={{ fontSize: "1.5rem" }}>🙏</span>
             </h1>
             <p style={{ margin: "4px 0 0", color: "var(--ink-500)", fontSize: ".875rem" }}>
-              {today} · <span className="ne">बजारकोमा स्वागत छ</span>
+              {today}
             </p>
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
@@ -1633,12 +1632,6 @@ export function SellerDashboard() {
                 <div>
                   <div style={{ fontSize: ".8125rem", color: "var(--ink-700)", fontWeight: 700 }}>
                     {k.label}
-                  </div>
-                  <div
-                    className="ne"
-                    style={{ fontSize: ".7rem", color: "var(--ink-400)", fontWeight: 600 }}
-                  >
-                    {k.sub}
                   </div>
                 </div>
                 <span
@@ -1740,11 +1733,8 @@ export function SellerDashboard() {
               boxShadow: "var(--sh-1)",
             }}
           >
-            <div
-              className="ne"
-              style={{ fontSize: ".8125rem", color: "var(--ink-500)", fontWeight: 600 }}
-            >
-              आजको कुल कमाइ · Earnings today
+            <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", fontWeight: 600 }}>
+              Earnings today
             </div>
             <div
               className="tnum bz-stat-xl"
@@ -1766,8 +1756,7 @@ export function SellerDashboard() {
                 gap: 6,
               }}
             >
-              <Icon name="wallet" size={14} color="var(--success)" />{" "}
-              <span className="ne">आजको बिक्री</span> · From your dashboard
+              <Icon name="wallet" size={14} color="var(--success)" /> From your dashboard
             </div>
             <div
               style={{
@@ -1822,7 +1811,7 @@ export function SellerDashboard() {
               }}
             >
               <div style={{ fontWeight: 800, fontSize: ".9375rem", color: "var(--blue-deep)" }}>
-                Today's tasks · आजको काम
+                Today's tasks
               </div>
               {tasks.length > 0 ? (
                 <Chip tone="red" size="sm">
@@ -1900,9 +1889,6 @@ export function SellerDashboard() {
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: ".875rem" }}>{t.label}</div>
-                  <div className="ne" style={{ fontSize: ".7rem", color: "var(--ink-500)" }}>
-                    {t.ne}
-                  </div>
                 </div>
                 {t.action ? (
                   <button
@@ -1973,12 +1959,6 @@ export function SellerDashboard() {
                 >
                   Sales trend
                 </h3>
-                <div
-                  className="ne"
-                  style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 2 }}
-                >
-                  ७ दिनको बिक्री
-                </div>
               </div>
               <div
                 style={{
@@ -2059,9 +2039,6 @@ export function SellerDashboard() {
                   <div style={{ fontWeight: 800, color: "var(--red)", fontSize: ".875rem" }}>
                     {bargainGlance.pending} offer waiting
                   </div>
-                  <div className="ne" style={{ fontSize: ".7rem", color: "var(--ink-500)" }}>
-                    १ मोलतोल बाँकी
-                  </div>
                 </div>
                 <Icon name="chevronRight" size={18} color="var(--red)" />
               </AppLink>
@@ -2137,7 +2114,7 @@ export function SellerDashboard() {
               color: "var(--blue-deep)",
             }}
           >
-            Recent activity · हालैको
+            Recent activity
           </h3>
           <div
             style={{
@@ -2205,7 +2182,7 @@ export function SellerDashboard() {
             }}
           >
             <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-              Top products · मनपर्ने सामान
+              Top products
             </h3>
             <Button
               variant="ghost"
@@ -2279,11 +2256,10 @@ export function SellerDashboard() {
           }}
         >
           {[
-            { icon: "plus", label: "Add product", ne: "थप्नुहोस्", tint: "green", to: "s-add" },
+            { icon: "plus", label: "Add product", tint: "green", to: "s-add" },
             {
               icon: "package",
               label: "Orders",
-              ne: "अर्डर",
               tint: "red",
               to: "s-inbox",
               badge: "2",
@@ -2291,11 +2267,10 @@ export function SellerDashboard() {
             {
               icon: "store",
               label: "My products",
-              ne: "मेरो सामान",
               tint: "blue",
               to: "s-products",
             },
-            { icon: "wallet", label: "Payouts", ne: "भुक्तानी", tint: "saffron", to: "s-ledger" },
+            { icon: "wallet", label: "Payouts", tint: "saffron", to: "s-ledger" },
           ].map((a) => (
             <AppLink
               key={a.label}
@@ -2329,9 +2304,6 @@ export function SellerDashboard() {
               </span>
               <div style={{ flex: 1, textAlign: "left" }}>
                 <div style={{ fontWeight: 800, fontSize: ".9375rem" }}>{a.label}</div>
-                <div className="ne" style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
-                  {a.ne}
-                </div>
               </div>
               {a.badge && (
                 <span
@@ -2394,16 +2366,16 @@ export const INBOX_TONE: Record<OrderStatus, string> = {
   delivered: "success",
   cancelled: "neutral",
 };
-export const INBOX_LABEL: Record<OrderStatus, { en: string; ne: string; icon: string }> = {
-  placed: { en: "New order", ne: "नयाँ अर्डर", icon: "package" },
-  accepted: { en: "Accepted", ne: "स्वीकार", icon: "check" },
-  packaging_started: { en: "Packaging", ne: "प्याकिङ", icon: "package" },
-  ready_for_pickup: { en: "Ready pickup", ne: "पिकअप तयार", icon: "package" },
-  picked_up: { en: "Picked up", ne: "लिइयो", icon: "truck" },
-  arrived_at_hub: { en: "At hub", ne: "हबमा", icon: "mapPin" },
-  out_for_delivery: { en: "Out delivery", ne: "डेलिभरी", icon: "truck" },
-  delivered: { en: "Delivered", ne: "पुग्यो", icon: "check" },
-  cancelled: { en: "Cancelled", ne: "रद्द", icon: "x" },
+export const INBOX_LABEL: Record<OrderStatus, { en: string; icon: string }> = {
+  placed: { en: "New order", icon: "package" },
+  accepted: { en: "Accepted", icon: "check" },
+  packaging_started: { en: "Packaging", icon: "package" },
+  ready_for_pickup: { en: "Ready pickup", icon: "package" },
+  picked_up: { en: "Picked up", icon: "truck" },
+  arrived_at_hub: { en: "At hub", icon: "mapPin" },
+  out_for_delivery: { en: "Out delivery", icon: "truck" },
+  delivered: { en: "Delivered", icon: "check" },
+  cancelled: { en: "Cancelled", icon: "x" },
 };
 
 export function OrderCard({
@@ -2564,13 +2536,7 @@ export function SellerInbox() {
             <h1
               style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}
             >
-              Orders{" "}
-              <span
-                className="ne"
-                style={{ fontSize: "1rem", color: "var(--ink-500)", fontWeight: 600 }}
-              >
-                · अर्डर
-              </span>
+              Orders
             </h1>
             <p style={{ margin: "2px 0 0", fontSize: ".8125rem", color: "var(--ink-500)" }}>
               Tap an order to print labels, message buyer, or update status.
@@ -2938,7 +2904,7 @@ export function SellerOrderDetail() {
 
   const reject = () => {
     if (!o.canCancel) return;
-    if (window.confirm("Cancel this order before pickup? · अर्डर रद्द गर्ने?")) {
+    if (window.confirm("Cancel this order before pickup?")) {
       void moveOrder("cancelled");
     }
   };
@@ -2982,7 +2948,7 @@ export function SellerOrderDetail() {
           <Icon name="package" size={32} color="var(--danger)" />
           <div>
             <div style={{ fontWeight: 800, color: "var(--danger)", fontSize: "1rem" }}>
-              {INBOX_LABEL[o.status].en} · {INBOX_LABEL[o.status].ne}
+              {INBOX_LABEL[o.status].en}
             </div>
             <div style={{ fontSize: ".8125rem", color: "var(--ink-700)" }}>
               {o.time} · Order #{o.id}
@@ -3010,7 +2976,7 @@ export function SellerOrderDetail() {
               marginBottom: 8,
             }}
           >
-            Buyer · खरिदकर्ता
+            Buyer
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <BuyerAvatar
@@ -3063,7 +3029,7 @@ export function SellerOrderDetail() {
               marginBottom: 8,
             }}
           >
-            Item · सामान
+            Item
           </div>
           <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
             <Placeholder
@@ -3104,7 +3070,7 @@ export function SellerOrderDetail() {
               marginBottom: 10,
             }}
           >
-            Payment · भुक्तानी
+            Payment
           </div>
           <div
             style={{
@@ -3131,7 +3097,7 @@ export function SellerOrderDetail() {
               alignItems: "center",
             }}
           >
-            <span style={{ fontWeight: 700, color: "var(--ink-900)" }}>You get · तपाईंलाई</span>
+            <span style={{ fontWeight: 700, color: "var(--ink-900)" }}>You get</span>
             <span
               className="tnum"
               style={{ fontWeight: 800, fontSize: "1.375rem", color: "var(--success)" }}
@@ -3154,7 +3120,7 @@ export function SellerOrderDetail() {
             onClick={() => void moveOrder(nextStatus[o.status]!)}
             icon="check"
           >
-            {nextLabel[o.status]} · स्थिति अपडेट
+            {nextLabel[o.status]}
           </Button>
         ) : (
           <Button variant="ghost" size="lg" full disabled>
@@ -3169,7 +3135,7 @@ export function SellerOrderDetail() {
             onClick={reject}
             style={{ marginTop: 10 }}
           >
-            Can't fulfill · पूरा गर्न सक्दिनँ
+            Can't fulfill
           </Button>
         )}
       </div>
@@ -3224,9 +3190,6 @@ export function CategoryAttrFields({ category, values, onChange }) {
             }}
           >
             {f.en}{" "}
-            <span className="ne" style={{ fontWeight: 600, color: "var(--ink-400)" }}>
-              · {f.ne}
-            </span>
             {f.req && (
               <span style={{ color: "var(--red)", fontWeight: 800 }} title="Required">
                 *
@@ -3372,7 +3335,7 @@ export function CategoryAttrFields({ category, values, onChange }) {
                 onChange={(e) => set(f.k, e.target.checked)}
                 style={{ width: 20, height: 20, accentColor: "var(--blue)" }}
               />
-              Yes · हो
+              Yes
             </label>
           )}
 
@@ -3555,7 +3518,7 @@ export function SellerAddProduct({
           allowBargaining: bargainOk,
           maxDiscountPct: bargainOk ? bargainPct : 0,
         });
-        toast("Product updated · अपडेट भयो");
+        toast("Product updated");
         nav("s-products");
       } catch (err) {
         toast(err instanceof Error ? err.message : "Could not save changes. Please try again.");
@@ -3580,7 +3543,7 @@ export function SellerAddProduct({
         allowBargaining: bargainOk,
         maxDiscountPct: bargainOk ? bargainPct : 0,
       });
-      toast("Product published! · प्रकाशित भयो");
+      toast("Product published!");
       nav("s-products");
     } catch (err) {
       toast(err instanceof Error ? err.message : "Could not publish. Please try again.");
@@ -3661,9 +3624,6 @@ export function SellerAddProduct({
           <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
             {isEdit ? "Edit product" : "Add a product"}
           </h1>
-          <p className="ne" style={{ color: "var(--ink-500)", margin: "4px 0 12px" }}>
-            {isEdit ? "सामान सम्पादन गर्नुहोस्" : "३ ट्यापमा सामान थप्नुहोस्"}
-          </p>
 
           {/* Progress */}
           <div style={{ display: "flex", gap: 6, marginBottom: 22 }}>
@@ -3718,9 +3678,6 @@ export function SellerAddProduct({
                     {isEdit ? "can't be changed here" : "3 required · up to 5"}
                   </span>
                 </h3>
-                <div className="ne" style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
-                  {isEdit ? "फोटो यहाँ परिवर्तन गर्न मिल्दैन" : "३ फोटो अनिवार्य · ५ सम्म"}
-                </div>
               </div>
             </div>
             {isEdit ? (
@@ -3789,9 +3746,6 @@ export function SellerAddProduct({
                 <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>
                   Describe your product
                 </h3>
-                <div className="ne" style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
-                  सामानको बारेमा लेख्नुहोस्
-                </div>
               </div>
             </div>
 
@@ -3804,7 +3758,7 @@ export function SellerAddProduct({
                 marginBottom: 6,
               }}
             >
-              Product name · नाम
+              Product name
             </label>
             <input
               value={title}
@@ -3832,7 +3786,7 @@ export function SellerAddProduct({
                 marginBottom: 6,
               }}
             >
-              Description · विवरण <span style={{ color: "var(--red)", fontWeight: 800 }}>*</span>
+              Description <span style={{ color: "var(--red)", fontWeight: 800 }}>*</span>
             </label>
             <textarea
               value={description}
@@ -3873,7 +3827,7 @@ export function SellerAddProduct({
                 marginBottom: 6,
               }}
             >
-              Category · वर्ग
+              Category
             </label>
             <select
               value={category}
@@ -3897,7 +3851,7 @@ export function SellerAddProduct({
               <option value="">Pick a category</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.en} · {c.ne}
+                  {c.en}
                 </option>
               ))}
             </select>
@@ -3939,9 +3893,6 @@ export function SellerAddProduct({
                     Product specifications{" "}
                     <span style={{ color: "var(--red)", fontWeight: 800 }}>*</span>
                   </h3>
-                  <div className="ne" style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
-                    विशिष्टताहरू — खरिदकर्तालाई Specifications ट्याबमा देखिन्छ
-                  </div>
                 </div>
               </div>
               <p style={{ margin: "0 0 14px", fontSize: ".8125rem", color: "var(--ink-500)" }}>
@@ -3993,9 +3944,6 @@ export function SellerAddProduct({
               </span>
               <div style={{ flex: 1 }}>
                 <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>Price &amp; stock</h3>
-                <div className="ne" style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
-                  मूल्य र संख्या
-                </div>
               </div>
               <label
                 style={{
@@ -4030,7 +3978,7 @@ export function SellerAddProduct({
                       marginBottom: 6,
                     }}
                   >
-                    Price (Rs.) · मूल्य
+                    Price (Rs.)
                   </label>
                   <input
                     value={price}
@@ -4061,7 +4009,7 @@ export function SellerAddProduct({
                       marginBottom: 6,
                     }}
                   >
-                    Stock · संख्या
+                    Stock
                   </label>
                   <input
                     value={stock}
@@ -4218,9 +4166,6 @@ export function SellerAddProduct({
                     Optional
                   </span>
                 </h3>
-                <div className="ne" style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
-                  मोलतोल स्वीकार?
-                </div>
               </div>
               <label
                 style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}
@@ -4276,10 +4221,10 @@ export function SellerAddProduct({
             {isEdit
               ? publishing
                 ? "Saving…"
-                : "Save changes · सेभ गर्नुहोस्"
+                : "Save changes"
               : publishing
                 ? "Publishing…"
-                : "Publish · प्रकाशित गर्नुहोस्"}
+                : "Publish"}
           </Button>
           {!canPublish && !publishing && (
             <p
@@ -4293,12 +4238,6 @@ export function SellerAddProduct({
             >
               <strong style={{ color: "var(--ink-700)" }}>Still needed:</strong>{" "}
               {publishMissing.join(" · ")}
-              <span
-                className="ne"
-                style={{ display: "block", marginTop: 4, color: "var(--ink-400)" }}
-              >
-                माथि स्क्रोल गरेर फोटो, नाम, वर्ग र मूल्य/स्टक भर्नुहोस्
-              </span>
             </p>
           )}
         </div>
@@ -4458,13 +4397,7 @@ export function SellerInventory() {
               color: "var(--blue-deep)",
             }}
           >
-            My products{" "}
-            <span
-              className="ne"
-              style={{ fontSize: "1rem", color: "var(--ink-500)", fontWeight: 600 }}
-            >
-              · मेरो सामान
-            </span>
+            My products
           </h1>
           <Button variant="primary" icon="plus" href={pathFromScreen("s-add")}>
             Add
@@ -4747,13 +4680,12 @@ export function SellerInventory() {
                         >
                           {oos ? (
                             <>
-                              <Icon name="zap" size={14} color="var(--danger)" /> Out of stock ·
-                              सकियो
+                              <Icon name="zap" size={14} color="var(--danger)" /> Out of stock
                             </>
                           ) : low ? (
                             <>
                               <Icon name="zap" size={14} color="var(--saffron)" /> Only {it.stock}{" "}
-                              left · कम छ
+                              left
                             </>
                           ) : (
                             <>Stock: {it.stock}</>
@@ -4793,7 +4725,7 @@ export function SellerInventory() {
                           }}
                         >
                           <div style={{ fontWeight: 700, fontSize: ".875rem" }}>
-                            Change stock · संख्या परिवर्तन
+                            Change stock
                             {savingId === it.id && (
                               <span
                                 style={{
@@ -4876,7 +4808,7 @@ export function SellerInventory() {
                             onClick={() => sellInShop(it.id)}
                             icon="store"
                           >
-                            Sold one in my shop · पसलमा बेचेँ (−1)
+                            Sold one in my shop (−1)
                           </Button>
                         )}
                         <div style={{ marginTop: 14 }}>
@@ -4887,7 +4819,7 @@ export function SellerInventory() {
                               marginBottom: 8,
                             }}
                           >
-                            Price (Rs.) · मूल्य
+                            Price (Rs.)
                           </div>
                           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                             <input
@@ -4943,7 +4875,7 @@ export function SellerInventory() {
                               nav("s-edit");
                             }}
                           >
-                            Edit full details · पूरा विवरण सम्पादन
+                            Edit full details
                           </Button>
                           <p
                             style={{
@@ -5010,12 +4942,11 @@ export function SellerLedger() {
   const statusLabel = {
     received: {
       en: "Received",
-      ne: "पैसा आयो ✓",
       color: "var(--success)",
       bg: "rgba(22,163,74,.1)",
     },
-    sending: { en: "Sending", ne: "पठाउँदै", color: "var(--saffron)", bg: "rgba(247,127,0,.1)" },
-    held: { en: "On hold", ne: "रोकिएको", color: "var(--danger)", bg: "rgba(220,38,38,.1)" },
+    sending: { en: "Sending", color: "var(--saffron)", bg: "rgba(247,127,0,.1)" },
+    held: { en: "On hold", color: "var(--danger)", bg: "rgba(220,38,38,.1)" },
   };
 
   return (
@@ -5037,13 +4968,7 @@ export function SellerLedger() {
           }}
         >
           <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-            Payouts{" "}
-            <span
-              className="ne"
-              style={{ fontSize: "1rem", color: "var(--ink-500)", fontWeight: 600 }}
-            >
-              · भुक्तानी
-            </span>
+            Payouts
           </h1>
           <div className="bz-no-print">
             <Button variant="ghost" href={pathFromScreen("s-dashboard")} icon="chevronLeft">
@@ -5084,7 +5009,7 @@ export function SellerLedger() {
               textAlign: "center",
             }}
           >
-            Payout history · भुक्तानी इतिहास
+            Payout history
           </div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
@@ -5153,7 +5078,7 @@ export function SellerLedger() {
                           fontSize: ".75rem",
                         }}
                       >
-                        <span className="ne">{s.ne}</span>
+                        {s.en}
                       </span>
                     </td>
                   </tr>
@@ -5463,13 +5388,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
       >
         <div>
           <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-            {buyerMode ? "Messages" : "Chat"}{" "}
-            <span
-              className="ne"
-              style={{ fontSize: "1rem", color: "var(--ink-500)", fontWeight: 600 }}
-            >
-              · च्याट
-            </span>
+            {buyerMode ? "Messages" : "Chat"}
           </h1>
           <p style={{ margin: "2px 0 0", fontSize: ".8125rem", color: "var(--ink-500)" }}>
             {buyerMode
@@ -5817,7 +5736,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
                     void send(msg);
                   }
                 }}
-                placeholder="Type a message · सन्देश लेख्नुहोस्"
+                placeholder="Type a message"
                 disabled={sending}
               />
               <button
@@ -5875,13 +5794,7 @@ export function SellerBargain() {
       <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
         <SellerHelpBar />
         <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-          Bargaining{" "}
-          <span
-            className="ne"
-            style={{ fontSize: "1rem", color: "var(--ink-500)", fontWeight: 600 }}
-          >
-            · मोलतोल
-          </span>
+          Bargaining
         </h1>
         <p style={{ margin: "4px 0 18px", fontSize: ".875rem", color: "var(--ink-500)" }}>
           Buyers can send you offers below your listed price. You decide the maximum discount.
@@ -5912,9 +5825,6 @@ export function SellerBargain() {
             <div>
               <div style={{ fontSize: ".8125rem", fontWeight: 600, color: "var(--ink-700)" }}>
                 Maximum bargain you allow
-              </div>
-              <div className="ne" style={{ fontSize: ".75rem", color: "var(--ink-400)" }}>
-                तपाईंले दिने अधिकतम छुट
               </div>
             </div>
             <label
@@ -6051,7 +5961,7 @@ export function SellerBargain() {
             color: "var(--blue-deep)",
           }}
         >
-          Offers · प्रस्ताव
+          Offers
         </h2>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {BARGAIN_OFFERS.map((o) => {
@@ -6180,13 +6090,7 @@ export function SellerPromotions() {
       <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
         <SellerHelpBar />
         <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-          Promotions{" "}
-          <span
-            className="ne"
-            style={{ fontSize: "1rem", color: "var(--ink-500)", fontWeight: 600 }}
-          >
-            · छुट
-          </span>
+          Promotions
         </h1>
         <p style={{ margin: "4px 0 18px", fontSize: ".875rem", color: "var(--ink-500)" }}>
           Move slow stock. Reward repeat buyers. Get a sales bump for a few days.
@@ -6236,9 +6140,6 @@ export function SellerPromotions() {
               </span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 800 }}>{p.en}</div>
-                <div className="ne" style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
-                  {p.ne}
-                </div>
                 <div style={{ fontSize: ".75rem", color: "var(--ink-700)", marginTop: 6 }}>
                   {p.desc}
                 </div>
@@ -6342,13 +6243,7 @@ export function SellerReviews() {
       <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
         <SellerHelpBar />
         <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-          Reviews{" "}
-          <span
-            className="ne"
-            style={{ fontSize: "1rem", color: "var(--ink-500)", fontWeight: 600 }}
-          >
-            · समीक्षा
-          </span>
+          Reviews
         </h1>
         <p style={{ margin: "4px 0 18px", fontSize: ".875rem", color: "var(--ink-500)" }}>
           Reply to every review. Buyers trust shops that listen.
@@ -6605,13 +6500,7 @@ export function SellerStorefront() {
       <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
         <SellerHelpBar />
         <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-          Storefront{" "}
-          <span
-            className="ne"
-            style={{ fontSize: "1rem", color: "var(--ink-500)", fontWeight: 600 }}
-          >
-            · पसल सजावट
-          </span>
+          Storefront
         </h1>
         <p style={{ margin: "4px 0 18px", fontSize: ".875rem", color: "var(--ink-500)" }}>
           Customize how buyers see your shop. Changes go live in 5 minutes.
@@ -6744,7 +6633,7 @@ export function SellerStorefront() {
               }}
             >
               <h3 style={{ margin: "0 0 4px", fontSize: ".9375rem", fontWeight: 800 }}>
-                Store name · पसलको नाम
+                Store name
               </h3>
               <p style={{ margin: "0 0 12px", fontSize: ".75rem", color: "var(--ink-500)" }}>
                 This is what buyers see. Your owner name stays private — edit it in Profile.
@@ -6843,12 +6732,6 @@ export function SellerVideos() {
           <p style={{ margin: "12px 0 0", fontSize: ".9375rem", fontWeight: 600 }}>
             Complete verification to add and manage videos
           </p>
-          <p
-            className="ne"
-            style={{ margin: "6px 0 0", fontSize: ".75rem", color: "var(--ink-500)" }}
-          >
-            भिडियो थप्न र व्यवस्थापन गर्न प्रमाणीकरण पूरा गर्नुहोस्
-          </p>
         </div>
       </div>
     );
@@ -6875,12 +6758,12 @@ export function SellerVideos() {
 
 /* ---------- 4.17 Settings (includes Notifications) ---------- */
 export const NOTIF_EVENTS = [
-  { en: "New order", ne: "नयाँ अर्डर", defaults: [true, true, true, false] },
-  { en: "Bargain offer", ne: "मोलतोल", defaults: [true, false, true, false] },
-  { en: "Low stock", ne: "सामान कम", defaults: [true, false, true, false] },
-  { en: "New review", ne: "नयाँ समीक्षा", defaults: [true, false, false, false] },
-  { en: "Payout sent", ne: "पैसा पठाइयो", defaults: [true, true, true, true] },
-  { en: "Policy update", ne: "नीति परिवर्तन", defaults: [true, false, false, true] },
+  { en: "New order", defaults: [true, true, true, false] },
+  { en: "Bargain offer", defaults: [true, false, true, false] },
+  { en: "Low stock", defaults: [true, false, true, false] },
+  { en: "New review", defaults: [true, false, false, false] },
+  { en: "Payout sent", defaults: [true, true, true, true] },
+  { en: "Policy update", defaults: [true, false, false, true] },
 ];
 export const NOTIF_CHANNELS = [
   { en: "In-app", icon: "bell" },
@@ -6928,7 +6811,6 @@ export function SellerVerificationTimeline() {
       key: "submitted",
       icon: "file",
       en: "KYC application submitted",
-      ne: "केवाईसी कागजात पेश गरियो",
       at: verification?.submittedAt,
       state: submitted ? "done" : "todo",
       hint: submitted ? null : "You haven't sent your document yet.",
@@ -6937,7 +6819,6 @@ export function SellerVerificationTimeline() {
       key: "review",
       icon: reviewed ? "shieldCheck" : "clock",
       en: reviewed ? "Reviewed by BazaarCo" : "Under review by BazaarCo",
-      ne: reviewed ? "BazaarCo ले जाँच गर्‍यो" : "BazaarCo ले जाँच गर्दैछ",
       at: reviewed ? verification?.reviewedAt : null,
       state: reviewed ? "done" : submitted ? "current" : "todo",
       hint: status === "pending" ? "Usually decided within 1–2 working days." : null,
@@ -6951,12 +6832,6 @@ export function SellerVerificationTimeline() {
           : status === "rejected"
             ? "Not approved"
             : "Approval",
-      ne:
-        status === "approved"
-          ? "स्वीकृत — अब बेच्न सक्नुहुन्छ"
-          : status === "rejected"
-            ? "अस्वीकृत भयो"
-            : "स्वीकृति",
       at: reviewed ? verification?.reviewedAt : null,
       state: status === "approved" ? "done" : status === "rejected" ? "done-red" : "todo",
       note: status === "rejected" ? verification?.note : null,
@@ -6992,13 +6867,7 @@ export function SellerVerificationTimeline() {
                   color: "var(--blue-deep)",
                 }}
               >
-                KYC verification{" "}
-                <span
-                  className="ne"
-                  style={{ fontSize: "1rem", color: "var(--ink-500)", fontWeight: 600 }}
-                >
-                  · केवाईसी
-                </span>
+                KYC verification
               </h1>
               <p style={{ margin: "4px 0 0", fontSize: ".875rem", color: "var(--ink-500)" }}>
                 Track your document verification status.
@@ -7084,12 +6953,6 @@ export function SellerVerificationTimeline() {
                     >
                       {m.en}
                     </div>
-                    <div
-                      className="ne"
-                      style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 1 }}
-                    >
-                      {m.ne}
-                    </div>
                     {when ? (
                       <div
                         style={{
@@ -7147,16 +7010,14 @@ export function SellerVerificationTimeline() {
           {(status === "none" || status === "rejected") && (
             <div style={{ marginTop: 18 }}>
               <Button variant="primary" size="lg" full onClick={() => nav("s-onboarding")}>
-                {status === "rejected"
-                  ? "Re-upload document · कागजात फेरि पठाउनुहोस्"
-                  : "Start verification · प्रमाणीकरण सुरु गर्नुहोस्"}
+                {status === "rejected" ? "Re-upload document" : "Start verification"}
               </Button>
             </div>
           )}
           {status === "approved" && (
             <div style={{ marginTop: 18 }}>
               <Button variant="primary" size="lg" full onClick={() => nav("s-dashboard")}>
-                Open dashboard · ड्यासबोर्ड
+                Open dashboard
               </Button>
             </div>
           )}
@@ -7217,13 +7078,7 @@ export function SellerSettings() {
       <div className="bz-seller-page" style={{ maxWidth: "var(--container)", margin: "0 auto" }}>
         <SellerHelpBar />
         <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-          Settings{" "}
-          <span
-            className="ne"
-            style={{ fontSize: "1rem", color: "var(--ink-500)", fontWeight: 600 }}
-          >
-            · सेटिङ
-          </span>
+          Settings
         </h1>
         {/* Tab bar — same underline pattern as PDP description/specs */}
         <div
@@ -7237,8 +7092,8 @@ export function SellerSettings() {
           }}
         >
           {[
-            { id: "account", en: "Account", ne: "खाता" },
-            { id: "alerts", en: "Alerts", ne: "सूचना" },
+            { id: "account", en: "Account" },
+            { id: "alerts", en: "Alerts" },
           ].map((t) => {
             const active = tab === t.id;
             return (
@@ -7262,10 +7117,7 @@ export function SellerSettings() {
                     "color var(--dur-standard) var(--ease), border-color var(--dur-standard) var(--ease)",
                 }}
               >
-                {t.en}{" "}
-                <span className="ne" style={{ fontSize: ".75rem", marginLeft: 4, fontWeight: 600 }}>
-                  {t.ne}
-                </span>
+                {t.en}
               </button>
             );
           })}
@@ -7354,9 +7206,6 @@ export function SellerSettings() {
                     <tr key={e.en} style={{ borderTop: "1px solid var(--line-200)" }}>
                       <td style={{ padding: "14px 16px" }}>
                         <div style={{ fontWeight: 700 }}>{e.en}</div>
-                        <div className="ne" style={{ fontSize: ".7rem", color: "var(--ink-500)" }}>
-                          {e.ne}
-                        </div>
                       </td>
                       {NOTIF_CHANNELS.map((_, ci) => (
                         <td key={ci} style={{ padding: "14px 12px", textAlign: "center" }}>
@@ -7503,10 +7352,7 @@ export function SellerProfile() {
     <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
       <SellerHelpBar />
       <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-        My profile{" "}
-        <span className="ne" style={{ fontSize: "1rem", color: "var(--ink-500)", fontWeight: 600 }}>
-          · प्रोफाइल
-        </span>
+        My profile
       </h1>
 
       {/* Owner card */}
@@ -7558,7 +7404,7 @@ export function SellerProfile() {
           color: "var(--blue-deep)",
         }}
       >
-        My info · मेरो जानकारी
+        My info
       </h2>
       <div
         style={{
@@ -7781,12 +7627,6 @@ export function SellerAnalytics() {
           >
             My shop
           </h1>
-          <p
-            className="ne"
-            style={{ margin: "4px 0 0", color: "var(--ink-500)", fontSize: ".95rem" }}
-          >
-            मेरो पसल — हालको हालचाल
-          </p>
         </div>
 
         <div className="bz-seller-analytics-layout">
@@ -7860,12 +7700,6 @@ export function SellerAnalytics() {
                 >
                   Shop snapshot
                 </h2>
-                <p
-                  className="ne"
-                  style={{ margin: "4px 0 0", fontSize: ".8125rem", color: "var(--ink-500)" }}
-                >
-                  हप्ताभरको सारांश
-                </p>
               </div>
               <div
                 style={{
@@ -7953,12 +7787,6 @@ export function SellerAnalytics() {
             >
               Sales — last 7 days
             </h2>
-            <p
-              className="ne"
-              style={{ margin: "0 0 18px", fontSize: ".8125rem", color: "var(--ink-500)" }}
-            >
-              ७ दिनको बिक्री
-            </p>
             <SellerBarChart data={salesByDay} height={300} />
           </div>
 
@@ -7973,12 +7801,6 @@ export function SellerAnalytics() {
             >
               Where my money is
             </h2>
-            <p
-              className="ne"
-              style={{ margin: "0 0 14px", fontSize: ".8125rem", color: "var(--ink-500)" }}
-            >
-              मेरो पैसा कहाँ छ
-            </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {moneyBuckets.map((b) => {
                 const pct = (b.v / maxBucket) * 100;
@@ -7994,17 +7816,6 @@ export function SellerAnalytics() {
                     >
                       <div>
                         <span style={{ fontWeight: 700, fontSize: ".95rem" }}>{b.en}</span>
-                        <span
-                          className="ne"
-                          style={{
-                            marginLeft: 8,
-                            color: "var(--ink-500)",
-                            fontSize: ".75rem",
-                            fontWeight: 600,
-                          }}
-                        >
-                          {b.ne}
-                        </span>
                       </div>
                       <span
                         className="tnum"
@@ -8067,12 +7878,6 @@ export function SellerAnalytics() {
             >
               Your top 3 items this week
             </h2>
-            <p
-              className="ne"
-              style={{ margin: "0 0 14px", fontSize: ".8125rem", color: "var(--ink-500)" }}
-            >
-              सबभन्दा बढी बिक्ने
-            </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {topProducts.length === 0 && (
                 <p style={{ margin: 0, color: "var(--ink-500)", fontSize: ".875rem" }}>

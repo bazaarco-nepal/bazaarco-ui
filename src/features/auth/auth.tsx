@@ -570,7 +570,7 @@ export function Auth() {
             {!pendingVerification && !isSeller && (
               <div style={{ marginTop: 10 }}>
                 <Button variant="ghost" full href={pathFromScreen("home")}>
-                  Skip for now → शप गर्न जानुहोस्
+                  Skip for now
                 </Button>
               </div>
             )}

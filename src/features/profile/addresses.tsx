@@ -262,11 +262,8 @@ export function AddressesPage() {
           <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
             Saved addresses
           </h1>
-          <p
-            className="ne"
-            style={{ margin: "6px 0 0", color: "var(--ink-500)", fontSize: ".875rem" }}
-          >
-            बचत गरिएका ठेगानाहरू — checkout मा छान्नुहोस्
+          <p style={{ margin: "6px 0 0", color: "var(--ink-500)", fontSize: ".875rem" }}>
+            Saved addresses — choose at checkout
           </p>
         </div>
         {!editing && addresses.length > 0 && addresses.length < 10 && (
@@ -432,7 +429,7 @@ export function AddressesPage() {
               marginBottom: 8,
             }}
           >
-            Label · लेबल
+            Label
           </label>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
             {ADDRESS_LABEL_PRESETS.map((preset) => (

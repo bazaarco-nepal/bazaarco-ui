@@ -379,7 +379,7 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
           Cancel
         </Button>
       </div>
-      <p className="ne" style={{ margin: "10px 0 0", fontSize: ".7rem", color: "var(--ink-400)" }}>
+      <p style={{ margin: "10px 0 0", fontSize: ".7rem", color: "var(--ink-400)" }}>
         Draft = only you see it · Publish = live for buyers (with hashtags)
       </p>
     </div>

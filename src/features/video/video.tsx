@@ -1031,9 +1031,6 @@ export function VideoTheater() {
       >
         {p.name}
       </h2>
-      <div className="ne" style={{ color: "var(--ink-400)", fontSize: ".875rem", marginTop: 3 }}>
-        {p.ne}
-      </div>
       <div style={{ margin: "14px 0" }}>
         <Price value={p.price} original={p.original} size="lg" />
       </div>

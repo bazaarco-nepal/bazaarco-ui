@@ -427,7 +427,7 @@ export function Cart() {
                   else promptLogin("Please sign in to complete checkout.");
                 }}
               >
-                Checkout · चेकआउट
+                Checkout
               </Button>
             </div>
             <div
@@ -683,7 +683,7 @@ export function Checkout() {
           color: "var(--blue-deep)",
         }}
       >
-        Checkout · चेकआउट
+        Checkout
       </h1>
       <p style={{ margin: "0 0 20px", color: "var(--ink-500)", fontSize: ".9375rem" }}>
         Three quick steps. No emails, no passwords.
@@ -1225,10 +1225,7 @@ export function OrderSuccess({ total }) {
           </span>
         </div>
         <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--ink-900)" }}>
-          Order placed!{" "}
-          <span className="ne" style={{ color: "var(--ink-500)", fontWeight: 600 }}>
-            · अर्डर सम्पन्न भयो
-          </span>
+          Order placed!
         </h1>
         <p style={{ color: "var(--ink-500)", marginTop: 8 }}>
           Order{" "}

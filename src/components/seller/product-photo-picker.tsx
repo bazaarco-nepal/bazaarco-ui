@@ -193,10 +193,7 @@ function ImageCropModal({
         >
           Crop & adjust
         </h3>
-        <p
-          className="ne"
-          style={{ margin: "0 0 16px", fontSize: ".8125rem", color: "var(--ink-500)" }}
-        >
+        <p style={{ margin: "0 0 16px", fontSize: ".8125rem", color: "var(--ink-500)" }}>
           Drag to position · zoom and brightness below
         </p>
 

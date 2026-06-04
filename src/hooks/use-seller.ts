@@ -6,6 +6,7 @@ import {
   type CreateProductPayload,
   type UpdateProductPayload,
 } from "@/services/api/seller";
+import type { OrderStatus } from "@/lib/order-utils";
 import {
   sellerOrganizationApi,
   type SetupSellerOrganizationPayload,
@@ -99,6 +100,20 @@ export function useSellerInbox() {
   });
 }
 
+export function useUpdateSellerOrderStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: OrderStatus }) =>
+      sellerApi.updateOrderStatus(id, status),
+    onSuccess: (order) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.seller.inbox });
+      void qc.invalidateQueries({ queryKey: queryKeys.orders.list });
+      void qc.invalidateQueries({ queryKey: queryKeys.orders.detail(order.id) });
+      void qc.invalidateQueries({ queryKey: queryKeys.tracking(order.id) });
+    },
+  });
+}
+
 export function useSellerInventory() {
   return useQuery({
     queryKey: queryKeys.seller.inventory,
@@ -187,6 +202,20 @@ export function useUploadStorefrontLogo() {
     mutationFn: (file: File) => storefrontApi.uploadLogo(file),
     onSuccess: (data) => {
       qc.setQueryData(queryKeys.seller.storefront, data);
+      // The sidebar brand reads the logo from the organization query — refresh it
+      // so the new shop logo appears live, without a page reload.
+      void qc.invalidateQueries({ queryKey: queryKeys.seller.organization });
+    },
+  });
+}
+
+export function useRemoveStorefrontLogo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => storefrontApi.removeLogo(),
+    onSuccess: (data) => {
+      qc.setQueryData(queryKeys.seller.storefront, data);
+      void qc.invalidateQueries({ queryKey: queryKeys.seller.organization });
     },
   });
 }

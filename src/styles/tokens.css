@@ -661,6 +661,24 @@ body {
 .bz-side-item:hover {
   background: var(--line-100);
 }
+.bz-side-foot {
+  border-top: 1px solid var(--line-200);
+  padding: 8px 0;
+}
+.bz-side-logout {
+  color: var(--red);
+}
+.bz-side-logout .bz-side-sub {
+  color: var(--red);
+  opacity: 0.7;
+}
+.bz-side-logout:hover {
+  background: var(--tint-red-50);
+}
+.bz-side-logout:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
 .bz-side-item.active {
   background: var(--tint-red-50);
   color: var(--red);
@@ -811,9 +829,12 @@ body {
   .bz-side-mobile-bar {
     display: flex;
   }
-  /* reserve space for fixed bottom navbar so last item (My profile) isn't hidden */
+  /* reserve space for fixed bottom navbar so last item isn't hidden */
   .bz-side-scroll {
     padding-bottom: 76px;
+  }
+  .bz-side-foot {
+    padding-bottom: 72px;
   }
 }
 

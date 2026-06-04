@@ -60,6 +60,7 @@ import {
 import { useCategories, useProduct } from "@/hooks/use-catalog";
 import { useUploadImage } from "@/hooks/use-media-upload";
 import type { SellerInventoryItem } from "@/services/api/seller";
+import type { OrderStatus } from "@/lib/order-utils";
 import {
   useCreateProduct,
   useUpdateProduct,
@@ -81,7 +82,9 @@ import {
   useUpdateStorefront,
   useUploadStorefrontBanner,
   useUploadStorefrontLogo,
+  useRemoveStorefrontLogo,
   useSellerLedger,
+  useUpdateSellerOrderStatus,
 } from "@/hooks/use-seller";
 import { useChatInbox, useChatMessages, useInvalidateChat } from "@/hooks/use-chat";
 import {
@@ -118,11 +121,12 @@ export type SellerInboxOrderItem = {
   qty: number;
   price: number;
   pay: string;
-  status: string;
+  status: OrderStatus;
   time: string;
   phone: string;
   icon: string;
   tint: string;
+  canCancel: boolean;
 };
 
 export const sellerOrderRef = { current: null as SellerInboxOrderItem | null };
@@ -148,6 +152,7 @@ export const SELLER_NAV = [
   {
     group: "More · थप",
     items: [
+      { id: "s-storefront", icon: "palette", en: "My Store", ne: "मेरो पसल" },
       { id: "s-bargain", icon: "bargain", en: "Bargaining", ne: "मोलतोल", badgeKey: "bargain" },
       { id: "s-promos", icon: "megaphone", en: "Offers", ne: "छुट" },
       { id: "s-ledger", icon: "wallet", en: "My money", ne: "भुक्तानी" },
@@ -167,8 +172,12 @@ export function SellerSidebar({
   openMobile,
   setOpenMobile,
   badges = {},
+  shopName,
+  logoUrl,
 }) {
   const close = () => setOpenMobile(false);
+  const logoutMutation = useLogout();
+  const displayName = shopName?.trim() || "BazaarCo";
   return (
     <>
       <div className={"bz-side-overlay" + (openMobile ? " show" : "")} onClick={close} />
@@ -176,26 +185,45 @@ export function SellerSidebar({
         className={"bz-seller-side" + (collapsed ? " collapsed" : "") + (openMobile ? " open" : "")}
       >
         <div className="bz-side-head">
-          <div className="bz-side-brand">
+          <div className="bz-side-brand" title={displayName}>
             <div
               style={{
                 width: 36,
                 height: 36,
                 borderRadius: "var(--r-md)",
-                background: "var(--red)",
+                background: logoUrl ? "#fff" : "var(--red)",
                 color: "#fff",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 flexShrink: 0,
                 fontWeight: 800,
+                overflow: "hidden",
+                border: logoUrl ? "1px solid var(--line-200)" : "none",
               }}
             >
-              <Icon name="store" size={20} color="#fff" />
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt={displayName}
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              ) : (
+                <Icon name="store" size={20} color="#fff" />
+              )}
             </div>
             <div className="bz-side-brand-text" style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontWeight: 800, color: "var(--blue-deep)", fontSize: ".9375rem" }}>
-                BazaarCo
+              <div
+                style={{
+                  fontWeight: 800,
+                  color: "var(--blue-deep)",
+                  fontSize: ".9375rem",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {displayName}
               </div>
               <div
                 style={{
@@ -257,6 +285,26 @@ export function SellerSidebar({
             </div>
           ))}
         </div>
+
+        <div className="bz-side-foot">
+          <button
+            className="bz-side-item bz-side-logout"
+            onClick={() => {
+              close();
+              logoutMutation.mutate(undefined, { onSuccess: () => onNav("home") });
+            }}
+            disabled={logoutMutation.isPending}
+            title="Log out"
+          >
+            <Icon name="logout" size={20} color="var(--red)" />
+            <span className="bz-side-label">
+              <span className="bz-side-en">
+                {logoutMutation.isPending ? "Logging out…" : "Log out"}
+              </span>
+              <span className="bz-side-sub ne">लग आउट</span>
+            </span>
+          </button>
+        </div>
       </aside>
     </>
   );
@@ -270,8 +318,7 @@ export function SellerShell({ screen, children }) {
   const { data: chatInbox } = useChatInbox();
   const chatThreads = chatInbox?.threads ?? [];
   const badges = {
-    orders: inbox.filter((o: { status?: string }) => o.status === "new" || o.status === "pending")
-      .length,
+    orders: inbox.filter((o: { status?: string }) => o.status === "placed").length,
     chat: chatThreads.reduce((sum, t) => sum + (t.unread ?? 0), 0),
     bargain: bargains.filter(
       (b: { status?: string; accepted?: boolean; rejected?: boolean }) =>
@@ -318,6 +365,8 @@ export function SellerShell({ screen, children }) {
         openMobile={openMobile}
         setOpenMobile={setOpenMobile}
         badges={badges}
+        shopName={organization?.shopName}
+        logoUrl={organization?.logoUrl}
       />
       <section className="bz-side-content">
         <div className="bz-side-mobile-bar">
@@ -343,7 +392,7 @@ export function SellerShell({ screen, children }) {
         {organization?.linked &&
           organization.verification &&
           organization.verification.status !== "approved" && (
-            <div style={{ padding: "16px 24px 0", maxWidth: "100%" }}>
+            <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "16px 28px 0" }}>
               <SellerVerificationBanner
                 status={organization.verification.status}
                 note={organization.verification.note}
@@ -2332,15 +2381,36 @@ export function SellerDashboard() {
 }
 
 /* ---------- 4.3 Orders Inbox (Viber-style feed) ---------- */
-export const INBOX_TONE = { new: "red", packed: "saffron", shipped: "blue", done: "success" };
-export const INBOX_LABEL = {
-  new: { en: "New order", ne: "नयाँ अर्डर", icon: "package" },
-  packed: { en: "Packed", ne: "प्याक भयो", icon: "package" },
-  shipped: { en: "Shipped", ne: "पठाइयो", icon: "truck" },
-  done: { en: "Delivered", ne: "पुग्यो", icon: "check" },
+export const INBOX_TONE: Record<OrderStatus, string> = {
+  placed: "red",
+  accepted: "blue",
+  packaging_started: "saffron",
+  ready_for_pickup: "saffron",
+  picked_up: "blue",
+  arrived_at_hub: "blue",
+  out_for_delivery: "blue",
+  delivered: "success",
+  cancelled: "neutral",
+};
+export const INBOX_LABEL: Record<OrderStatus, { en: string; ne: string; icon: string }> = {
+  placed: { en: "New order", ne: "नयाँ अर्डर", icon: "package" },
+  accepted: { en: "Accepted", ne: "स्वीकार", icon: "check" },
+  packaging_started: { en: "Packaging", ne: "प्याकिङ", icon: "package" },
+  ready_for_pickup: { en: "Ready pickup", ne: "पिकअप तयार", icon: "package" },
+  picked_up: { en: "Picked up", ne: "लिइयो", icon: "truck" },
+  arrived_at_hub: { en: "At hub", ne: "हबमा", icon: "mapPin" },
+  out_for_delivery: { en: "Out delivery", ne: "डेलिभरी", icon: "truck" },
+  delivered: { en: "Delivered", ne: "पुग्यो", icon: "check" },
+  cancelled: { en: "Cancelled", ne: "रद्द", icon: "x" },
 };
 
-export function OrderCard({ o, onOpen }) {
+export function OrderCard({
+  o,
+  onOpen,
+}: {
+  o: SellerInboxOrderItem;
+  onOpen: (order: SellerInboxOrderItem) => void;
+}) {
   const lbl = INBOX_LABEL[o.status];
   const tone = INBOX_TONE[o.status];
   return (
@@ -2348,7 +2418,7 @@ export function OrderCard({ o, onOpen }) {
       onClick={() => onOpen(o)}
       style={{
         background: "#fff",
-        border: `1.5px solid ${o.status === "new" ? "var(--danger)" : "var(--line-200)"}`,
+        border: `1.5px solid ${o.status === "placed" ? "var(--danger)" : "var(--line-200)"}`,
         borderRadius: "var(--r-lg)",
         padding: 12,
         textAlign: "left",
@@ -2426,20 +2496,32 @@ export function SellerInbox() {
   const [range, setRange] = useState("all");
 
   const q = search.trim().toLowerCase();
-  const baseFiltered = INBOX_ORDERS.filter((o) => {
+  const baseFiltered = INBOX_ORDERS.filter((o: SellerInboxOrderItem) => {
     if (q && !`${o.id} ${o.buyer} ${o.city} ${o.item}`.toLowerCase().includes(q)) return false;
     if (!inDateRange(o, range)) return false;
     return true;
   });
   const counts = {
     all: baseFiltered.length,
-    new: baseFiltered.filter((o) => o.status === "new").length,
-    packed: baseFiltered.filter((o) => o.status === "packed").length,
-    shipped: baseFiltered.filter((o) => o.status === "shipped").length,
-    done: baseFiltered.filter((o) => o.status === "done").length,
+    placed: baseFiltered.filter((o) => o.status === "placed").length,
+    packaging: baseFiltered.filter((o) =>
+      ["accepted", "packaging_started", "ready_for_pickup"].includes(o.status),
+    ).length,
+    transit: baseFiltered.filter((o) =>
+      ["picked_up", "arrived_at_hub", "out_for_delivery"].includes(o.status),
+    ).length,
+    delivered: baseFiltered.filter((o) => o.status === "delivered").length,
+    cancelled: baseFiltered.filter((o) => o.status === "cancelled").length,
   };
-  const list = baseFiltered.filter((o) => tab === "all" || o.status === tab);
-  const openOrder = (o) => {
+  const list = baseFiltered.filter((o) => {
+    if (tab === "all") return true;
+    if (tab === "packaging")
+      return ["accepted", "packaging_started", "ready_for_pickup"].includes(o.status);
+    if (tab === "transit")
+      return ["picked_up", "arrived_at_hub", "out_for_delivery"].includes(o.status);
+    return o.status === tab;
+  });
+  const openOrder = (o: SellerInboxOrderItem) => {
     sellerOrderRef.current = o;
     nav("s-order-detail");
   };
@@ -2453,10 +2535,11 @@ export function SellerInbox() {
 
   const tabs = [
     { id: "all", label: "All" },
-    { id: "new", label: "New", tone: "red" },
-    { id: "packed", label: "Packing", tone: "saffron" },
-    { id: "shipped", label: "Shipped", tone: "blue" },
-    { id: "done", label: "Delivered", tone: "success" },
+    { id: "placed", label: "New" },
+    { id: "packaging", label: "Packaging" },
+    { id: "transit", label: "In transit" },
+    { id: "delivered", label: "Delivered" },
+    { id: "cancelled", label: "Cancelled" },
   ];
 
   return (
@@ -2670,10 +2753,21 @@ export function SellerInbox() {
 
         {view === "kanban" ? (
           <div className="bz-kanban">
-            {["new", "packed", "shipped", "done"].map((col) => {
-              const lbl = INBOX_LABEL[col];
-              const tone = INBOX_TONE[col];
-              const items = baseFiltered.filter((o) => o.status === col);
+            {[
+              { id: "placed", statuses: ["placed"] },
+              { id: "packaging", statuses: ["accepted", "packaging_started", "ready_for_pickup"] },
+              { id: "transit", statuses: ["picked_up", "arrived_at_hub", "out_for_delivery"] },
+              { id: "delivered", statuses: ["delivered"] },
+            ].map((col) => {
+              const sampleStatus = col.statuses[0] as OrderStatus;
+              const lbl =
+                col.id === "packaging"
+                  ? { en: "Packaging", icon: "package" }
+                  : col.id === "transit"
+                    ? { en: "In transit", icon: "truck" }
+                    : INBOX_LABEL[sampleStatus];
+              const tone = INBOX_TONE[sampleStatus];
+              const items = baseFiltered.filter((o) => col.statuses.includes(o.status));
               return (
                 <div
                   key={col}
@@ -2792,19 +2886,57 @@ export function SellerOrderDetail() {
   const { nav, toast } = useBz();
   const { data: inboxOrders = [] } = useSellerInbox();
   const o = sellerOrderRef.current || inboxOrders[0];
-  const [busy, setBusy] = useState(false);
+  const updateStatus = useUpdateSellerOrderStatus();
 
-  const accept = () => {
-    setBusy(true);
-    setTimeout(() => {
-      toast(`Order ${o.id} accepted — pack and call rider`);
-      nav("s-inbox");
-    }, 600);
+  if (!o) {
+    return (
+      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
+        <EmptyState
+          icon="package"
+          title="No order selected"
+          message="Open an order from the seller orders list."
+          cta="Back to orders"
+          ctaHref={pathFromScreen("s-inbox")}
+        />
+      </div>
+    );
+  }
+
+  const nextStatus: Partial<Record<OrderStatus, OrderStatus>> = {
+    placed: "accepted",
+    accepted: "packaging_started",
+    packaging_started: "ready_for_pickup",
+    ready_for_pickup: "picked_up",
+    picked_up: "arrived_at_hub",
+    arrived_at_hub: "out_for_delivery",
+    out_for_delivery: "delivered",
   };
-  const reject = () => {
-    if (window.confirm("Tell the buyer you can't fulfill this order? · अर्डर रद्द गर्ने?")) {
-      toast("Marked out of stock — buyer refunded");
+
+  const nextLabel: Partial<Record<OrderStatus, string>> = {
+    placed: "Accept order",
+    accepted: "Start packaging",
+    packaging_started: "Mark ready for pickup",
+    ready_for_pickup: "Mark picked up",
+    picked_up: "Mark arrived at hub",
+    arrived_at_hub: "Mark out for delivery",
+    out_for_delivery: "Mark delivered",
+  };
+
+  const moveOrder = async (status: OrderStatus) => {
+    try {
+      const updated = await updateStatus.mutateAsync({ id: o.id, status });
+      sellerOrderRef.current = updated;
+      toast(`Order ${o.id} updated to ${INBOX_LABEL[status].en}`);
       nav("s-inbox");
+    } catch {
+      /* API layer surfaces the error */
+    }
+  };
+
+  const reject = () => {
+    if (!o.canCancel) return;
+    if (window.confirm("Cancel this order before pickup? · अर्डर रद्द गर्ने?")) {
+      void moveOrder("cancelled");
     }
   };
 
@@ -2847,7 +2979,7 @@ export function SellerOrderDetail() {
           <Icon name="package" size={32} color="var(--danger)" />
           <div>
             <div style={{ fontWeight: 800, color: "var(--danger)", fontSize: "1rem" }}>
-              New order · नयाँ अर्डर
+              {INBOX_LABEL[o.status].en} · {INBOX_LABEL[o.status].ne}
             </div>
             <div style={{ fontSize: ".8125rem", color: "var(--ink-700)" }}>
               {o.time} · Order #{o.id}
@@ -3032,13 +3164,34 @@ export function SellerOrderDetail() {
           </div>
         </div>
 
-        {/* ONE BIG ACTION */}
-        <Button variant="primary" size="lg" full loading={busy} onClick={accept} icon="check">
-          Accept order · स्वीकार गर्नुहोस्
-        </Button>
-        <Button variant="danger" full onClick={reject} style={{ marginTop: 10 }}>
-          Can't fulfill · पूरा गर्न सक्दिनँ
-        </Button>
+        {/* Status actions */}
+        {nextStatus[o.status] ? (
+          <Button
+            variant="primary"
+            size="lg"
+            full
+            loading={updateStatus.isPending}
+            onClick={() => void moveOrder(nextStatus[o.status]!)}
+            icon="check"
+          >
+            {nextLabel[o.status]} · स्थिति अपडेट
+          </Button>
+        ) : (
+          <Button variant="ghost" size="lg" full disabled>
+            {INBOX_LABEL[o.status].en}
+          </Button>
+        )}
+        {o.canCancel && (
+          <Button
+            variant="danger"
+            full
+            disabled={updateStatus.isPending}
+            onClick={reject}
+            style={{ marginTop: 10 }}
+          >
+            Can't fulfill · पूरा गर्न सक्दिनँ
+          </Button>
+        )}
 
         {/* Print actions */}
         <div
@@ -3134,8 +3287,8 @@ export function SellerOrderDetail() {
           <div style={{ fontSize: ".8125rem", color: "var(--blue-deep)" }}>
             <b>What happens next?</b>
             <br />
-            After you accept, pack the item. We'll send a rider. Money lands in your wallet within
-            24 hrs.
+            Keep the order status current. Buyers can cancel until BazaarCo pickup collects the
+            package from your store.
           </div>
         </div>
       </div>
@@ -4410,6 +4563,8 @@ export function SellerAddProduct({
 }
 
 /* ---------- 4.5 Inventory — swipe-to-sell ---------- */
+const EMPTY_INVENTORY = [];
+
 export const INV_SORTS = [
   { value: "added", label: "Recently added" },
   { value: "stockLow", label: "Stock low → high" },
@@ -4419,7 +4574,7 @@ export const INV_SORTS = [
 
 export function SellerInventory() {
   const { nav, toast } = useBz();
-  const { data: inventoryData = [], isLoading, isError, error } = useSellerInventory();
+  const { data: inventoryData = EMPTY_INVENTORY, isLoading, isError, error } = useSellerInventory();
   const updateProduct = useUpdateProduct();
   const [items, setItems] = useState([]);
   useEffect(() => {
@@ -6640,24 +6795,36 @@ export function SellerStorefront() {
   const { data: storefront, isLoading, isError, error } = useSellerStorefront();
   const updateStorefront = useUpdateStorefront();
   const uploadLogo = useUploadStorefrontLogo();
+  const removeLogo = useRemoveStorefrontLogo();
   const uploadBanner = useUploadStorefrontBanner();
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const [logoCropUrl, setLogoCropUrl] = useState<string | null>(null);
-  const [blocks, setBlocks] = useState([]);
   const [about, setAbout] = useState("");
   const [shopName, setShopName] = useState("");
 
   useEffect(() => {
     if (!storefront) return;
-    if (storefront.blocks) setBlocks(storefront.blocks);
     setAbout(storefront.about ?? "");
     setShopName(storefront.shopName ?? "");
   }, [storefront]);
 
   const logoUrl = storefront?.logoUrl;
   const bannerUrl = storefront?.bannerUrl;
-  const busy = updateStorefront.isPending || uploadLogo.isPending || uploadBanner.isPending;
+  const busy =
+    updateStorefront.isPending ||
+    uploadLogo.isPending ||
+    removeLogo.isPending ||
+    uploadBanner.isPending;
+
+  const handleRemoveLogo = async () => {
+    try {
+      await removeLogo.mutateAsync();
+      toast("Logo removed");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Could not remove logo");
+    }
+  };
 
   const revokeObjectUrl = (url: string | null) => {
     if (!url) return;
@@ -6709,7 +6876,7 @@ export function SellerStorefront() {
       return;
     }
     try {
-      await updateStorefront.mutateAsync({ about, blocks, shopName: trimmedName });
+      await updateStorefront.mutateAsync({ about, shopName: trimmedName });
       toast("Storefront published — buyers see it now");
     } catch (e) {
       toast(e instanceof Error ? e.message : "Could not save storefront");
@@ -6807,17 +6974,30 @@ export function SellerStorefront() {
                   />
                 )}
                 <div>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    icon="image"
-                    disabled={busy}
-                    onClick={() => logoInputRef.current?.click()}
-                  >
-                    {uploadLogo.isPending ? "Uploading…" : "Change logo"}
-                  </Button>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      icon="image"
+                      disabled={busy}
+                      onClick={() => logoInputRef.current?.click()}
+                    >
+                      {uploadLogo.isPending ? "Uploading…" : logoUrl ? "Change logo" : "Add logo"}
+                    </Button>
+                    {logoUrl ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={busy}
+                        onClick={() => void handleRemoveLogo()}
+                      >
+                        {removeLogo.isPending ? "Removing…" : "Remove"}
+                      </Button>
+                    ) : null}
+                  </div>
                   <p style={{ margin: "6px 0 0", fontSize: ".75rem", color: "var(--ink-400)" }}>
-                    You can crop and position before saving.
+                    Your shop logo — shown to buyers and in your dashboard. You can crop before
+                    saving.
                   </p>
                 </div>
               </div>
@@ -6914,44 +7094,6 @@ export function SellerStorefront() {
                   resize: "vertical",
                 }}
               />
-            </div>
-
-            <div
-              style={{
-                background: "#fff",
-                border: "1.5px solid var(--line-200)",
-                borderRadius: "var(--r-lg)",
-                padding: 16,
-              }}
-            >
-              <h3 style={{ margin: "0 0 12px", fontSize: ".9375rem", fontWeight: 800 }}>
-                Sections
-              </h3>
-              {blocks.map((b, i) => (
-                <label
-                  key={b.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "10px 0",
-                    borderBottom: i < blocks.length - 1 ? "1px dashed var(--line-200)" : "none",
-                    cursor: "pointer",
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={b.enabled}
-                    onChange={() =>
-                      setBlocks((arr) =>
-                        arr.map((x) => (x.id === b.id ? { ...x, enabled: !x.enabled } : x)),
-                      )
-                    }
-                    style={{ width: 18, height: 18 }}
-                  />
-                  <span style={{ flex: 1, fontWeight: 600 }}>{b.en}</span>
-                </label>
-              ))}
             </div>
 
             <Button
@@ -7337,12 +7479,10 @@ export function SellerSettings() {
   const updateSettings = useUpdateSellerSettings();
   const [tab, setTab] = useState("account");
   const [notif, setNotif] = useState(null);
-  const [language, setLanguage] = useState("both");
 
   useEffect(() => {
     if (!settings) return;
     setNotif(settings.alertMatrix.map((row) => [...row]));
-    setLanguage(settings.account.language);
   }, [settings]);
 
   const handleSave = async () => {
@@ -7350,7 +7490,6 @@ export function SellerSettings() {
     try {
       await updateSettings.mutateAsync({
         alertMatrix: notif,
-        account: { language },
       });
       toast("Settings saved");
     } catch (e) {
@@ -7560,17 +7699,6 @@ export function SellerSettings() {
             {[
               { icon: "lock", en: "Password", sub: "Managed via sign-in" },
               { icon: "mail", en: "Email", sub: user?.email ?? "—" },
-              {
-                icon: "image",
-                en: "Profile photo",
-                sub: "Upload your face — buyers trust real people",
-              },
-              {
-                icon: "palette",
-                en: "Language",
-                sub:
-                  language === "en" ? "English" : language === "ne" ? "नेपाली" : "English + नेपाली",
-              },
             ].map((r, i, a) => (
               <div
                 key={r.en}
@@ -7587,28 +7715,7 @@ export function SellerSettings() {
                 <Icon name={r.icon} size={22} color="var(--ink-700)" />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700 }}>{r.en}</div>
-                  {r.en === "Language" ? (
-                    <select
-                      value={language}
-                      onChange={(e) => setLanguage(e.target.value)}
-                      style={{
-                        marginTop: 6,
-                        width: "100%",
-                        height: 40,
-                        border: "1.5px solid var(--line-200)",
-                        borderRadius: "var(--r-md)",
-                        fontFamily: "var(--font-sans)",
-                        color: "var(--ink-900)",
-                        fontWeight: 600,
-                      }}
-                    >
-                      <option value="both">English + नेपाली</option>
-                      <option value="en">English</option>
-                      <option value="ne">नेपाली</option>
-                    </select>
-                  ) : (
-                    <div style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}>{r.sub}</div>
-                  )}
+                  <div style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}>{r.sub}</div>
                 </div>
               </div>
             ))}

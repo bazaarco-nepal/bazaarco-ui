@@ -44,7 +44,11 @@ import {
   isAddressComplete,
   savedAddressToDelivery,
 } from "@/lib/saved-address";
-import { DEFAULT_DELIVERY } from "@/lib/delivery-location";
+import {
+  DEFAULT_DELIVERY,
+  isDeliverableCity,
+  DELIVERY_AREA_MESSAGE,
+} from "@/lib/delivery-location";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { queryKeys } from "@/services/api/query-keys";
 import {
@@ -595,7 +599,9 @@ export function Checkout() {
   const phoneDigits = phone.replace(/\D/g, "");
   const phoneComplete = isValidNpPhone(phoneDigits);
   const addressComplete = isAddressComplete(address);
-  const canPlaceOrder = phoneComplete && addressComplete;
+  // We currently deliver only inside Kathmandu — block anything else.
+  const addressDeliverable = isDeliverableCity(address.city);
+  const canPlaceOrder = phoneComplete && addressComplete && addressDeliverable;
 
   // Late hydration of the saved phone — prefill only while the field is untouched.
   useEffect(() => {
@@ -646,7 +652,7 @@ export function Checkout() {
     }
   };
 
-  const payLabel = `Place order — Rs. ${total.toLocaleString()} cash on delivery`;
+  const payLabel = "Place order";
 
   return (
     <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 80px" }}>
@@ -889,12 +895,27 @@ export function Checkout() {
             </p>
           )}
 
+          {!enteringNewAddress && address.city.trim() && !addressDeliverable && (
+            <p
+              role="alert"
+              style={{
+                margin: "12px 0 0",
+                fontSize: ".8125rem",
+                color: "var(--danger)",
+                fontWeight: 600,
+                lineHeight: 1.45,
+              }}
+            >
+              {DELIVERY_AREA_MESSAGE}
+            </p>
+          )}
+
           <div style={{ marginTop: 14 }}>
             <Button
               variant="primary"
               full
               onClick={() => setOpenSec(2)}
-              disabled={!addressComplete}
+              disabled={!addressComplete || !addressDeliverable}
             >
               Continue
             </Button>
@@ -1022,15 +1043,23 @@ export function Checkout() {
           </Button>
           {!canPlaceOrder && (
             <p
+              role={phoneComplete && addressComplete && !addressDeliverable ? "alert" : undefined}
               style={{
                 textAlign: "center",
                 fontSize: ".8125rem",
-                color: "var(--ink-500)",
+                color:
+                  phoneComplete && addressComplete && !addressDeliverable
+                    ? "var(--danger)"
+                    : "var(--ink-500)",
+                fontWeight: phoneComplete && addressComplete && !addressDeliverable ? 600 : 400,
                 marginTop: 10,
                 marginBottom: 0,
+                lineHeight: 1.45,
               }}
             >
-              Add your phone number and delivery address to place the order.
+              {phoneComplete && addressComplete && !addressDeliverable
+                ? DELIVERY_AREA_MESSAGE
+                : "Add your phone number and delivery address to place the order."}
             </p>
           )}
         </div>
@@ -1046,11 +1075,20 @@ export function Checkout() {
           }}
         >
           <Icon name="lock" size={13} color="var(--ink-400)" /> Your details are safe with us
-          <span style={{ width: 1, height: 12, background: "var(--line-200)" }} />
-          <span style={{ fontSize: ".7rem", fontWeight: 700, color: "var(--ink-500)" }}>
-            Cash on delivery only
-          </span>
         </div>
+        <p
+          style={{
+            textAlign: "center",
+            fontSize: ".75rem",
+            color: "var(--ink-500)",
+            marginTop: 10,
+            marginBottom: 0,
+            lineHeight: 1.5,
+          }}
+        >
+          💙 Sorry, it's cash on delivery only for now — digital payments are on the way. Thanks for
+          your patience!
+        </p>
       </div>
     </div>
   );
@@ -1064,7 +1102,7 @@ function refundWindow(pay) {
 }
 function PolicyDisclosure({ pay }) {
   const rows = [
-    "Free cancellation before your order ships",
+    "Free cancellation before BazaarCo pickup",
     "7-day returns for damaged, wrong, or not-as-described items",
     `Refunds once approved — ${refundWindow(pay)}`,
   ];
@@ -1123,9 +1161,9 @@ function PolicyDisclosure({ pay }) {
         >
           <p style={{ margin: "0 0 8px" }}>
             <b style={{ color: "var(--ink-700)" }}>Cancellation.</b> You can cancel free of charge
-            any time before the seller ships your order. Orders may also be cancelled if the seller
-            cannot fulfil them or the order breaks platform policies — you are refunded in full in
-            that case.
+            any time before BazaarCo pickup collects it from the seller. Orders may also be
+            cancelled if the seller cannot fulfil them or the order breaks platform policies — you
+            are refunded in full in that case.
           </p>
           <p style={{ margin: "0 0 8px" }}>
             <b style={{ color: "var(--ink-700)" }}>Returns.</b> Submit a return request through

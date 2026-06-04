@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ASSETS } from "@/config/assets";
-import { postalForCity } from "@/lib/delivery-location";
+import { postalForCity, isDeliverableCity, DELIVERY_AREA_MESSAGE } from "@/lib/delivery-location";
 import { reverseGeocode } from "@/lib/reverse-geocode";
 import { MapPinPicker } from "@/components/ui/map-pin-picker";
 
@@ -999,8 +999,14 @@ export function StatusPill({ status }) {
     new: { tone: "blue", label: "New" },
     placed: { tone: "blue", label: "Order placed" },
     applied: { tone: "blue", label: "Awaiting confirmation" },
+    accepted: { tone: "blue", label: "Accepted" },
     packing: { tone: "saffron", label: "Packing" },
+    packaging_started: { tone: "saffron", label: "Packaging" },
     packed: { tone: "saffron", label: "Packed" },
+    ready_for_pickup: { tone: "saffron", label: "Ready for pickup" },
+    picked_up: { tone: "blue", label: "Picked up" },
+    arrived_at_hub: { tone: "blue", label: "At hub" },
+    out_for_delivery: { tone: "blue", label: "Out for delivery" },
     shipped: { tone: "blue", label: "Shipped" },
     delivered: { tone: "success", label: "Delivered" },
     confirmed: { tone: "blue", label: "Confirmed" },
@@ -2083,7 +2089,7 @@ export function MobileBuyBar({ onAdd, onBuy }) {
         boxShadow: "0 -2px 12px rgba(15,23,42,.08)",
       }}
     >
-      <div style={{ display: "flex", gap: 10 }}>
+      <div style={{ display: "flex", gap: 10, flex: 1, minWidth: 0 }}>
         <Button variant="secondary" size="lg" full icon="cart" onClick={onAdd}>
           Add to Cart
         </Button>
@@ -2286,10 +2292,29 @@ export function LandmarkAddress({ value, onChange }) {
           }}
         >
           <option value="">Select city…</option>
-          {cities.map((c) => (
-            <option key={c}>{c}</option>
-          ))}
+          {cities.map((c) => {
+            const deliverable = isDeliverableCity(c);
+            return (
+              <option key={c} value={c} disabled={!deliverable}>
+                {deliverable ? c : `${c} — coming soon`}
+              </option>
+            );
+          })}
         </select>
+        {v.city && !isDeliverableCity(v.city) && (
+          <p
+            role="alert"
+            style={{
+              margin: "8px 0 0",
+              fontSize: ".8125rem",
+              color: "var(--danger)",
+              fontWeight: 600,
+              lineHeight: 1.45,
+            }}
+          >
+            {DELIVERY_AREA_MESSAGE}
+          </p>
+        )}
       </div>
       <div>
         <label

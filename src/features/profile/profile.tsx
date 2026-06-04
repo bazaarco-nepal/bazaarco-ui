@@ -80,8 +80,34 @@ const ORDER_STATUS_META = {
     action: "Track",
     actionVariant: "secondary",
   },
+  accepted: { tone: "blue", label: "Accepted", action: "Track", actionVariant: "secondary" },
   confirmed: { tone: "blue", label: "Confirmed", action: "Track", actionVariant: "secondary" },
+  packaging_started: {
+    tone: "saffron",
+    label: "Packaging",
+    action: "Track",
+    actionVariant: "secondary",
+  },
   packed: { tone: "saffron", label: "Packed", action: "Track", actionVariant: "secondary" },
+  ready_for_pickup: {
+    tone: "saffron",
+    label: "Ready for pickup",
+    action: "Track",
+    actionVariant: "secondary",
+  },
+  picked_up: { tone: "blue", label: "Picked up", action: "Track", actionVariant: "secondary" },
+  arrived_at_hub: {
+    tone: "blue",
+    label: "At hub",
+    action: "Track",
+    actionVariant: "secondary",
+  },
+  out_for_delivery: {
+    tone: "saffron",
+    label: "Out for delivery",
+    action: "Call rider · राइडरलाई फोन गर्नुहोस्",
+    actionVariant: "primary",
+  },
   shipped: {
     tone: "saffron",
     label: "On the way",
@@ -117,7 +143,15 @@ export function Orders() {
   const [cancelTarget, setCancelTarget] = useState(null);
   const orders = ordersData.filter((o) => {
     if (filter === "active")
-      return ["placed", "applied", "confirmed", "packed", "shipped"].includes(o.status);
+      return [
+        "placed",
+        "accepted",
+        "packaging_started",
+        "ready_for_pickup",
+        "picked_up",
+        "arrived_at_hub",
+        "out_for_delivery",
+      ].includes(o.status);
     if (filter === "delivered") return o.status === "delivered";
     if (filter === "cancelled") return o.status === "cancelled";
     return true;
@@ -256,15 +290,17 @@ export function Orders() {
                         onClick={() => {
                           if (
                             o.status === "placed" ||
-                            o.status === "applied" ||
-                            o.status === "shipped" ||
-                            o.status === "confirmed" ||
-                            o.status === "packed"
+                            o.status === "accepted" ||
+                            o.status === "packaging_started" ||
+                            o.status === "ready_for_pickup" ||
+                            o.status === "picked_up" ||
+                            o.status === "arrived_at_hub" ||
+                            o.status === "out_for_delivery"
                           )
                             openTracking(o.id);
                           else if (o.status === "delivered") nav("review");
                         }}
-                        icon={o.status === "shipped" ? "phone" : undefined}
+                        icon={o.status === "out_for_delivery" ? "phone" : undefined}
                       >
                         {meta.action}
                       </Button>
@@ -295,7 +331,7 @@ export function Orders() {
       {cancelTarget && (
         <ConfirmModal
           title="Cancel order?"
-          message={`Cancel order #${cancelTarget.id}? You can only cancel before the seller ships your items.`}
+          message={`Cancel order #${cancelTarget.id}? You can only cancel before BazaarCo pickup collects it from the seller.`}
           confirmLabel={cancelOrder.isPending ? "Cancelling…" : "Cancel order"}
           onConfirm={async () => {
             try {

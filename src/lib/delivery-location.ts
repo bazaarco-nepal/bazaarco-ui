@@ -14,6 +14,22 @@ export const DEFAULT_DELIVERY: DeliveryLocation = {
   postal: "",
 };
 
+/**
+ * Cities we currently deliver to. We're launching in Kathmandu and expanding
+ * across Nepal soon — gate address selection on this list everywhere.
+ */
+export const SERVICEABLE_CITIES = ["Kathmandu"] as const;
+
+/** Friendly, simple apology shown when a buyer picks a city we don't serve yet. */
+export const DELIVERY_AREA_MESSAGE =
+  "We're very sorry — for now we only deliver inside Kathmandu. We're expanding across all of Nepal soon!";
+
+/** True when we currently deliver to the given city. */
+export function isDeliverableCity(city?: string | null): boolean {
+  const c = city?.trim();
+  return !!c && (SERVICEABLE_CITIES as readonly string[]).includes(c);
+}
+
 const STORAGE_KEY = "bz_delivery_v1";
 
 /** Common postal codes for major cities (Nepal). */

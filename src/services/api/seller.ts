@@ -1,6 +1,7 @@
 import { getData, patchData, postData } from "./http";
 import type { Product } from "@/types";
 import type { StorefrontData } from "./storefront";
+import type { OrderStatus } from "@/lib/order-utils";
 
 // What the Add Product form sends. The owning seller is resolved from auth on
 // the server; icon/tint are inherited from the category.
@@ -36,6 +37,22 @@ export interface SellerInventoryItem {
   tint: string;
 }
 
+export interface SellerOrder {
+  id: string;
+  buyer: string;
+  city: string;
+  item: string;
+  qty: number;
+  price: number;
+  pay: string;
+  status: OrderStatus;
+  time: string;
+  phone: string;
+  icon: string;
+  tint: string;
+  canCancel: boolean;
+}
+
 export interface CreateProductPayload {
   name: string;
   ne?: string;
@@ -67,8 +84,12 @@ export const sellerApi = {
     return getData<T>("/seller/dashboard");
   },
 
-  getInbox<T = unknown>(): Promise<T> {
-    return getData<T>("/seller/inbox");
+  getInbox(): Promise<SellerOrder[]> {
+    return getData<SellerOrder[]>("/seller/inbox");
+  },
+
+  updateOrderStatus(id: string, status: OrderStatus): Promise<SellerOrder> {
+    return patchData<SellerOrder>(`/seller/orders/${encodeURIComponent(id)}/status`, { status });
   },
 
   getInventory(): Promise<SellerInventoryItem[]> {

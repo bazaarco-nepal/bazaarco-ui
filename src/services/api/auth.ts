@@ -5,8 +5,11 @@ import type {
   AuthSessionResponse,
   AuthUser,
   LoginPayload,
+  PendingEmailVerification,
   RegisterPayload,
+  ResendEmailVerificationPayload,
   UpdateProfilePayload,
+  VerifyEmailPayload,
 } from "@/types/auth";
 import type { ApiSuccessResponse } from "./types";
 import { ApiRequestError } from "./http";
@@ -75,14 +78,40 @@ export function getGoogleLoginUrl(intent: "buyer" | "seller" = "buyer"): string 
   return `${base}/auth/google?${params.toString()}`;
 }
 
-export async function register(payload: RegisterPayload): Promise<AuthUser> {
+export async function register(payload: RegisterPayload): Promise<PendingEmailVerification> {
+  try {
+    const { data } = await authClient.post<ApiSuccessResponse<PendingEmailVerification>>(
+      "/auth/register",
+      payload,
+    );
+    return data.data;
+  } catch (error) {
+    throw mapAuthError(error);
+  }
+}
+
+export async function verifyEmail(payload: VerifyEmailPayload): Promise<AuthUser> {
   try {
     const { data } = await authClient.post<ApiSuccessResponse<AuthSessionResponse>>(
-      "/auth/register",
+      "/auth/verify-email",
       payload,
     );
     await persistClientSession(data.data.token);
     return data.data.user;
+  } catch (error) {
+    throw mapAuthError(error);
+  }
+}
+
+export async function resendEmailVerification(
+  payload: ResendEmailVerificationPayload,
+): Promise<PendingEmailVerification> {
+  try {
+    const { data } = await authClient.post<ApiSuccessResponse<PendingEmailVerification>>(
+      "/auth/resend-verification",
+      payload,
+    );
+    return data.data;
   } catch (error) {
     throw mapAuthError(error);
   }

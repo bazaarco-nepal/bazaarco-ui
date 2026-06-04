@@ -8,9 +8,10 @@ type InfoPageProps = {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
+  showBrowse?: boolean;
 };
 
-function InfoPageShell({ title, subtitle, children }: InfoPageProps) {
+function InfoPageShell({ title, subtitle, children, showBrowse = true }: InfoPageProps) {
   return (
     <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "28px 28px 80px" }}>
       <AppLink
@@ -45,18 +46,20 @@ function InfoPageShell({ title, subtitle, children }: InfoPageProps) {
       >
         {children}
       </div>
-      <div style={{ marginTop: 32 }}>
-        <Button variant="secondary" href={pathFromScreen("browse")}>
-          Browse products
-        </Button>
-      </div>
+      {showBrowse && (
+        <div style={{ marginTop: 32 }}>
+          <Button variant="secondary" href={pathFromScreen("browse")}>
+            Browse products
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
 
 export function HelpSupportPage() {
   return (
-    <InfoPageShell title="Help & support" subtitle="मद्दत र सहयोग">
+    <InfoPageShell title="Help & support" subtitle="मद्दत र सहयोग" showBrowse={false}>
       <p>
         Need help with an order, payment, or seller? We&apos;re here for shoppers and sellers across
         Nepal.
@@ -98,7 +101,7 @@ export function HelpSupportPage() {
 
 export function PrivacyPolicyPage() {
   return (
-    <InfoPageShell title="Privacy policy" subtitle="गोपनीयता नीति">
+    <InfoPageShell title="Privacy policy" subtitle="गोपनीयता नीति" showBrowse={false}>
       <p>
         BazaarCo Nepal Pvt. Ltd. (&quot;BazaarCo&quot;, &quot;we&quot;) respects your privacy. This
         policy explains what we collect, why, and your choices.

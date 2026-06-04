@@ -634,6 +634,28 @@ export function PDP({ p: pProp }: PdpProps) {
   const openPhotoLightbox = () => {
     if (gallery.length > 0) setLightboxOpen(true);
   };
+
+  // Share via the native share sheet when available, falling back to copying the link.
+  const shareProduct = async () => {
+    if (typeof window === "undefined") return;
+    const url = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: p.name, text: `${p.name} · Rs. ${p.price}`, url });
+        return;
+      }
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+        toast("Link copied to clipboard");
+        return;
+      }
+      toast("Sharing isn't supported on this device");
+    } catch (err) {
+      // The user dismissing the native share sheet throws AbortError — ignore it.
+      if (err instanceof Error && err.name === "AbortError") return;
+      toast("Couldn't share this product");
+    }
+  };
   const [qty, setQty] = useState(1);
   const [buyNowSheet, setBuyNowSheet] = useState(false);
   const [bargain, setBargain] = useState(false);
@@ -710,13 +732,17 @@ export function PDP({ p: pProp }: PdpProps) {
                     if (touchStartX.current == null) return;
                     touchDelta.current = e.touches[0].clientX - touchStartX.current;
                   }}
-                  onTouchEnd={() => {
+                  onTouchEnd={(e) => {
                     if (touchStartX.current == null) return;
                     const dx = touchDelta.current;
                     const maxIdx = Math.max(0, media.length - 1);
+                    // Only treat a tap as "zoom" when it lands on the image hit-area —
+                    // taps on the overlay controls (back / wishlist / share) must reach
+                    // their own onClick instead of opening the lightbox.
+                    const onImage = (e.target as HTMLElement).closest(".bz-pdp-mobile__zoom-hit");
                     if (Math.abs(dx) > 40) {
                       setMediaIdx((i) => Math.max(0, Math.min(maxIdx, i + (dx < 0 ? 1 : -1))));
-                    } else if (Math.abs(dx) <= 12 && media[mediaIdx]?.type === "photo") {
+                    } else if (Math.abs(dx) <= 12 && media[mediaIdx]?.type === "photo" && onImage) {
                       openPhotoLightbox();
                     }
                     touchStartX.current = null;
@@ -758,6 +784,7 @@ export function PDP({ p: pProp }: PdpProps) {
                   <button
                     type="button"
                     aria-label="Back"
+                    onTouchStart={(e) => e.stopPropagation()}
                     onClick={() => window.history.back()}
                     className="bz-pdp-m-fab"
                     style={{ top: 12, left: 12 }}
@@ -768,6 +795,7 @@ export function PDP({ p: pProp }: PdpProps) {
                   <button
                     type="button"
                     aria-label={wished ? "Remove from wishlist" : "Save to wishlist"}
+                    onTouchStart={(e) => e.stopPropagation()}
                     onClick={() => toggleWish(p.id)}
                     className="bz-pdp-m-fab"
                     style={{
@@ -781,6 +809,8 @@ export function PDP({ p: pProp }: PdpProps) {
                   <button
                     type="button"
                     aria-label="Share"
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onClick={shareProduct}
                     className="bz-pdp-m-fab"
                     style={{ top: 12, right: 12 }}
                   >
@@ -1689,6 +1719,7 @@ export function PDP({ p: pProp }: PdpProps) {
               </button>
               <button
                 type="button"
+                onClick={shareProduct}
                 className="bz-link-hover"
                 style={{
                   background: "none",

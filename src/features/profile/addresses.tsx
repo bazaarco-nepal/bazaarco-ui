@@ -19,7 +19,11 @@ import {
   savedAddressToDelivery,
 } from "@/lib/saved-address";
 import type { DeliveryLocation } from "@/lib/delivery-location";
-import { DEFAULT_DELIVERY } from "@/lib/delivery-location";
+import {
+  DEFAULT_DELIVERY,
+  isDeliverableCity,
+  DELIVERY_AREA_MESSAGE,
+} from "@/lib/delivery-location";
 import type { SavedAddress } from "@/services/api/addresses";
 import { ApiRequestError } from "@/services/api/http";
 
@@ -180,6 +184,10 @@ export function AddressesPage() {
     }
     if (!isAddressComplete(form.location)) {
       toast("Complete city, area, and landmark");
+      return;
+    }
+    if (!isDeliverableCity(form.location.city)) {
+      toast(DELIVERY_AREA_MESSAGE);
       return;
     }
     try {
@@ -471,7 +479,12 @@ export function AddressesPage() {
             <Button variant="secondary" full disabled={busy} onClick={closeForm}>
               Cancel
             </Button>
-            <Button variant="primary" full disabled={busy} onClick={() => void save()}>
+            <Button
+              variant="primary"
+              full
+              disabled={busy || !isDeliverableCity(form.location.city)}
+              onClick={() => void save()}
+            >
               {busy ? "Saving…" : "Save address"}
             </Button>
           </div>

@@ -45,6 +45,12 @@ export const storefrontApi = {
     return data.data;
   },
 
+  async removeLogo(): Promise<StorefrontData> {
+    const { data } =
+      await apiClient.delete<ApiSuccessResponse<StorefrontData>>("/seller/storefront/logo");
+    return data.data;
+  },
+
   async uploadBanner(file: File): Promise<StorefrontData> {
     const form = new FormData();
     form.append("file", file);

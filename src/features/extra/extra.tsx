@@ -100,8 +100,8 @@ export function Tracking() {
             .find((n) => n.state === "current")
             ?.t?.toLowerCase()
             .includes("pack")
-        ? "packed"
-        : "confirmed";
+        ? "packaging_started"
+        : "accepted";
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
@@ -253,7 +253,7 @@ export function Tracking() {
       {confirmCancel && order && (
         <ConfirmModal
           title="Cancel order?"
-          message={`Cancel order #${order.id}? You can only cancel before the seller ships your items.`}
+          message={`Cancel order #${order.id}? You can only cancel before BazaarCo pickup collects it from the seller.`}
           confirmLabel={cancelOrder.isPending ? "Cancelling…" : "Cancel order"}
           onConfirm={async () => {
             try {

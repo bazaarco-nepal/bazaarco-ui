@@ -9,9 +9,17 @@ import {
   login,
   logout,
   register,
+  resendEmailVerification,
   updateProfile,
+  verifyEmail,
 } from "@/services/api/auth";
-import type { LoginPayload, RegisterPayload, UpdateProfilePayload } from "@/types/auth";
+import type {
+  LoginPayload,
+  RegisterPayload,
+  ResendEmailVerificationPayload,
+  UpdateProfilePayload,
+  VerifyEmailPayload,
+} from "@/types/auth";
 import { queryKeys } from "@/services/api/query-keys";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { clearRoleHint, writeRoleHint } from "@/lib/auth-hint";
@@ -56,14 +64,26 @@ export function useLogin() {
 }
 
 export function useRegister() {
+  return useMutation({
+    mutationFn: (payload: RegisterPayload) => register(payload),
+  });
+}
+
+export function useVerifyEmail() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: RegisterPayload) => register(payload),
+    mutationFn: (payload: VerifyEmailPayload) => verifyEmail(payload),
     onSuccess: async (user) => {
       applySession(user);
       await queryClient.setQueryData(queryKeys.auth.me, user);
     },
+  });
+}
+
+export function useResendEmailVerification() {
+  return useMutation({
+    mutationFn: (payload: ResendEmailVerificationPayload) => resendEmailVerification(payload),
   });
 }
 

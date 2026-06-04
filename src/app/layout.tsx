@@ -30,7 +30,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${plusJakarta.variable} ${inter.variable} ${mukta.variable}`}>
-      <body>
+      {/* Browser extensions (ColorZilla, Grammarly, etc.) inject attributes like
+          `cz-shortcut-listen` onto <body> before React hydrates. Suppress the
+          resulting attribute-only mismatch — it's external and not a real bug. */}
+      <body suppressHydrationWarning>
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

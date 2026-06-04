@@ -24,13 +24,11 @@ export interface ShopRules {
 export interface SellerSettings {
   shopRules: ShopRules;
   alertMatrix: boolean[][];
-  account: { language: "en" | "ne" | "both" };
 }
 
 export type UpdateSellerSettingsPayload = {
   shopRules?: Partial<ShopRules>;
   alertMatrix?: boolean[][];
-  account?: { language?: "en" | "ne" | "both" };
 };
 
 export const sellerSettingsApi = {

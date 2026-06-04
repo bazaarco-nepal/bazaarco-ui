@@ -20,6 +20,22 @@ export interface RegisterPayload {
   intent: AuthIntent;
 }
 
+export interface PendingEmailVerification {
+  email: string;
+  intent: AuthIntent;
+  verificationRequired: true;
+  expiresAt: string;
+}
+
+export interface VerifyEmailPayload {
+  email: string;
+  otp: string;
+}
+
+export interface ResendEmailVerificationPayload {
+  email: string;
+}
+
 export interface LoginPayload {
   email: string;
   password: string;

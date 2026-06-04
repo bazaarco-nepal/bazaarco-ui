@@ -860,27 +860,6 @@ export function Navbar() {
           <Icon name="chevronDown" size={14} color="var(--ink-500)" />
         </button>
 
-        <button
-          type="button"
-          onClick={() => setDeliverOpen(true)}
-          aria-label={`Deliver to ${deliverLabel}`}
-          className="bz-show-mobile"
-          style={{
-            flexShrink: 0,
-            width: 40,
-            height: 40,
-            borderRadius: "var(--r-md)",
-            border: "1px solid var(--line-200)",
-            background: "var(--line-100)",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-          }}
-        >
-          <Icon name="mapPin" size={18} color="var(--red)" />
-        </button>
-
         <DeliverToModal
           open={deliverOpen}
           value={deliveryLocation}
@@ -921,7 +900,6 @@ export function Navbar() {
             href={pathFromScreen("cart")}
             size={40}
           />
-          <IconButton name="menu" label="Menu" onClick={() => setMenuOpen(true)} size={40} />
         </div>
 
         <nav className="bz-navbar__nav bz-navbar__nav--desktop">

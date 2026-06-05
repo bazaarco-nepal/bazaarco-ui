@@ -64,7 +64,13 @@ import {
   DevViewSwitcher,
 } from "@/components/common";
 import { pathFromScreen } from "@/config/routes";
-import { resolveDelivery, deliveryChoices, distinctSellerCount } from "@/lib/delivery-options";
+import {
+  resolveDelivery,
+  deliveryChoices,
+  distinctSellerCount,
+  deliveryTypeLabel,
+} from "@/lib/delivery-options";
+import { useOrder } from "@/hooks/use-orders";
 import {
   selectedLines,
   allSelected,
@@ -308,7 +314,6 @@ export function Cart() {
   const deliveryTier = useBazaarStore((s) => s.deliveryTier);
   const selectedCartIds = useBazaarStore((s) => s.selectedCartIds);
   const setSelectedCartIds = useBazaarStore((s) => s.setSelectedCartIds);
-  const [coupon, setCoupon] = useState("");
   const [confirm, setConfirm] = useState(null);
 
   // Only the lines the shopper ticked get priced and ordered.
@@ -335,9 +340,6 @@ export function Cart() {
       setConfirm(null);
       toast("Removed from cart");
     });
-  };
-  const applyCoupon = () => {
-    if (coupon.trim()) toast("Coupons coming soon");
   };
 
   if (cartLoading && cart.length === 0) {
@@ -477,6 +479,7 @@ export function Cart() {
             return (
               <div
                 key={it.id}
+                className="bz-cart-card"
                 style={{
                   display: "flex",
                   gap: 14,
@@ -496,6 +499,7 @@ export function Cart() {
                 <AppLink
                   href={pathFromScreen("pdp", it.id)}
                   onNavigate={() => openProduct(it)}
+                  className="bz-cart-card__media"
                   style={{ cursor: "pointer", flexShrink: 0, alignSelf: "flex-start" }}
                 >
                   {it.img ? (
@@ -523,7 +527,7 @@ export function Cart() {
                     <AppLink
                       href={pathFromScreen("pdp", it.id)}
                       onNavigate={() => openProduct(it)}
-                      style={{ cursor: "pointer", textDecoration: "none" }}
+                      style={{ cursor: "pointer", textDecoration: "none", minWidth: 0 }}
                     >
                       <div style={{ fontWeight: 600, fontSize: ".9375rem" }}>{it.name}</div>
                       <div
@@ -538,21 +542,16 @@ export function Cart() {
                       >
                         <Icon name="badgeCheck" size={13} color="var(--gold)" /> {s?.name}
                       </div>
-                      {it.coupon && (
-                        <div style={{ marginTop: 6 }}>
-                          <Chip tone="success" size="sm" icon="tag">
-                            Coupon applied
-                          </Chip>
-                        </div>
-                      )}
                     </AppLink>
                     <Price value={it.price} size="sm" />
                   </div>
                   <div
+                    className="bz-cart-card__actions"
                     style={{
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
+                      gap: 10,
                       marginTop: 12,
                     }}
                   >
@@ -580,9 +579,10 @@ export function Cart() {
           })}
         </div>
 
-        {/* summary — desktop / tablet; mobile uses the sticky bar below */}
+        {/* summary — sticky sidebar on desktop, stacked breakdown on mobile.
+            The in-card checkout button is hidden ≤768px (the sticky bar owns
+            the action there), so the CTA is never duplicated. */}
         <div
-          className="bz-hide-mobile"
           style={{ position: "sticky", top: 96, display: "flex", flexDirection: "column", gap: 14 }}
         >
           <div
@@ -607,38 +607,6 @@ export function Cart() {
                 {selectedCount} item{selectedCount === 1 ? "" : "s"}
               </span>
             </div>
-            <details style={{ marginBottom: 12 }}>
-              <summary
-                style={{
-                  cursor: "pointer",
-                  color: "var(--blue)",
-                  fontWeight: 700,
-                  fontSize: ".875rem",
-                  listStyle: "none",
-                }}
-              >
-                + Have a promo code?
-              </summary>
-              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                <input
-                  value={coupon}
-                  onChange={(e) => setCoupon(e.target.value)}
-                  placeholder="Coupon code"
-                  style={{
-                    flex: 1,
-                    height: 40,
-                    border: "1px solid var(--line-200)",
-                    borderRadius: "var(--r-md)",
-                    padding: "0 12px",
-                    fontSize: ".875rem",
-                    fontFamily: "var(--font-sans)",
-                  }}
-                />
-                <Button variant="secondary" onClick={applyCoupon}>
-                  Apply
-                </Button>
-              </div>
-            </details>
             <Row label="Subtotal" value={bd.subtotal} />
             <Row label="Delivery" value={bd.delivery} />
             {bd.discount > 0 && (
@@ -658,7 +626,7 @@ export function Cart() {
               <Icon name="truck" size={13} color="var(--ink-400)" /> Choose Standard or Premium
               same-day at checkout
             </div>
-            <div style={{ marginTop: 16 }}>
+            <div className="bz-hide-mobile" style={{ marginTop: 16 }}>
               <Button
                 variant="primary"
                 full
@@ -855,7 +823,7 @@ function isValidNpPhone(digits) {
 
 /* ---------- CHECKOUT (single page, 3 collapsed sections) ---------- */
 export function Checkout() {
-  const { cart, nav, placeOrder } = useBz();
+  const { cart, nav, placeOrder, updateCartQty, toast } = useBz();
   const queryClient = useQueryClient();
   const authed = useBazaarStore((s) => s.authed);
   const buyerPhone = useBazaarStore((s) => s.buyerPhone);
@@ -863,6 +831,13 @@ export function Checkout() {
   const deliveryTier = useBazaarStore((s) => s.deliveryTier);
   const setDeliveryTier = useBazaarStore((s) => s.setDeliveryTier);
   const selectedCartIds = useBazaarStore((s) => s.selectedCartIds);
+  const setSelectedCartIds = useBazaarStore((s) => s.setSelectedCartIds);
+  // Removing an item here just deselects it from this order — it stays saved in
+  // the cart for later (non-destructive), and the total drops immediately.
+  const removeFromOrder = (id) => {
+    setSelectedCartIds((prev) => toggleLine(cart, prev, id));
+    toast("Removed from this order — still saved in your cart");
+  };
   // Price and place only what the buyer selected in the cart, so the total
   // shown here is exactly what the server charges (provider sends the same set).
   const selectedCart = selectedLines(cart, selectedCartIds);
@@ -985,410 +960,619 @@ export function Checkout() {
         Three quick steps. No emails, no passwords.
       </p>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <CheckoutSection
-          n={1}
-          title="Phone number"
-          summary={phoneComplete ? `+977 ${phoneDigits}` : "Add your mobile for delivery updates"}
-          complete={phoneComplete}
-          open={openSec === 0}
-          onToggle={() => setOpenSec(openSec === 0 ? -1 : 0)}
-        >
-          <label style={{ fontSize: ".8125rem", fontWeight: 600, color: "var(--ink-700)" }}>
-            Mobile number
-          </label>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
-            <span
-              style={{
-                fontWeight: 700,
-                fontSize: ".9375rem",
-                color: "var(--ink-700)",
-                flexShrink: 0,
-              }}
-            >
-              +977
-            </span>
-            <input
-              type="tel"
-              inputMode="numeric"
-              autoComplete="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-              placeholder="98XXXXXXXX"
-              style={{
-                flex: 1,
-                height: 48,
-                border: `1.5px solid ${phoneComplete || !phoneDigits ? "var(--line-200)" : "var(--danger)"}`,
-                borderRadius: "var(--r-md)",
-                padding: "0 14px",
-                fontSize: "1rem",
-                fontWeight: 600,
-                fontFamily: "var(--font-sans)",
-              }}
-            />
-          </div>
-          {phoneDigits.length > 0 && !phoneComplete && (
-            <p
-              style={{
-                fontSize: ".8125rem",
-                color: "var(--danger)",
-                marginTop: 8,
-                marginBottom: 0,
-              }}
-            >
-              Enter a valid 10-digit Nepal mobile (e.g. 98XXXXXXXX).
-            </p>
-          )}
-          <p
+      <div
+        className="bz-stack-900"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 380px",
+          gap: 32,
+          alignItems: "start",
+          marginTop: 8,
+        }}
+      >
+        {/* LEFT column — the steps the shopper works through */}
+        <div>
+          {/* Your order — an editable bill: adjust qty or remove without leaving checkout */}
+          <div
             style={{
-              fontSize: ".8125rem",
-              color: "var(--ink-400)",
-              marginTop: 10,
-              marginBottom: 0,
+              background: "#fff",
+              border: "1px solid var(--line-200)",
+              borderRadius: "var(--r-lg)",
+              padding: 20,
+              marginBottom: 12,
             }}
           >
-            Used for order updates and delivery calls. We will not share it with sellers.
-          </p>
-          <div style={{ marginTop: 14 }}>
-            <Button
-              variant="primary"
-              full
-              onClick={() => {
-                setBuyerPhone(phoneDigits);
-                setOpenSec(1);
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                justifyContent: "space-between",
+                gap: 8,
               }}
-              disabled={!phoneComplete}
             >
-              Continue
-            </Button>
+              <span style={{ fontWeight: 800, fontSize: "1.0625rem", color: "var(--ink-900)" }}>
+                Your order
+              </span>
+              <span className="tnum" style={{ fontSize: ".8125rem", color: "var(--ink-400)" }}>
+                {selectedCart.length} item{selectedCart.length === 1 ? "" : "s"}
+              </span>
+            </div>
+            <p style={{ margin: "4px 0 0", fontSize: ".8125rem", color: "var(--ink-400)" }}>
+              Adjust quantity or remove an item to fit your budget — changes update the total below.
+            </p>
+
+            {selectedCart.length === 0 ? (
+              <p style={{ margin: "16px 0 0", fontSize: ".9375rem", color: "var(--ink-500)" }}>
+                No items in this order.{" "}
+                <AppLink
+                  href={pathFromScreen("cart")}
+                  style={{ color: "var(--blue)", fontWeight: 700, textDecoration: "none" }}
+                >
+                  Go to your cart
+                </AppLink>{" "}
+                to add some.
+              </p>
+            ) : (
+              <div style={{ marginTop: 8 }}>
+                {selectedCart.map((it, i) => (
+                  <div
+                    key={it.id}
+                    style={{
+                      display: "flex",
+                      gap: 14,
+                      padding: "14px 0",
+                      borderTop: i > 0 ? "1px solid var(--line-100)" : "none",
+                    }}
+                  >
+                    {it.img ? (
+                      <img
+                        src={it.img}
+                        alt={it.name}
+                        style={{
+                          width: 64,
+                          height: 64,
+                          objectFit: "cover",
+                          borderRadius: "var(--r-md)",
+                          flexShrink: 0,
+                        }}
+                      />
+                    ) : (
+                      <Placeholder
+                        icon={it.icon}
+                        tint={it.tint}
+                        style={{ width: 64, height: 64 }}
+                        radius="var(--r-md)"
+                      />
+                    )}
+                    <div
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 8,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          gap: 12,
+                          alignItems: "flex-start",
+                        }}
+                      >
+                        <div style={{ minWidth: 0 }}>
+                          <div
+                            style={{
+                              fontWeight: 600,
+                              fontSize: ".9375rem",
+                              color: "var(--ink-900)",
+                            }}
+                          >
+                            {it.name}
+                          </div>
+                          <div
+                            className="tnum"
+                            style={{ fontSize: ".8125rem", color: "var(--ink-400)", marginTop: 2 }}
+                          >
+                            Rs. {it.price.toLocaleString("en-IN")} each
+                          </div>
+                        </div>
+                        <div
+                          className="tnum"
+                          style={{
+                            fontWeight: 800,
+                            fontSize: ".9375rem",
+                            color: "var(--ink-900)",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          Rs. {(it.price * it.qty).toLocaleString("en-IN")}
+                        </div>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 10,
+                        }}
+                      >
+                        <QtyStepper value={it.qty} onChange={(q) => updateCartQty(it.id, q)} />
+                        <button
+                          type="button"
+                          onClick={() => removeFromOrder(it.id)}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: "var(--danger)",
+                            cursor: "pointer",
+                            fontSize: ".8125rem",
+                            fontWeight: 700,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 5,
+                            fontFamily: "inherit",
+                          }}
+                        >
+                          <Icon name="x" size={15} /> Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </CheckoutSection>
 
-        <CheckoutSection
-          n={2}
-          title="Delivery address"
-          summary={
-            addressComplete
-              ? `${address.area}, ${address.city} · ${address.landmark}`
-              : "Set your delivery address"
-          }
-          complete={addressComplete}
-          open={openSec === 1}
-          onToggle={() => setOpenSec(openSec === 1 ? -1 : 1)}
-        >
-          {authed && savedAddresses.length > 0 && (
-            <SavedAddressPicker
-              addresses={savedAddresses}
-              selectedId={selectedAddressId}
-              useNew={useNewAddress}
-              onSelect={(addr) => {
-                setSelectedAddressId(addr.id);
-                setUseNewAddress(false);
-                setSaveNewAddress(false);
-                setAddress(savedAddressToDelivery(addr));
-              }}
-              onUseNew={() => {
-                setUseNewAddress(true);
-                setSelectedAddressId(null);
-                setAddress({ ...DEFAULT_DELIVERY, city: "Kathmandu", area: "", landmark: "" });
-              }}
-              onManage={() => nav("addresses")}
-            />
-          )}
-
-          {(enteringNewAddress || !authed) && (
-            <>
-              {authed && !savedAddresses.length && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <CheckoutSection
+              n={1}
+              title="Phone number"
+              summary={
+                phoneComplete ? `+977 ${phoneDigits}` : "Add your mobile for delivery updates"
+              }
+              complete={phoneComplete}
+              open={openSec === 0}
+              onToggle={() => setOpenSec(openSec === 0 ? -1 : 0)}
+            >
+              <label style={{ fontSize: ".8125rem", fontWeight: 600, color: "var(--ink-700)" }}>
+                Mobile number
+              </label>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}>
+                <span
+                  style={{
+                    fontWeight: 700,
+                    fontSize: ".9375rem",
+                    color: "var(--ink-700)",
+                    flexShrink: 0,
+                  }}
+                >
+                  +977
+                </span>
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                  placeholder="98XXXXXXXX"
+                  style={{
+                    flex: 1,
+                    height: 48,
+                    border: `1.5px solid ${phoneComplete || !phoneDigits ? "var(--line-200)" : "var(--danger)"}`,
+                    borderRadius: "var(--r-md)",
+                    padding: "0 14px",
+                    fontSize: "1rem",
+                    fontWeight: 600,
+                    fontFamily: "var(--font-sans)",
+                  }}
+                />
+              </div>
+              {phoneDigits.length > 0 && !phoneComplete && (
                 <p
                   style={{
-                    margin: "0 0 12px",
                     fontSize: ".8125rem",
-                    color: "var(--ink-500)",
+                    color: "var(--danger)",
+                    marginTop: 8,
+                    marginBottom: 0,
+                  }}
+                >
+                  Enter a valid 10-digit Nepal mobile (e.g. 98XXXXXXXX).
+                </p>
+              )}
+              <p
+                style={{
+                  fontSize: ".8125rem",
+                  color: "var(--ink-400)",
+                  marginTop: 10,
+                  marginBottom: 0,
+                }}
+              >
+                Used for order updates and delivery calls. We will not share it with sellers.
+              </p>
+              <div style={{ marginTop: 14 }}>
+                <Button
+                  variant="primary"
+                  full
+                  onClick={() => {
+                    setBuyerPhone(phoneDigits);
+                    setOpenSec(1);
+                  }}
+                  disabled={!phoneComplete}
+                >
+                  Continue
+                </Button>
+              </div>
+            </CheckoutSection>
+
+            <CheckoutSection
+              n={2}
+              title="Delivery address"
+              summary={
+                addressComplete
+                  ? `${address.area}, ${address.city} · ${address.landmark}`
+                  : "Set your delivery address"
+              }
+              complete={addressComplete}
+              open={openSec === 1}
+              onToggle={() => setOpenSec(openSec === 1 ? -1 : 1)}
+            >
+              {authed && savedAddresses.length > 0 && (
+                <SavedAddressPicker
+                  addresses={savedAddresses}
+                  selectedId={selectedAddressId}
+                  useNew={useNewAddress}
+                  onSelect={(addr) => {
+                    setSelectedAddressId(addr.id);
+                    setUseNewAddress(false);
+                    setSaveNewAddress(false);
+                    setAddress(savedAddressToDelivery(addr));
+                  }}
+                  onUseNew={() => {
+                    setUseNewAddress(true);
+                    setSelectedAddressId(null);
+                    setAddress({ ...DEFAULT_DELIVERY, city: "Kathmandu", area: "", landmark: "" });
+                  }}
+                  onManage={() => nav("addresses")}
+                />
+              )}
+
+              {(enteringNewAddress || !authed) && (
+                <>
+                  {authed && !savedAddresses.length && (
+                    <p
+                      style={{
+                        margin: "0 0 12px",
+                        fontSize: ".8125rem",
+                        color: "var(--ink-500)",
+                        lineHeight: 1.45,
+                      }}
+                    >
+                      Add at least one delivery address to continue. We&apos;ll save it to your
+                      profile so next time it&apos;s one tap.
+                    </p>
+                  )}
+                  <LandmarkAddress value={address} onChange={setAddress} />
+                  {authed && enteringNewAddress && (
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 10,
+                        marginTop: 14,
+                        fontSize: ".875rem",
+                        color: "var(--ink-700)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={shouldSaveNewAddress}
+                        disabled={mustSaveNewAddress}
+                        onChange={(e) => setSaveNewAddress(e.target.checked)}
+                        style={{ marginTop: 3, width: 18, height: 18, accentColor: "var(--blue)" }}
+                      />
+                      <span>
+                        {mustSaveNewAddress
+                          ? "Save this first address to my profile"
+                          : "Save to my addresses for next time"}
+                        {shouldSaveNewAddress && (
+                          <span style={{ display: "grid", gap: 8, marginTop: 8 }}>
+                            <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                              {ADDRESS_LABEL_PRESETS.map((label) => {
+                                const active = newAddressLabel === label;
+                                return (
+                                  <button
+                                    key={label}
+                                    type="button"
+                                    onClick={() => setNewAddressLabel(label)}
+                                    style={{
+                                      border: `1.5px solid ${
+                                        active ? "var(--blue)" : "var(--line-200)"
+                                      }`,
+                                      background: active ? "var(--tint-blue-50)" : "#fff",
+                                      color: active ? "var(--blue)" : "var(--ink-600)",
+                                      borderRadius: "999px",
+                                      padding: "7px 12px",
+                                      fontSize: ".8125rem",
+                                      fontWeight: 800,
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    {label}
+                                  </button>
+                                );
+                              })}
+                            </span>
+                            <input
+                              value={newAddressLabel}
+                              onChange={(e) => setNewAddressLabel(e.target.value)}
+                              placeholder="Label (Home, Office…)"
+                              style={{
+                                width: "100%",
+                                height: 40,
+                                border: "1.5px solid var(--line-200)",
+                                borderRadius: "var(--r-md)",
+                                padding: "0 12px",
+                                fontFamily: "var(--font-sans)",
+                              }}
+                            />
+                          </span>
+                        )}
+                      </span>
+                    </label>
+                  )}
+                </>
+              )}
+
+              {authed && !useNewAddress && selectedAddressId && (
+                <p style={{ fontSize: ".8125rem", color: "var(--ink-500)", margin: "0 0 8px" }}>
+                  Delivering to your saved address above. Choose &quot;Deliver to a different
+                  address&quot; to edit details.
+                </p>
+              )}
+
+              {!enteringNewAddress && address.city.trim() && !addressDeliverable && (
+                <p
+                  role="alert"
+                  style={{
+                    margin: "12px 0 0",
+                    fontSize: ".8125rem",
+                    color: "var(--danger)",
+                    fontWeight: 600,
                     lineHeight: 1.45,
                   }}
                 >
-                  Add at least one delivery address to continue. We&apos;ll save it to your profile
-                  so next time it&apos;s one tap.
+                  {DELIVERY_AREA_MESSAGE}
                 </p>
               )}
-              <LandmarkAddress value={address} onChange={setAddress} />
-              {authed && enteringNewAddress && (
-                <label
+
+              <div style={{ marginTop: 14 }}>
+                <Button
+                  variant="primary"
+                  full
+                  onClick={() => setOpenSec(2)}
+                  disabled={!addressComplete || !addressDeliverable}
+                >
+                  Continue
+                </Button>
+              </div>
+            </CheckoutSection>
+
+            <CheckoutSection
+              n={3}
+              title="Payment method"
+              summary="Cash on Delivery"
+              complete
+              open={openSec === 2}
+              onToggle={() => setOpenSec(openSec === 2 ? -1 : 2)}
+            >
+              <div
+                aria-disabled="true"
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  display: "flex",
+                  gap: 14,
+                  padding: 14,
+                  borderRadius: "var(--r-md)",
+                  border: "1.5px solid var(--line-200)",
+                  background: "var(--line-100)",
+                  alignItems: "center",
+                  cursor: "not-allowed",
+                  opacity: 0.92,
+                }}
+              >
+                <span
                   style={{
+                    width: 22,
+                    height: 22,
+                    borderRadius: "50%",
+                    border: "2px solid var(--ink-400)",
                     display: "flex",
-                    alignItems: "flex-start",
-                    gap: 10,
-                    marginTop: 14,
-                    fontSize: ".875rem",
-                    color: "var(--ink-700)",
-                    cursor: "pointer",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
                   }}
                 >
-                  <input
-                    type="checkbox"
-                    checked={shouldSaveNewAddress}
-                    disabled={mustSaveNewAddress}
-                    onChange={(e) => setSaveNewAddress(e.target.checked)}
-                    style={{ marginTop: 3, width: 18, height: 18, accentColor: "var(--blue)" }}
+                  <span
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: "50%",
+                      background: "var(--ink-400)",
+                    }}
                   />
-                  <span>
-                    {mustSaveNewAddress
-                      ? "Save this first address to my profile"
-                      : "Save to my addresses for next time"}
-                    {shouldSaveNewAddress && (
-                      <span style={{ display: "grid", gap: 8, marginTop: 8 }}>
-                        <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                          {ADDRESS_LABEL_PRESETS.map((label) => {
-                            const active = newAddressLabel === label;
-                            return (
-                              <button
-                                key={label}
-                                type="button"
-                                onClick={() => setNewAddressLabel(label)}
-                                style={{
-                                  border: `1.5px solid ${
-                                    active ? "var(--blue)" : "var(--line-200)"
-                                  }`,
-                                  background: active ? "var(--tint-blue-50)" : "#fff",
-                                  color: active ? "var(--blue)" : "var(--ink-600)",
-                                  borderRadius: "999px",
-                                  padding: "7px 12px",
-                                  fontSize: ".8125rem",
-                                  fontWeight: 800,
-                                  cursor: "pointer",
-                                }}
-                              >
-                                {label}
-                              </button>
-                            );
-                          })}
-                        </span>
-                        <input
-                          value={newAddressLabel}
-                          onChange={(e) => setNewAddressLabel(e.target.value)}
-                          placeholder="Label (Home, Office…)"
-                          style={{
-                            width: "100%",
-                            height: 40,
-                            border: "1.5px solid var(--line-200)",
-                            borderRadius: "var(--r-md)",
-                            padding: "0 12px",
-                            fontFamily: "var(--font-sans)",
-                          }}
-                        />
-                      </span>
-                    )}
-                  </span>
-                </label>
-              )}
-            </>
-          )}
-
-          {authed && !useNewAddress && selectedAddressId && (
-            <p style={{ fontSize: ".8125rem", color: "var(--ink-500)", margin: "0 0 8px" }}>
-              Delivering to your saved address above. Choose &quot;Deliver to a different
-              address&quot; to edit details.
-            </p>
-          )}
-
-          {!enteringNewAddress && address.city.trim() && !addressDeliverable && (
-            <p
-              role="alert"
-              style={{
-                margin: "12px 0 0",
-                fontSize: ".8125rem",
-                color: "var(--danger)",
-                fontWeight: 600,
-                lineHeight: 1.45,
-              }}
-            >
-              {DELIVERY_AREA_MESSAGE}
-            </p>
-          )}
-
-          <div style={{ marginTop: 14 }}>
-            <Button
-              variant="primary"
-              full
-              onClick={() => setOpenSec(2)}
-              disabled={!addressComplete || !addressDeliverable}
-            >
-              Continue
-            </Button>
-          </div>
-        </CheckoutSection>
-
-        <CheckoutSection
-          n={3}
-          title="Payment method"
-          summary="Cash on Delivery"
-          complete
-          open={openSec === 2}
-          onToggle={() => setOpenSec(openSec === 2 ? -1 : 2)}
-        >
-          <div
-            aria-disabled="true"
-            style={{
-              width: "100%",
-              textAlign: "left",
-              display: "flex",
-              gap: 14,
-              padding: 14,
-              borderRadius: "var(--r-md)",
-              border: "1.5px solid var(--line-200)",
-              background: "var(--line-100)",
-              alignItems: "center",
-              cursor: "not-allowed",
-              opacity: 0.92,
-            }}
-          >
-            <span
-              style={{
-                width: 22,
-                height: 22,
-                borderRadius: "50%",
-                border: "2px solid var(--ink-400)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              <span
-                style={{ width: 10, height: 10, borderRadius: "50%", background: "var(--ink-400)" }}
-              />
-            </span>
-            <span
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: "var(--r-sm)",
-                background: "var(--line-200)",
-                color: "var(--ink-500)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              <Icon name="wallet" size={20} color="var(--ink-500)" />
-            </span>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <b style={{ fontSize: ".9375rem", color: "var(--ink-700)" }}>Cash on Delivery</b>
-                <Chip tone="neutral" size="sm">
-                  Only option
-                </Chip>
+                </span>
+                <span
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: "var(--r-sm)",
+                    background: "var(--line-200)",
+                    color: "var(--ink-500)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Icon name="wallet" size={20} color="var(--ink-500)" />
+                </span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <b style={{ fontSize: ".9375rem", color: "var(--ink-700)" }}>
+                      Cash on Delivery
+                    </b>
+                    <Chip tone="neutral" size="sm">
+                      Only option
+                    </Chip>
+                  </div>
+                  <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 2 }}>
+                    Pay Rs. {total.toLocaleString()} when your order is delivered
+                  </div>
+                </div>
               </div>
-              <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 2 }}>
-                Pay Rs. {total.toLocaleString()} when your order is delivered
+              <p style={{ fontSize: ".8125rem", color: "var(--ink-400)", margin: "12px 0 0" }}>
+                eSewa, Khalti, and card payments are coming soon.
+              </p>
+              <div
+                style={{
+                  marginTop: 14,
+                  background: "var(--tint-blue-50)",
+                  borderRadius: "var(--r-md)",
+                  padding: 12,
+                  fontSize: ".8125rem",
+                  color: "var(--blue)",
+                  display: "flex",
+                  gap: 8,
+                }}
+              >
+                <Icon name="shieldCheck" size={18} color="var(--blue)" style={{ flexShrink: 0 }} />
+                <span>
+                  Our delivery partner may call to confirm your address. Please keep your phone
+                  reachable.
+                </span>
               </div>
-            </div>
+            </CheckoutSection>
           </div>
-          <p style={{ fontSize: ".8125rem", color: "var(--ink-400)", margin: "12px 0 0" }}>
-            eSewa, Khalti, and card payments are coming soon.
-          </p>
-          <div
-            style={{
-              marginTop: 14,
-              background: "var(--tint-blue-50)",
-              borderRadius: "var(--r-md)",
-              padding: 12,
-              fontSize: ".8125rem",
-              color: "var(--blue)",
-              display: "flex",
-              gap: 8,
-            }}
-          >
-            <Icon name="shieldCheck" size={18} color="var(--blue)" style={{ flexShrink: 0 }} />
-            <span>
-              Our delivery partner may call to confirm your address. Please keep your phone
-              reachable.
-            </span>
-          </div>
-        </CheckoutSection>
-      </div>
 
-      {/* Delivery option — customer picks the speed; combined pricing is auto.
+          {/* Delivery option — customer picks the speed; combined pricing is auto.
           Keyed off the SELECTED items so the fee matches the charge. */}
-      <DeliveryOptionPicker cart={selectedCart} tier={deliveryTier} onChange={setDeliveryTier} />
+          <DeliveryOptionPicker
+            cart={selectedCart}
+            tier={deliveryTier}
+            onChange={setDeliveryTier}
+          />
 
-      {/* Cancellation + refund policy — shown before order is placed */}
-      <PolicyDisclosure pay={pay} />
-
-      {/* Confirm bar */}
-      <div
-        style={{
-          marginTop: 14,
-          background: "#fff",
-          border: "1px solid var(--line-200)",
-          borderRadius: "var(--r-lg)",
-          padding: 20,
-        }}
-      >
-        <Row label="Subtotal" value={bd.subtotal} />
-        <Row label={`Delivery · ${bd.deliveryLabel}`} value={bd.delivery} />
-        {bd.discount > 0 && <Row label="Discount" value={bd.discount} color="var(--success)" />}
-        <Row label="Total" value={total} strong />
-        <div style={{ marginTop: 18 }}>
-          <Button
-            variant="primary"
-            full
-            size="lg"
-            loading={loading}
-            onClick={submit}
-            disabled={!canPlaceOrder}
-          >
-            {loading ? "Placing order…" : payLabel}
-          </Button>
-          {!canPlaceOrder && (
-            <p
-              role={phoneComplete && addressComplete && !addressDeliverable ? "alert" : undefined}
-              style={{
-                textAlign: "center",
-                fontSize: ".8125rem",
-                color:
-                  phoneComplete && addressComplete && !addressDeliverable
-                    ? "var(--danger)"
-                    : "var(--ink-500)",
-                fontWeight: phoneComplete && addressComplete && !addressDeliverable ? 600 : 400,
-                marginTop: 10,
-                marginBottom: 0,
-                lineHeight: 1.45,
-              }}
-            >
-              {phoneComplete && addressComplete && !addressDeliverable
-                ? DELIVERY_AREA_MESSAGE
-                : "Add your phone number and delivery address to place the order."}
-            </p>
-          )}
+          {/* Cancellation + refund policy — shown before order is placed */}
+          <PolicyDisclosure pay={pay} />
         </div>
+
+        {/* RIGHT column — persistent order summary + primary CTA (sticky on desktop) */}
         <div
           style={{
+            position: "sticky",
+            top: 96,
             display: "flex",
-            alignItems: "center",
-            gap: 10,
-            justifyContent: "center",
-            marginTop: 12,
-            color: "var(--ink-400)",
-            fontSize: ".75rem",
+            flexDirection: "column",
+            gap: 14,
           }}
         >
-          <Icon name="lock" size={13} color="var(--ink-400)" /> Your details are safe with us
+          <div
+            style={{
+              background: "#fff",
+              border: "1px solid var(--line-200)",
+              borderRadius: "var(--r-lg)",
+              padding: 20,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                justifyContent: "space-between",
+                gap: 8,
+                marginBottom: 14,
+              }}
+            >
+              <span style={{ fontWeight: 800, fontSize: "1.0625rem", color: "var(--ink-900)" }}>
+                Order summary
+              </span>
+              <span className="tnum" style={{ fontSize: ".8125rem", color: "var(--ink-400)" }}>
+                {selectedCart.length} item{selectedCart.length === 1 ? "" : "s"}
+              </span>
+            </div>
+            <Row label="Subtotal" value={bd.subtotal} />
+            <Row label={`Delivery · ${bd.deliveryLabel}`} value={bd.delivery} />
+            {bd.discount > 0 && <Row label="Discount" value={bd.discount} color="var(--success)" />}
+            <Row label="Total" value={total} strong />
+            <div style={{ marginTop: 18 }}>
+              <Button
+                variant="primary"
+                full
+                size="lg"
+                loading={loading}
+                onClick={submit}
+                disabled={!canPlaceOrder}
+              >
+                {loading ? "Placing order…" : payLabel}
+              </Button>
+              {!canPlaceOrder && (
+                <p
+                  role={
+                    phoneComplete && addressComplete && !addressDeliverable ? "alert" : undefined
+                  }
+                  style={{
+                    textAlign: "center",
+                    fontSize: ".8125rem",
+                    color:
+                      phoneComplete && addressComplete && !addressDeliverable
+                        ? "var(--danger)"
+                        : "var(--ink-500)",
+                    fontWeight: phoneComplete && addressComplete && !addressDeliverable ? 600 : 400,
+                    marginTop: 10,
+                    marginBottom: 0,
+                    lineHeight: 1.45,
+                  }}
+                >
+                  {!hasSelection
+                    ? "Your order is empty — add an item from your cart to place the order."
+                    : phoneComplete && addressComplete && !addressDeliverable
+                      ? DELIVERY_AREA_MESSAGE
+                      : "Add your phone number and delivery address to place the order."}
+                </p>
+              )}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                justifyContent: "center",
+                marginTop: 12,
+                color: "var(--ink-400)",
+                fontSize: ".75rem",
+              }}
+            >
+              <Icon name="lock" size={13} color="var(--ink-400)" /> Your details are safe with us
+            </div>
+            <p
+              style={{
+                textAlign: "center",
+                fontSize: ".75rem",
+                color: "var(--ink-500)",
+                marginTop: 10,
+                marginBottom: 0,
+                lineHeight: 1.5,
+              }}
+            >
+              💙 Sorry, it's cash on delivery only for now — digital payments are on the way. Thanks
+              for your patience!
+            </p>
+          </div>
         </div>
-        <p
-          style={{
-            textAlign: "center",
-            fontSize: ".75rem",
-            color: "var(--ink-500)",
-            marginTop: 10,
-            marginBottom: 0,
-            lineHeight: 1.5,
-          }}
-        >
-          💙 Sorry, it's cash on delivery only for now — digital payments are on the way. Thanks for
-          your patience!
-        </p>
       </div>
     </div>
   );
@@ -1484,106 +1668,267 @@ function PolicyDisclosure({ pay }) {
 }
 
 /* ---------- ORDER SUCCESS ---------- */
+/* ---------- ORDER SUCCESS — confirmation flow (cf. Daraz) ---------- */
+const successCard = {
+  background: "#fff",
+  border: "1px solid var(--line-200)",
+  borderRadius: "var(--r-lg)",
+};
+
 export function OrderSuccess({ total }) {
-  const { nav, openTracking } = useBz();
+  const { openTracking } = useBz();
   const orderId = useBazaarStore((s) => s.lastOrderId);
+  const user = useBazaarStore((s) => s.user);
+  const { byId } = useCatalog();
+  const { data: order } = useOrder(orderId);
+
+  // Prefer the authoritative figure from the fetched order; fall back to the
+  // total the store stashed at checkout so the header renders instantly.
+  const grandTotal = order?.total ?? total ?? 0;
+  const deliveryFee = order?.deliveryFee ?? 0;
+  const subtotal = Math.max(0, grandTotal - deliveryFee);
+  const isCod = (order?.paymentMethod ?? "cod") === "cod";
+  const lineItems = order?.lineItems ?? [];
+  const products = lineItems.map((li) => byId(li.productId)).filter(Boolean);
+  const extraCount = Math.max(0, lineItems.length - 3);
+  const money = (n) => `Rs. ${Number(n).toLocaleString("en-IN")}`;
+
   return (
     <div
       className="bz-order-success"
-      style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "40px 28px" }}
+      style={{ maxWidth: 760, margin: "0 auto", padding: "40px 28px" }}
     >
+      {/* 1 — Thank you + total + order number */}
       <div
         className="bz-order-success__card"
-        style={{
-          background: "#fff",
-          border: "1px solid var(--line-200)",
-          borderRadius: "var(--r-xl)",
-          padding: 36,
-          textAlign: "center",
-        }}
+        style={{ ...successCard, padding: 32, textAlign: "center" }}
       >
         <div
           style={{
-            width: 72,
-            height: 72,
+            width: 64,
+            height: 64,
             borderRadius: "50%",
-            background: "rgba(22,163,74,.1)",
+            background: "var(--tint-blue-50)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            margin: "0 auto 18px",
+            margin: "0 auto 16px",
           }}
         >
+          <Icon name="check" size={32} color="var(--blue)" />
+        </div>
+        <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
+          Thank you for your purchase!
+        </h1>
+        <div
+          style={{
+            marginTop: 14,
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "center",
+            gap: 6,
+          }}
+        >
+          <span style={{ fontSize: ".875rem", color: "var(--ink-500)", fontWeight: 600 }}>Rs.</span>
           <span
-            style={{
-              width: 52,
-              height: 52,
-              borderRadius: "50%",
-              background: "var(--success)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
+            className="tnum"
+            style={{ fontSize: "1.875rem", fontWeight: 800, color: "var(--ink-900)" }}
           >
-            <Icon name="check" size={30} color="#fff" />
+            {Number(grandTotal).toLocaleString("en-IN")}
           </span>
         </div>
-        <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--ink-900)" }}>
-          Order placed!
-        </h1>
-        <p style={{ color: "var(--ink-500)", marginTop: 8 }}>
-          Order{" "}
-          <b className="tnum" style={{ color: "var(--ink-900)" }}>
-            #{orderId}
-          </b>{" "}
-          confirmed
-          {total > 0 && (
-            <>
-              {" "}
-              · <span className="tnum">Rs. {total.toLocaleString()}</span>
-            </>
-          )}
-        </p>
-        <div
-          className="bz-order-success__actions"
-          style={{ display: "flex", gap: 12, marginTop: 28 }}
-        >
-          <Button
-            className="bz-order-success__action"
-            variant="primary"
-            full
-            size="lg"
-            icon="package"
-            disabled={!orderId}
-            href={pathFromScreen("tracking", undefined, undefined, orderId)}
-            onNavigate={() => orderId && openTracking(orderId)}
+        {orderId && (
+          <div style={{ marginTop: 8, fontSize: ".9375rem", color: "var(--ink-500)" }}>
+            Your order number is{" "}
+            <span
+              className="tnum"
+              style={{ color: "var(--ink-900)", fontWeight: 700, overflowWrap: "anywhere" }}
+            >
+              {orderId}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* 2 — Cash-on-delivery: amount to keep ready */}
+      {isCod && (
+        <div style={{ ...successCard, padding: 24, textAlign: "center", marginTop: 16 }}>
+          <div style={{ color: "var(--ink-600)", fontSize: ".9375rem" }}>
+            Please have this amount ready on delivery day.
+          </div>
+          <div
+            className="tnum"
+            style={{ marginTop: 8, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}
           >
-            Track order
-          </Button>
-          <Button
-            className="bz-order-success__action"
-            variant="secondary"
-            full
-            size="lg"
-            href={pathFromScreen("home")}
-          >
-            Continue shopping
-          </Button>
+            {money(grandTotal)}
+          </div>
         </div>
-        <Button variant="ghost" full icon="headphones" style={{ marginTop: 10 }}>
-          Need help? Call us
+      )}
+
+      {/* 3 — Get by: items + estimated delivery + track */}
+      <div style={{ marginTop: 24 }}>
+        <h2
+          style={{ margin: "0 0 12px", fontSize: "1rem", fontWeight: 700, color: "var(--ink-900)" }}
+        >
+          Get by
+        </h2>
+        <div style={{ ...successCard }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 14,
+              padding: 16,
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+              {products
+                .slice(0, 3)
+                .map((p, i) =>
+                  p.img ? (
+                    <img
+                      key={p.id ?? i}
+                      src={p.img}
+                      alt={p.name}
+                      style={{
+                        width: 56,
+                        height: 56,
+                        objectFit: "cover",
+                        borderRadius: "var(--r-md)",
+                      }}
+                    />
+                  ) : (
+                    <Placeholder
+                      key={p.id ?? i}
+                      icon={p.icon}
+                      tint={p.tint}
+                      style={{ width: 56, height: 56 }}
+                      radius="var(--r-md)"
+                    />
+                  ),
+                )}
+              {extraCount > 0 && (
+                <span
+                  className="tnum"
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: "var(--r-md)",
+                    background: "var(--line-100)",
+                    color: "var(--ink-600)",
+                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  +{extraCount}
+                </span>
+              )}
+              {products.length === 0 && (
+                <span style={{ color: "var(--ink-400)", fontSize: ".875rem" }}>Your order</span>
+              )}
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: ".75rem", color: "var(--ink-400)" }}>Estimated delivery</div>
+              <div style={{ fontWeight: 700, color: "var(--ink-900)", whiteSpace: "nowrap" }}>
+                {order?.eta ?? "We'll confirm soon"}
+              </div>
+            </div>
+          </div>
+          <div
+            style={{
+              borderTop: "1px solid var(--line-200)",
+              padding: 16,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+              flexWrap: "wrap",
+            }}
+          >
+            <span style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}>
+              To track your order, go to <b style={{ color: "var(--ink-800)" }}>My orders</b>
+            </span>
+            <Button
+              variant="secondary"
+              icon="package"
+              disabled={!orderId}
+              href={orderId ? pathFromScreen("tracking", undefined, undefined, orderId) : undefined}
+              onNavigate={() => orderId && openTracking(orderId)}
+            >
+              View order
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* 4 — Confirmation email notice */}
+      {user?.email && (
+        <div
+          style={{
+            ...successCard,
+            marginTop: 14,
+            padding: 16,
+            display: "flex",
+            gap: 12,
+            alignItems: "flex-start",
+          }}
+        >
+          <Icon name="mail" size={20} color="var(--blue)" style={{ flexShrink: 0, marginTop: 2 }} />
+          <span style={{ fontSize: ".875rem", color: "var(--ink-600)", lineHeight: 1.5 }}>
+            We&apos;ve sent a confirmation email to{" "}
+            <b style={{ color: "var(--ink-900)" }}>{user.email}</b> with the details of your order.
+          </span>
+        </div>
+      )}
+
+      {/* 5 — Order summary (collapsible) */}
+      <details style={{ ...successCard, marginTop: 14 }}>
+        <summary
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            padding: 16,
+            cursor: "pointer",
+            listStyle: "none",
+          }}
+        >
+          <span style={{ fontWeight: 700, color: "var(--ink-900)" }}>Order Summary</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+            <span className="tnum" style={{ fontWeight: 800, color: "var(--blue-deep)" }}>
+              {money(grandTotal)}
+            </span>
+            <Icon name="chevronDown" size={18} color="var(--ink-400)" />
+          </span>
+        </summary>
+        <div style={{ padding: "0 16px 16px" }}>
+          <Row label="Subtotal" value={subtotal} />
+          <Row label={`Delivery · ${deliveryTypeLabel(order?.deliveryType)}`} value={deliveryFee} />
+          <Row label="Total" value={grandTotal} strong />
+        </div>
+      </details>
+
+      {/* 6 — Continue shopping */}
+      <div
+        className="bz-order-success__actions"
+        style={{ display: "flex", justifyContent: "center", marginTop: 24 }}
+      >
+        <Button
+          className="bz-order-success__action"
+          variant="primary"
+          size="lg"
+          href={pathFromScreen("home")}
+          style={{ minWidth: 260 }}
+        >
+          Continue shopping
         </Button>
       </div>
-      <p
-        style={{
-          textAlign: "center",
-          color: "var(--ink-400)",
-          fontSize: ".8125rem",
-          marginTop: 16,
-        }}
-      >
-        Email receipt sent to your inbox
-      </p>
     </div>
   );
 }

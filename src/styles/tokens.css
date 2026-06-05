@@ -1403,6 +1403,24 @@ body {
   .bz-pdp-panel {
     margin-top: 20px !important;
   }
+  /* Cart — fit the line cards to a phone column so nothing spills past the
+     right edge (which `overflow-x: clip` would otherwise hide, leaving the
+     gutters looking lopsided): smaller media, tighter card padding, and the
+     qty/remove row may wrap. Page gutters stay at 28px to match every other
+     buyer screen. */
+  .bz-cart-card {
+    gap: 12px !important;
+    padding: 12px !important;
+  }
+  .bz-cart-card__media,
+  .bz-cart-card__media > * {
+    width: 72px !important;
+    height: 72px !important;
+  }
+  .bz-cart-card__actions {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
 }
 
 /* Product / card grids — auto-fit pattern that always fills row */

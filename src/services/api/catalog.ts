@@ -29,6 +29,25 @@ export interface CreateProductQuestionPayload {
   askerName?: string;
 }
 
+/**
+ * Normalize a product as it arrives from the API. Core now emits
+ * `outOfStock: boolean` directly; honor it when present and otherwise derive it
+ * from the numeric `stock` field (`stock <= 0`) so sold-out items are reliably
+ * excluded by the home/browse `!outOfStock` filters. `stock` is dropped — the UI
+ * `Product` type carries `outOfStock`, not raw stock.
+ */
+export function mapProduct(raw: Product & { stock?: number }): Product {
+  const { stock, ...rest } = raw;
+  const product = rest as Product;
+  if (typeof product.outOfStock === "boolean") return product;
+  if (typeof stock === "number") product.outOfStock = stock <= 0;
+  return product;
+}
+
+function mapProductPage(page: PaginatedData<Product>): PaginatedData<Product> {
+  return { ...page, items: page.items.map(mapProduct) };
+}
+
 export interface ProductListParams {
   category?: string;
   hasVideo?: boolean;
@@ -66,28 +85,33 @@ export const catalogApi = {
     return getData<SellerReview[]>(`/catalog/sellers/${id}/reviews`);
   },
 
-  getSellerProducts(id: string): Promise<Product[]> {
-    return getData<Product[]>(`/catalog/sellers/${id}/products`);
+  async getSellerProducts(id: string): Promise<Product[]> {
+    const items = await getData<Product[]>(`/catalog/sellers/${id}/products`);
+    return items.map(mapProduct);
   },
 
   createSellerReview(id: string, payload: CreateSellerReviewPayload): Promise<SellerReview> {
     return postData<SellerReview>(`/catalog/sellers/${id}/reviews`, payload);
   },
 
-  getProducts(params?: ProductListParams): Promise<PaginatedData<Product>> {
-    return getData<PaginatedData<Product>>("/catalog/products", params);
+  async getProducts(params?: ProductListParams): Promise<PaginatedData<Product>> {
+    return mapProductPage(await getData<PaginatedData<Product>>("/catalog/products", params));
   },
 
-  getTopPicks(params?: TopPicksParams): Promise<PaginatedData<Product>> {
-    return getData<PaginatedData<Product>>("/catalog/products/top-picks", params);
+  async getTopPicks(params?: TopPicksParams): Promise<PaginatedData<Product>> {
+    return mapProductPage(
+      await getData<PaginatedData<Product>>("/catalog/products/top-picks", params),
+    );
   },
 
-  getNewArrivals(params?: PagedParams): Promise<PaginatedData<Product>> {
-    return getData<PaginatedData<Product>>("/catalog/products/new-arrivals", params);
+  async getNewArrivals(params?: PagedParams): Promise<PaginatedData<Product>> {
+    return mapProductPage(
+      await getData<PaginatedData<Product>>("/catalog/products/new-arrivals", params),
+    );
   },
 
-  getProduct(id: string): Promise<Product> {
-    return getData<Product>(`/catalog/products/${id}`);
+  async getProduct(id: string): Promise<Product> {
+    return mapProduct(await getData<Product>(`/catalog/products/${id}`));
   },
 
   getProductReviews(id: string): Promise<ProductReview[]> {

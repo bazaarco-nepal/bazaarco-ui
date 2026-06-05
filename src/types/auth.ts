@@ -60,3 +60,8 @@ export interface ConfirmPasswordResetPayload {
   otp: string;
   newPassword: string;
 }
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+}

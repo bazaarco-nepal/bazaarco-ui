@@ -22,6 +22,7 @@ import {
   AddressesPage,
   Orders,
   WriteReview,
+  reviewProductRef,
   SellerShell,
   SellerOnboarding,
   SellerDashboard,
@@ -137,7 +138,7 @@ export function MarketplaceScreen() {
   if (screen === "profile-edit") return <ProfileEdit />;
   if (screen === "addresses") return <AddressesPage />;
   if (screen === "orders") return <Orders />;
-  if (screen === "review") return <WriteReview />;
+  if (screen === "review") return <WriteReview productId={reviewProductRef.current ?? undefined} />;
   if (screen === "help") return <HelpSupportPage />;
   if (screen === "privacy") return <PrivacyPolicyPage />;
   if (screen === "terms") return <TermsPage />;

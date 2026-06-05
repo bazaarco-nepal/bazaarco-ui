@@ -37,7 +37,8 @@ import {
   ApiState,
   PasswordInput,
 } from "@/components/ui";
-import { useCatalog } from "@/hooks/use-catalog";
+import { useCatalog, useCreateProductReview } from "@/hooks/use-catalog";
+import { ApiRequestError } from "@/services/api/http";
 import { useDeleteAccount, useLogout, useUpdateProfile } from "@/hooks/use-auth";
 import { useUploadImage } from "@/hooks/use-media-upload";
 import { useBargains } from "@/hooks/use-bargains";
@@ -60,6 +61,7 @@ import {
   Footer,
   DevViewSwitcher,
   BuyerAvatar,
+  ChangePasswordModal,
   LogoutConfirmModal,
 } from "@/components/common";
 import { pathFromScreen } from "@/config/routes";
@@ -136,6 +138,11 @@ const DEFAULT_ORDER_STATUS_META = {
 function orderStatusMeta(status: string) {
   return ORDER_STATUS_META[status] ?? DEFAULT_ORDER_STATUS_META;
 }
+
+// The product a delivered order's "Rate & review" targets. Set before
+// nav("review") and read by MarketplaceScreen to render the right product —
+// same module-ref handoff as `editProductRef` in seller.tsx.
+export const reviewProductRef = { current: null as string | null };
 
 export function Orders() {
   const { nav, openTracking } = useBz();
@@ -295,7 +302,10 @@ export function Orders() {
                             o.status === "out_for_delivery"
                           )
                             openTracking(o.id);
-                          else if (o.status === "delivered") nav("review");
+                          else if (o.status === "delivered") {
+                            reviewProductRef.current = o.items[0] ?? null;
+                            nav("review");
+                          }
                         }}
                         icon={o.status === "out_for_delivery" ? "phone" : undefined}
                       >
@@ -356,6 +366,7 @@ export function Profile() {
   const unreadMessages = (chatInbox?.threads ?? []).reduce((sum, t) => sum + (t.unread || 0), 0);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [changePwdOpen, setChangePwdOpen] = useState(false);
   const [deleteText, setDeleteText] = useState("");
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -593,6 +604,14 @@ export function Profile() {
           href={pathFromScreen("addresses")}
           onClick={() => nav("addresses")}
         />
+        {requiresPassword && (
+          <MenuRow
+            icon="lock"
+            label="Change password"
+            sub="Update your account password"
+            onClick={() => setChangePwdOpen(true)}
+          />
+        )}
         <MenuRow
           icon="headphones"
           label="Help & support"
@@ -601,7 +620,7 @@ export function Profile() {
           onClick={() => nav("help")}
         />
         <MenuRow
-          icon="lock"
+          icon="shield"
           label="Privacy policy"
           sub="How we handle your data"
           href={pathFromScreen("privacy")}
@@ -629,6 +648,9 @@ export function Profile() {
           </button>
         </div>
       </div>
+
+      {/* Change password modal */}
+      <ChangePasswordModal open={changePwdOpen} onClose={() => setChangePwdOpen(false)} />
 
       {/* Logout confirmation modal */}
       <LogoutConfirmModal
@@ -823,15 +845,43 @@ export function Profile() {
 
 export function WriteReview({ productId }: WriteReviewProps) {
   const { nav, toast } = useBz();
-  const { byId, products } = useCatalog();
-  const p = productId ? byId(productId) : products[0];
+  const { byId } = useCatalog();
+  const p = productId ? byId(productId) : undefined;
+  const createReview = useCreateProductReview(productId ?? null);
   const [rating, setRating] = useState(0);
   const [text, setText] = useState("");
   const [photos, setPhotos] = useState(0);
 
-  const submit = () => {
-    toast("Thanks! Review posted.");
-    nav("orders");
+  // No reviewed product resolved (cold load / deep link with no stashed id):
+  // there's nothing to rate, so point the user back to their orders.
+  if (!p) {
+    return (
+      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "24px 28px 80px" }}>
+        <EmptyState
+          title="Pick an order to review"
+          message="Open a delivered order and tap “Rate & review” to leave a review."
+          cta="Back to orders"
+          ctaHref={pathFromScreen("orders")}
+        />
+      </div>
+    );
+  }
+
+  const submit = async () => {
+    if (rating === 0 || createReview.isPending) return;
+    try {
+      await createReview.mutateAsync({ rating, text: text.trim() });
+      toast("Thanks! Review posted.");
+      nav("orders");
+    } catch (err) {
+      if (err instanceof ApiRequestError && err.status === 403) {
+        toast("You can only review products you've purchased.");
+      } else if (err instanceof ApiRequestError && err.status === 409) {
+        toast("You've already reviewed this product.");
+      } else {
+        toast("Could not post review. Try again.");
+      }
+    }
   };
 
   return (
@@ -1002,7 +1052,14 @@ export function WriteReview({ productId }: WriteReviewProps) {
       />
 
       <div style={{ marginTop: 20 }}>
-        <Button variant="primary" size="lg" full disabled={rating === 0} onClick={submit}>
+        <Button
+          variant="primary"
+          size="lg"
+          full
+          disabled={rating === 0}
+          loading={createReview.isPending}
+          onClick={() => void submit()}
+        >
           Post review
         </Button>
       </div>

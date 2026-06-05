@@ -84,8 +84,8 @@ export const sellerApi = {
     return patchData<Product>(`/seller/products/${encodeURIComponent(id)}`, payload);
   },
 
-  getDashboard<T = unknown>(): Promise<T> {
-    return getData<T>("/seller/dashboard");
+  getDashboard<T = unknown>(range?: string): Promise<T> {
+    return getData<T>("/seller/dashboard", range ? { range } : undefined);
   },
 
   getInbox(): Promise<SellerOrder[]> {

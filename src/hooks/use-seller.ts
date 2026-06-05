@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   sellerApi,
   type CreateProductPayload,
@@ -84,10 +84,13 @@ export function useSubmitSellerVerification() {
   });
 }
 
-export function useSellerDashboard() {
+export function useSellerDashboard(range = "week") {
   return useQuery({
-    queryKey: queryKeys.seller.dashboard,
-    queryFn: () => sellerApi.getDashboard(),
+    queryKey: queryKeys.seller.dashboard(range),
+    queryFn: () => sellerApi.getDashboard(range),
+    // Keep the previous range's data on screen while the next loads, so
+    // toggling Today / 7 days / 30 days doesn't blank the dashboard.
+    placeholderData: keepPreviousData,
     staleTime: STALE_TIME,
   });
 }

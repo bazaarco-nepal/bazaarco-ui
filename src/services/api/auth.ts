@@ -4,9 +4,11 @@ import { clearAccessToken, getAccessToken, setAccessToken } from "@/lib/auth-tok
 import type {
   AuthSessionResponse,
   AuthUser,
+  ConfirmPasswordResetPayload,
   LoginPayload,
   PendingEmailVerification,
   RegisterPayload,
+  RequestPasswordResetResponse,
   ResendEmailVerificationPayload,
   UpdateProfilePayload,
   VerifyEmailPayload,
@@ -164,6 +166,28 @@ export async function deleteAccount(payload?: { password?: string }): Promise<vo
   } catch (error) {
     throw mapAuthError(error);
   } finally {
+    clearAccessToken();
+  }
+}
+
+export async function requestPasswordReset(): Promise<RequestPasswordResetResponse> {
+  try {
+    const { data } = await authClient.post<ApiSuccessResponse<RequestPasswordResetResponse>>(
+      "/auth/password-reset/request",
+    );
+    return data.data;
+  } catch (error) {
+    throw mapAuthError(error);
+  }
+}
+
+export async function confirmPasswordReset(payload: ConfirmPasswordResetPayload): Promise<void> {
+  try {
+    await authClient.post("/auth/password-reset/confirm", payload);
+  } catch (error) {
+    throw mapAuthError(error);
+  } finally {
+    // Reset revokes all sessions server-side — drop the local token to force re-login.
     clearAccessToken();
   }
 }

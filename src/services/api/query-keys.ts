@@ -43,7 +43,7 @@ export const queryKeys = {
   },
   seller: {
     organization: ["seller", "organization"] as const,
-    dashboard: ["seller", "dashboard"] as const,
+    dashboard: (range: string) => ["seller", "dashboard", range] as const,
     inbox: ["seller", "inbox"] as const,
     inventory: ["seller", "inventory"] as const,
     bargains: ["seller", "bargains"] as const,

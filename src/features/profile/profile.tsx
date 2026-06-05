@@ -496,8 +496,6 @@ export function Profile() {
     });
   };
 
-  const [accountOpen, setAccountOpen] = useState(false);
-
   return (
     <div className="bz-profile">
       <style>{`
@@ -646,31 +644,6 @@ export function Profile() {
           border-radius: var(--r-full);
         }
 
-        /* ---- Account (expanded) — always a stacked grouped card ---- */
-        .bz-acct-account__card {
-          grid-template-columns: 1fr;
-          gap: 0;
-          background: #fff;
-          border: 1px solid var(--line-200);
-          border-radius: var(--r-xl);
-          overflow: hidden;
-        }
-        .bz-acct-account__card .bz-acct-row {
-          position: relative;
-          border: none;
-          border-radius: 0;
-          box-shadow: none;
-        }
-        .bz-acct-account__card .bz-acct-row:hover { box-shadow: none; background: var(--line-100); }
-        .bz-acct-account__card .bz-acct-row:not(:first-child)::before {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: 74px;
-          right: 0;
-          height: 1px;
-          background: var(--line-100);
-        }
         .bz-delete-link {
           align-self: center;
           display: inline-flex;
@@ -861,12 +834,14 @@ export function Profile() {
       <section className="bz-acct-group">
         <h2 className="bz-acct-group__title">Settings &amp; help</h2>
         <div className="bz-acct-group__cards">
-          <AcctRow
-            icon="settings"
-            title="Account"
-            sub="Password, privacy, logout"
-            onClick={() => setAccountOpen((v) => !v)}
-          />
+          {requiresPassword && (
+            <AcctRow
+              icon="lock"
+              title="Change password"
+              sub="Update your account password"
+              onClick={() => setChangePwdOpen(true)}
+            />
+          )}
           <AcctRow
             icon="headphones"
             title="Help & support"
@@ -877,38 +852,33 @@ export function Profile() {
         </div>
       </section>
 
-      {/* ACCOUNT — revealed when the Account card is tapped */}
-      {accountOpen && (
-        <section className="bz-acct-group">
-          <div className="bz-acct-group__cards bz-acct-account__card">
-            {requiresPassword && (
-              <AcctRow
-                icon="lock"
-                title="Change password"
-                sub="Update your account password"
-                onClick={() => setChangePwdOpen(true)}
-              />
-            )}
-            <AcctRow
-              icon="shieldCheck"
-              title="Privacy policy"
-              sub="How we handle your data"
-              href={pathFromScreen("privacy")}
-              onNavigate={() => nav("privacy")}
-            />
-            <AcctRow
-              icon="file"
-              title="Terms & conditions"
-              sub="Marketplace rules"
-              href={pathFromScreen("terms")}
-              onNavigate={() => nav("terms")}
-            />
-          </div>
-          <button className="bz-delete-link" onClick={() => setConfirmDelete(true)}>
-            Delete my account
-          </button>
-        </section>
-      )}
+      {/* LEGAL — always visible; no longer nested under an Account toggle */}
+      <section className="bz-acct-group">
+        <h2 className="bz-acct-group__title">Legal</h2>
+        <div className="bz-acct-group__cards">
+          <AcctRow
+            icon="shieldCheck"
+            title="Privacy policy"
+            sub="How we handle your data"
+            href={pathFromScreen("privacy")}
+            onNavigate={() => nav("privacy")}
+          />
+          <AcctRow
+            icon="file"
+            title="Terms & conditions"
+            sub="Marketplace rules"
+            href={pathFromScreen("terms")}
+            onNavigate={() => nav("terms")}
+          />
+        </div>
+      </section>
+
+      {/* Delete account — destructive, sits just above logout */}
+      <section className="bz-acct-group">
+        <button className="bz-delete-link" onClick={() => setConfirmDelete(true)}>
+          Delete my account
+        </button>
+      </section>
 
       {/* Mobile only: a dedicated logout at the very end of the profile. On
           desktop, logout lives in the navbar account menu instead. Both routes

@@ -13,6 +13,7 @@ const BUYER_BOTTOM_NAV_SCREENS = new Set([
   "browse",
   "bargains",
   "cart",
+  "checkout",
   "orders",
   "tracking",
   "profile",
@@ -35,7 +36,7 @@ function BottomNavBridge() {
   const bottomNavActive = (() => {
     if (screen === "home" || screen === "browse") return "home";
     if (screen === "bargains") return "bargains";
-    if (screen === "cart") return "cart";
+    if (screen === "cart" || screen === "checkout") return "cart";
     if (screen === "orders" || screen === "tracking") return "orders";
     if (
       screen === "profile" ||

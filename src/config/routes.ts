@@ -47,7 +47,6 @@ export const SELLER_SCREENS = new Set([
 export const NO_NAV_SCREENS = new Set([
   "auth",
   "auth-callback",
-  "checkout",
   "success",
   "video",
   ...SELLER_SCREENS,

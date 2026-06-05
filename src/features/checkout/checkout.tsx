@@ -257,6 +257,40 @@ function DeliveryOptionPicker({ cart, tier, onChange }) {
   );
 }
 
+/* ---------- Branded selection checkbox ---------- */
+function SelectCheck({ checked, indeterminate, onChange, label, size = 22 }) {
+  const on = checked || indeterminate;
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={indeterminate ? "mixed" : checked}
+      aria-label={label}
+      onClick={onChange}
+      style={{
+        width: size,
+        height: size,
+        flexShrink: 0,
+        borderRadius: 6,
+        border: `2px solid ${on ? "var(--blue)" : "var(--ink-400)"}`,
+        background: on ? "var(--blue)" : "#fff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "pointer",
+        padding: 0,
+        transition: "background .15s var(--ease), border-color .15s var(--ease)",
+      }}
+    >
+      {indeterminate ? (
+        <Icon name="minus" size={size - 8} color="#fff" />
+      ) : checked ? (
+        <Icon name="check" size={size - 8} color="#fff" />
+      ) : null}
+    </button>
+  );
+}
+
 /* ---------- CART ---------- */
 export function Cart() {
   const {
@@ -272,9 +306,27 @@ export function Cart() {
   } = useBz();
   const { sellerOf } = useCatalog();
   const deliveryTier = useBazaarStore((s) => s.deliveryTier);
+  const selectedCartIds = useBazaarStore((s) => s.selectedCartIds);
+  const setSelectedCartIds = useBazaarStore((s) => s.setSelectedCartIds);
   const [coupon, setCoupon] = useState("");
   const [confirm, setConfirm] = useState(null);
-  const bd = priceBreakdown(cart, deliveryTier);
+
+  // Only the lines the shopper ticked get priced and ordered.
+  const selectedCart = selectedLines(cart, selectedCartIds);
+  const selectedCount = selectedCart.length;
+  const everySelected = allSelected(cart, selectedCartIds);
+  const someSelected = selectedCount > 0 && !everySelected;
+  const bd = priceBreakdown(selectedCart, deliveryTier);
+
+  const toggleOne = (id) => setSelectedCartIds((prev) => toggleLine(cart, prev, id));
+  const toggleEvery = () => setSelectedCartIds((prev) => toggleAll(cart, prev));
+
+  const goToCheckout = () => {
+    if (selectedCount === 0) return;
+    if (authed) nav("checkout");
+    else promptLogin("Please sign in to complete checkout.");
+  };
+
   const setQty = (id, q) => {
     void updateCartQty(id, q);
   };
@@ -378,24 +430,73 @@ export function Cart() {
         }}
       >
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {/* Select-all bar — drives selection on every viewport. */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              background: "#fff",
+              border: "1px solid var(--line-200)",
+              borderRadius: "var(--r-lg)",
+              padding: "12px 16px",
+            }}
+          >
+            <SelectCheck
+              checked={everySelected}
+              indeterminate={someSelected}
+              onChange={toggleEvery}
+              label={everySelected ? "Deselect all items" : "Select all items"}
+            />
+            <button
+              type="button"
+              onClick={toggleEvery}
+              style={{
+                background: "none",
+                border: "none",
+                padding: 0,
+                cursor: "pointer",
+                fontWeight: 700,
+                fontSize: ".9375rem",
+                color: "var(--ink-800)",
+                fontFamily: "inherit",
+              }}
+            >
+              Select all
+            </button>
+            <span
+              className="tnum"
+              style={{ marginLeft: "auto", fontSize: ".8125rem", color: "var(--ink-400)" }}
+            >
+              {selectedCount} of {cart.length} selected
+            </span>
+          </div>
           {cart.map((it) => {
             const s = sellerOf(it);
+            const sel = isLineSelected(it.id, selectedCartIds);
             return (
               <div
                 key={it.id}
                 style={{
                   display: "flex",
-                  gap: 16,
+                  gap: 14,
                   background: "#fff",
-                  border: "1px solid var(--line-200)",
+                  border: `1.5px solid ${sel ? "var(--blue)" : "var(--line-200)"}`,
                   borderRadius: "var(--r-lg)",
                   padding: 16,
+                  transition: "border-color .15s var(--ease), opacity .15s var(--ease)",
+                  opacity: sel ? 1 : 0.6,
                 }}
               >
+                <SelectCheck
+                  checked={sel}
+                  onChange={() => toggleOne(it.id)}
+                  label={`${sel ? "Deselect" : "Select"} ${it.name}`}
+                />
                 <AppLink
                   href={pathFromScreen("pdp", it.id)}
                   onNavigate={() => openProduct(it)}
-                  style={{ cursor: "pointer", flexShrink: 0 }}
+                  style={{ cursor: "pointer", flexShrink: 0, alignSelf: "flex-start" }}
                 >
                   {it.img ? (
                     <img
@@ -479,8 +580,9 @@ export function Cart() {
           })}
         </div>
 
-        {/* summary */}
+        {/* summary — desktop / tablet; mobile uses the sticky bar below */}
         <div
+          className="bz-hide-mobile"
           style={{ position: "sticky", top: 96, display: "flex", flexDirection: "column", gap: 14 }}
         >
           <div
@@ -491,7 +593,20 @@ export function Cart() {
               padding: 20,
             }}
           >
-            <div style={{ fontWeight: 700, marginBottom: 12 }}>Order summary</div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                justifyContent: "space-between",
+                gap: 8,
+                marginBottom: 12,
+              }}
+            >
+              <span style={{ fontWeight: 700 }}>Order summary</span>
+              <span className="tnum" style={{ fontSize: ".8125rem", color: "var(--ink-400)" }}>
+                {selectedCount} item{selectedCount === 1 ? "" : "s"}
+              </span>
+            </div>
             <details style={{ marginBottom: 12 }}>
               <summary
                 style={{
@@ -549,12 +664,12 @@ export function Cart() {
                 full
                 size="lg"
                 iconRight="arrowRight"
-                onClick={() => {
-                  if (authed) nav("checkout");
-                  else promptLogin("Please sign in to complete checkout.");
-                }}
+                disabled={selectedCount === 0}
+                onClick={goToCheckout}
               >
-                Checkout
+                {selectedCount === 0
+                  ? "Select items to checkout"
+                  : `Checkout · ${selectedCount} item${selectedCount === 1 ? "" : "s"}`}
               </Button>
             </div>
             <div
@@ -573,6 +688,50 @@ export function Cart() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Mobile spacer so the last card clears the sticky bar + bottom nav. */}
+      <div className="bz-show-mobile" style={{ display: "none", height: 132 }} aria-hidden />
+
+      {/* Mobile sticky action bar — total + checkout, pinned above the tab nav.
+          Selection itself is driven by the select-all bar / per-item boxes. */}
+      <div
+        className="bz-show-mobile bz-show-mobile--flex"
+        style={{
+          display: "none",
+          position: "fixed",
+          left: 0,
+          right: 0,
+          bottom: "calc(60px + env(safe-area-inset-bottom, 0px))",
+          zIndex: 95,
+          alignItems: "center",
+          gap: 12,
+          background: "#fff",
+          borderTop: "1px solid var(--line-200)",
+          boxShadow: "0 -2px 12px rgba(15,23,42,.08)",
+          padding: "12px 16px",
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: ".75rem", color: "var(--ink-400)" }}>
+            {selectedCount} item{selectedCount === 1 ? "" : "s"} · incl. delivery
+          </div>
+          <div
+            className="tnum"
+            style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--blue-deep)" }}
+          >
+            Rs. {bd.total.toLocaleString("en-IN")}
+          </div>
+        </div>
+        <Button
+          variant="primary"
+          size="lg"
+          iconRight="arrowRight"
+          disabled={selectedCount === 0}
+          onClick={goToCheckout}
+        >
+          {selectedCount === 0 ? "Select items" : "Checkout"}
+        </Button>
       </div>
 
       {confirm && (
@@ -703,6 +862,10 @@ export function Checkout() {
   const setBuyerPhone = useBazaarStore((s) => s.setBuyerPhone);
   const deliveryTier = useBazaarStore((s) => s.deliveryTier);
   const setDeliveryTier = useBazaarStore((s) => s.setDeliveryTier);
+  const selectedCartIds = useBazaarStore((s) => s.selectedCartIds);
+  // Price and place only what the buyer selected in the cart, so the total
+  // shown here is exactly what the server charges (provider sends the same set).
+  const selectedCart = selectedLines(cart, selectedCartIds);
   const { data: savedAddresses = [] } = useAddresses(authed);
   const [openSec, setOpenSec] = useState(0);
   // Phone is shared with the profile — prefill from there, and saving the order
@@ -716,7 +879,7 @@ export function Checkout() {
   const [saveNewAddress, setSaveNewAddress] = useState(true);
   const [newAddressLabel, setNewAddressLabel] = useState("Home");
   const [loading, setLoading] = useState(false);
-  const bd = priceBreakdown(cart, deliveryTier);
+  const bd = priceBreakdown(selectedCart, deliveryTier);
   const total = bd.total;
   const pay = "cod";
 
@@ -730,7 +893,10 @@ export function Checkout() {
   const addressComplete = isAddressComplete(address);
   // We currently deliver only inside Kathmandu — block anything else.
   const addressDeliverable = isDeliverableCity(address.city);
-  const canPlaceOrder = phoneComplete && addressComplete && addressDeliverable;
+  // Guard the empty-selection edge: never place an order with nothing selected
+  // (an empty id list would otherwise be read server-side as "the whole cart").
+  const hasSelection = selectedCart.length > 0;
+  const canPlaceOrder = phoneComplete && addressComplete && addressDeliverable && hasSelection;
 
   // Late hydration of the saved phone — prefill only while the field is untouched.
   useEffect(() => {
@@ -1143,8 +1309,9 @@ export function Checkout() {
         </CheckoutSection>
       </div>
 
-      {/* Delivery option — customer picks the speed; combined pricing is auto */}
-      <DeliveryOptionPicker cart={cart} tier={deliveryTier} onChange={setDeliveryTier} />
+      {/* Delivery option — customer picks the speed; combined pricing is auto.
+          Keyed off the SELECTED items so the fee matches the charge. */}
+      <DeliveryOptionPicker cart={selectedCart} tier={deliveryTier} onChange={setDeliveryTier} />
 
       {/* Cancellation + refund policy — shown before order is placed */}
       <PolicyDisclosure pay={pay} />

@@ -69,6 +69,10 @@ export function BuyerAvatar({
           src={imageUrl}
           alt=""
           aria-hidden="true"
+          // Google profile photos (lh3.googleusercontent.com) 403/429 when the
+          // browser sends a referrer — without this they fail to load and we'd
+          // wrongly fall back to the initial. Harmless for Cloudinary URLs.
+          referrerPolicy="no-referrer"
           onError={() => setFailedSrc(imageUrl)}
           style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
         />

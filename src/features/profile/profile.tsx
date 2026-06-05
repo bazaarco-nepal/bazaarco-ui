@@ -23,7 +23,6 @@ import {
   TINTS,
   AllInPriceCard,
   OTPInput,
-  MenuRow,
   ChipGroup,
   MobileBuyBar,
   BottomNav,
@@ -43,6 +42,8 @@ import { useDeleteAccount, useLogout, useUpdateProfile } from "@/hooks/use-auth"
 import { useUploadImage } from "@/hooks/use-media-upload";
 import { useBargains } from "@/hooks/use-bargains";
 import { useAddresses } from "@/hooks/use-addresses";
+import { useCartQuery } from "@/hooks/use-cart";
+import { useWishlistQuery } from "@/hooks/use-wishlist";
 import { useCancelOrder, useOrders } from "@/hooks/use-orders";
 import { canCancelOrder } from "@/lib/order-utils";
 import { ConfirmModal } from "@/features/checkout/checkout";
@@ -355,15 +356,87 @@ export function Orders() {
   );
 }
 
+// Orders that still need attention — anything that isn't a closed end-state.
+// Mirrors the API's order state machine (orders.constants.ts).
+const ACTIVE_ORDER_STATUSES = [
+  "placed",
+  "applied",
+  "accepted",
+  "confirmed",
+  "packaging_started",
+  "packed",
+  "ready_for_pickup",
+  "picked_up",
+  "arrived_at_hub",
+  "out_for_delivery",
+  "shipped",
+];
+
+function isActiveOrder(status: string) {
+  return ACTIVE_ORDER_STATUSES.includes(status);
+}
+
+// A live stat in the account header band. Tappable shortcut to the relevant
+// section; `value` shows an em-dash placeholder while the query is in flight.
+function StatTile({ value, label, href, onNavigate }) {
+  return (
+    <AppLink href={href} onNavigate={onNavigate} className="bz-stat">
+      <span className="bz-stat__value tnum">{value}</span>
+      <span className="bz-stat__label">{label}</span>
+    </AppLink>
+  );
+}
+
+// One account hub entry: a square icon tile, title (+ optional badge), and a
+// live subtitle. Renders as a link (with SPA onNavigate) or a button.
+function AcctRow({ icon, title, sub, badge, accent, href, onNavigate, onClick }) {
+  const Tag = href ? AppLink : "button";
+  const tagProps = href ? { href, onNavigate } : { onClick, type: "button" };
+  return (
+    <Tag {...tagProps} className={`bz-acct-row${accent ? " bz-acct-row--accent" : ""}`}>
+      <span className={`bz-acct-row__icon${accent ? " bz-acct-row__icon--accent" : ""}`}>
+        <Icon name={icon} size={20} color={accent ? "var(--blue)" : "var(--ink-700)"} />
+      </span>
+      <span className="bz-acct-row__body">
+        <span className="bz-acct-row__title">
+          {title}
+          {badge && <span className="bz-acct-row__badge">{badge}</span>}
+        </span>
+        {sub && <span className="bz-acct-row__sub">{sub}</span>}
+      </span>
+      <Icon name="chevronRight" size={18} color="var(--ink-300)" />
+    </Tag>
+  );
+}
+
 export function Profile() {
   const { nav, toast } = useBz();
   const logoutMutation = useLogout();
   const deleteMutation = useDeleteAccount();
   const user = useBazaarStore((s) => s.user);
-  const { data: bargains = [] } = useBargains();
+  const authed = useBazaarStore((s) => s.authed);
+  const ordersQuery = useOrders();
+  const cartQuery = useCartQuery(authed);
+  const wishlistQuery = useWishlistQuery(authed);
+  const bargainsQuery = useBargains();
   const { data: savedAddresses = [] } = useAddresses();
   const { data: chatInbox } = useChatInbox();
+
+  // Live counts — every number here is real backend data, no placeholders.
+  const orders = ordersQuery.data ?? [];
+  const totalOrders = orders.length;
+  const activeOrders = orders.filter((o) => isActiveOrder(o.status)).length;
+  const cartCount = cartQuery.data?.items.length ?? 0;
+  const wishlistCount = wishlistQuery.data?.productIds.length ?? 0;
+  const bargains = bargainsQuery.data ?? [];
+  // "Active" bargains = anything the seller hasn't rejected (pending/countered/accepted).
+  const activeBargains = bargains.filter((b) => b.status !== "rejected").length;
   const unreadMessages = (chatInbox?.threads ?? []).reduce((sum, t) => sum + (t.unread || 0), 0);
+
+  const firstName = displayName(user, "there").split(/\s+/)[0];
+  const memberSince = user?.createdAt ? new Date(user.createdAt).getFullYear() : null;
+  const dash = "–";
+  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [changePwdOpen, setChangePwdOpen] = useState(false);
@@ -429,90 +502,174 @@ export function Profile() {
     <div className="bz-profile">
       <style>{`
         .bz-profile {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 22px;
           max-width: var(--container);
           margin: 0 auto;
           padding: 28px 28px 96px;
-          align-items: start;
+          display: flex;
+          flex-direction: column;
+          gap: 28px;
         }
-        @media (min-width: 900px) {
-          .bz-profile { grid-template-columns: 360px 1fr; gap: 32px; }
-        }
-        .bz-profile__rail { display: flex; flex-direction: column; gap: 14px; }
-        .bz-profile__main { display: flex; flex-direction: column; gap: 10px; }
-        .bz-profile__account-section { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
-        /* Mobile: collapse the separate menu cards into one grouped card with
-           inset hairline dividers — fewer borders reads calmer and more premium. */
         @media (max-width: 899px) {
-          .bz-profile__main {
-            gap: 0;
-            background: #fff;
-            border: 1px solid var(--line-200);
-            border-radius: var(--r-xl);
-            overflow: hidden;
-          }
-          .bz-profile__main .bz-menu-row {
-            position: relative;
-            border: none;
-            border-radius: 0;
-            padding: 0 20px;
-            min-height: 72px;
-          }
-          .bz-profile__main .bz-menu-row:not(:first-child)::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 64px;
-            right: 0;
-            height: 1px;
-            background: var(--line-100);
-          }
-          .bz-profile__account-section .bz-profile__account-card {
-            gap: 0;
-            background: #fff;
-            border: 1px solid var(--line-200);
-            border-radius: var(--r-xl);
-            overflow: hidden;
-          }
-          .bz-profile__account-section .bz-profile__account-card .bz-menu-row {
-            position: relative;
-            border: none;
-            border-radius: 0;
-            padding: 0 20px;
-            min-height: 72px;
-          }
-          .bz-profile__account-section .bz-profile__account-card .bz-menu-row:not(:first-child)::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 64px;
-            right: 0;
-            height: 1px;
-            background: var(--line-100);
-          }
+          .bz-profile { padding: 20px 16px 96px; gap: 22px; }
         }
-        @media (min-width: 900px) {
-          .bz-profile__rail    { grid-column: 1; grid-row: 1; }
-          .bz-profile__main    { grid-column: 2; grid-row: 1 / span 2; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; align-content: start; }
-          .bz-profile__main > .bz-profile__full { grid-column: 1 / -1; }
-          .bz-profile__account-section { grid-column: 2; grid-row: 3; display: flex; flex-direction: column; align-items: center; }
-          .bz-profile__account-card { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; }
+
+        /* ---- Account header band: identity + live stats, full width ---- */
+        .bz-acct-header {
+          background: #fff;
+          border: 1px solid var(--line-200);
+          border-radius: var(--r-xl);
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 22px;
+          box-shadow: var(--sh-1);
         }
-        .bz-profile__card {
+        .bz-acct-header__top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+        }
+        .bz-acct-header__identity {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          min-width: 0;
+        }
+        .bz-acct-header__avatar { flex-shrink: 0; display: inline-flex; }
+        .bz-acct-header__name {
+          font-size: 1.375rem;
+          font-weight: 800;
+          color: var(--ink-900);
+          line-height: 1.2;
+        }
+        .bz-acct-header__meta {
+          font-size: .875rem;
+          color: var(--ink-500);
+          margin-top: 3px;
+          overflow-wrap: anywhere;
+        }
+        .bz-greet--mobile { display: none; }
+        .bz-edit--short { display: none; }
+
+        /* ---- Stat tiles ---- */
+        .bz-acct-stats {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 12px;
+        }
+        .bz-stat {
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+          padding: 14px 16px;
+          border: 1px solid var(--line-200);
+          border-radius: var(--r-lg);
+          background: var(--page);
+          text-decoration: none;
+          transition: border-color var(--dur-standard) var(--ease), background var(--dur-standard) var(--ease);
+        }
+        .bz-stat:hover { border-color: var(--blue); background: #fff; }
+        .bz-stat__value { font-size: 1.5rem; font-weight: 800; color: var(--ink-900); line-height: 1.1; }
+        .bz-stat__label { font-size: .8125rem; font-weight: 600; color: var(--ink-400); }
+
+        /* ---- Section groups ---- */
+        .bz-acct-group { display: flex; flex-direction: column; gap: 12px; }
+        .bz-acct-group__title {
+          margin: 0;
+          padding-left: 2px;
+          font-size: .75rem;
+          font-weight: 700;
+          letter-spacing: .05em;
+          text-transform: uppercase;
+          color: var(--ink-400);
+        }
+        /* Three cards per row on desktop; auto-fit stretches a 2-card group
+           (Settings & help) to fill the width. Collapses to a list on mobile. */
+        .bz-acct-group__cards {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+          gap: 12px;
+        }
+
+        /* ---- Hub row / card ---- */
+        .bz-acct-row {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          width: 100%;
+          padding: 16px;
           background: #fff;
           border: 1px solid var(--line-200);
           border-radius: var(--r-lg);
-          padding: 18px;
-          display: flex;
-          flex-direction: column;
-          gap: 14px;
+          text-align: left;
+          text-decoration: none;
+          font-family: inherit;
+          cursor: pointer;
+          transition: border-color var(--dur-standard) var(--ease), box-shadow var(--dur-standard) var(--ease);
         }
-        .bz-profile__divider {
+        .bz-acct-row:hover { border-color: var(--blue); box-shadow: var(--sh-1); }
+        .bz-acct-row--accent { border-color: var(--blue); box-shadow: inset 0 0 0 1px var(--blue); }
+        .bz-acct-row__icon {
+          width: 44px;
+          height: 44px;
+          border-radius: var(--r-md);
+          background: var(--line-100);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+        .bz-acct-row__icon--accent { background: var(--tint-blue-50); }
+        .bz-acct-row__body { flex: 1; min-width: 0; }
+        .bz-acct-row__title {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-weight: 700;
+          font-size: .9375rem;
+          color: var(--ink-900);
+        }
+        .bz-acct-row__sub {
+          display: block;
+          margin-top: 2px;
+          font-size: .8125rem;
+          color: var(--ink-400);
+        }
+        .bz-acct-row__badge {
+          flex-shrink: 0;
+          font-size: .6875rem;
+          font-weight: 700;
+          color: var(--blue);
+          background: var(--tint-blue-50);
+          padding: 2px 8px;
+          border-radius: var(--r-full);
+        }
+
+        /* ---- Account (expanded) — always a stacked grouped card ---- */
+        .bz-acct-account__card {
+          grid-template-columns: 1fr;
+          gap: 0;
+          background: #fff;
+          border: 1px solid var(--line-200);
+          border-radius: var(--r-xl);
+          overflow: hidden;
+        }
+        .bz-acct-account__card .bz-acct-row {
+          position: relative;
+          border: none;
+          border-radius: 0;
+          box-shadow: none;
+        }
+        .bz-acct-account__card .bz-acct-row:hover { box-shadow: none; background: var(--line-100); }
+        .bz-acct-account__card .bz-acct-row:not(:first-child)::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 74px;
+          right: 0;
           height: 1px;
-          background: var(--line-200);
-          margin: 2px 0;
+          background: var(--line-100);
         }
         .bz-delete-link {
           align-self: center;
@@ -522,149 +679,245 @@ export function Profile() {
           background: none;
           border: none;
           padding: 4px 2px;
+          margin-top: 14px;
           cursor: pointer;
           font-family: inherit;
           font-weight: 500;
           font-size: .75rem;
           color: var(--ink-400);
-          opacity: .45;
+          opacity: .55;
           transition: opacity .15s, color .15s;
-          margin-top: 24px;
         }
-        .bz-delete-link:hover { opacity: .7; color: var(--danger); }
+        .bz-delete-link:hover { opacity: .85; color: var(--danger); }
+
+        /* ---- Mobile: greeting instead of avatar, grouped list cards ---- */
+        .bz-profile__logout-mobile { display: none; }
+        @media (max-width: 899px) {
+          .bz-acct-header { padding: 18px; gap: 18px; }
+          .bz-acct-header__avatar { display: none; }
+          .bz-greet--desktop { display: none; }
+          .bz-greet--mobile { display: block; }
+          .bz-acct-header__member { display: none; }
+          .bz-edit--full { display: none; }
+          .bz-edit--short { display: inline; }
+          .bz-acct-stats { gap: 8px; }
+          .bz-stat { padding: 12px 8px; align-items: center; text-align: center; }
+          .bz-stat__value { font-size: 1.25rem; }
+          .bz-stat__label { font-size: .6875rem; }
+
+          .bz-acct-group__cards {
+            grid-template-columns: 1fr;
+            gap: 0;
+            background: #fff;
+            border: 1px solid var(--line-200);
+            border-radius: var(--r-xl);
+            overflow: hidden;
+          }
+          .bz-acct-group__cards .bz-acct-row {
+            position: relative;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+          }
+          .bz-acct-group__cards .bz-acct-row--accent { box-shadow: none; }
+          .bz-acct-group__cards .bz-acct-row:not(:first-child)::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 74px;
+            right: 0;
+            height: 1px;
+            background: var(--line-100);
+          }
+          .bz-profile__logout-mobile { display: block; margin-top: 4px; }
+        }
       `}</style>
 
-      {/* LEFT RAIL — identity card: name, email, photo */}
-      <aside className="bz-profile__rail">
-        <div className="bz-profile__card">
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <BuyerAvatar user={user} size={64} fontSize="1.5rem" />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: "1.125rem", fontWeight: 800 }}>
+      {/* ACCOUNT HEADER BAND — identity + live stats (desktop avatar, mobile greeting) */}
+      <header className="bz-acct-header">
+        <div className="bz-acct-header__top">
+          <div className="bz-acct-header__identity">
+            <span className="bz-acct-header__avatar">
+              <BuyerAvatar user={user} size={56} fontSize="1.375rem" />
+            </span>
+            <div style={{ minWidth: 0 }}>
+              <div className="bz-acct-header__name bz-greet--desktop">
                 {displayName(user, "Guest")}
               </div>
-              <div
-                className="tnum"
-                style={{
-                  fontSize: ".875rem",
-                  color: "var(--ink-500)",
-                  wordBreak: "break-all",
-                }}
-              >
+              <div className="bz-acct-header__name bz-greet--mobile">Hi, {firstName}</div>
+              <div className="bz-acct-header__meta tnum">
                 {user?.email ?? ""}
+                {memberSince && (
+                  <span className="bz-acct-header__member"> · Member since {memberSince}</span>
+                )}
               </div>
             </div>
-            <Button variant="ghost" href={pathFromScreen("profile-edit")}>
-              Edit
-            </Button>
           </div>
+          <Button
+            variant="secondary"
+            href={pathFromScreen("profile-edit")}
+            onNavigate={() => nav("profile-edit")}
+          >
+            <span className="bz-edit--full">Edit profile</span>
+            <span className="bz-edit--short">Edit</span>
+          </Button>
         </div>
-      </aside>
 
-      {/* RIGHT MAIN — navigation menu */}
-      <div className="bz-profile__main">
-        <MenuRow
-          icon="cart"
-          label="My cart"
-          sub="Items ready for checkout"
-          href={pathFromScreen("cart")}
-          onClick={() => nav("cart")}
-        />
-        <MenuRow
-          icon="package"
-          label="My orders"
-          sub="Track, return, re-order"
-          href={pathFromScreen("orders")}
-          onClick={() => nav("orders")}
-        />
-        <MenuRow
-          icon="heart"
-          label="Wishlist"
-          sub="Saved products"
-          href={pathFromScreen("wishlist")}
-          onClick={() => nav("wishlist")}
-        />
-        <MenuRow
-          icon="messageDots"
-          label="My messages"
-          sub={unreadMessages ? `${unreadMessages} unread` : "Chats with sellers"}
-          href={pathFromScreen("messages")}
-          onClick={() => nav("messages")}
-          badge={unreadMessages > 0 ? String(unreadMessages) : undefined}
-        />
-        <MenuRow
-          icon="bargain"
-          label="My bargains"
-          sub={bargains.length ? `${bargains.length} offer(s)` : "No active offers"}
-          href={pathFromScreen("bargains")}
-          onClick={() => nav("bargains")}
-          badge={bargains.length > 0 ? String(bargains.length) : undefined}
-        />
-        <MenuRow
-          icon="mapPin"
-          label="Saved addresses"
-          sub={
-            savedAddresses.length
-              ? `${savedAddresses.length} saved · ${savedAddresses.find((a) => a.isDefault)?.label ?? "Home"} default`
-              : "Add Home, Office, and more"
-          }
-          href={pathFromScreen("addresses")}
-          onClick={() => nav("addresses")}
-        />
-        <MenuRow
-          icon="headphones"
-          label="Help & support"
-          sub="Chat, call, FAQs"
-          href={pathFromScreen("help")}
-          onClick={() => nav("help")}
-        />
-        <MenuRow
-          icon="settings"
-          label="Account"
-          sub="Password, privacy, logout"
-          onClick={() => setAccountOpen(!accountOpen)}
-        />
-      </div>
+        <div className="bz-acct-stats">
+          <StatTile
+            value={ordersQuery.isLoading ? dash : totalOrders}
+            label="Orders"
+            href={pathFromScreen("orders")}
+            onNavigate={() => nav("orders")}
+          />
+          <StatTile
+            value={cartQuery.isLoading ? dash : cartCount}
+            label="In cart"
+            href={pathFromScreen("cart")}
+            onNavigate={() => nav("cart")}
+          />
+          <StatTile
+            value={wishlistQuery.isLoading ? dash : wishlistCount}
+            label="Wishlist"
+            href={pathFromScreen("wishlist")}
+            onNavigate={() => nav("wishlist")}
+          />
+          <StatTile
+            value={bargainsQuery.isLoading ? dash : activeBargains}
+            label="Bargains"
+            href={pathFromScreen("bargains")}
+            onNavigate={() => nav("bargains")}
+          />
+        </div>
+      </header>
 
-      {/* ACCOUNT section — revealed when Account is tapped */}
+      {/* SHOPPING — My orders carries the accent + live active count */}
+      <section className="bz-acct-group">
+        <h2 className="bz-acct-group__title">Shopping</h2>
+        <div className="bz-acct-group__cards">
+          <AcctRow
+            accent
+            icon="package"
+            title="My orders"
+            badge={activeOrders > 0 ? `${activeOrders} active` : undefined}
+            sub="Track, return, re-order"
+            href={pathFromScreen("orders")}
+            onNavigate={() => nav("orders")}
+          />
+          <AcctRow
+            icon="cart"
+            title="My cart"
+            sub={
+              cartCount ? `${plural(cartCount, "item")} ready for checkout` : "Your cart is empty"
+            }
+            href={pathFromScreen("cart")}
+            onNavigate={() => nav("cart")}
+          />
+          <AcctRow
+            icon="heart"
+            title="Wishlist"
+            sub={wishlistCount ? plural(wishlistCount, "saved product") : "No saved products yet"}
+            href={pathFromScreen("wishlist")}
+            onNavigate={() => nav("wishlist")}
+          />
+        </div>
+      </section>
+
+      {/* ACTIVITY */}
+      <section className="bz-acct-group">
+        <h2 className="bz-acct-group__title">Activity</h2>
+        <div className="bz-acct-group__cards">
+          <AcctRow
+            icon="messageDots"
+            title="My messages"
+            badge={unreadMessages > 0 ? String(unreadMessages) : undefined}
+            sub={unreadMessages ? plural(unreadMessages, "unread message") : "Chats with sellers"}
+            href={pathFromScreen("messages")}
+            onNavigate={() => nav("messages")}
+          />
+          <AcctRow
+            icon="bargain"
+            title="My bargains"
+            badge={activeBargains > 0 ? String(activeBargains) : undefined}
+            sub={activeBargains ? plural(activeBargains, "active offer") : "No active offers"}
+            href={pathFromScreen("bargains")}
+            onNavigate={() => nav("bargains")}
+          />
+          <AcctRow
+            icon="mapPin"
+            title="Saved addresses"
+            sub={
+              savedAddresses.length
+                ? `${savedAddresses.length} saved · ${savedAddresses.find((a) => a.isDefault)?.label ?? savedAddresses[0]?.label ?? "Home"} default`
+                : "Home, Office, and more"
+            }
+            href={pathFromScreen("addresses")}
+            onNavigate={() => nav("addresses")}
+          />
+        </div>
+      </section>
+
+      {/* SETTINGS & HELP */}
+      <section className="bz-acct-group">
+        <h2 className="bz-acct-group__title">Settings &amp; help</h2>
+        <div className="bz-acct-group__cards">
+          <AcctRow
+            icon="settings"
+            title="Account"
+            sub="Password, privacy, logout"
+            onClick={() => setAccountOpen((v) => !v)}
+          />
+          <AcctRow
+            icon="headphones"
+            title="Help & support"
+            sub="Chat, call, FAQs"
+            href={pathFromScreen("help")}
+            onNavigate={() => nav("help")}
+          />
+        </div>
+      </section>
+
+      {/* ACCOUNT — revealed when the Account card is tapped */}
       {accountOpen && (
-        <div className="bz-profile__account-section">
-          <div className="bz-profile__account-card">
+        <section className="bz-acct-group">
+          <div className="bz-acct-group__cards bz-acct-account__card">
             {requiresPassword && (
-              <MenuRow
+              <AcctRow
                 icon="lock"
-                label="Change password"
+                title="Change password"
                 sub="Update your account password"
                 onClick={() => setChangePwdOpen(true)}
               />
             )}
-            <MenuRow
+            <AcctRow
               icon="shieldCheck"
-              label="Privacy policy"
+              title="Privacy policy"
               sub="How we handle your data"
               href={pathFromScreen("privacy")}
-              onClick={() => nav("privacy")}
+              onNavigate={() => nav("privacy")}
             />
-            <MenuRow
+            <AcctRow
               icon="file"
-              label="Terms & conditions"
+              title="Terms & conditions"
               sub="Marketplace rules"
               href={pathFromScreen("terms")}
-              onClick={() => nav("terms")}
-            />
-            <MenuRow
-              icon="logout"
-              label="Log out"
-              sub="Sign out of your account"
-              onClick={() => setConfirmLogout(true)}
-              danger
+              onNavigate={() => nav("terms")}
             />
           </div>
           <button className="bz-delete-link" onClick={() => setConfirmDelete(true)}>
             Delete my account
           </button>
-        </div>
+        </section>
       )}
+
+      {/* Mobile only: a dedicated logout at the very end of the profile. On
+          desktop, logout lives in the navbar account menu instead. Both routes
+          open the same confirmation modal before signing out. */}
+      <div className="bz-profile__logout-mobile">
+        <Button variant="danger" full icon="logout" onClick={() => setConfirmLogout(true)}>
+          Log out
+        </Button>
+      </div>
 
       {/* Change password modal */}
       <ChangePasswordModal open={changePwdOpen} onClose={() => setChangePwdOpen(false)} />

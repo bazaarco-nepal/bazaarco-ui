@@ -79,13 +79,22 @@ function SignedOutScreen({ onLogin }: { onLogin: () => void }) {
 
 export function MarketplaceScreen() {
   const pathname = usePathname();
-  const screen = screenFromPath(pathname);
+  const routeScreen = screenFromPath(pathname);
+  const screenOverride = useBazaarStore((s) => s.screenOverride);
+  const setScreenOverride = useBazaarStore((s) => s.setScreenOverride);
+  const screen = screenOverride ?? routeScreen;
   const { product, nav } = useBz();
   const orderTotal = useBazaarStore((s) => s.orderTotal);
   const authed = useBazaarStore((s) => s.authed);
   const authReady = useBazaarStore((s) => s.authReady);
   const roleHint = useBazaarStore((s) => s.roleHint);
   const user = useBazaarStore((s) => s.user);
+
+  useEffect(() => {
+    if (screenOverride && routeScreen === screenOverride) {
+      setScreenOverride(null);
+    }
+  }, [routeScreen, screenOverride, setScreenOverride]);
 
   // Keep the browser tab title meaningful per screen. On the product page use
   // the loaded product name; everything else maps to a friendly screen label.

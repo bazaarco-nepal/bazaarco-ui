@@ -173,6 +173,7 @@ export function Browse() {
   } = catalog;
   const [loading, setLoading] = useState(true);
   const urlParams = useSearchParams();
+  const urlQuery = urlParams.get("q")?.trim() ?? "";
   const catFromUrl = useMemo(() => categoryIdsFromSearchParams(urlParams), [urlParams]);
   const [cats, setCats] = useState(catFromUrl);
   const [quick, setQuick] = useState([]);
@@ -191,9 +192,17 @@ export function Browse() {
     setCats(catFromUrl);
   }, [catFromUrl]);
 
+  const effectiveQuery = urlQuery || query.trim();
+
+  useEffect(() => {
+    if (urlQuery && urlQuery !== query) {
+      setQuery(urlQuery);
+    }
+  }, [urlQuery, query, setQuery]);
+
   useEffect(() => {
     const next = browsePath({
-      q: query?.trim() || undefined,
+      q: effectiveQuery || undefined,
       cat: cats.length ? cats : undefined,
       sort: sort !== "popular" ? sort : undefined,
     });
@@ -203,9 +212,8 @@ export function Browse() {
         router.replace(next, { scroll: false });
       }
     }
-  }, [cats, query, sort, router]);
+  }, [cats, effectiveQuery, sort, router]);
 
-  const effectiveQuery = query;
   const band = PLP_PRICE_BANDS.find((b) => b.id === priceBand);
   // Custom min/max take precedence over preset band.
   const customMin = priceMin === "" ? null : Math.max(0, parseInt(priceMin, 10) || 0);
@@ -242,14 +250,24 @@ export function Browse() {
     : null;
 
   const { data: searchData, isLoading: searchLoading } = useSearch(searchParams);
-  const correctedQuery = searchData?.correction || query;
+  const correctedQuery = searchData?.correction || effectiveQuery;
 
   useEffect(() => {
     if (catalogLoading || searchLoading) return;
     setLoading(true);
     const id = setTimeout(() => setLoading(false), 600);
     return () => clearTimeout(id);
-  }, [cats, quick, priceBand, priceMin, priceMax, query, sort, catalogLoading, searchLoading]);
+  }, [
+    cats,
+    quick,
+    priceBand,
+    priceMin,
+    priceMax,
+    effectiveQuery,
+    sort,
+    catalogLoading,
+    searchLoading,
+  ]);
 
   const searchProducts = useMemo(() => {
     if (!searchData?.items?.length) return null;
@@ -305,7 +323,7 @@ export function Browse() {
   };
 
   const totalCount = strict.length + related.length;
-  const showDidYouMean = !loading && query && totalCount === 0;
+  const showDidYouMean = !loading && effectiveQuery && totalCount === 0;
 
   // Active filters — labeled chips with one-tap removal.
   const activeChips = [
@@ -322,7 +340,7 @@ export function Browse() {
   const hasActive = activeChips.length > 0;
 
   const browseHeading = (() => {
-    if (query) return `Results for "${query}"`;
+    if (effectiveQuery) return `Results for "${effectiveQuery}"`;
     if (cats.length === 1) {
       const c = (CATEGORIES ?? []).find((x) => x.id === cats[0]);
       return c?.en ?? "Products";
@@ -332,7 +350,7 @@ export function Browse() {
   })();
 
   const browseCrumb = (() => {
-    if (query) return `Search: "${query}"`;
+    if (effectiveQuery) return `Search: "${effectiveQuery}"`;
     if (cats.length === 1) {
       const c = (CATEGORIES ?? []).find((x) => x.id === cats[0]);
       return c?.en ?? "Category";
@@ -361,7 +379,7 @@ export function Browse() {
           {/* Sticky horizontal chip bar — research-aligned 5 universal filters + More.
               Only in results mode (a query or active filter). On the category-grid
               landing it's noise: filters act on product results, not category picking. */}
-          {(hasActive || query) && (
+          {(hasActive || effectiveQuery) && (
             <div
               style={{
                 display: "flex",
@@ -512,7 +530,7 @@ export function Browse() {
           )}
 
           {/* When no filters AND no query → category browser. Otherwise product grid. */}
-          {!hasActive && !query ? (
+          {!hasActive && !effectiveQuery ? (
             <>
               <h2
                 style={{
@@ -647,7 +665,7 @@ export function Browse() {
           </div>
 
           {/* corrected query banner */}
-          {correctedQuery !== query && (
+          {correctedQuery !== effectiveQuery && (
             <div
               style={{
                 background: "var(--tint-blue-50)",
@@ -660,7 +678,7 @@ export function Browse() {
             >
               Showing results for <b>"{correctedQuery}"</b> ·{" "}
               <button
-                onClick={() => setQuery(query)}
+                onClick={() => setQuery(effectiveQuery)}
                 style={{
                   background: "none",
                   border: "none",
@@ -672,7 +690,7 @@ export function Browse() {
                   font: "inherit",
                 }}
               >
-                search instead for "{query}"
+                search instead for "{effectiveQuery}"
               </button>
             </div>
           )}
@@ -962,7 +980,7 @@ export function Browse() {
             </div>
           ) : showDidYouMean ? (
             <DidYouMean
-              q={query}
+              q={effectiveQuery}
               suggestions={[]}
               onPick={(s) => setQuery(s)}
               onReset={() => {

@@ -196,6 +196,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
     (nextScreen: string, options?: { cat?: string }) => {
       const state = useBazaarStore.getState();
       const productId = state.activeProduct?.id;
+      state.setScreenOverride(nextScreen === "browse" ? "browse" : null);
       if (nextScreen === "browse") {
         const q = state.query.trim();
         router.push(
@@ -214,6 +215,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
 
   const submitSearch = useCallback(() => {
     const q = useBazaarStore.getState().query.trim();
+    useBazaarStore.getState().setScreenOverride("browse");
     router.push(browsePath({ q: q || undefined }));
     setTimeout(scrollTop, 0);
   }, [router, scrollTop]);

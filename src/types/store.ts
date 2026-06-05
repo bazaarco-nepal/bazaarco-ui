@@ -16,6 +16,8 @@ export interface BazaarStoreState {
   wish: string[];
   wishSellers: string[];
   query: string;
+  /** Optimistic screen while client navigation catches up (e.g. search → browse). */
+  screenOverride: string | null;
   orderTotal: number;
   lastOrderId: string | null;
   activeProduct: Product | null;
@@ -38,6 +40,7 @@ export interface BazaarStoreState {
   setWish: (wish: string[] | ((prev: string[]) => string[])) => void;
   setWishSellers: (sellerIds: string[] | ((prev: string[]) => string[])) => void;
   setQuery: (query: string) => void;
+  setScreenOverride: (screen: string | null) => void;
   setOrderTotal: (total: number) => void;
   setLastOrderId: (id: string | null) => void;
   setActiveProduct: (product: Product | null) => void;

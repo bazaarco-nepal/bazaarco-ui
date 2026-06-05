@@ -8,6 +8,8 @@ import {
   confirmPasswordReset,
   deleteAccount,
   fetchCurrentUser,
+  forgotPasswordConfirm,
+  forgotPasswordRequest,
   login,
   logout,
   register,
@@ -19,6 +21,8 @@ import {
 import type {
   ChangePasswordPayload,
   ConfirmPasswordResetPayload,
+  ForgotPasswordConfirmPayload,
+  ForgotPasswordRequestPayload,
   LoginPayload,
   RegisterPayload,
   ResendEmailVerificationPayload,
@@ -181,5 +185,17 @@ export function useDeleteAccount() {
     onSuccess: async () => {
       await clearSessionState(queryClient);
     },
+  });
+}
+
+export function useForgotPasswordRequest() {
+  return useMutation({
+    mutationFn: (payload: ForgotPasswordRequestPayload) => forgotPasswordRequest(payload),
+  });
+}
+
+export function useForgotPasswordConfirm() {
+  return useMutation({
+    mutationFn: (payload: ForgotPasswordConfirmPayload) => forgotPasswordConfirm(payload),
   });
 }

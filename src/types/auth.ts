@@ -65,3 +65,13 @@ export interface ChangePasswordPayload {
   currentPassword: string;
   newPassword: string;
 }
+
+export interface ForgotPasswordRequestPayload {
+  email: string;
+}
+
+export interface ForgotPasswordConfirmPayload {
+  email: string;
+  otp: string;
+  newPassword: string;
+}

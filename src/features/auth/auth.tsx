@@ -7,6 +7,8 @@ import { useBz } from "@/components/common";
 import { resolvePostAuthScreen } from "@/lib/auth-rbac";
 import { screenFromPath, pathFromScreen } from "@/config/routes";
 import {
+  useForgotPasswordConfirm,
+  useForgotPasswordRequest,
   useLogin,
   useRegister,
   useResendEmailVerification,
@@ -89,6 +91,19 @@ export function Auth() {
   const [otp, setOtp] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  // Forgot password state
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotStep, setForgotStep] = useState<1 | 2>(1);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotMaskedEmail, setForgotMaskedEmail] = useState("");
+  const [forgotOtp, setForgotOtp] = useState("");
+  const [forgotNewPassword, setForgotNewPassword] = useState("");
+  const [forgotConfirmPassword, setForgotConfirmPassword] = useState("");
+  const [forgotError, setForgotError] = useState<string | null>(null);
+
+  const forgotRequestMutation = useForgotPasswordRequest();
+  const forgotConfirmMutation = useForgotPasswordConfirm();
+
   const loginMutation = useLogin();
   const registerMutation = useRegister();
   const verifyEmailMutation = useVerifyEmail();
@@ -104,6 +119,7 @@ export function Auth() {
     mode === "register" && password.length > 0 && !isStrongPassword(password)
       ? passwordRequirementMessage
       : null;
+  const forgotBusy = forgotRequestMutation.isPending || forgotConfirmMutation.isPending;
   const busy =
     loginMutation.isPending ||
     registerMutation.isPending ||
@@ -229,6 +245,66 @@ export function Auth() {
       : email.trim().length > 0 && fullName.trim().length >= 2 && isStrongPassword(password));
   const canVerify = /^\d{6}$/.test(otp.trim());
 
+  const openForgotPassword = () => {
+    setForgotMode(true);
+    setForgotStep(1);
+    setForgotEmail(loginEmail);
+    setForgotOtp("");
+    setForgotNewPassword("");
+    setForgotConfirmPassword("");
+    setForgotError(null);
+    setForgotMaskedEmail("");
+    setError(null);
+  };
+
+  const handleForgotSendCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotError(null);
+    const trimmed = forgotEmail.trim();
+    if (!isValidEmail(trimmed)) {
+      setForgotError("Enter a valid email address.");
+      return;
+    }
+    try {
+      const res = await forgotRequestMutation.mutateAsync({ email: trimmed });
+      setForgotMaskedEmail(res.email);
+      setForgotStep(2);
+      toast("Reset code sent to your email");
+    } catch (err) {
+      setForgotError(err instanceof Error ? err.message : "Could not send reset code");
+    }
+  };
+
+  const handleForgotConfirm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotError(null);
+
+    if (!/^\d{6}$/.test(forgotOtp.trim())) {
+      setForgotError("Enter the 6-digit code");
+      return;
+    }
+    if (!isStrongPassword(forgotNewPassword)) {
+      setForgotError(passwordRequirementMessage);
+      return;
+    }
+    if (forgotNewPassword !== forgotConfirmPassword) {
+      setForgotError("Passwords do not match");
+      return;
+    }
+
+    try {
+      await forgotConfirmMutation.mutateAsync({
+        email: forgotEmail.trim(),
+        otp: forgotOtp.trim(),
+        newPassword: forgotNewPassword,
+      });
+      toast("Password updated — please sign in");
+      setForgotMode(false);
+    } catch (err) {
+      setForgotError(err instanceof Error ? err.message : "Could not reset password");
+    }
+  };
+
   return (
     <div
       style={{
@@ -273,7 +349,7 @@ export function Auth() {
             <Logo height={48} />
           </div>
 
-          {!pendingVerification && (
+          {!pendingVerification && !forgotMode && (
             <div
               style={{
                 display: "flex",
@@ -348,7 +424,9 @@ export function Auth() {
             <h1
               style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}
             >
-              {pendingVerification ? (
+              {forgotMode ? (
+                "Reset your password"
+              ) : pendingVerification ? (
                 "Verify your email"
               ) : mode === "register" ? (
                 isSeller ? (
@@ -363,14 +441,18 @@ export function Auth() {
               )}
             </h1>
             <p style={{ color: "var(--ink-500)", margin: "6px 0 0" }}>
-              {pendingVerification
-                ? `Enter the 6-digit code sent to ${pendingVerification.email}.`
-                : mode === "register"
-                  ? "Your name, email, and password — or continue with Google."
-                  : "Sign in with email and password — or continue with Google."}
+              {forgotMode
+                ? forgotStep === 1
+                  ? "Enter the email address you signed up with. We'll send a code to reset your password."
+                  : ""
+                : pendingVerification
+                  ? `Enter the 6-digit code sent to ${pendingVerification.email}.`
+                  : mode === "register"
+                    ? "Your name, email, and password — or continue with Google."
+                    : "Sign in with email and password — or continue with Google."}
             </p>
 
-            {!pendingVerification && (
+            {!pendingVerification && !forgotMode && (
               <div style={{ marginTop: 18 }}>
                 <button
                   type="button"
@@ -414,7 +496,7 @@ export function Auth() {
               </div>
             )}
 
-            {!pendingVerification && (
+            {!pendingVerification && !forgotMode && (
               <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "14px 0" }}>
                 <span style={{ flex: 1, height: 1, background: "var(--line-200)" }} />
                 <span
@@ -432,7 +514,222 @@ export function Auth() {
               </div>
             )}
 
-            {pendingVerification ? (
+            {forgotMode ? (
+              forgotStep === 1 ? (
+                <form onSubmit={handleForgotSendCode}>
+                  <Field
+                    label="Email address"
+                    error={
+                      forgotEmail.trim().length > 0 && !isValidEmail(forgotEmail.trim())
+                        ? "Enter a valid email address."
+                        : null
+                    }
+                  >
+                    <input
+                      type="email"
+                      autoComplete="email"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      style={inputStyle}
+                      required
+                    />
+                  </Field>
+
+                  {forgotError && (
+                    <p
+                      style={{
+                        color: "var(--red)",
+                        fontSize: ".875rem",
+                        margin: "0 0 12px",
+                        textAlign: "left",
+                      }}
+                    >
+                      {forgotError}
+                    </p>
+                  )}
+
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    full
+                    disabled={!isValidEmail(forgotEmail.trim()) || forgotBusy}
+                    type="submit"
+                  >
+                    {forgotBusy ? "Please wait…" : "Send reset code"}
+                  </Button>
+
+                  <div style={{ marginTop: 14, textAlign: "center" }}>
+                    <button
+                      type="button"
+                      onClick={() => setForgotMode(false)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "var(--blue)",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        fontSize: ".875rem",
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      Back to sign in
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={handleForgotConfirm}>
+                  <p
+                    style={{
+                      margin: "0 0 16px",
+                      color: "var(--ink-500)",
+                      fontSize: ".9375rem",
+                      lineHeight: 1.55,
+                      textAlign: "left",
+                    }}
+                  >
+                    Enter the code sent to{" "}
+                    <b style={{ color: "var(--ink-700)" }}>{forgotMaskedEmail}</b> and choose a new
+                    password.
+                  </p>
+
+                  <Field label="Verification code">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      value={forgotOtp}
+                      onChange={(e) => setForgotOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      placeholder="123456"
+                      style={{
+                        ...inputStyle,
+                        textAlign: "center",
+                        fontSize: "1.25rem",
+                        fontWeight: 800,
+                        letterSpacing: ".24em",
+                      }}
+                      minLength={6}
+                      maxLength={6}
+                      required
+                    />
+                  </Field>
+
+                  <Field
+                    label="New password"
+                    error={
+                      forgotNewPassword.length > 0 && !isStrongPassword(forgotNewPassword)
+                        ? passwordRequirementMessage
+                        : null
+                    }
+                  >
+                    <PasswordInput
+                      value={forgotNewPassword}
+                      onChange={(e) => setForgotNewPassword(e.target.value)}
+                      placeholder="8+ characters, number, symbol"
+                      autoComplete="new-password"
+                      inputStyle={{
+                        ...inputStyle,
+                        border:
+                          forgotNewPassword.length > 0 && !isStrongPassword(forgotNewPassword)
+                            ? "1.5px solid var(--red)"
+                            : "1.5px solid var(--line-200)",
+                      }}
+                    />
+                  </Field>
+
+                  <Field
+                    label="Confirm new password"
+                    error={
+                      forgotConfirmPassword.length > 0 &&
+                      forgotConfirmPassword !== forgotNewPassword
+                        ? "Passwords do not match"
+                        : null
+                    }
+                  >
+                    <PasswordInput
+                      value={forgotConfirmPassword}
+                      onChange={(e) => setForgotConfirmPassword(e.target.value)}
+                      placeholder="Re-enter password"
+                      autoComplete="new-password"
+                      inputStyle={{
+                        ...inputStyle,
+                        border:
+                          forgotConfirmPassword.length > 0 &&
+                          forgotConfirmPassword !== forgotNewPassword
+                            ? "1.5px solid var(--red)"
+                            : "1.5px solid var(--line-200)",
+                      }}
+                    />
+                  </Field>
+
+                  {forgotError && (
+                    <p
+                      style={{
+                        color: "var(--red)",
+                        fontSize: ".875rem",
+                        margin: "0 0 12px",
+                        textAlign: "left",
+                      }}
+                    >
+                      {forgotError}
+                    </p>
+                  )}
+
+                  <Button variant="primary" size="lg" full disabled={forgotBusy} type="submit">
+                    {forgotBusy ? "Please wait…" : "Update password"}
+                  </Button>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      gap: 12,
+                      marginTop: 14,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForgotStep(1);
+                        setForgotOtp("");
+                        setForgotNewPassword("");
+                        setForgotConfirmPassword("");
+                        setForgotError(null);
+                      }}
+                      disabled={forgotBusy}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "var(--ink-500)",
+                        fontWeight: 700,
+                        cursor: forgotBusy ? "not-allowed" : "pointer",
+                        fontSize: ".875rem",
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      Change email
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setForgotMode(false)}
+                      disabled={forgotBusy}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "var(--blue)",
+                        fontWeight: 700,
+                        cursor: forgotBusy ? "not-allowed" : "pointer",
+                        fontSize: ".875rem",
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      Back to sign in
+                    </button>
+                  </div>
+                </form>
+              )
+            ) : pendingVerification ? (
               <form onSubmit={handleVerifyEmail}>
                 <Field label="Verification code">
                   <input
@@ -591,6 +888,27 @@ export function Auth() {
                   />
                 </Field>
 
+                {mode === "login" && (
+                  <div style={{ textAlign: "right", marginBottom: 12, marginTop: -4 }}>
+                    <button
+                      type="button"
+                      onClick={openForgotPassword}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "var(--blue)",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        fontSize: ".8125rem",
+                        fontFamily: "inherit",
+                        padding: 0,
+                      }}
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+                )}
+
                 {error && (
                   <p
                     style={{
@@ -616,7 +934,7 @@ export function Auth() {
               </form>
             )}
 
-            {!pendingVerification && (
+            {!pendingVerification && !forgotMode && (
               <div style={{ marginTop: 16 }}>
                 <button
                   type="button"
@@ -643,7 +961,7 @@ export function Auth() {
               </div>
             )}
 
-            {!pendingVerification && !isSeller && (
+            {!pendingVerification && !forgotMode && !isSeller && (
               <div style={{ marginTop: 10 }}>
                 <Button variant="ghost" full href={pathFromScreen("home")}>
                   Skip for now

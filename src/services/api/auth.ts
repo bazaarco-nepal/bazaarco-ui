@@ -6,6 +6,8 @@ import type {
   AuthUser,
   ChangePasswordPayload,
   ConfirmPasswordResetPayload,
+  ForgotPasswordConfirmPayload,
+  ForgotPasswordRequestPayload,
   LoginPayload,
   PendingEmailVerification,
   RegisterPayload,
@@ -207,6 +209,28 @@ export async function completeOnboarding(): Promise<AuthUser> {
   try {
     const { data } = await authClient.patch<ApiSuccessResponse<AuthUser>>("/auth/onboarding");
     return data.data;
+  } catch (error) {
+    throw mapAuthError(error);
+  }
+}
+
+export async function forgotPasswordRequest(
+  payload: ForgotPasswordRequestPayload,
+): Promise<RequestPasswordResetResponse> {
+  try {
+    const { data } = await authClient.post<ApiSuccessResponse<RequestPasswordResetResponse>>(
+      "/auth/forgot-password",
+      payload,
+    );
+    return data.data;
+  } catch (error) {
+    throw mapAuthError(error);
+  }
+}
+
+export async function forgotPasswordConfirm(payload: ForgotPasswordConfirmPayload): Promise<void> {
+  try {
+    await authClient.post("/auth/forgot-password/confirm", payload);
   } catch (error) {
     throw mapAuthError(error);
   }

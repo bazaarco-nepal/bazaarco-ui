@@ -329,7 +329,21 @@ export function Cart() {
       >
         <Icon name="chevronLeft" size={16} /> Continue shopping
       </AppLink>
+      {/* Mobile: plain text-only page title, matching the "My orders" header. */}
       <h1
+        className="bz-show-mobile"
+        style={{
+          display: "none",
+          margin: "0 0 24px",
+          fontSize: "1.5rem",
+          fontWeight: 800,
+          color: "var(--blue-deep)",
+        }}
+      >
+        My cart
+      </h1>
+      <h1
+        className="bz-hide-mobile"
         style={{
           margin: "0 0 8px",
           fontSize: "1.5rem",

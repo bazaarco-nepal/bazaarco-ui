@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { BazaarCtx, LoginPromptModal } from "@/components/common";
 import { useCurrentUser } from "@/hooks/use-auth";
@@ -11,6 +12,8 @@ import { browsePath, pathFromScreen, productIdFromPath, screenFromPath } from "@
 import { ordersApi } from "@/services/api/orders";
 import { ApiRequestError } from "@/services/api/http";
 import { useBazaarStore } from "@/store/bazaar-store";
+import { queryKeys } from "@/services/api/query-keys";
+import { effectiveSelectedIds, pruneSelection, selectLine } from "@/lib/cart-selection";
 import type { CheckoutPayload } from "@/services/api/orders";
 import type { Product } from "@/types";
 
@@ -21,6 +24,7 @@ interface ToastState {
 
 export function BazaarProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const pathname = usePathname();
   const screen = screenFromPath(pathname);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -73,6 +77,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   const activeProduct = useBazaarStore((s) => s.activeProduct);
   const setActiveProduct = useBazaarStore((s) => s.setActiveProduct);
   const setCart = useBazaarStore((s) => s.setCart);
+  const setSelectedCartIds = useBazaarStore((s) => s.setSelectedCartIds);
   const setOrderTotal = useBazaarStore((s) => s.setOrderTotal);
   const setLastOrderId = useBazaarStore((s) => s.setLastOrderId);
 
@@ -89,10 +94,18 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!authed) {
       setCart([]);
+      setSelectedCartIds(null);
       setWish([]);
       setWishSellers([]);
     }
-  }, [authed, setCart, setWish, setWishSellers]);
+  }, [authed, setCart, setSelectedCartIds, setWish, setWishSellers]);
+
+  // Keep the checkout selection valid as the cart changes: drop ids for items
+  // that left the cart. The `null` ("all selected") sentinel passes through, so
+  // a never-touched cart keeps defaulting to "buy everything".
+  useEffect(() => {
+    setSelectedCartIds((prev) => pruneSelection(cart, prev));
+  }, [cart, setSelectedCartIds]);
 
   const scrollTop = useCallback(() => {
     window.scrollTo(0, 0);
@@ -236,6 +249,9 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       if (!ensureAuthed("Please sign in to add items to your cart.")) return;
       try {
         await addItem.mutateAsync({ product, qty });
+        // A freshly-added item should be selected for checkout. No-op while the
+        // selection is still the "all" sentinel.
+        setSelectedCartIds((prev) => selectLine(prev, product.id));
         const defaultMsg = qty > 1 ? `${qty} added to cart` : "Added to cart";
         toast(successMessage ?? defaultMsg);
       } catch (error) {
@@ -244,7 +260,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
     },
-    [addItem, ensureAuthed, toast],
+    [addItem, ensureAuthed, setSelectedCartIds, toast],
   );
 
   const updateCartQty = useCallback(
@@ -295,10 +311,20 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
     async (payload: CheckoutPayload) => {
       if (!ensureAuthed("Please sign in to place your order.")) return;
       try {
-        const order = await ordersApi.checkout(payload);
+        const { cart: currentCart, selectedCartIds } = useBazaarStore.getState();
+        // Resolve the selection to an explicit id list (the server only orders
+        // and clears these). The "all" sentinel expands to the whole cart.
+        const selectedItemIds = effectiveSelectedIds(currentCart, selectedCartIds);
+        const order = await ordersApi.checkout({ ...payload, selectedItemIds });
         setOrderTotal(order.total);
         setLastOrderId(order.id);
-        setCart([]);
+        // Remove only the items that were actually ordered; leave the rest in
+        // the cart. `order.items` is the list of ordered product ids.
+        const ordered = new Set(order.items);
+        setCart((prev) => prev.filter((line) => !ordered.has(line.id)));
+        setSelectedCartIds(null);
+        // Reconcile with the server (it cleared only the ordered rows).
+        void queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });
         nav("success");
       } catch (error) {
         const msg = error instanceof ApiRequestError ? error.message : "Could not place order";
@@ -306,7 +332,16 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
     },
-    [ensureAuthed, nav, setCart, setLastOrderId, setOrderTotal, toast],
+    [
+      ensureAuthed,
+      nav,
+      queryClient,
+      setCart,
+      setLastOrderId,
+      setOrderTotal,
+      setSelectedCartIds,
+      toast,
+    ],
   );
 
   const cartCount = cart.reduce((sum, item) => sum + item.qty, 0);

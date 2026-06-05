@@ -2,6 +2,7 @@ import type { AuthIntent, AuthUser } from "@/types/auth";
 import type { CartLine, Product } from "@/types/catalog";
 import type { DeliveryLocation } from "@/lib/delivery-location";
 import type { DeliveryTier } from "@/lib/delivery-options";
+import type { CartSelection } from "@/lib/cart-selection";
 
 export interface BazaarStoreState {
   authed: boolean;
@@ -10,6 +11,8 @@ export interface BazaarStoreState {
   /** Last-known role from a previous session, hydrated from storage on boot. */
   roleHint: AuthIntent | null;
   cart: CartLine[];
+  /** Cart lines chosen for the next checkout. `null` = every line selected. */
+  selectedCartIds: CartSelection;
   wish: string[];
   wishSellers: string[];
   query: string;
@@ -31,6 +34,7 @@ export interface BazaarStoreState {
   hydrateBuyerPhone: () => void;
   setBuyerPhone: (phone: string) => void;
   setCart: (cart: CartLine[] | ((prev: CartLine[]) => CartLine[])) => void;
+  setSelectedCartIds: (selection: CartSelection | ((prev: CartSelection) => CartSelection)) => void;
   setWish: (wish: string[] | ((prev: string[]) => string[])) => void;
   setWishSellers: (sellerIds: string[] | ((prev: string[]) => string[])) => void;
   setQuery: (query: string) => void;

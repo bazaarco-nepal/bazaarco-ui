@@ -65,6 +65,13 @@ import {
 } from "@/components/common";
 import { pathFromScreen } from "@/config/routes";
 import { resolveDelivery, deliveryChoices, distinctSellerCount } from "@/lib/delivery-options";
+import {
+  selectedLines,
+  allSelected,
+  isLineSelected,
+  toggleLine,
+  toggleAll,
+} from "@/lib/cart-selection";
 
 export function priceBreakdown(cart, deliveryTier = "standard") {
   const subtotal = cart.reduce((s, it) => s + it.price * it.qty, 0);

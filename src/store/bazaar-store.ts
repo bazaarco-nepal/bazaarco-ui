@@ -14,6 +14,7 @@ export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
   user: null,
   roleHint: null,
   cart: [],
+  selectedCartIds: null,
   wish: [],
   wishSellers: [],
   query: "",
@@ -50,6 +51,11 @@ export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
   setCart: (cart) =>
     set((state) => ({
       cart: typeof cart === "function" ? cart(state.cart) : cart,
+    })),
+  setSelectedCartIds: (selection) =>
+    set((state) => ({
+      selectedCartIds:
+        typeof selection === "function" ? selection(state.selectedCartIds) : selection,
     })),
   setWish: (wish) =>
     set((state) => ({

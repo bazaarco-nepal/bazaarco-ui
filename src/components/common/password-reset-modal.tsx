@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import { Button, PasswordInput } from "@/components/ui";
 import { useBz } from "@/components/common/marketplace";
 import { useConfirmPasswordReset, useRequestPasswordReset } from "@/hooks/use-auth";
+import { isStrongPassword, passwordRequirementMessage } from "@/lib/password-validation";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -85,8 +86,8 @@ export function PasswordResetModal({
       setError("Enter the 6-digit code");
       return;
     }
-    if (newPassword.length < 8) {
-      setError("Password must be at least 8 characters");
+    if (!isStrongPassword(newPassword)) {
+      setError(passwordRequirementMessage);
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -249,7 +250,7 @@ export function PasswordResetModal({
             <PasswordInput
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="At least 8 characters"
+              placeholder="8+ characters, number, symbol"
               autoComplete="new-password"
               inputStyle={inputStyle}
               style={{ marginBottom: 14 }}

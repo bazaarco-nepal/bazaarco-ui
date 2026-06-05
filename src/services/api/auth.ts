@@ -4,6 +4,7 @@ import { clearAccessToken, getAccessToken, setAccessToken } from "@/lib/auth-tok
 import type {
   AuthSessionResponse,
   AuthUser,
+  ChangePasswordPayload,
   ConfirmPasswordResetPayload,
   LoginPayload,
   PendingEmailVerification,
@@ -188,6 +189,16 @@ export async function confirmPasswordReset(payload: ConfirmPasswordResetPayload)
     throw mapAuthError(error);
   } finally {
     // Reset revokes all sessions server-side — drop the local token to force re-login.
+    clearAccessToken();
+  }
+}
+
+export async function changePassword(payload: ChangePasswordPayload): Promise<void> {
+  try {
+    await authClient.patch("/auth/password", payload);
+  } catch (error) {
+    throw mapAuthError(error);
+  } finally {
     clearAccessToken();
   }
 }

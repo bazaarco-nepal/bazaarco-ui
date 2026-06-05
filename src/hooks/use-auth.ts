@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  changePassword,
   completeOnboarding,
   confirmPasswordReset,
   deleteAccount,
@@ -16,6 +17,7 @@ import {
   verifyEmail,
 } from "@/services/api/auth";
 import type {
+  ChangePasswordPayload,
   ConfirmPasswordResetPayload,
   LoginPayload,
   RegisterPayload,
@@ -155,6 +157,17 @@ export function useConfirmPasswordReset() {
     mutationFn: (payload: ConfirmPasswordResetPayload) => confirmPasswordReset(payload),
     onSuccess: async () => {
       // Server revoked all sessions — wipe local session state to force re-login.
+      await clearSessionState(queryClient);
+    },
+  });
+}
+
+export function useChangePassword() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: ChangePasswordPayload) => changePassword(payload),
+    onSuccess: async () => {
       await clearSessionState(queryClient);
     },
   });

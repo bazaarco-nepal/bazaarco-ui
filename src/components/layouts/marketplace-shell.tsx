@@ -6,6 +6,7 @@ import { NO_FOOTER_SCREENS, NO_NAV_SCREENS, SELLER_SCREENS, screenFromPath } fro
 import { BottomNav, Toast } from "@/components/ui";
 import { Footer, Navbar, useBz } from "@/components/common";
 import { AuthRoleGuard } from "@/components/layouts/auth-role-guard";
+import { useBazaarStore } from "@/store/bazaar-store";
 
 const BUYER_BOTTOM_NAV_SCREENS = new Set([
   "home",
@@ -29,6 +30,7 @@ function BottomNavBridge() {
   const pathname = usePathname();
   const screen = screenFromPath(pathname);
   const isSeller = SELLER_SCREENS.has(screen);
+  const user = useBazaarStore((s) => s.user);
 
   const bottomNavActive = (() => {
     if (screen === "home" || screen === "browse") return "home";
@@ -60,7 +62,14 @@ function BottomNavBridge() {
     return null;
   }
 
-  return <BottomNav active={bottomNavActive} onNav={nav} cartCount={cartCount} />;
+  return (
+    <BottomNav
+      active={bottomNavActive}
+      onNav={nav}
+      cartCount={cartCount}
+      avatarUrl={user?.avatarUrl}
+    />
+  );
 }
 
 export function MarketplaceShell({ children }: { children: React.ReactNode }) {

@@ -423,6 +423,8 @@ export function Profile() {
     });
   };
 
+  const [accountOpen, setAccountOpen] = useState(false);
+
   return (
     <div className="bz-profile">
       <style>{`
@@ -440,7 +442,7 @@ export function Profile() {
         }
         .bz-profile__rail { display: flex; flex-direction: column; gap: 14px; }
         .bz-profile__main { display: flex; flex-direction: column; gap: 10px; }
-        .bz-profile__actions { display: flex; flex-direction: column; gap: 14px; }
+        .bz-profile__account-section { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
         /* Mobile: collapse the separate menu cards into one grouped card with
            inset hairline dividers — fewer borders reads calmer and more premium. */
         @media (max-width: 899px) {
@@ -467,12 +469,36 @@ export function Profile() {
             height: 1px;
             background: var(--line-100);
           }
+          .bz-profile__account-section .bz-profile__account-card {
+            gap: 0;
+            background: #fff;
+            border: 1px solid var(--line-200);
+            border-radius: var(--r-xl);
+            overflow: hidden;
+          }
+          .bz-profile__account-section .bz-profile__account-card .bz-menu-row {
+            position: relative;
+            border: none;
+            border-radius: 0;
+            padding: 0 20px;
+            min-height: 72px;
+          }
+          .bz-profile__account-section .bz-profile__account-card .bz-menu-row:not(:first-child)::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 64px;
+            right: 0;
+            height: 1px;
+            background: var(--line-100);
+          }
         }
         @media (min-width: 900px) {
           .bz-profile__rail    { grid-column: 1; grid-row: 1; }
-          .bz-profile__actions { grid-column: 1; grid-row: 2; }
           .bz-profile__main    { grid-column: 2; grid-row: 1 / span 2; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; align-content: start; }
           .bz-profile__main > .bz-profile__full { grid-column: 1 / -1; }
+          .bz-profile__account-section { grid-column: 2; grid-row: 3; display: flex; flex-direction: column; align-items: center; }
+          .bz-profile__account-card { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; }
         }
         .bz-profile__card {
           background: #fff;
@@ -488,27 +514,8 @@ export function Profile() {
           background: var(--line-200);
           margin: 2px 0;
         }
-        .bz-logout-btn {
-          width: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          padding: 11px 14px;
-          border: 1px solid var(--line-200);
-          border-radius: var(--r-md);
-          background: #fff;
-          color: var(--danger);
-          font-family: inherit;
-          font-weight: 700;
-          font-size: .9375rem;
-          line-height: 1;
-          cursor: pointer;
-          transition: background .15s, border-color .15s;
-        }
-        .bz-logout-btn:hover { background: var(--tint-red-50); border-color: var(--danger); }
         .bz-delete-link {
-          align-self: flex-end;
+          align-self: center;
           display: inline-flex;
           align-items: center;
           gap: 5px;
@@ -517,19 +524,19 @@ export function Profile() {
           padding: 4px 2px;
           cursor: pointer;
           font-family: inherit;
-          font-weight: 600;
-          font-size: .8125rem;
-          color: var(--danger);
-          opacity: .6;
-          transition: opacity .15s;
+          font-weight: 500;
+          font-size: .75rem;
+          color: var(--ink-400);
+          opacity: .45;
+          transition: opacity .15s, color .15s;
+          margin-top: 24px;
         }
-        .bz-delete-link:hover { opacity: 1; }
+        .bz-delete-link:hover { opacity: .7; color: var(--danger); }
       `}</style>
 
-      {/* LEFT RAIL — single cohesive card: identity + account actions */}
+      {/* LEFT RAIL — identity card: name, email, photo */}
       <aside className="bz-profile__rail">
         <div className="bz-profile__card">
-          {/* Identity */}
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <BuyerAvatar user={user} size={64} fontSize="1.5rem" />
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -554,7 +561,7 @@ export function Profile() {
         </div>
       </aside>
 
-      {/* RIGHT MAIN — action grid */}
+      {/* RIGHT MAIN — navigation menu */}
       <div className="bz-profile__main">
         <MenuRow
           icon="cart"
@@ -604,14 +611,6 @@ export function Profile() {
           href={pathFromScreen("addresses")}
           onClick={() => nav("addresses")}
         />
-        {requiresPassword && (
-          <MenuRow
-            icon="lock"
-            label="Change password"
-            sub="Update your account password"
-            onClick={() => setChangePwdOpen(true)}
-          />
-        )}
         <MenuRow
           icon="headphones"
           label="Help & support"
@@ -620,34 +619,52 @@ export function Profile() {
           onClick={() => nav("help")}
         />
         <MenuRow
-          icon="shield"
-          label="Privacy policy"
-          sub="How we handle your data"
-          href={pathFromScreen("privacy")}
-          onClick={() => nav("privacy")}
-        />
-        <MenuRow
-          icon="file"
-          label="Terms & conditions"
-          sub="Marketplace rules"
-          href={pathFromScreen("terms")}
-          onClick={() => nav("terms")}
+          icon="settings"
+          label="Account"
+          sub="Password, privacy, logout"
+          onClick={() => setAccountOpen(!accountOpen)}
         />
       </div>
 
-      {/* ACCOUNT ACTIONS — bottom on mobile, left-rail bottom on desktop */}
-      <div className="bz-profile__actions">
-        <div className="bz-profile__card">
-          <button className="bz-logout-btn" onClick={() => setConfirmLogout(true)}>
-            <Icon name="logout" size={18} color="var(--danger)" />
-            Log out
-          </button>
+      {/* ACCOUNT section — revealed when Account is tapped */}
+      {accountOpen && (
+        <div className="bz-profile__account-section">
+          <div className="bz-profile__account-card">
+            {requiresPassword && (
+              <MenuRow
+                icon="lock"
+                label="Change password"
+                sub="Update your account password"
+                onClick={() => setChangePwdOpen(true)}
+              />
+            )}
+            <MenuRow
+              icon="shieldCheck"
+              label="Privacy policy"
+              sub="How we handle your data"
+              href={pathFromScreen("privacy")}
+              onClick={() => nav("privacy")}
+            />
+            <MenuRow
+              icon="file"
+              label="Terms & conditions"
+              sub="Marketplace rules"
+              href={pathFromScreen("terms")}
+              onClick={() => nav("terms")}
+            />
+            <MenuRow
+              icon="logout"
+              label="Log out"
+              sub="Sign out of your account"
+              onClick={() => setConfirmLogout(true)}
+              danger
+            />
+          </div>
           <button className="bz-delete-link" onClick={() => setConfirmDelete(true)}>
-            <Icon name="trash" size={14} color="var(--danger)" />
             Delete my account
           </button>
         </div>
-      </div>
+      )}
 
       {/* Change password modal */}
       <ChangePasswordModal open={changePwdOpen} onClose={() => setChangePwdOpen(false)} />

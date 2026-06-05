@@ -7575,10 +7575,37 @@ export function SellerProfile() {
         <Button variant="secondary" full onClick={() => setConfirmLogout(true)}>
           Log out
         </Button>
-        <Button variant="danger" full onClick={() => setConfirmDelete(true)}>
-          Delete account
-        </Button>
       </div>
+      <button
+        onClick={() => setConfirmDelete(true)}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          alignSelf: "center",
+          gap: 5,
+          background: "none",
+          border: "none",
+          padding: "4px 2px",
+          cursor: "pointer",
+          fontFamily: "inherit",
+          fontWeight: 500,
+          fontSize: ".75rem",
+          color: "var(--ink-400)",
+          opacity: 0.45,
+          marginTop: 24,
+          transition: "opacity .15s, color .15s",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.opacity = "0.7";
+          e.currentTarget.style.color = "var(--danger)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.opacity = "0.45";
+          e.currentTarget.style.color = "var(--ink-400)";
+        }}
+      >
+        Delete my account
+      </button>
 
       <SellerDeleteAccountModal open={confirmDelete} onClose={() => setConfirmDelete(false)} />
 

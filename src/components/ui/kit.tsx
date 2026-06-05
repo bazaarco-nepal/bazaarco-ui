@@ -2106,18 +2106,20 @@ export function BottomNav({
   onNav,
   seller,
   cartCount = 0,
+  avatarUrl,
 }: {
   active: string | null;
   onNav: (screen: string) => void;
   seller?: boolean;
   cartCount?: number;
+  avatarUrl?: string | null;
 }) {
   const buyerItems = [
     { id: "home", icon: "home", label: "Home" },
     { id: "bargains", icon: "bargain", label: "Bargain" },
     { id: "video", icon: "video", label: "Watch" },
     { id: "orders", icon: "package", label: "Orders" },
-    { id: "profile", icon: "user", label: "Account" },
+    { id: "profile", icon: "user", label: "Profile" },
   ];
   const sellerItems = [
     { id: "s-dashboard", icon: "home", label: "Home" },
@@ -2143,7 +2145,21 @@ export function BottomNav({
           aria-current={active === it.id ? "page" : undefined}
           className={`bz-bnav__item${active === it.id ? " bz-bnav__item--active" : ""}`}
         >
-          <Icon name={it.icon} size={22} />
+          {it.id === "profile" && avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt=""
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: "50%",
+                objectFit: "cover",
+                border: active === it.id ? "2px solid var(--blue)" : "2px solid var(--line-200)",
+              }}
+            />
+          ) : (
+            <Icon name={it.icon} size={22} />
+          )}
           <span className="bz-bnav__label">{it.label}</span>
           {"badge" in it && it.badge > 0 ? (
             <span className="bz-bnav__badge tnum" aria-hidden>

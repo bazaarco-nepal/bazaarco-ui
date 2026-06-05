@@ -11,6 +11,8 @@ export interface AuthUser {
   provider: AuthProvider;
   /** True after seller dashboard guide is done — do not show coachmark again. */
   onBoarding: boolean;
+  /** ISO 8601 account creation timestamp — drives the "Member since" line. */
+  createdAt: string;
 }
 
 export interface RegisterPayload {

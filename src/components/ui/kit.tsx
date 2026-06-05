@@ -2129,6 +2129,12 @@ export function BottomNav({
     { id: "__menu", icon: "menu", label: "More" },
   ];
   const items = seller ? sellerItems : buyerItems;
+  // Fall back to the user icon if the avatar image fails to load (e.g. an
+  // expired/blocked Google photo) instead of showing a broken-image glyph.
+  const [avatarFailed, setAvatarFailed] = useState(false);
+  useEffect(() => {
+    setAvatarFailed(false);
+  }, [avatarUrl]);
   return (
     <nav className="bz-bnav" aria-label="Bottom navigation">
       {items.map((it) => (
@@ -2145,10 +2151,12 @@ export function BottomNav({
           aria-current={active === it.id ? "page" : undefined}
           className={`bz-bnav__item${active === it.id ? " bz-bnav__item--active" : ""}`}
         >
-          {it.id === "profile" && avatarUrl ? (
+          {it.id === "profile" && avatarUrl && !avatarFailed ? (
             <img
               src={avatarUrl}
               alt=""
+              referrerPolicy="no-referrer"
+              onError={() => setAvatarFailed(true)}
               style={{
                 width: 24,
                 height: 24,

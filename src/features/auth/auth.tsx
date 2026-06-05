@@ -15,6 +15,7 @@ import {
 import { getGoogleLoginUrl } from "@/services/api/auth";
 import { ApiRequestError } from "@/services/api/http";
 import type { AuthUser, PendingEmailVerification } from "@/types/auth";
+import { isStrongPassword, passwordRequirementMessage } from "@/lib/password-validation";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -99,6 +100,10 @@ export function Auth() {
     activeEmailTrimmed.length > 0 && !isValidEmail(activeEmailTrimmed)
       ? "Enter a valid email address."
       : null;
+  const passwordFormatError =
+    mode === "register" && password.length > 0 && !isStrongPassword(password)
+      ? passwordRequirementMessage
+      : null;
   const busy =
     loginMutation.isPending ||
     registerMutation.isPending ||
@@ -140,7 +145,7 @@ export function Auth() {
     e.preventDefault();
     setError(null);
 
-    if (emailFormatError) {
+    if (emailFormatError || passwordFormatError) {
       return;
     }
 
@@ -218,11 +223,10 @@ export function Auth() {
   };
 
   const canSubmit =
-    password.length >= 8 &&
     isValidEmail(activeEmailTrimmed) &&
     (mode === "login"
-      ? loginEmail.trim().length > 0
-      : email.trim().length > 0 && fullName.trim().length >= 2);
+      ? loginEmail.trim().length > 0 && password.length > 0
+      : email.trim().length > 0 && fullName.trim().length >= 2 && isStrongPassword(password));
   const canVerify = /^\d{6}$/.test(otp.trim());
 
   return (
@@ -568,13 +572,20 @@ export function Auth() {
                   </Field>
                 )}
 
-                <Field label="Password">
+                <Field label="Password" error={passwordFormatError}>
                   <PasswordInput
                     autoComplete={mode === "register" ? "new-password" : "current-password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder={mode === "register" ? "At least 8 characters" : "Your password"}
-                    inputStyle={inputStyle}
+                    placeholder={
+                      mode === "register" ? "8+ characters, number, symbol" : "Your password"
+                    }
+                    inputStyle={{
+                      ...inputStyle,
+                      border: passwordFormatError
+                        ? "1.5px solid var(--red)"
+                        : "1.5px solid var(--line-200)",
+                    }}
                     minLength={8}
                     required
                   />

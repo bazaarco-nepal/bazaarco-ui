@@ -50,3 +50,13 @@ export interface AuthSessionResponse {
   user: AuthUser;
   token: string;
 }
+
+export interface RequestPasswordResetResponse {
+  email: string;
+  expiresAt: string;
+}
+
+export interface ConfirmPasswordResetPayload {
+  otp: string;
+  newPassword: string;
+}

@@ -29,7 +29,19 @@ const inputStyle: React.CSSProperties = {
   color: "var(--ink-900)",
 };
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const isValidEmail = (value: string) => emailPattern.test(value.trim());
+
+function Field({
+  label,
+  error,
+  children,
+}: {
+  label: string;
+  error?: string | null;
+  children: React.ReactNode;
+}) {
   return (
     <div style={{ marginBottom: 10, textAlign: "left" }}>
       <label
@@ -44,6 +56,18 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
         {label}
       </label>
       {children}
+      {error && (
+        <p
+          style={{
+            color: "var(--red)",
+            fontSize: ".8125rem",
+            fontWeight: 600,
+            margin: "6px 0 0",
+          }}
+        >
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -69,6 +93,12 @@ export function Auth() {
   const verifyEmailMutation = useVerifyEmail();
   const resendVerificationMutation = useResendEmailVerification();
   const isSeller = intent === "seller";
+  const activeEmail = mode === "login" ? loginEmail : email;
+  const activeEmailTrimmed = activeEmail.trim();
+  const emailFormatError =
+    activeEmailTrimmed.length > 0 && !isValidEmail(activeEmailTrimmed)
+      ? "Enter a valid email address."
+      : null;
   const busy =
     loginMutation.isPending ||
     registerMutation.isPending ||
@@ -110,6 +140,10 @@ export function Auth() {
     e.preventDefault();
     setError(null);
 
+    if (emailFormatError) {
+      return;
+    }
+
     try {
       let user: AuthUser;
       if (mode === "register") {
@@ -129,7 +163,7 @@ export function Auth() {
           password,
         });
       }
-      toast(mode === "register" ? "Account created" : "Welcome back");
+      toast("Welcome back");
       afterAuth(user);
     } catch (err) {
       const message =
@@ -185,6 +219,7 @@ export function Auth() {
 
   const canSubmit =
     password.length >= 8 &&
+    isValidEmail(activeEmailTrimmed) &&
     (mode === "login"
       ? loginEmail.trim().length > 0
       : email.trim().length > 0 && fullName.trim().length >= 2);
@@ -495,27 +530,39 @@ export function Auth() {
                         required
                       />
                     </Field>
-                    <Field label="Email">
+                    <Field label="Email" error={mode === "register" ? emailFormatError : null}>
                       <input
                         type="email"
                         autoComplete="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="you@example.com"
-                        style={inputStyle}
+                        style={{
+                          ...inputStyle,
+                          border:
+                            mode === "register" && emailFormatError
+                              ? "1.5px solid var(--red)"
+                              : "1.5px solid var(--line-200)",
+                        }}
                         required
                       />
                     </Field>
                   </>
                 ) : (
-                  <Field label="Email">
+                  <Field label="Email" error={mode === "login" ? emailFormatError : null}>
                     <input
                       type="email"
                       autoComplete="email"
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
                       placeholder="you@example.com"
-                      style={inputStyle}
+                      style={{
+                        ...inputStyle,
+                        border:
+                          mode === "login" && emailFormatError
+                            ? "1.5px solid var(--red)"
+                            : "1.5px solid var(--line-200)",
+                      }}
                       required
                     />
                   </Field>

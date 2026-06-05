@@ -34,7 +34,6 @@ import {
   BackToTop,
   ApiState,
   AppLink,
-  PasswordInput,
 } from "@/components/ui";
 import { ProductPhotoPicker, type ProductPhoto } from "@/components/seller/product-photo-picker";
 import { SellerVideoLibrary } from "@/components/seller/seller-video-library";
@@ -47,7 +46,6 @@ import {
   useLogout,
   useCurrentUser,
   useUpdateProfile,
-  useDeleteAccount,
 } from "@/hooks/use-auth";
 import { usePendingSellerVerifications, useReviewSellerVerification } from "@/hooks/use-admin";
 import { useBazaarStore } from "@/store/bazaar-store";
@@ -115,6 +113,9 @@ import {
   Footer,
   DevViewSwitcher,
   BuyerAvatar,
+  PasswordResetModal,
+  LogoutConfirmModal,
+  SellerDeleteAccountModal,
 } from "@/components/common";
 import { ASSETS } from "@/config/assets";
 import { pathFromScreen } from "@/config/routes";
@@ -187,7 +188,17 @@ export function SellerSidebar({
 }) {
   const close = () => setOpenMobile(false);
   const logoutMutation = useLogout();
+  const [confirmLogout, setConfirmLogout] = useState(false);
   const displayName = shopName?.trim() || "BazaarCo";
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        setConfirmLogout(false);
+        close();
+        onNav("home");
+      },
+    });
+  };
   return (
     <>
       <div className={"bz-side-overlay" + (openMobile ? " show" : "")} onClick={close} />
@@ -298,22 +309,22 @@ export function SellerSidebar({
         <div className="bz-side-foot">
           <button
             className="bz-side-item bz-side-logout"
-            onClick={() => {
-              close();
-              logoutMutation.mutate(undefined, { onSuccess: () => onNav("home") });
-            }}
-            disabled={logoutMutation.isPending}
+            onClick={() => setConfirmLogout(true)}
             title="Log out"
           >
             <Icon name="logout" size={20} color="var(--red)" />
             <span className="bz-side-label">
-              <span className="bz-side-en">
-                {logoutMutation.isPending ? "Logging out…" : "Log out"}
-              </span>
+              <span className="bz-side-en">Log out</span>
             </span>
           </button>
         </div>
       </aside>
+      <LogoutConfirmModal
+        open={confirmLogout}
+        pending={logoutMutation.isPending}
+        onConfirm={handleLogout}
+        onCancel={() => setConfirmLogout(false)}
+      />
     </>
   );
 }
@@ -1216,12 +1227,15 @@ export function SellerOnboarding() {
 
 /* Inline SVG charts (no deps) */
 
-export function SellerBarChart({ data, height = 280 }) {
+export function SellerBarChart({ data, height = 280, summaryTotalLabel = "7-day total" }) {
   const max = Math.max(...data.map((d) => d.value), 1);
   const total = data.reduce((sum, d) => sum + d.value, 0);
   const avg = data.length ? Math.round(total / data.length) : 0;
   const peakIdx = data.reduce((best, d, i) => (d.value > data[best].value ? i : best), 0);
   const chartH = Math.max(height - 72, 160);
+  // With many buckets (24 hourly / 30 daily) the per-bar amount labels overlap,
+  // so only show them for the sparser week view.
+  const showBarValues = data.length <= 10;
 
   return (
     <div style={{ width: "100%" }}>
@@ -1235,7 +1249,7 @@ export function SellerBarChart({ data, height = 280 }) {
       >
         {[
           {
-            label: "7-day total",
+            label: summaryTotalLabel,
             value: `Rs. ${total.toLocaleString()}`,
             tint: "var(--blue-deep)",
           },
@@ -1297,7 +1311,7 @@ export function SellerBarChart({ data, height = 280 }) {
           const isPeak = i === peakIdx && d.value > 0;
           return (
             <div
-              key={d.label}
+              key={i}
               style={{
                 flex: 1,
                 display: "flex",
@@ -1307,18 +1321,20 @@ export function SellerBarChart({ data, height = 280 }) {
                 minWidth: 0,
               }}
             >
-              <div
-                className="tnum"
-                style={{
-                  fontSize: ".68rem",
-                  fontWeight: 700,
-                  color: d.value > 0 ? "var(--ink-700)" : "var(--ink-400)",
-                  marginBottom: 6,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {d.value > 0 ? `Rs.${d.value.toLocaleString()}` : "—"}
-              </div>
+              {showBarValues && (
+                <div
+                  className="tnum"
+                  style={{
+                    fontSize: ".68rem",
+                    fontWeight: 700,
+                    color: d.value > 0 ? "var(--ink-700)" : "var(--ink-400)",
+                    marginBottom: 6,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {d.value > 0 ? `Rs.${d.value.toLocaleString()}` : "—"}
+                </div>
+              )}
               <div
                 title={`${d.label}: Rs. ${d.value.toLocaleString()}`}
                 style={{
@@ -1449,10 +1465,11 @@ export function SellerDashboard() {
   const user = useBazaarStore((s) => s.user);
   const setUser = useBazaarStore((s) => s.setUser);
   const completeOnboardingMutation = useCompleteOnboarding();
-  const { data: dashboard, isLoading, isError, error } = useSellerDashboard();
+  const [range, setRange] = useState("week");
+  const { data: dashboard, isLoading, isError, error } = useSellerDashboard(range);
   const { data: inbox = [] } = useSellerInbox();
   const { data: inventory = [] } = useSellerInventory();
-  const [range, setRange] = useState("week");
+  const rangeLabel = range === "today" ? "Today" : range === "month" ? "30 days" : "7 days";
 
   // Onboarding coachmark removed — silently mark onboarding complete the first
   // time a seller lands here so backend state stays consistent. No popup shown.
@@ -1497,7 +1514,7 @@ export function SellerDashboard() {
   const trustStrip = trust
     ? [
         {
-          k: "Orders this week",
+          k: range === "today" ? "Orders today" : `Orders · ${rangeLabel}`,
           v: String(trust.ordersThisWeek ?? 0),
           c: "var(--blue-deep)",
         },
@@ -1730,7 +1747,7 @@ export function SellerDashboard() {
             }}
           >
             <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", fontWeight: 600 }}>
-              Earnings today
+              {range === "today" ? "Earnings today" : `Earnings · ${rangeLabel}`}
             </div>
             <div
               className="tnum bz-stat-xl"
@@ -1979,7 +1996,17 @@ export function SellerDashboard() {
                 </span>
               </div>
             </div>
-            <SellerBarChart data={salesByDay} height={200} />
+            <SellerBarChart
+              data={salesByDay}
+              height={200}
+              summaryTotalLabel={
+                range === "today"
+                  ? "Today's total"
+                  : range === "month"
+                    ? "30-day total"
+                    : "7-day total"
+              }
+            />
           </div>
 
           <div
@@ -7087,6 +7114,10 @@ export function SellerSettings() {
   const updateSettings = useUpdateSellerSettings();
   const [tab, setTab] = useState("account");
   const [notif, setNotif] = useState(null);
+  const [pwdResetOpen, setPwdResetOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const noPassword = user?.provider === "google";
+  const pwdMode = noPassword ? "set" : "reset";
 
   useEffect(() => {
     if (!settings) return;
@@ -7293,41 +7324,99 @@ export function SellerSettings() {
             }}
           >
             {[
-              { icon: "lock", en: "Password", sub: "Managed via sign-in" },
-              { icon: "mail", en: "Email", sub: user?.email ?? "—" },
-            ].map((r, i, a) => (
-              <div
-                key={r.en}
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  padding: 16,
-                  background: "#fff",
-                  borderBottom: i < a.length - 1 ? "1px solid var(--line-200)" : "none",
-                }}
-              >
-                <Icon name={r.icon} size={22} color="var(--ink-700)" />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700 }}>{r.en}</div>
-                  <div style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}>{r.sub}</div>
+              {
+                icon: "lock",
+                en: noPassword ? "Set a password" : "Reset password",
+                sub: noPassword
+                  ? "Add a password to also sign in with email"
+                  : "Send a code to your email",
+                onAct: () => setPwdResetOpen(true),
+              },
+              { icon: "mail", en: "Email", sub: user?.email ?? "—", onAct: undefined },
+            ].map((r, i, a) => {
+              const content = (
+                <>
+                  <Icon name={r.icon} size={22} color="var(--ink-700)" />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700 }}>{r.en}</div>
+                    <div style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}>{r.sub}</div>
+                  </div>
+                  {r.onAct && <Icon name="chevronRight" size={18} color="var(--ink-400)" />}
+                </>
+              );
+              const rowStyle: React.CSSProperties = {
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: 16,
+                background: "#fff",
+                borderBottom: i < a.length - 1 ? "1px solid var(--line-200)" : "none",
+              };
+              return r.onAct ? (
+                <button
+                  key={r.en}
+                  onClick={() => r.onAct?.()}
+                  style={{ ...rowStyle, border: "none", cursor: "pointer", textAlign: "left" }}
+                >
+                  {content}
+                </button>
+              ) : (
+                <div key={r.en} style={rowStyle}>
+                  {content}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
-        <Button
-          variant="primary"
-          size="lg"
-          full
-          disabled={!notif || updateSettings.isPending}
-          onClick={() => void handleSave()}
-          style={{ marginTop: 18 }}
-        >
-          {updateSettings.isPending ? "Saving…" : "Save"}
-        </Button>
+        {tab === "account" && (
+          <div
+            style={{
+              background: "#fff",
+              border: "1.5px solid var(--danger)",
+              borderRadius: "var(--r-lg)",
+              padding: 16,
+              marginTop: 18,
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              flexWrap: "wrap",
+            }}
+          >
+            <Icon name="trash" size={22} color="var(--danger)" />
+            <div style={{ flex: 1, minWidth: 180 }}>
+              <div style={{ fontWeight: 800, color: "var(--danger)" }}>Delete account</div>
+              <div style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}>
+                Permanently remove your shop, products, and all data. This can&rsquo;t be undone.
+              </div>
+            </div>
+            <Button variant="danger" onClick={() => setConfirmDelete(true)}>
+              Delete account
+            </Button>
+          </div>
+        )}
+
+        {tab === "alerts" && (
+          <Button
+            variant="primary"
+            size="lg"
+            full
+            disabled={!notif || updateSettings.isPending}
+            onClick={() => void handleSave()}
+            style={{ marginTop: 18 }}
+          >
+            {updateSettings.isPending ? "Saving…" : "Save"}
+          </Button>
+        )}
+
+        <PasswordResetModal
+          open={pwdResetOpen}
+          onClose={() => setPwdResetOpen(false)}
+          mode={pwdMode}
+        />
+
+        <SellerDeleteAccountModal open={confirmDelete} onClose={() => setConfirmDelete(false)} />
       </div>
     </ApiState>
   );
@@ -7338,40 +7427,23 @@ export function SellerProfile() {
   const { nav, toast } = useBz();
   const logoutMutation = useLogout();
   const updateProfile = useUpdateProfile();
-  const deleteMutation = useDeleteAccount();
   const user = useBazaarStore((s) => s.user);
   const { data: storefront } = useSellerStorefront();
   const shopName = (storefront as { shopName?: string })?.shopName?.trim() || "Your shop";
   const sellerName = displayName(user, "Seller");
 
+  const [confirmLogout, setConfirmLogout] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleteText, setDeleteText] = useState("");
-  const [deletePassword, setDeletePassword] = useState("");
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-  const requiresPassword = user?.provider === "local";
-  const canDelete =
-    deleteText.trim().toUpperCase() === "DELETE" &&
-    (!requiresPassword || deletePassword.length > 0) &&
-    !deleteMutation.isPending;
+  const [pwdResetOpen, setPwdResetOpen] = useState(false);
+  const noPassword = user?.provider === "google";
+  const pwdMode = noPassword ? "set" : "reset";
 
-  const closeDeleteModal = () => {
-    setConfirmDelete(false);
-    setDeleteText("");
-    setDeletePassword("");
-    setDeleteError(null);
-  };
-
-  const handleDelete = () => {
-    if (!canDelete) return;
-    setDeleteError(null);
-    deleteMutation.mutate(requiresPassword ? { password: deletePassword } : undefined, {
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, {
       onSuccess: () => {
-        closeDeleteModal();
-        toast("Account deleted. We're sorry to see you go.");
+        setConfirmLogout(false);
+        toast("Logged out");
         nav("home");
-      },
-      onError: (err) => {
-        setDeleteError(err instanceof Error ? err.message : "Could not delete account");
       },
     });
   };
@@ -7464,7 +7536,14 @@ export function SellerProfile() {
         {[
           { icon: "user", en: "Owner name", sub: sellerName, onAct: editOwnerName },
           { icon: "mail", en: "Email", sub: user?.email ?? "—", onAct: undefined },
-          { icon: "lock", en: "Password", sub: "Managed via sign-in", onAct: undefined },
+          {
+            icon: "lock",
+            en: noPassword ? "Set a password" : "Reset password",
+            sub: noPassword
+              ? "Add a password to also sign in with email"
+              : "Send a code to your email",
+            onAct: () => setPwdResetOpen(true),
+          },
         ].map((r, i, a) => (
           <button
             key={r.en}
@@ -7493,11 +7572,7 @@ export function SellerProfile() {
       </div>
 
       <div style={{ display: "flex", gap: 10 }}>
-        <Button
-          variant="secondary"
-          full
-          onClick={() => logoutMutation.mutate(undefined, { onSuccess: () => nav("home") })}
-        >
+        <Button variant="secondary" full onClick={() => setConfirmLogout(true)}>
           Log out
         </Button>
         <Button variant="danger" full onClick={() => setConfirmDelete(true)}>
@@ -7505,135 +7580,20 @@ export function SellerProfile() {
         </Button>
       </div>
 
-      {confirmDelete && (
-        <div
-          onClick={closeDeleteModal}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 700,
-            background: "rgba(11,18,32,.6)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 20,
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "#fff",
-              borderRadius: "var(--r-xl)",
-              padding: 28,
-              width: "100%",
-              maxWidth: 460,
-              boxShadow: "var(--sh-3)",
-            }}
-          >
-            <h3
-              style={{
-                margin: "0 0 12px",
-                fontSize: "1.125rem",
-                fontWeight: 800,
-                color: "var(--ink-900)",
-              }}
-            >
-              Delete your seller account?
-            </h3>
-            <p
-              style={{
-                margin: "0 0 14px",
-                color: "var(--ink-500)",
-                fontSize: ".9375rem",
-                lineHeight: 1.5,
-              }}
-            >
-              This is <b style={{ color: "var(--danger)" }}>permanent</b>. Your shop, all your
-              product listings, reviews, and messages will be removed. If your products have any
-              existing orders, deletion is blocked — contact support instead.
-            </p>
-            <p
-              style={{
-                margin: "0 0 8px",
-                fontSize: ".8125rem",
-                fontWeight: 700,
-                color: "var(--ink-700)",
-              }}
-            >
-              Type <b style={{ color: "var(--danger)" }}>DELETE</b> to confirm
-            </p>
-            <input
-              value={deleteText}
-              onChange={(e) => setDeleteText(e.target.value)}
-              placeholder="Type DELETE"
-              autoFocus
-              style={{
-                width: "100%",
-                height: 44,
-                border: "1.5px solid var(--line-200)",
-                borderRadius: "var(--r-md)",
-                padding: "0 14px",
-                fontSize: ".9375rem",
-                fontFamily: "var(--font-sans)",
-                outline: "none",
-                marginBottom: requiresPassword ? 12 : 18,
-                letterSpacing: ".02em",
-              }}
-            />
-            {requiresPassword && (
-              <>
-                <p
-                  style={{
-                    margin: "0 0 8px",
-                    fontSize: ".8125rem",
-                    fontWeight: 700,
-                    color: "var(--ink-700)",
-                  }}
-                >
-                  Confirm your password
-                </p>
-                <PasswordInput
-                  value={deletePassword}
-                  onChange={(e) => setDeletePassword(e.target.value)}
-                  placeholder="Your password"
-                  autoComplete="current-password"
-                  inputStyle={{
-                    width: "100%",
-                    height: 44,
-                    border: "1.5px solid var(--line-200)",
-                    borderRadius: "var(--r-md)",
-                    padding: "0 14px",
-                    fontSize: ".9375rem",
-                    fontFamily: "var(--font-sans)",
-                    outline: "none",
-                    marginBottom: 18,
-                  }}
-                />
-              </>
-            )}
-            {deleteError && (
-              <p
-                style={{
-                  margin: "0 0 14px",
-                  color: "var(--danger)",
-                  fontSize: ".875rem",
-                  fontWeight: 600,
-                }}
-              >
-                {deleteError}
-              </p>
-            )}
-            <div style={{ display: "flex", gap: 10 }}>
-              <Button variant="secondary" full onClick={closeDeleteModal}>
-                Keep account
-              </Button>
-              <Button variant="danger" full disabled={!canDelete} onClick={handleDelete}>
-                {deleteMutation.isPending ? "Deleting…" : "Delete forever"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <SellerDeleteAccountModal open={confirmDelete} onClose={() => setConfirmDelete(false)} />
+
+      <PasswordResetModal
+        open={pwdResetOpen}
+        onClose={() => setPwdResetOpen(false)}
+        mode={pwdMode}
+      />
+
+      <LogoutConfirmModal
+        open={confirmLogout}
+        pending={logoutMutation.isPending}
+        onConfirm={handleLogout}
+        onCancel={() => setConfirmLogout(false)}
+      />
     </div>
   );
 }

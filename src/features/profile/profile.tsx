@@ -60,6 +60,7 @@ import {
   Footer,
   DevViewSwitcher,
   BuyerAvatar,
+  LogoutConfirmModal,
 } from "@/components/common";
 import { pathFromScreen } from "@/config/routes";
 import type { WriteReviewProps } from "@/types";
@@ -353,6 +354,7 @@ export function Profile() {
   const { data: savedAddresses = [] } = useAddresses();
   const { data: chatInbox } = useChatInbox();
   const unreadMessages = (chatInbox?.threads ?? []).reduce((sum, t) => sum + (t.unread || 0), 0);
+  const [confirmLogout, setConfirmLogout] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteText, setDeleteText] = useState("");
   const [deletePassword, setDeletePassword] = useState("");
@@ -370,11 +372,27 @@ export function Profile() {
     setDeleteError(null);
   };
 
+  // Escape-to-close + body scroll-lock while the delete modal is open.
+  useEffect(() => {
+    if (!confirmDelete) return;
+    const onKey = (e) => {
+      if (e.key === "Escape" && !deleteMutation.isPending) closeDeleteModal();
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [confirmDelete, deleteMutation.isPending]);
+
   const handleLogout = () => {
     logoutMutation.mutate(undefined, {
       onSuccess: () => {
         toast?.("Logged out");
         nav("home");
+        setConfirmLogout(false);
       },
     });
   };
@@ -601,7 +619,7 @@ export function Profile() {
       {/* ACCOUNT ACTIONS — bottom on mobile, left-rail bottom on desktop */}
       <div className="bz-profile__actions">
         <div className="bz-profile__card">
-          <button className="bz-logout-btn" onClick={handleLogout}>
+          <button className="bz-logout-btn" onClick={() => setConfirmLogout(true)}>
             <Icon name="logout" size={18} color="var(--danger)" />
             Log out
           </button>
@@ -612,10 +630,20 @@ export function Profile() {
         </div>
       </div>
 
+      {/* Logout confirmation modal */}
+      <LogoutConfirmModal
+        open={confirmLogout}
+        pending={logoutMutation.isPending}
+        onConfirm={handleLogout}
+        onCancel={() => setConfirmLogout(false)}
+      />
+
       {/* Account deletion confirmation modal */}
       {confirmDelete && (
         <div
-          onClick={closeDeleteModal}
+          onClick={() => {
+            if (!deleteMutation.isPending) closeDeleteModal();
+          }}
           style={{
             position: "fixed",
             inset: 0,
@@ -627,6 +655,10 @@ export function Profile() {
             padding: 20,
           }}
         >
+          <style>{`
+            .bz-delete-actions { display: flex; gap: 10px; flex-direction: row; }
+            @media (max-width: 480px) { .bz-delete-actions { flex-direction: column; } }
+          `}</style>
           <div
             onClick={(e) => e.stopPropagation()}
             className="bz-modal"
@@ -763,12 +795,23 @@ export function Profile() {
                 {deleteError}
               </p>
             )}
-            <div style={{ display: "flex", gap: 10 }}>
-              <Button variant="secondary" full onClick={closeDeleteModal}>
+            <div className="bz-delete-actions">
+              <Button
+                variant="secondary"
+                full
+                disabled={deleteMutation.isPending}
+                onClick={closeDeleteModal}
+              >
                 Keep account
               </Button>
-              <Button variant="danger" full disabled={!canDelete} onClick={handleDelete}>
-                {deleteMutation.isPending ? "Deleting…" : "Delete forever"}
+              <Button
+                variant="danger"
+                full
+                disabled={!canDelete}
+                loading={deleteMutation.isPending}
+                onClick={handleDelete}
+              >
+                Delete forever
               </Button>
             </div>
           </div>

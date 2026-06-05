@@ -18,6 +18,11 @@ export interface CheckoutPayload {
   paymentMethod: "cod";
   /** Speed chosen by the customer; combined pricing is resolved server-side. */
   deliveryTier?: DeliveryTier;
+  /**
+   * Product ids the buyer chose to check out. Omitted/empty ⇒ the whole cart.
+   * The server orders and clears only these, leaving the rest in the cart.
+   */
+  selectedItemIds?: string[];
   addressId?: string;
   deliveryAddress?: DeliveryAddress;
   saveAddress?: {

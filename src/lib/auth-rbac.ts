@@ -3,12 +3,17 @@ import type { AuthUser } from "@/types/auth";
 
 const PUBLIC_SCREENS = new Set(["auth", "auth-callback"]);
 
-/** Buyer screens a guest sees rendered normally (read-only catalog browsing). */
+/**
+ * Buyer screens a guest sees rendered normally (read-only browsing). `video` is
+ * here too: anyone may watch the reel feed signed-out — the write actions inside
+ * it (like, follow, save, add-to-cart) gate themselves with a sign-in prompt.
+ */
 const GUEST_VIEW_SCREENS = new Set([
   "home",
   "browse",
   "pdp",
   "store",
+  "video",
   "help",
   "privacy",
   "terms",
@@ -50,8 +55,8 @@ export function isGuestAllowedScreen(screen: string): boolean {
 }
 
 /**
- * Whether a guest sees the real screen rendered. Public/browse screens: yes.
- * Other buyer screens (video, cart, orders, bargains, account, …): no — the
+ * Whether a guest sees the real screen rendered. Public/browse/video screens:
+ * yes. Account buyer screens (cart, orders, bargains, account, …): no — the
  * screen layer renders a signed-out sign-in CTA instead of bouncing to /auth.
  */
 export function isGuestViewableScreen(screen: string): boolean {

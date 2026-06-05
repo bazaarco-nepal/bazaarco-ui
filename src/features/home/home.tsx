@@ -49,6 +49,7 @@ import {
   Navbar,
   Footer,
   DevViewSwitcher,
+  BuyerAvatar,
 } from "@/components/common";
 import { PicksSections } from "./_components/picks-tabs";
 import { SearchOverlay } from "./_components/search-overlay";
@@ -211,24 +212,13 @@ export function Home() {
         >
           <W style={{ paddingTop: 18, paddingBottom: 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: "50%",
-                  background: "var(--tint-red-50)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
+              <AppLink
+                href={pathFromScreen("profile")}
+                ariaLabel="Your profile"
+                style={{ display: "inline-flex", flexShrink: 0 }}
               >
-                <img
-                  src="/hiro%20hi%20Background%20Removed.png"
-                  alt="Hiro"
-                  style={{ width: 34, height: 34, objectFit: "contain" }}
-                />
-              </div>
+                <BuyerAvatar user={user} size={44} fontSize={18} />
+              </AppLink>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", fontWeight: 600 }}>
                   Hello 👋

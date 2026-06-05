@@ -25,6 +25,7 @@ import { useBazaarStore } from "@/store/bazaar-store";
 import { formatDeliverToLabel } from "@/lib/delivery-location";
 import { ASSETS } from "@/config/assets";
 import { BuyerAvatar } from "@/components/common/buyer-avatar";
+import { LogoutConfirmModal } from "@/components/common/logout-confirm-modal";
 
 import type { BazaarContextValue } from "@/types/bazaar";
 
@@ -612,7 +613,7 @@ export function NavMenuItem({ icon, label, danger, onClick, href, onNavigate }) 
   );
 }
 
-function AccountMenuPanel({ navLabel, user, authed, goAndClose, logoutMutation }) {
+function AccountMenuPanel({ navLabel, user, authed, goAndClose, onLogout }) {
   return (
     <>
       <AppLink
@@ -684,12 +685,7 @@ function AccountMenuPanel({ navLabel, user, authed, goAndClose, logoutMutation }
       />
       <div style={{ height: 1, background: "var(--line-200)", margin: "6px 4px" }} />
       {authed ? (
-        <NavMenuItem
-          icon="x"
-          label="Log out"
-          danger
-          onClick={() => logoutMutation.mutate(undefined, { onSuccess: () => goAndClose("home") })}
-        />
+        <NavMenuItem icon="x" label="Log out" danger onClick={onLogout} />
       ) : (
         <NavMenuItem
           icon="user"
@@ -749,6 +745,22 @@ export function Navbar() {
     nav(s);
   };
 
+  // Logout is always confirmed: close the account menu/sheet, then open the
+  // shared confirmation modal. Signing out only happens once the user confirms.
+  const [confirmLogout, setConfirmLogout] = useState(false);
+  const requestLogout = () => {
+    setMenuOpen(false);
+    setConfirmLogout(true);
+  };
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        setConfirmLogout(false);
+        nav("home");
+      },
+    });
+  };
+
   return (
     <header className={`bz-navbar${screen === "home" ? " bz-hide-mobile" : ""}`}>
       <div className="bz-navbar__trust bz-hide-mobile">
@@ -775,14 +787,18 @@ export function Navbar() {
         <AppLink
           href={pathFromScreen("home")}
           ariaLabel="BazaarCo home"
-          className="bz-navbar__brand"
+          className="bz-navbar__brand bz-hide-mobile"
         >
-          <span className="bz-hide-mobile">
-            <Logo height={38} />
-          </span>
-          <span className="bz-show-mobile">
-            <Logo height={26} />
-          </span>
+          <Logo height={38} />
+        </AppLink>
+
+        {/* Mobile-only: buyer's profile picture replaces the logo and links to the profile page */}
+        <AppLink
+          href={pathFromScreen("profile")}
+          ariaLabel="Your profile"
+          className="bz-navbar__brand bz-show-mobile"
+        >
+          <BuyerAvatar user={user} size={40} fontSize={16} />
         </AppLink>
 
         {!hasSavedAddress && (
@@ -912,7 +928,7 @@ export function Navbar() {
                   user={user}
                   authed={authed}
                   goAndClose={goAndClose}
-                  logoutMutation={logoutMutation}
+                  onLogout={requestLogout}
                 />
               </div>
             )}
@@ -961,12 +977,20 @@ export function Navbar() {
                 user={user}
                 authed={authed}
                 goAndClose={goAndClose}
-                logoutMutation={logoutMutation}
+                onLogout={requestLogout}
               />
             </div>
           </div>
         </>
       )}
+
+      {/* Shared logout confirmation — every logout entry point opens this. */}
+      <LogoutConfirmModal
+        open={confirmLogout}
+        pending={logoutMutation.isPending}
+        onConfirm={handleLogout}
+        onCancel={() => setConfirmLogout(false)}
+      />
     </header>
   );
 }

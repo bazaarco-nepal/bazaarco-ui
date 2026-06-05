@@ -516,7 +516,21 @@ export function Wishlist() {
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
       <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "24px 28px 0" }}>
+        {/* Mobile: plain text-only page title, matching the "My orders" header. */}
         <h1
+          className="bz-show-mobile"
+          style={{
+            display: "none",
+            margin: "0 0 24px",
+            fontSize: "1.5rem",
+            fontWeight: 800,
+            color: "var(--blue-deep)",
+          }}
+        >
+          My wishlist
+        </h1>
+        <h1
+          className="bz-hide-mobile"
           style={{
             margin: "0 0 20px",
             fontSize: "1.5rem",
@@ -602,7 +616,13 @@ export function Bargains() {
         className="bz-container-pad"
         style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "28px 28px 96px" }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+        {/* On mobile, when there are offers, this icon header is hidden in favour
+            of the plain "Bargain" title below — matching the "My orders" header.
+            When empty, it stays exactly as-is on every viewport. */}
+        <div
+          className={offers.length > 0 ? "bz-hide-mobile" : undefined}
+          style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}
+        >
           <div
             style={{
               width: 44,
@@ -633,6 +653,21 @@ export function Bargains() {
             </p>
           </div>
         </div>
+
+        {offers.length > 0 && (
+          <h1
+            className="bz-show-mobile"
+            style={{
+              display: "none",
+              margin: "0 0 24px",
+              fontSize: "1.5rem",
+              fontWeight: 800,
+              color: "var(--blue-deep)",
+            }}
+          >
+            Bargain
+          </h1>
+        )}
 
         {offers.length === 0 ? (
           <EmptyState

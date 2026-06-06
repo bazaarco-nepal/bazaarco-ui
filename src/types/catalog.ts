@@ -37,7 +37,6 @@ export interface Seller {
 export interface Product {
   id: string;
   name: string;
-  ne?: string;
   description?: string;
   metadata?: Record<string, unknown>;
   price: number;

@@ -194,11 +194,10 @@ export function Browse() {
 
   const effectiveQuery = urlQuery || query.trim();
 
-  useEffect(() => {
-    if (urlQuery && urlQuery !== query) {
-      setQuery(urlQuery);
-    }
-  }, [urlQuery, query, setQuery]);
+  // Note: syncing the URL's `q` into the store on navigation is handled once,
+  // without `query` as a dependency, in BazaarProvider. Re-syncing here (with
+  // `query` in deps) reverted every keystroke back to the URL value, making the
+  // navbar search box impossible to edit/erase on the results page.
 
   useEffect(() => {
     const next = browsePath({

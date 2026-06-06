@@ -10,6 +10,7 @@ export interface CategoryAttributeField {
   t: CategoryAttributeType;
   req?: boolean;
   o?: string[];
+  allowOther?: boolean;
   u?: string;
   help?: string;
 }

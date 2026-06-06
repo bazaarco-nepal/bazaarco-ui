@@ -9,6 +9,7 @@ export type ProductPhoto = {
   id: string;
   previewUrl: string;
   file: File;
+  sourceName: string;
 };
 
 const MAX_PHOTOS = 5;
@@ -18,8 +19,13 @@ const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif";
 
 type CropDraft = {
   objectUrl: string;
+  sourceName: string;
   replaceIndex: number | null;
 };
+
+function normalizeFileName(name: string) {
+  return name.trim().toLowerCase();
+}
 
 function clampOffset(
   offset: { x: number; y: number },
@@ -343,6 +349,7 @@ export function ProductPhotoPicker({
   photosRef.current = photos;
   const [cropDraft, setCropDraft] = useState<CropDraft | null>(null);
   const [pickIndex, setPickIndex] = useState<number | null>(null);
+  const [error, setError] = useState("");
 
   const revoke = (url: string) => {
     try {
@@ -354,6 +361,7 @@ export function ProductPhotoPicker({
 
   const openFilePicker = (replaceIndex: number | null) => {
     if (replaceIndex === null && photos.length >= max) return;
+    setError("");
     setPickIndex(replaceIndex);
     fileRef.current?.click();
   };
@@ -363,8 +371,18 @@ export function ProductPhotoPicker({
     e.target.value = "";
     if (!file) return;
     if (!file.type.startsWith("image/")) return;
+    const incomingName = normalizeFileName(file.name);
+    const duplicate = photos.some((photo, index) => {
+      if (pickIndex !== null && index === pickIndex) return false;
+      return normalizeFileName(photo.sourceName || photo.file.name) === incomingName;
+    });
+    if (duplicate) {
+      setError("You are not allowed to use the same photo twice.");
+      setPickIndex(null);
+      return;
+    }
     const objectUrl = URL.createObjectURL(file);
-    setCropDraft({ objectUrl, replaceIndex: pickIndex });
+    setCropDraft({ objectUrl, sourceName: file.name, replaceIndex: pickIndex });
     setPickIndex(null);
   };
 
@@ -377,7 +395,7 @@ export function ProductPhotoPicker({
     if (!cropDraft) return;
     revoke(cropDraft.objectUrl);
     const id = crypto.randomUUID?.() ?? String(Date.now());
-    const next: ProductPhoto = { id, previewUrl, file };
+    const next: ProductPhoto = { id, previewUrl, file, sourceName: cropDraft.sourceName };
     if (cropDraft.replaceIndex !== null) {
       const prev = photos[cropDraft.replaceIndex];
       if (prev) revoke(prev.previewUrl);
@@ -506,6 +524,20 @@ export function ProductPhotoPicker({
           </button>
         )}
       </div>
+
+      {error && (
+        <p
+          role="alert"
+          style={{
+            margin: "10px 0 0",
+            color: "var(--red)",
+            fontSize: ".8125rem",
+            fontWeight: 700,
+          }}
+        >
+          {error}
+        </p>
+      )}
 
       {photos.length > 0 &&
         (photos.length < min ? (

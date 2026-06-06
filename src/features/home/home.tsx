@@ -353,7 +353,7 @@ export function Home() {
             <SectionHead
               title="Shop by category"
               action="All categories"
-              actionHref={pathFromScreen("browse")}
+              actionHref={browsePath({ view: "categories" })}
             />
             <div className="bz-cat-row">
               {catalogLoading && !categories
@@ -374,15 +374,16 @@ export function Home() {
                       <div className="skel" style={{ height: 10, width: 48, borderRadius: 4 }} />
                     </div>
                   ))
-                : (categories ?? []).map((c) => (
-                    <CategoryTile
-                      key={c.id}
-                      c={c}
-                      compact
-                      href={browsePath({ cat: c.id })}
-                      onClick={() => nav("browse", { cat: c.id })}
-                    />
-                  ))}
+                : (categories ?? [])
+                    .slice(0, 12)
+                    .map((c) => (
+                      <CategoryTile
+                        key={c.id}
+                        c={c}
+                        href={browsePath({ cat: c.id })}
+                        onClick={() => nav("browse", { cat: c.id })}
+                      />
+                    ))}
             </div>
           </div>
         </W>

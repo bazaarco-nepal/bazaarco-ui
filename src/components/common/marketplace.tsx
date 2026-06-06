@@ -466,26 +466,30 @@ const CAT_TINTS = {
 // sync with the backend taxonomy in
 // bazaarco-api/src/infrastructure/database/seeds/catalog-data.ts.
 const CATEGORY_ICON: Record<string, string> = {
-  clothing: "shirt",
-  footwear: "sneaker",
-  beauty: "lipstick",
   electronics: "phone",
-  accessories: "handbag",
-  home: "home",
-  furniture: "sofa",
-  grocery: "basket",
-  books: "book",
-  sports: "football",
-  handicraft: "temple",
-  baby: "pacifier",
+  "home-appliances": "home",
+  fashion: "shirt",
+  "health-beauty": "lipstick",
+  "groceries-essentials": "basket",
+  "home-living": "home",
+  "mother-baby-kids": "pacifier",
+  "sports-outdoors": "football",
+  automotive: "truck",
+  "books-stationery": "book",
+  "musical-instruments": "headphones",
+  "pet-supplies": "leaf",
+  "crafts-heritage": "temple",
+  "digital-goods-services": "file",
+  "tools-home-improvement": "settings",
+  "medical-office-supplies": "filePlus",
 };
 
-// `compact` (home grid) hides the Nepali subtitle and shortens the label to a
-// single word so 4 cols stay calm. Full label + Nepali live on the browse page.
+// `compact` is kept for call-site compatibility, but category labels always use
+// the exact taxonomy name so buyer views do not drift from the catalog.
 export function CategoryTile({ c, onClick, compact = false, href }) {
   const [hov, setHov] = useState(false);
   const t = CAT_TINTS[c.tint] ?? CAT_TINTS.red;
-  const label = compact ? c.en.split(/\s*&\s*|\s+/)[0] : c.en;
+  const label = c.en;
   const iconName = CATEGORY_ICON[c.id] ?? "tag";
   // Nav use (e.g. home → /browse) passes `href` and renders a real anchor so the
   // browser can open it in a new tab. Filter use (browse page) omits href and
@@ -495,7 +499,7 @@ export function CategoryTile({ c, onClick, compact = false, href }) {
   return (
     <Tag
       {...tagProps}
-      className="bz-cat__tile"
+      className={`bz-cat__tile${compact ? " bz-cat__tile--compact" : ""}`}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{

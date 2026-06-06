@@ -11,6 +11,7 @@ const PUBLIC_SCREENS = new Set(["auth", "auth-callback"]);
 const GUEST_VIEW_SCREENS = new Set([
   "home",
   "browse",
+  "search",
   "pdp",
   "store",
   "video",

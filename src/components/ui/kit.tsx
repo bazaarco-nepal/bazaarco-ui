@@ -1512,6 +1512,16 @@ export function EmptyState({
   onSecondary,
   secondaryHref,
   dark,
+}: {
+  title: React.ReactNode;
+  message?: React.ReactNode;
+  cta?: React.ReactNode;
+  onCta?: () => void;
+  ctaHref?: string;
+  secondary?: React.ReactNode;
+  onSecondary?: () => void;
+  secondaryHref?: string;
+  dark?: boolean;
 }) {
   return (
     <div

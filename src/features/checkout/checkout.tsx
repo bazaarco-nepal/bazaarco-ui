@@ -361,7 +361,10 @@ export function Cart() {
 
   if (cart.length === 0)
     return (
-      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px" }}>
+      <div
+        className="bz-container-pad"
+        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px" }}
+      >
         <EmptyState
           title="Your cart is empty"
           message="Looks like you haven't added anything yet. Let's find something you'll love."
@@ -374,7 +377,10 @@ export function Cart() {
     );
 
   return (
-    <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "24px 28px 0" }}>
+    <div
+      className="bz-container-pad"
+      style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "24px 28px 0" }}
+    >
       <AppLink
         href={pathFromScreen("home")}
         className="bz-show-mobile bz-show-mobile--flex"
@@ -933,7 +939,10 @@ export function Checkout() {
   const payLabel = "Place order";
 
   return (
-    <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 80px" }}>
+    <div
+      className="bz-container-pad"
+      style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 80px" }}
+    >
       <AppLink
         href={pathFromScreen("cart")}
         style={{

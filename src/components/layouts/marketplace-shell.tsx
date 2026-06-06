@@ -11,6 +11,7 @@ import { useBazaarStore } from "@/store/bazaar-store";
 const BUYER_BOTTOM_NAV_SCREENS = new Set([
   "home",
   "browse",
+  "search",
   "bargains",
   "cart",
   "checkout",

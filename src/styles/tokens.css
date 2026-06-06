@@ -1722,6 +1722,13 @@ body {
   max-width: min(560px, calc(100vw - 32px)) !important;
 }
 
+/* Search results: always a 2-column grid on mobile, regardless of result count */
+@media (max-width: 768px) {
+  .bz-search-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
 /* Hide on small screens */
 @media (max-width: 768px) {
   .bz-hide-mobile {

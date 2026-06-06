@@ -69,7 +69,7 @@ function ScreenLoader() {
 /** Signed-out state for a gated buyer screen — guests land here, then opt in. */
 function SignedOutScreen({ onLogin }: { onLogin: () => void }) {
   return (
-    <div style={{ padding: "28px 28px 96px" }}>
+    <div className="bz-container-pad" style={{ padding: "28px 28px 96px" }}>
       <EmptyState
         title="Log in to continue"
         message="Sign in to access your account, orders, bargains, messages, and more."

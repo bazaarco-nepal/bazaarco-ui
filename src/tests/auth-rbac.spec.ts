@@ -19,6 +19,14 @@ describe("guest video access", () => {
     }
   });
 
+  // Regression: searching for a product must not require sign-in. The faceted
+  // /search page is a read-only browsing surface (the Core API /search route is
+  // public), so guests see real results, not a "Log in to continue" wall.
+  it("a guest can search for products without signing in", () => {
+    expect(isGuestAllowedScreen("search")).toBe(true);
+    expect(isGuestViewableScreen("search")).toBe(true);
+  });
+
   it("account screens still require sign-in (guests get the CTA, not the screen)", () => {
     for (const screen of ["cart", "checkout", "orders", "bargains", "wishlist", "profile"]) {
       expect(isGuestViewableScreen(screen), `"${screen}" must stay gated`).toBe(false);

@@ -231,7 +231,10 @@ export function AddressesPage() {
     setDefault.isPending;
 
   return (
-    <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "24px 28px 80px" }}>
+    <div
+      className="bz-container-pad"
+      style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "24px 28px 80px" }}
+    >
       <AppLink
         href={pathFromScreen("profile")}
         onNavigate={() => nav("profile")}

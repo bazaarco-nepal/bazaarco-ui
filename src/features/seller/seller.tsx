@@ -444,7 +444,10 @@ export function SellerShell({ screen, children }) {
         {organization?.linked &&
           organization.verification &&
           organization.verification.status !== "approved" && (
-            <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "16px 28px 0" }}>
+            <div
+              className="bz-container-pad"
+              style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "16px 28px 0" }}
+            >
               <SellerVerificationBanner
                 status={organization.verification.status}
                 note={organization.verification.note}
@@ -683,7 +686,10 @@ export function SellerOnboarding() {
   // Only "none"/"rejected" fall through to the actual upload flow below.
   if (savedStatus === "approved") {
     return (
-      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
+      <div
+        className="bz-container-pad"
+        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
+      >
         <div style={{ maxWidth: 540, margin: "0 auto" }}>
           <SellerHelpBar />
           <div style={{ textAlign: "center", padding: "30px 0" }}>
@@ -716,7 +722,10 @@ export function SellerOnboarding() {
   if (savedStatus === "pending" && stage !== "done") {
     const submittedDoc = verification?.docType === "pan" ? "PAN" : "NID";
     return (
-      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
+      <div
+        className="bz-container-pad"
+        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
+      >
         <div style={{ maxWidth: 540, margin: "0 auto" }}>
           <SellerHelpBar />
           <div style={{ textAlign: "center", padding: "30px 0" }}>
@@ -773,7 +782,10 @@ export function SellerOnboarding() {
   }
 
   return (
-    <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
+    <div
+      className="bz-container-pad"
+      style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
+    >
       <div style={{ maxWidth: 540, margin: "0 auto" }}>
         <SellerHelpBar />
 
@@ -1566,7 +1578,10 @@ export function SellerDashboard() {
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
-      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
+      <div
+        className="bz-container-pad"
+        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
+      >
         <SellerHelpBar />
 
         {/* Greeting + range */}
@@ -2548,7 +2563,10 @@ export function SellerInbox() {
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
-      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
+      <div
+        className="bz-container-pad"
+        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
+      >
         <SellerHelpBar />
 
         <div
@@ -2862,7 +2880,10 @@ export function SellerOrderDetail() {
 
   if (!o) {
     return (
-      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
+      <div
+        className="bz-container-pad"
+        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
+      >
         <EmptyState
           icon="package"
           title="No order selected"
@@ -2913,7 +2934,10 @@ export function SellerOrderDetail() {
   };
 
   return (
-    <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
+    <div
+      className="bz-container-pad"
+      style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
+    >
       <div style={{ maxWidth: 620, margin: "0 auto" }}>
         <SellerHelpBar />
 
@@ -4902,6 +4926,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
   if (!item) {
     return (
       <div
+        className="bz-container-pad"
         style={{
           maxWidth: "var(--container)",
           margin: "0 auto",
@@ -4923,6 +4948,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
       <div
+        className="bz-container-pad"
         style={{
           maxWidth: "var(--container)",
           margin: "0 auto",
@@ -5497,6 +5523,7 @@ export function SellerInventory() {
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
       <div
+        className="bz-container-pad"
         style={{
           maxWidth: "var(--container)",
           margin: "0 auto",
@@ -6209,7 +6236,7 @@ export function SellerLedger() {
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
       <div
-        className="bz-seller-ledger-print"
+        className="bz-seller-ledger-print bz-container-pad"
         style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
       >
         <div className="bz-no-print">
@@ -7066,7 +7093,10 @@ export function SellerBargain() {
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
-      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
+      <div
+        className="bz-container-pad"
+        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
+      >
         <SellerHelpBar />
         <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
           Bargaining
@@ -7408,7 +7438,10 @@ export function SellerReviews() {
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
-      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
+      <div
+        className="bz-container-pad"
+        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
+      >
         <SellerHelpBar />
         <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
           Reviews
@@ -7652,6 +7685,7 @@ export function SellerStorefront() {
         />
       ) : null}
       <div
+        className="bz-container-pad"
         style={{
           maxWidth: "var(--container)",
           margin: "0 auto",
@@ -7991,7 +8025,10 @@ export function SellerVideos() {
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
-      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
+      <div
+        className="bz-container-pad"
+        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
+      >
         <SellerHelpBar />
         <SellerVideoLibrary
           videos={videos}
@@ -8646,7 +8683,10 @@ export function SellerProfile() {
   };
 
   return (
-    <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
+    <div
+      className="bz-container-pad"
+      style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
+    >
       <SellerHelpBar />
       <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
         My profile

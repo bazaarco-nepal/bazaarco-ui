@@ -12,7 +12,10 @@ type InfoPageProps = {
 
 function InfoPageShell({ title, children, showBrowse = true }: InfoPageProps) {
   return (
-    <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "28px 28px 80px" }}>
+    <div
+      className="bz-container-pad"
+      style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "28px 28px 80px" }}
+    >
       <AppLink
         href={pathFromScreen("profile")}
         style={{

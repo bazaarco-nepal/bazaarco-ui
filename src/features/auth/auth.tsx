@@ -307,6 +307,7 @@ export function Auth() {
 
   return (
     <div
+      className="bz-container-pad"
       style={{
         minHeight: "calc(100vh - 110px)",
         background: "var(--page)",

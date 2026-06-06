@@ -1574,9 +1574,16 @@ body {
   font-size: clamp(1.25rem, 4vw, 1.5rem) !important;
 }
 
-/* Containers — kill horizontal overflow on mobile */
+/* Containers — kill horizontal overflow on mobile.
+   Single source of truth for the mobile page gutter: every page root (buyer
+   and seller) carries one of these container classes, so the left/right gutter
+   is identical — 16px — across the whole app on mobile. Only touches horizontal
+   padding; each screen keeps its own top/bottom spacing. (bz-store-page and
+   bz-pdp-root already set 16px L/R at this breakpoint via their own rules.) */
 @media (max-width: 768px) {
-  .bz-container-pad {
+  .bz-container-pad,
+  .bz-seller-page,
+  .bz-chat-page {
     padding-left: 16px !important;
     padding-right: 16px !important;
   }

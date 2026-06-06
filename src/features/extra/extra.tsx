@@ -75,7 +75,10 @@ export function Tracking() {
 
   if (!orderId) {
     return (
-      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "24px 28px 80px" }}>
+      <div
+        className="bz-container-pad"
+        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "24px 28px 80px" }}
+      >
         <EmptyState
           icon="package"
           title="No order selected"
@@ -106,7 +109,10 @@ export function Tracking() {
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
-      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "24px 28px 0" }}>
+      <div
+        className="bz-container-pad"
+        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "24px 28px 0" }}
+      >
         <AppLink
           href={pathFromScreen("orders")}
           style={{
@@ -493,7 +499,10 @@ export function Wishlist() {
 
   if (!authed) {
     return (
-      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px" }}>
+      <div
+        className="bz-container-pad"
+        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px" }}
+      >
         <EmptyState
           title="Sign in to see your wishlist"
           message="Save products and sellers you love — they stay on your account."
@@ -514,7 +523,10 @@ export function Wishlist() {
 
   if (totalSaved === 0) {
     return (
-      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px" }}>
+      <div
+        className="bz-container-pad"
+        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px" }}
+      >
         <EmptyState
           title="Your wishlist is empty"
           message="Tap the heart on any product or seller to save them here."
@@ -529,7 +541,10 @@ export function Wishlist() {
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
-      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "24px 28px 0" }}>
+      <div
+        className="bz-container-pad"
+        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "24px 28px 0" }}
+      >
         {/* Mobile: plain text-only page title, matching the "My orders" header. */}
         <h1
           className="bz-show-mobile"

@@ -63,6 +63,7 @@ import {
 } from "@/hooks/use-bargains";
 import { useUploadImage } from "@/hooks/use-media-upload";
 import type { SellerInventoryItem } from "@/services/api/seller";
+import type { CategoryAttributeField } from "@/types";
 import type { OrderStatus } from "@/lib/order-utils";
 import {
   useCreateProduct,
@@ -3182,12 +3183,72 @@ export function SellerOrderDetail() {
   );
 }
 
-/* ---------- 4.4a Category-specific attribute fields ---------- */
-export function CategoryAttrFields({ category, values, onChange }) {
+const RESERVED_METADATA_KEYS = new Set(["stock"]);
+
+function labelFromMetadataKey(key: string) {
+  return key
+    .replace(/[_-]+/g, " ")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function keyFromMetadataLabel(label: string) {
+  const words = label
+    .trim()
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!words.length) return "";
+  const [first, ...rest] = words;
+  return [
+    first.toLowerCase(),
+    ...rest.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()),
+  ].join("");
+}
+
+function uniqueMetadataKey(label: string, existing: Set<string>, current?: string) {
+  const base = keyFromMetadataLabel(label);
+  if (!base) return "";
+  if (base === current || !existing.has(base)) return base;
+  let i = 2;
+  while (existing.has(`${base}${i}`) && `${base}${i}` !== current) i += 1;
+  return `${base}${i}`;
+}
+
+function cleanMetadata(values: Record<string, unknown>) {
+  return Object.fromEntries(
+    Object.entries(values).filter(([key, value]) => {
+      if (RESERVED_METADATA_KEYS.has(key)) return false;
+      if (value === undefined || value === null) return false;
+      if (typeof value === "string" && value.trim() === "") return false;
+      if (Array.isArray(value) && value.length === 0) return false;
+      return true;
+    }),
+  );
+}
+
+/* ---------- 4.4a Product metadata fields ---------- */
+export function CategoryAttrFields({
+  category,
+  values,
+  onChange,
+}: {
+  category: string;
+  values: Record<string, unknown>;
+  onChange: (next: Record<string, unknown>) => void;
+}) {
   const { data: categories = [] } = useCategories();
   const [otherText, setOtherText] = useState<Record<string, string>>({});
+  const [customLabels, setCustomLabels] = useState<Record<string, string>>({});
+  const [newMetaLabel, setNewMetaLabel] = useState("");
+  const [newMetaValue, setNewMetaValue] = useState("");
   const fields = categories.find((c) => c.id === category)?.fields || [];
-  if (!fields.length) return null;
+  const fieldKeys = new Set(fields.map((field) => field.k));
+  const customKeys = Object.keys(values).filter(
+    (key) => !fieldKeys.has(key) && !RESERVED_METADATA_KEYS.has(key),
+  );
   const inputStyle = {
     width: "100%",
     height: 48,
@@ -3200,46 +3261,89 @@ export function CategoryAttrFields({ category, values, onChange }) {
     fontFamily: "var(--font-sans)",
     color: "var(--ink-900)",
   };
-  const set = (k, v) => onChange({ ...values, [k]: v });
-  const toggleMulti = (k, opt) => {
+  const buttonStyle = {
+    minHeight: 40,
+    padding: "0 12px",
+    borderRadius: "var(--r-md)",
+    border: "1.5px solid var(--line-200)",
+    background: "#fff",
+    color: "var(--ink-600)",
+    fontWeight: 700,
+    cursor: "pointer",
+  };
+  const set = (k: string, v: unknown) => onChange(cleanMetadata({ ...values, [k]: v }));
+  const remove = (k: string) => {
+    const next = { ...values };
+    delete next[k];
+    onChange(cleanMetadata(next));
+  };
+  const toggleMulti = (k: string, opt: string) => {
     const cur = Array.isArray(values[k]) ? values[k] : [];
     set(k, cur.includes(opt) ? cur.filter((x) => x !== opt) : [...cur, opt]);
   };
-  const addOther = (k) => {
+  const addOther = (k: string) => {
     const raw = (otherText[k] || "").trim();
     if (!raw) return;
-    const cur = Array.isArray(values[k]) ? values[k] : [];
+    const cur = Array.isArray(values[k]) ? (values[k] as string[]) : [];
     if (!cur.some((x) => x.toLowerCase() === raw.toLowerCase())) set(k, [...cur, raw]);
     setOtherText((t) => ({ ...t, [k]: "" }));
+  };
+  const commitCustomLabel = (oldKey: string) => {
+    const label = (customLabels[oldKey] ?? labelFromMetadataKey(oldKey)).trim();
+    const existing = new Set(Object.keys(values));
+    const nextKey = uniqueMetadataKey(label, existing, oldKey);
+    if (!nextKey || nextKey === oldKey) return;
+    const next = { ...values, [nextKey]: values[oldKey] };
+    delete next[oldKey];
+    onChange(cleanMetadata(next));
+    setCustomLabels((labels) => {
+      const copy = { ...labels };
+      delete copy[oldKey];
+      copy[nextKey] = label;
+      return copy;
+    });
+  };
+  const addCustom = () => {
+    const label = newMetaLabel.trim();
+    const value = newMetaValue.trim();
+    if (!label || !value) return;
+    const key = uniqueMetadataKey(label, new Set(Object.keys(values)));
+    if (!key) return;
+    onChange(cleanMetadata({ ...values, [key]: value }));
+    setCustomLabels((labels) => ({ ...labels, [key]: label }));
+    setNewMetaLabel("");
+    setNewMetaValue("");
   };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {fields.map((f) => (
         <div key={f.k}>
-          <label
-            style={{
-              fontSize: ".8125rem",
-              fontWeight: 700,
-              color: "var(--ink-700)",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              marginBottom: 6,
-              flexWrap: "wrap",
-            }}
-          >
-            {f.en}{" "}
-            {f.req && (
-              <span style={{ color: "var(--red)", fontWeight: 800 }} title="Required">
-                *
-              </span>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+            <label
+              style={{
+                fontSize: ".8125rem",
+                fontWeight: 700,
+                color: "var(--ink-700)",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                marginBottom: 6,
+                flexWrap: "wrap",
+              }}
+            >
+              {f.en}
+              {f.u && (
+                <span style={{ color: "var(--ink-400)", fontWeight: 600, fontSize: ".75rem" }}>
+                  ({f.u})
+                </span>
+              )}
+            </label>
+            {values[f.k] !== undefined && (
+              <button type="button" onClick={() => remove(f.k)} style={buttonStyle}>
+                Clear
+              </button>
             )}
-            {f.u && (
-              <span style={{ color: "var(--ink-400)", fontWeight: 600, fontSize: ".75rem" }}>
-                ({f.u})
-              </span>
-            )}
-          </label>
+          </div>
 
           {f.t === "select" && (
             <select
@@ -3252,7 +3356,7 @@ export function CategoryAttrFields({ category, values, onChange }) {
               }}
             >
               <option value="">Choose…</option>
-              {f.o.map((o) => (
+              {(f.o ?? []).map((o) => (
                 <option key={o} value={o}>
                   {o}
                 </option>
@@ -3262,8 +3366,14 @@ export function CategoryAttrFields({ category, values, onChange }) {
 
           {f.t === "multi" && (
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {[...f.o, ...(values[f.k] || []).filter((v) => !f.o.includes(v))].map((o) => {
-                const on = (values[f.k] || []).includes(o);
+              {[
+                ...(f.o ?? []),
+                ...((Array.isArray(values[f.k]) ? values[f.k] : []) as string[]).filter(
+                  (v) => !(f.o ?? []).includes(v),
+                ),
+              ].map((o) => {
+                const selected = Array.isArray(values[f.k]) ? (values[f.k] as string[]) : [];
+                const on = selected.includes(o);
                 return (
                   <button
                     key={o}
@@ -3385,6 +3495,61 @@ export function CategoryAttrFields({ category, values, onChange }) {
           )}
         </div>
       ))}
+
+      {customKeys.map((key) => (
+        <div key={key} className="bz-metadata-row">
+          <input
+            value={customLabels[key] ?? labelFromMetadataKey(key)}
+            onChange={(e) => setCustomLabels((labels) => ({ ...labels, [key]: e.target.value }))}
+            onBlur={() => commitCustomLabel(key)}
+            style={inputStyle}
+            aria-label="Metadata label"
+          />
+          <input
+            value={String(values[key] ?? "")}
+            onChange={(e) => set(key, e.target.value)}
+            style={inputStyle}
+            aria-label="Metadata value"
+          />
+          <button type="button" onClick={() => remove(key)} style={buttonStyle}>
+            Delete
+          </button>
+        </div>
+      ))}
+
+      <div className="bz-metadata-row">
+        <input
+          value={newMetaLabel}
+          onChange={(e) => setNewMetaLabel(e.target.value)}
+          placeholder="Custom detail"
+          style={inputStyle}
+        />
+        <input
+          value={newMetaValue}
+          onChange={(e) => setNewMetaValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              addCustom();
+            }
+          }}
+          placeholder="Value"
+          style={inputStyle}
+        />
+        <button
+          type="button"
+          onClick={addCustom}
+          disabled={!newMetaLabel.trim() || !newMetaValue.trim()}
+          style={{
+            ...buttonStyle,
+            borderColor: "var(--blue)",
+            color: "var(--blue)",
+            opacity: newMetaLabel.trim() && newMetaValue.trim() ? 1 : 0.45,
+          }}
+        >
+          Add
+        </button>
+      </div>
     </div>
   );
 }
@@ -3482,13 +3647,8 @@ export function SellerAddProduct({
 
   const titleOk = title.trim().length >= 3;
   const descriptionOk = description.trim().length >= 10;
-  const requiredAttrFields = attrFields.filter((f) => f.req);
-  const specsOk =
-    !category ||
-    attrFields.length === 0 ||
-    (requiredAttrFields.length > 0
-      ? requiredAttrFields.every((f) => attrFilled(f, attrs[f.k]))
-      : attrFields.some((f) => attrFilled(f, attrs[f.k])));
+  const categoryOk = Boolean(category);
+  const specsOk = true;
   const variantsOk = !hasVariants || variants.every((v) => v.price && v.stock);
   // Editing keeps the existing gallery — the update endpoint never touches images.
   const photosOk = isEdit ? true : productPhotos.length >= 3 && productPhotos.length <= 5;
@@ -3497,14 +3657,13 @@ export function SellerAddProduct({
     titleOk &&
     descriptionOk &&
     specsOk &&
-    Boolean(category) &&
+    categoryOk &&
     (hasVariants ? variantsOk : price && stock);
 
   const publishMissing: string[] = [];
   if (!photosOk) publishMissing.push("3 to 5 photos (required)");
   if (!titleOk) publishMissing.push("product name (3+ characters)");
   if (!descriptionOk) publishMissing.push("product description (10+ characters)");
-  if (!specsOk) publishMissing.push("required product specifications");
   if (!category) publishMissing.push("category");
   if (hasVariants) {
     if (!variantsOk) publishMissing.push("price & stock on every variant");
@@ -3669,7 +3828,7 @@ export function SellerAddProduct({
             {[
               photosOk,
               titleOk && descriptionOk,
-              specsOk,
+              categoryOk,
               hasVariants ? variantsOk : price && stock,
             ].map((done, i) => (
               <div
@@ -3929,21 +4088,14 @@ export function SellerAddProduct({
                 </span>
                 <div style={{ flex: 1 }}>
                   <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>
-                    Product specifications{" "}
-                    <span style={{ color: "var(--red)", fontWeight: 800 }}>*</span>
+                    Product specifications
                   </h3>
                 </div>
               </div>
               <p style={{ margin: "0 0 14px", fontSize: ".8125rem", color: "var(--ink-500)" }}>
-                Fill all fields marked{" "}
-                <span style={{ color: "var(--red)", fontWeight: 800 }}>*</span> — they appear under
-                Specifications on your product page.
+                Add any details that matter for this exact item. Suggested fields are optional, and
+                you can add your own.
               </p>
-              {!specsOk && (
-                <p style={{ margin: "0 0 14px", fontSize: ".8125rem", color: "var(--saffron)" }}>
-                  Complete required specifications before publishing.
-                </p>
-              )}
 
               <CategoryAttrFields category={category} values={attrs} onChange={setAttrs} />
             </div>

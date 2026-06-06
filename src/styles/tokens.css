@@ -1036,6 +1036,13 @@ body {
   width: 100%;
 }
 
+.bz-metadata-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
 .bz-photo-cell {
   position: relative;
   aspect-ratio: 1;
@@ -1094,6 +1101,23 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+}
+
+@media (max-width: 560px) {
+  .bz-metadata-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .bz-metadata-row > button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .bz-photo-grid {
+    gap: 8px;
   }
 }
 
@@ -1627,13 +1651,20 @@ body {
     margin-bottom: 24px !important;
   }
   .bz-cat-row .bz-cat__tile {
-    height: 104px;
+    min-height: 112px;
     border-radius: 18px;
     justify-content: center;
     gap: 10px;
+    padding: 8px 6px !important;
   }
   .bz-cat-row .bz-cat__tile:hover .bz-cat__en {
     color: var(--blue-deep);
+  }
+  .bz-cat-row .bz-cat__en {
+    max-width: 100%;
+    font-size: 0.78rem !important;
+    line-height: 1.22;
+    overflow-wrap: anywhere;
   }
 }
 /* Desktop — contained 6-col grid. The card now constrains width, so we use
@@ -1653,13 +1684,19 @@ body {
     gap: 24px 10px;
   }
 }
-/* Mobile — 4 across, cap to first 8 (4 + 4); rest via "All categories" */
+/* Mobile — 3 across, cap to first 6 (3 + 3); rest via "All categories" */
 @media (max-width: 768px) {
   .bz-cat-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 18px 6px;
   }
-  .bz-cat-row > *:nth-child(n + 9) {
+  .bz-cat-row > *:nth-child(n + 7) {
     display: none !important;
+  }
+  .bz-cat-row .bz-cat__en {
+    font-size: 0.76rem !important;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
   }
 }
 

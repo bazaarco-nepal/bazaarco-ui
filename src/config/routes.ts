@@ -143,6 +143,7 @@ export type BrowsePathOptions = {
   q?: string;
   cat?: string | string[];
   sort?: string;
+  view?: "categories";
 };
 
 /** Build `/browse` with optional search, category, and sort query params. */
@@ -157,6 +158,7 @@ export function browsePath(options?: BrowsePathOptions): string {
   }
   const sort = options?.sort?.trim();
   if (sort) params.set("sort", sort);
+  if (options?.view === "categories") params.set("view", "categories");
   const qs = params.toString();
   return qs ? `/browse?${qs}` : "/browse";
 }

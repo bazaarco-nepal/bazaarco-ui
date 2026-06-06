@@ -10,6 +10,7 @@ export interface CategoryAttributeField {
   t: CategoryAttributeType;
   req?: boolean;
   o?: string[];
+  allowOther?: boolean;
   u?: string;
   help?: string;
 }
@@ -37,7 +38,6 @@ export interface Seller {
 export interface Product {
   id: string;
   name: string;
-  ne?: string;
   description?: string;
   metadata?: Record<string, unknown>;
   price: number;

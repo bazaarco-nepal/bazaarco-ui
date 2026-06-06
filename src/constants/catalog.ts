@@ -3,34 +3,6 @@
    ============================================================ */
 export const CATEGORIES = [
   {
-    id: "fashion",
-    en: "Fashion",
-    icon: "shirt",
-    tint: "red",
-    img: "https://picsum.photos/seed/cat-fashion/300/300",
-  },
-  {
-    id: "home",
-    en: "Home & Living",
-    icon: "home",
-    tint: "blue",
-    img: "https://picsum.photos/seed/cat-home/300/300",
-  },
-  {
-    id: "handicraft",
-    en: "Handicrafts",
-    icon: "palette",
-    tint: "saffron",
-    img: "https://picsum.photos/seed/cat-handicraft/300/300",
-  },
-  {
-    id: "beauty",
-    en: "Beauty",
-    icon: "sparkles",
-    tint: "purple",
-    img: "https://picsum.photos/seed/cat-beauty/300/300",
-  },
-  {
     id: "electronics",
     en: "Electronics",
     icon: "phone",
@@ -38,25 +10,109 @@ export const CATEGORIES = [
     img: "https://picsum.photos/seed/cat-electronics/300/300",
   },
   {
-    id: "grocery",
-    en: "Groceries",
+    id: "home-appliances",
+    en: "Home Appliances",
+    icon: "home",
+    tint: "blue",
+    img: "https://picsum.photos/seed/cat-home-appliances/300/300",
+  },
+  {
+    id: "fashion",
+    en: "Fashion",
+    icon: "shirt",
+    tint: "red",
+    img: "https://picsum.photos/seed/cat-fashion/300/300",
+  },
+  {
+    id: "health-beauty",
+    en: "Health & Beauty",
+    icon: "lipstick",
+    tint: "purple",
+    img: "https://picsum.photos/seed/cat-health-beauty/300/300",
+  },
+  {
+    id: "groceries-essentials",
+    en: "Groceries & Essentials",
     icon: "basket",
     tint: "green",
-    img: "https://picsum.photos/seed/cat-grocery/300/300",
+    img: "https://picsum.photos/seed/cat-groceries-essentials/300/300",
   },
   {
-    id: "books",
-    en: "Books",
+    id: "home-living",
+    en: "Home & Living",
+    icon: "home",
+    tint: "teal",
+    img: "https://picsum.photos/seed/cat-home-living/300/300",
+  },
+  {
+    id: "mother-baby-kids",
+    en: "Mother, Baby & Kids",
+    icon: "pacifier",
+    tint: "purple",
+    img: "https://picsum.photos/seed/cat-mother-baby-kids/300/300",
+  },
+  {
+    id: "sports-outdoors",
+    en: "Sports & Outdoors",
+    icon: "football",
+    tint: "teal",
+    img: "https://picsum.photos/seed/cat-sports-outdoors/300/300",
+  },
+  {
+    id: "automotive",
+    en: "Automotive",
+    icon: "truck",
+    tint: "slate",
+    img: "https://picsum.photos/seed/cat-automotive/300/300",
+  },
+  {
+    id: "books-stationery",
+    en: "Books & Stationery",
     icon: "book",
     tint: "gold",
-    img: "https://picsum.photos/seed/cat-books/300/300",
+    img: "https://picsum.photos/seed/cat-books-stationery/300/300",
   },
   {
-    id: "sports",
-    en: "Sports",
-    icon: "dumbbell",
-    tint: "teal",
-    img: "https://picsum.photos/seed/cat-sports/300/300",
+    id: "musical-instruments",
+    en: "Musical Instruments",
+    icon: "headphones",
+    tint: "saffron",
+    img: "https://picsum.photos/seed/cat-musical-instruments/300/300",
+  },
+  {
+    id: "pet-supplies",
+    en: "Pet Supplies",
+    icon: "leaf",
+    tint: "green",
+    img: "https://picsum.photos/seed/cat-pet-supplies/300/300",
+  },
+  {
+    id: "crafts-heritage",
+    en: "Crafts & Heritage",
+    icon: "temple",
+    tint: "saffron",
+    img: "https://picsum.photos/seed/cat-crafts-heritage/300/300",
+  },
+  {
+    id: "digital-goods-services",
+    en: "Digital Goods & Services",
+    icon: "file",
+    tint: "blue",
+    img: "https://picsum.photos/seed/cat-digital-goods-services/300/300",
+  },
+  {
+    id: "tools-home-improvement",
+    en: "Tools & Home Improvement",
+    icon: "settings",
+    tint: "gold",
+    img: "https://picsum.photos/seed/cat-tools-home-improvement/300/300",
+  },
+  {
+    id: "medical-office-supplies",
+    en: "Medical & Office Supplies",
+    icon: "filePlus",
+    tint: "slate",
+    img: "https://picsum.photos/seed/cat-medical-office-supplies/300/300",
   },
 ];
 
@@ -69,22 +125,26 @@ export const CATEGORIES = [
    Options stay English (sizes/standards/proper nouns); labels bilingual.
    ============================================================ */
 export const ATTR_CATEGORIES = [
-  { id: "clothing", en: "Fashion & Clothing", icon: "shirt" },
-  { id: "footwear", en: "Shoes & Footwear", icon: "tag" },
-  { id: "beauty", en: "Beauty & Cosmetics", icon: "sparkles" },
   { id: "electronics", en: "Electronics", icon: "phone" },
-  { id: "accessories", en: "Accessories", icon: "watch" },
-  { id: "home", en: "Home & Kitchen", icon: "home" },
-  { id: "furniture", en: "Furniture", icon: "home" },
-  { id: "grocery", en: "Groceries", icon: "basket" },
-  { id: "books", en: "Books & Stationery", icon: "book" },
-  { id: "handicraft", en: "Nepali Handmade", icon: "palette" },
-  { id: "baby", en: "Baby Products", icon: "sparkles" },
-  { id: "sports", en: "Sports & Fitness", icon: "dumbbell" },
+  { id: "home-appliances", en: "Home Appliances", icon: "home" },
+  { id: "fashion", en: "Fashion", icon: "shirt" },
+  { id: "health-beauty", en: "Health & Beauty", icon: "lipstick" },
+  { id: "groceries-essentials", en: "Groceries & Essentials", icon: "basket" },
+  { id: "home-living", en: "Home & Living", icon: "home" },
+  { id: "mother-baby-kids", en: "Mother, Baby & Kids", icon: "pacifier" },
+  { id: "sports-outdoors", en: "Sports & Outdoors", icon: "football" },
+  { id: "automotive", en: "Automotive", icon: "truck" },
+  { id: "books-stationery", en: "Books & Stationery", icon: "book" },
+  { id: "musical-instruments", en: "Musical Instruments", icon: "headphones" },
+  { id: "pet-supplies", en: "Pet Supplies", icon: "leaf" },
+  { id: "crafts-heritage", en: "Crafts & Heritage", icon: "temple" },
+  { id: "digital-goods-services", en: "Digital Goods & Services", icon: "file" },
+  { id: "tools-home-improvement", en: "Tools & Home Improvement", icon: "settings" },
+  { id: "medical-office-supplies", en: "Medical & Office Supplies", icon: "filePlus" },
 ];
 
-export const CATEGORY_ATTRIBUTES = {
-  clothing: [
+export const LEGACY_CATEGORY_ATTRIBUTES = {
+  fashion: [
     {
       k: "department",
       en: "For whom",
@@ -236,7 +296,7 @@ export const CATEGORY_ATTRIBUTES = {
       o: ["Waterproof", "Water-resistant", "Not waterproof"],
     },
   ],
-  beauty: [
+  "health-beauty": [
     {
       k: "type",
       en: "Product type",
@@ -377,7 +437,7 @@ export const CATEGORY_ATTRIBUTES = {
     },
     { k: "adjustable", en: "Adjustable", t: "toggle" },
   ],
-  home: [
+  "home-living": [
     {
       k: "type",
       en: "Product type",
@@ -457,7 +517,7 @@ export const CATEGORY_ATTRIBUTES = {
     },
     { k: "weightCap", en: "Weight it can hold", t: "text", u: "kg" },
   ],
-  grocery: [
+  "groceries-essentials": [
     {
       k: "foodType",
       en: "Food type",
@@ -507,7 +567,7 @@ export const CATEGORY_ATTRIBUTES = {
       help: "Required to sell packaged food in Nepal.",
     },
   ],
-  books: [
+  "books-stationery": [
     {
       k: "type",
       en: "Type",
@@ -544,7 +604,7 @@ export const CATEGORY_ATTRIBUTES = {
       o: ["Fiction", "Non-fiction", "Biography", "Academic", "Children's", "Cookbook"],
     },
   ],
-  handicraft: [
+  "crafts-heritage": [
     {
       k: "craft",
       en: "Craft type",
@@ -594,7 +654,7 @@ export const CATEGORY_ATTRIBUTES = {
       help: "For made-to-order items.",
     },
   ],
-  baby: [
+  "mother-baby-kids": [
     {
       k: "type",
       en: "Product type",
@@ -631,7 +691,7 @@ export const CATEGORY_ATTRIBUTES = {
       o: ["Machine wash gentle", "Sterilise", "Hand wash"],
     },
   ],
-  sports: [
+  "sports-outdoors": [
     {
       k: "activity",
       en: "Sport / activity",
@@ -679,6 +739,232 @@ export const CATEGORY_ATTRIBUTES = {
     },
   ],
 };
+
+const COMMON_METADATA_FIELDS = [
+  { k: "brand", en: "Brand", t: "text" },
+  { k: "model", en: "Model / variant", t: "text" },
+  { k: "material", en: "Material", t: "text" },
+  {
+    k: "color",
+    en: "Colour",
+    t: "multi",
+    o: ["Black", "White", "Blue", "Red", "Green", "Grey", "Gold", "Silver", "Multi"],
+    allowOther: true,
+  },
+  { k: "weight", en: "Weight", t: "text", u: "kg / g" },
+  { k: "dimensions", en: "Dimensions", t: "text", u: "L x W x H" },
+  { k: "origin", en: "Country / place of origin", t: "text" },
+  { k: "warranty", en: "Warranty", t: "text" },
+];
+
+const CATEGORY_METADATA_FIELDS = {
+  electronics: [
+    {
+      k: "productType",
+      en: "Product type",
+      t: "select",
+      o: ["Mobile phone", "Laptop", "Tablet", "TV", "Camera", "Audio", "Accessory", "Other"],
+    },
+    { k: "batteryCapacity", en: "Battery capacity", t: "text", u: "mAh / Wh" },
+    { k: "ram", en: "RAM", t: "text" },
+    { k: "ramType", en: "RAM type", t: "text" },
+    { k: "storage", en: "Storage", t: "text" },
+    { k: "processor", en: "Processor", t: "text" },
+    { k: "screenSize", en: "Screen size", t: "text", u: "inch" },
+    { k: "operatingSystem", en: "Operating system", t: "text" },
+    {
+      k: "connectivity",
+      en: "Connectivity",
+      t: "multi",
+      o: ["4G", "5G", "Wi-Fi", "Bluetooth", "NFC", "USB-C"],
+      allowOther: true,
+    },
+  ],
+  "home-appliances": [
+    {
+      k: "applianceType",
+      en: "Appliance type",
+      t: "select",
+      o: [
+        "Refrigerator",
+        "Washing machine",
+        "Microwave",
+        "Rice cooker",
+        "Fan",
+        "Heater",
+        "Mixer / grinder",
+        "Other",
+      ],
+    },
+    { k: "power", en: "Power", t: "text", u: "W" },
+    { k: "capacity", en: "Capacity", t: "text", u: "L / kg" },
+    { k: "energyRating", en: "Energy rating", t: "text" },
+    { k: "voltage", en: "Voltage", t: "text" },
+    { k: "installationRequired", en: "Installation required", t: "toggle" },
+  ],
+  fashion: [
+    { k: "department", en: "For whom", t: "select", o: ["Men", "Women", "Kids", "Unisex"] },
+    {
+      k: "size",
+      en: "Size",
+      t: "multi",
+      o: ["XS", "S", "M", "L", "XL", "XXL", "Free size"],
+      allowOther: true,
+    },
+    { k: "fabric", en: "Fabric", t: "text" },
+    { k: "fit", en: "Fit", t: "text" },
+    { k: "pattern", en: "Pattern", t: "text" },
+    { k: "care", en: "Care instructions", t: "text" },
+  ],
+  "health-beauty": [
+    {
+      k: "productType",
+      en: "Product type",
+      t: "select",
+      o: ["Skincare", "Makeup", "Hair care", "Fragrance", "Personal care", "Supplement", "Other"],
+    },
+    { k: "netQuantity", en: "Net quantity", t: "text", u: "ml / g / pcs" },
+    { k: "skinType", en: "Skin / hair type", t: "text" },
+    { k: "ingredients", en: "Key ingredients", t: "text" },
+    { k: "expiry", en: "Expiry / best before", t: "date" },
+    { k: "certification", en: "Certification / approval", t: "text" },
+  ],
+  "groceries-essentials": [
+    { k: "foodType", en: "Food / essential type", t: "text" },
+    { k: "netWeight", en: "Net weight / volume", t: "text", u: "kg / g / L / ml" },
+    { k: "ingredients", en: "Ingredients", t: "text" },
+    { k: "mfgDate", en: "Manufactured / packed on", t: "date" },
+    { k: "expiry", en: "Best before / expiry", t: "date" },
+    { k: "storage", en: "Storage instructions", t: "text" },
+    {
+      k: "dietary",
+      en: "Dietary tags",
+      t: "multi",
+      o: ["Organic", "Vegan", "Gluten-free", "Sugar-free"],
+      allowOther: true,
+    },
+  ],
+  "home-living": [
+    { k: "productType", en: "Product type", t: "text" },
+    { k: "room", en: "Room / use", t: "text" },
+    { k: "capacity", en: "Capacity", t: "text" },
+    { k: "setPieces", en: "Pieces in set", t: "num" },
+    { k: "care", en: "Care instructions", t: "text" },
+  ],
+  "mother-baby-kids": [
+    { k: "productType", en: "Product type", t: "text" },
+    { k: "ageRange", en: "Age range", t: "text" },
+    { k: "safetyCertification", en: "Safety certification", t: "text" },
+    { k: "bpaFree", en: "BPA-free", t: "toggle" },
+    { k: "hypoallergenic", en: "Hypoallergenic", t: "toggle" },
+  ],
+  "sports-outdoors": [
+    { k: "activity", en: "Sport / activity", t: "text" },
+    { k: "size", en: "Size", t: "text" },
+    {
+      k: "skillLevel",
+      en: "Skill level",
+      t: "select",
+      o: ["Beginner", "Intermediate", "Advanced", "Professional"],
+    },
+    { k: "waterResistance", en: "Water resistance", t: "text" },
+    { k: "loadCapacity", en: "Load capacity", t: "text", u: "kg" },
+  ],
+  automotive: [
+    { k: "partType", en: "Part / accessory type", t: "text" },
+    {
+      k: "vehicleType",
+      en: "Vehicle type",
+      t: "select",
+      o: ["Car", "Motorbike", "Scooter", "Truck", "Bus", "Other"],
+    },
+    { k: "compatibleModels", en: "Compatible models", t: "text" },
+    { k: "yearRange", en: "Year range", t: "text" },
+    { k: "partNumber", en: "Part number", t: "text" },
+  ],
+  "books-stationery": [
+    {
+      k: "productType",
+      en: "Product type",
+      t: "select",
+      o: ["Book", "Notebook", "Pen", "Art supply", "Office supply", "Other"],
+    },
+    { k: "author", en: "Author", t: "text" },
+    { k: "publisher", en: "Publisher", t: "text" },
+    { k: "language", en: "Language", t: "text" },
+    { k: "isbn", en: "ISBN", t: "text" },
+    { k: "pages", en: "Pages", t: "num" },
+  ],
+  "musical-instruments": [
+    { k: "instrumentType", en: "Instrument type", t: "text" },
+    {
+      k: "skillLevel",
+      en: "Skill level",
+      t: "select",
+      o: ["Beginner", "Intermediate", "Professional"],
+    },
+    { k: "bodyMaterial", en: "Body material", t: "text" },
+    { k: "stringCount", en: "String count", t: "num" },
+    { k: "includedAccessories", en: "Included accessories", t: "text" },
+  ],
+  "pet-supplies": [
+    {
+      k: "petType",
+      en: "Pet type",
+      t: "select",
+      o: ["Dog", "Cat", "Bird", "Fish", "Small pet", "Other"],
+    },
+    { k: "lifeStage", en: "Life stage", t: "select", o: ["Baby", "Adult", "Senior", "All ages"] },
+    { k: "flavor", en: "Flavour / scent", t: "text" },
+    { k: "netWeight", en: "Net weight / volume", t: "text" },
+    { k: "ingredients", en: "Ingredients", t: "text" },
+  ],
+  "crafts-heritage": [
+    { k: "craftType", en: "Craft type", t: "text" },
+    { k: "artisan", en: "Artisan / maker", t: "text" },
+    { k: "madeIn", en: "Made in", t: "text" },
+    { k: "technique", en: "Technique", t: "text" },
+    { k: "handmade", en: "Handmade", t: "toggle" },
+  ],
+  "digital-goods-services": [
+    {
+      k: "deliveryMethod",
+      en: "Delivery method",
+      t: "select",
+      o: ["Email", "Download link", "Account activation", "Online service", "Other"],
+    },
+    { k: "licenseType", en: "License / access type", t: "text" },
+    { k: "duration", en: "Duration", t: "text" },
+    { k: "platform", en: "Platform", t: "text" },
+    { k: "requirements", en: "Requirements", t: "text" },
+  ],
+  "tools-home-improvement": [
+    { k: "toolType", en: "Tool / improvement type", t: "text" },
+    {
+      k: "powerSource",
+      en: "Power source",
+      t: "select",
+      o: ["Manual", "Electric", "Battery", "Petrol", "Other"],
+    },
+    { k: "voltage", en: "Voltage", t: "text" },
+    { k: "includedItems", en: "Included items", t: "text" },
+    { k: "safetyRating", en: "Safety rating", t: "text" },
+  ],
+  "medical-office-supplies": [
+    { k: "supplyType", en: "Supply type", t: "text" },
+    { k: "quantity", en: "Quantity / pack size", t: "text" },
+    { k: "sterile", en: "Sterile", t: "toggle" },
+    { k: "expiry", en: "Expiry date", t: "date" },
+    { k: "certification", en: "Certification / compliance", t: "text" },
+  ],
+};
+
+export const CATEGORY_ATTRIBUTES = Object.fromEntries(
+  CATEGORIES.map((category) => [
+    category.id,
+    [...COMMON_METADATA_FIELDS, ...(CATEGORY_METADATA_FIELDS[category.id] ?? [])],
+  ]),
+);
 
 export const PROVINCES = [
   "Koshi",

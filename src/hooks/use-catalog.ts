@@ -13,11 +13,38 @@ import type { CategoryAttributeField, Product, Seller } from "@/types";
 
 const STALE_TIME = 5 * 60 * 1000;
 const PICKS_PAGE_SIZE = 12;
+const CATEGORY_DISPLAY_ORDER = [
+  "electronics",
+  "home-appliances",
+  "fashion",
+  "health-beauty",
+  "groceries-essentials",
+  "home-living",
+  "mother-baby-kids",
+  "sports-outdoors",
+  "automotive",
+  "books-stationery",
+  "musical-instruments",
+  "pet-supplies",
+  "crafts-heritage",
+  "digital-goods-services",
+  "tools-home-improvement",
+  "medical-office-supplies",
+];
+const CATEGORY_ORDER_INDEX = new Map(
+  CATEGORY_DISPLAY_ORDER.map((categoryId, index) => [categoryId, index]),
+);
 
 export function useCategories() {
   return useQuery({
     queryKey: queryKeys.catalog.categories,
     queryFn: () => catalogApi.getCategories(),
+    select: (categories) =>
+      [...categories].sort(
+        (a, b) =>
+          (CATEGORY_ORDER_INDEX.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+            (CATEGORY_ORDER_INDEX.get(b.id) ?? Number.MAX_SAFE_INTEGER) || a.en.localeCompare(b.en),
+      ),
     staleTime: STALE_TIME,
   });
 }

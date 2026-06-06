@@ -174,6 +174,7 @@ export function Browse() {
   const [loading, setLoading] = useState(true);
   const urlParams = useSearchParams();
   const urlQuery = urlParams.get("q")?.trim() ?? "";
+  const categoryView = urlParams.get("view") === "categories";
   const catFromUrl = useMemo(() => categoryIdsFromSearchParams(urlParams), [urlParams]);
   const [cats, setCats] = useState(catFromUrl);
   const [quick, setQuick] = useState([]);
@@ -200,10 +201,13 @@ export function Browse() {
   // navbar search box impossible to edit/erase on the results page.
 
   useEffect(() => {
+    const preserveCategoryView =
+      categoryView && !effectiveQuery && cats.length === 0 && sort === "popular";
     const next = browsePath({
       q: effectiveQuery || undefined,
       cat: cats.length ? cats : undefined,
       sort: sort !== "popular" ? sort : undefined,
+      view: preserveCategoryView ? "categories" : undefined,
     });
     if (typeof window !== "undefined") {
       const current = window.location.pathname + window.location.search;
@@ -211,7 +215,7 @@ export function Browse() {
         router.replace(next, { scroll: false });
       }
     }
-  }, [cats, effectiveQuery, sort, router]);
+  }, [categoryView, cats, effectiveQuery, sort, router]);
 
   const band = PLP_PRICE_BANDS.find((b) => b.id === priceBand);
   // Custom min/max take precedence over preset band.
@@ -337,6 +341,7 @@ export function Browse() {
     priceActive && { key: "p-range", label: priceLabel, onRemove: clearPrice },
   ].filter(Boolean);
   const hasActive = activeChips.length > 0;
+  const showCategoryBrowser = categoryView && !hasActive && !effectiveQuery;
 
   const browseHeading = (() => {
     if (effectiveQuery) return `Results for "${effectiveQuery}"`;
@@ -694,166 +699,223 @@ export function Browse() {
             </div>
           )}
 
-          {/* Header row + sort chips */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-end",
-              justifyContent: "space-between",
-              marginBottom: 14,
-              gap: 16,
-              flexWrap: "wrap",
-            }}
-          >
-            <div>
-              <h1
+          {showCategoryBrowser ? (
+            <>
+              <div style={{ marginBottom: 18 }}>
+                <h1
+                  style={{
+                    margin: 0,
+                    fontSize: "1.5rem",
+                    fontWeight: 800,
+                    color: "var(--blue-deep)",
+                  }}
+                >
+                  All categories
+                </h1>
+                <div
+                  className="tnum"
+                  style={{ fontSize: ".875rem", color: "var(--ink-400)", marginTop: 4 }}
+                >
+                  Choose a category to browse products.
+                </div>
+              </div>
+              <div className="bz-cat-card" style={{ display: "block", marginTop: 0 }}>
+                <div className="bz-cat-row">
+                  {(CATEGORIES ?? []).map((c) => (
+                    <CategoryTile
+                      key={c.id}
+                      c={c}
+                      href={browsePath({ cat: c.id })}
+                      onClick={() => setCats([c.id])}
+                    />
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Header row + sort chips */}
+              <div
                 style={{
-                  margin: 0,
-                  fontSize: "1.5rem",
-                  fontWeight: 800,
-                  color: "var(--blue-deep)",
+                  display: "flex",
+                  alignItems: "flex-end",
+                  justifyContent: "space-between",
+                  marginBottom: 14,
+                  gap: 16,
+                  flexWrap: "wrap",
                 }}
               >
-                {browseHeading}
-              </h1>
-              <div
-                className="tnum"
-                style={{ fontSize: ".875rem", color: "var(--ink-400)", marginTop: 4 }}
-              >
-                {loading ? "Searching…" : `${totalCount} product${totalCount === 1 ? "" : "s"}`}
-                {oos.length > 0 && <span> · {oos.length} out of stock</span>}
+                <div>
+                  <h1
+                    style={{
+                      margin: 0,
+                      fontSize: "1.5rem",
+                      fontWeight: 800,
+                      color: "var(--blue-deep)",
+                    }}
+                  >
+                    {browseHeading}
+                  </h1>
+                  <div
+                    className="tnum"
+                    style={{ fontSize: ".875rem", color: "var(--ink-400)", marginTop: 4 }}
+                  >
+                    {loading ? "Searching…" : `${totalCount} product${totalCount === 1 ? "" : "s"}`}
+                    {oos.length > 0 && <span> · {oos.length} out of stock</span>}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
 
-          {/* Shop by category — placed directly below search/header (Amazon pattern) */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              flexWrap: "wrap",
-              marginBottom: 14,
-            }}
-          >
-            <span
-              style={{
-                fontSize: ".75rem",
-                fontWeight: 700,
-                color: "var(--ink-400)",
-                textTransform: "uppercase",
-                letterSpacing: ".06em",
-                marginRight: 4,
-              }}
-            >
-              Shop by
-            </span>
-            {(CATEGORIES ?? []).map((c) => {
-              const on = cats.includes(c.id);
-              return (
-                <button
-                  key={c.id}
-                  onClick={() => toggleCat(c.id)}
-                  aria-pressed={on}
+              {/* Shop by category — placed directly below search/header (Amazon pattern) */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  flexWrap: "wrap",
+                  marginBottom: 14,
+                }}
+              >
+                <span
                   style={{
-                    padding: "6px 12px",
-                    borderRadius: "var(--r-full)",
-                    cursor: "pointer",
-                    fontWeight: 600,
                     fontSize: ".75rem",
-                    border: `1px solid ${on ? "var(--blue)" : "var(--line-200)"}`,
-                    background: on ? "var(--tint-blue-50)" : "var(--line-100)",
-                    color: on ? "var(--blue)" : "var(--ink-500)",
-                  }}
-                >
-                  {c.en}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Sort — segmented control, distinct from filters */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              marginBottom: 14,
-              flexWrap: "wrap",
-            }}
-          >
-            <span
-              style={{
-                fontSize: ".75rem",
-                fontWeight: 700,
-                color: "var(--ink-400)",
-                textTransform: "uppercase",
-                letterSpacing: ".06em",
-              }}
-            >
-              Sort by
-            </span>
-            <div
-              style={{
-                display: "inline-flex",
-                border: "1.5px solid var(--line-200)",
-                borderRadius: "var(--r-full)",
-                overflow: "hidden",
-                background: "#fff",
-              }}
-            >
-              {PLP_SORT_OPTIONS.map((o, i) => (
-                <button
-                  key={o.value}
-                  onClick={() => setSort(o.value)}
-                  aria-pressed={sort === o.value}
-                  style={{
-                    padding: "8px 16px",
-                    border: "none",
-                    cursor: "pointer",
-                    background: sort === o.value ? "var(--blue-deep)" : "transparent",
-                    color: sort === o.value ? "#fff" : "var(--ink-700)",
                     fontWeight: 700,
-                    fontSize: ".8125rem",
-                    whiteSpace: "nowrap",
-                    borderLeft: i === 0 ? "none" : "1px solid var(--line-200)",
+                    color: "var(--ink-400)",
+                    textTransform: "uppercase",
+                    letterSpacing: ".06em",
+                    marginRight: 4,
                   }}
                 >
-                  {o.label}
-                </button>
-              ))}
-            </div>
-          </div>
+                  Shop by
+                </span>
+                {(CATEGORIES ?? []).map((c) => {
+                  const on = cats.includes(c.id);
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => toggleCat(c.id)}
+                      aria-pressed={on}
+                      style={{
+                        padding: "6px 12px",
+                        borderRadius: "var(--r-full)",
+                        cursor: "pointer",
+                        fontWeight: 600,
+                        fontSize: ".75rem",
+                        border: `1px solid ${on ? "var(--blue)" : "var(--line-200)"}`,
+                        background: on ? "var(--tint-blue-50)" : "var(--line-100)",
+                        color: on ? "var(--blue)" : "var(--ink-500)",
+                      }}
+                    >
+                      {c.en}
+                    </button>
+                  );
+                })}
+              </div>
 
-          {/* Quick filters — 5 high-signal trust/delivery chips, bigger tap area */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              flexWrap: "wrap",
-              marginBottom: 10,
-            }}
-          >
-            <span
-              style={{
-                fontSize: ".75rem",
-                fontWeight: 700,
-                color: "var(--ink-400)",
-                textTransform: "uppercase",
-                letterSpacing: ".06em",
-                marginRight: 4,
-              }}
-            >
-              Filter
-            </span>
-            {PLP_QUICK_FILTERS.map((f) => {
-              const on = quick.includes(f.id);
-              return (
+              {/* Sort — segmented control, distinct from filters */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  marginBottom: 14,
+                  flexWrap: "wrap",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: ".75rem",
+                    fontWeight: 700,
+                    color: "var(--ink-400)",
+                    textTransform: "uppercase",
+                    letterSpacing: ".06em",
+                  }}
+                >
+                  Sort by
+                </span>
+                <div
+                  style={{
+                    display: "inline-flex",
+                    border: "1.5px solid var(--line-200)",
+                    borderRadius: "var(--r-full)",
+                    overflow: "hidden",
+                    background: "#fff",
+                  }}
+                >
+                  {PLP_SORT_OPTIONS.map((o, i) => (
+                    <button
+                      key={o.value}
+                      onClick={() => setSort(o.value)}
+                      aria-pressed={sort === o.value}
+                      style={{
+                        padding: "8px 16px",
+                        border: "none",
+                        cursor: "pointer",
+                        background: sort === o.value ? "var(--blue-deep)" : "transparent",
+                        color: sort === o.value ? "#fff" : "var(--ink-700)",
+                        fontWeight: 700,
+                        fontSize: ".8125rem",
+                        whiteSpace: "nowrap",
+                        borderLeft: i === 0 ? "none" : "1px solid var(--line-200)",
+                      }}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quick filters — 5 high-signal trust/delivery chips, bigger tap area */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  flexWrap: "wrap",
+                  marginBottom: 10,
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: ".75rem",
+                    fontWeight: 700,
+                    color: "var(--ink-400)",
+                    textTransform: "uppercase",
+                    letterSpacing: ".06em",
+                    marginRight: 4,
+                  }}
+                >
+                  Filter
+                </span>
+                {PLP_QUICK_FILTERS.map((f) => {
+                  const on = quick.includes(f.id);
+                  return (
+                    <button
+                      key={f.id}
+                      onClick={() => toggleQuick(f.id)}
+                      aria-pressed={on}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                        padding: "8px 14px",
+                        borderRadius: "var(--r-full)",
+                        cursor: "pointer",
+                        fontWeight: 700,
+                        fontSize: ".8125rem",
+                        minHeight: 36,
+                        border: `1.5px solid ${on ? "var(--blue)" : "var(--line-200)"}`,
+                        background: on ? "var(--tint-blue-50)" : "#fff",
+                        color: on ? "var(--blue)" : "var(--ink-700)",
+                      }}
+                    >
+                      <Icon name={f.icon} size={14} color={on ? "var(--blue)" : "var(--ink-500)"} />
+                      {f.label}
+                    </button>
+                  );
+                })}
                 <button
-                  key={f.id}
-                  onClick={() => toggleQuick(f.id)}
-                  aria-pressed={on}
+                  onClick={() => setSheet(true)}
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
@@ -864,154 +926,32 @@ export function Browse() {
                     fontWeight: 700,
                     fontSize: ".8125rem",
                     minHeight: 36,
-                    border: `1.5px solid ${on ? "var(--blue)" : "var(--line-200)"}`,
-                    background: on ? "var(--tint-blue-50)" : "#fff",
-                    color: on ? "var(--blue)" : "var(--ink-700)",
-                  }}
-                >
-                  <Icon name={f.icon} size={14} color={on ? "var(--blue)" : "var(--ink-500)"} />
-                  {f.label}
-                </button>
-              );
-            })}
-            <button
-              onClick={() => setSheet(true)}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "8px 14px",
-                borderRadius: "var(--r-full)",
-                cursor: "pointer",
-                fontWeight: 700,
-                fontSize: ".8125rem",
-                minHeight: 36,
-                border: "1.5px solid var(--line-200)",
-                background: "#fff",
-                color: "var(--ink-700)",
-              }}
-            >
-              <Icon name="sliders" size={14} /> Price · More
-            </button>
-          </div>
-
-          {/* Active filter chips — one-tap removal */}
-          {hasActive && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                flexWrap: "wrap",
-                marginBottom: 22,
-                padding: "10px 12px",
-                background: "var(--line-100)",
-                borderRadius: "var(--r-md)",
-              }}
-            >
-              <span style={{ fontSize: ".75rem", fontWeight: 700, color: "var(--ink-500)" }}>
-                Active:
-              </span>
-              {activeChips.map((c) => (
-                <button
-                  key={c.key}
-                  onClick={c.onRemove}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                    padding: "5px 6px 5px 11px",
-                    borderRadius: "var(--r-full)",
-                    border: "1.5px solid var(--blue)",
+                    border: "1.5px solid var(--line-200)",
                     background: "#fff",
-                    color: "var(--blue)",
-                    fontWeight: 700,
-                    fontSize: ".75rem",
-                    cursor: "pointer",
+                    color: "var(--ink-700)",
                   }}
                 >
-                  {c.label}
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: 18,
-                      height: 18,
-                      borderRadius: "var(--r-full)",
-                      background: "var(--blue)",
-                      color: "#fff",
-                    }}
-                  >
-                    <Icon name="x" size={10} color="#fff" />
-                  </span>
+                  <Icon name="sliders" size={14} /> Price · More
                 </button>
-              ))}
-              <button
-                onClick={clearAll}
-                style={{
-                  marginLeft: "auto",
-                  padding: "5px 11px",
-                  borderRadius: "var(--r-full)",
-                  border: "none",
-                  background: "none",
-                  color: "var(--ink-500)",
-                  fontWeight: 700,
-                  fontSize: ".75rem",
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                }}
-              >
-                Clear all
-              </button>
-            </div>
-          )}
+              </div>
 
-          {/* grid */}
-          {loading ? (
-            <div
-              className="bz-grid-cards"
-              style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 18 }}
-            >
-              {Array.from({ length: 8 }).map((_, i) => (
-                <SkeletonCard key={i} />
-              ))}
-            </div>
-          ) : showDidYouMean ? (
-            <DidYouMean
-              q={effectiveQuery}
-              suggestions={[]}
-              onPick={(s) => setQuery(s)}
-              onReset={() => {
-                setQuery("");
-                clearAll();
-              }}
-            />
-          ) : totalCount === 0 ? (
-            <div style={{ maxWidth: 480, margin: "40px auto", textAlign: "center" }}>
-              <div
-                style={{
-                  fontSize: "1.125rem",
-                  fontWeight: 800,
-                  color: "var(--ink-900)",
-                  marginBottom: 4,
-                }}
-              >
-                No products match your filters
-              </div>
-              <div style={{ color: "var(--ink-500)", fontSize: ".875rem", marginBottom: 14 }}>
-                {hasActive ? "Try removing one of these filters:" : "Try browsing by category."}
-              </div>
+              {/* Active filter chips — one-tap removal */}
               {hasActive && (
                 <div
                   style={{
                     display: "flex",
+                    alignItems: "center",
                     gap: 8,
-                    justifyContent: "center",
                     flexWrap: "wrap",
-                    marginBottom: 16,
+                    marginBottom: 22,
+                    padding: "10px 12px",
+                    background: "var(--line-100)",
+                    borderRadius: "var(--r-md)",
                   }}
                 >
+                  <span style={{ fontSize: ".75rem", fontWeight: 700, color: "var(--ink-500)" }}>
+                    Active:
+                  </span>
                   {activeChips.map((c) => (
                     <button
                       key={c.key}
@@ -1020,124 +960,226 @@ export function Browse() {
                         display: "inline-flex",
                         alignItems: "center",
                         gap: 6,
-                        padding: "8px 14px",
+                        padding: "5px 6px 5px 11px",
                         borderRadius: "var(--r-full)",
-                        border: "1.5px solid var(--line-200)",
+                        border: "1.5px solid var(--blue)",
                         background: "#fff",
-                        color: "var(--ink-700)",
+                        color: "var(--blue)",
                         fontWeight: 700,
-                        fontSize: ".8125rem",
+                        fontSize: ".75rem",
                         cursor: "pointer",
                       }}
                     >
-                      Remove "{c.label}"
-                      <Icon name="x" size={12} color="var(--ink-500)" />
+                      {c.label}
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          width: 18,
+                          height: 18,
+                          borderRadius: "var(--r-full)",
+                          background: "var(--blue)",
+                          color: "#fff",
+                        }}
+                      >
+                        <Icon name="x" size={10} color="#fff" />
+                      </span>
                     </button>
                   ))}
-                </div>
-              )}
-              <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-                <Button variant="secondary" onClick={clearAll}>
-                  Clear all filters
-                </Button>
-                <Button variant="ghost" href={pathFromScreen("home")}>
-                  Back to home
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div
-                className="bz-grid-cards"
-                style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 18 }}
-              >
-                {strictPaged.visible.map((p) => (
-                  <ProductCard key={p.id} p={p} onClick={openProduct} />
-                ))}
-              </div>
-              <LoadMore
-                paged={strictPaged}
-                noun="products"
-                onClear={hasActive ? clearAll : undefined}
-                pageBar={
-                  <PageBar
-                    page={strictPaged.page}
-                    pageCount={strictPaged.pageCount}
-                    onPage={strictPaged.goPage}
-                  />
-                }
-              />
-
-              {/* Related accessories — pushed below strict matches */}
-              {related.length > 0 && (
-                <div style={{ marginTop: 36 }}>
-                  <div
+                  <button
+                    onClick={clearAll}
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      margin: "0 0 14px",
+                      marginLeft: "auto",
+                      padding: "5px 11px",
+                      borderRadius: "var(--r-full)",
+                      border: "none",
+                      background: "none",
                       color: "var(--ink-500)",
+                      fontWeight: 700,
+                      fontSize: ".75rem",
+                      cursor: "pointer",
+                      textDecoration: "underline",
                     }}
                   >
-                    <span style={{ flex: 1, height: 1, background: "var(--line-200)" }} />
-                    <span
+                    Clear all
+                  </button>
+                </div>
+              )}
+
+              {/* grid */}
+              {loading ? (
+                <div
+                  className="bz-grid-cards"
+                  style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 18 }}
+                >
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <SkeletonCard key={i} />
+                  ))}
+                </div>
+              ) : showDidYouMean ? (
+                <DidYouMean
+                  q={effectiveQuery}
+                  suggestions={[]}
+                  onPick={(s) => setQuery(s)}
+                  onReset={() => {
+                    setQuery("");
+                    clearAll();
+                  }}
+                />
+              ) : totalCount === 0 ? (
+                <div style={{ maxWidth: 480, margin: "40px auto", textAlign: "center" }}>
+                  <div
+                    style={{
+                      fontSize: "1.125rem",
+                      fontWeight: 800,
+                      color: "var(--ink-900)",
+                      marginBottom: 4,
+                    }}
+                  >
+                    No products match your filters
+                  </div>
+                  <div style={{ color: "var(--ink-500)", fontSize: ".875rem", marginBottom: 14 }}>
+                    {hasActive ? "Try removing one of these filters:" : "Try browsing by category."}
+                  </div>
+                  {hasActive && (
+                    <div
                       style={{
-                        fontSize: ".8125rem",
-                        fontWeight: 700,
-                        color: "var(--ink-500)",
-                        whiteSpace: "nowrap",
+                        display: "flex",
+                        gap: 8,
+                        justifyContent: "center",
+                        flexWrap: "wrap",
+                        marginBottom: 16,
                       }}
                     >
-                      Related accessories
-                    </span>
-                    <span style={{ flex: 1, height: 1, background: "var(--line-200)" }} />
+                      {activeChips.map((c) => (
+                        <button
+                          key={c.key}
+                          onClick={c.onRemove}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            padding: "8px 14px",
+                            borderRadius: "var(--r-full)",
+                            border: "1.5px solid var(--line-200)",
+                            background: "#fff",
+                            color: "var(--ink-700)",
+                            fontWeight: 700,
+                            fontSize: ".8125rem",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Remove "{c.label}"
+                          <Icon name="x" size={12} color="var(--ink-500)" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+                    <Button variant="secondary" onClick={clearAll}>
+                      Clear all filters
+                    </Button>
+                    <Button variant="ghost" href={pathFromScreen("home")}>
+                      Back to home
+                    </Button>
                   </div>
+                </div>
+              ) : (
+                <>
                   <div
                     className="bz-grid-cards"
                     style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 18 }}
                   >
-                    {related.map((p) => (
+                    {strictPaged.visible.map((p) => (
                       <ProductCard key={p.id} p={p} onClick={openProduct} />
                     ))}
                   </div>
-                </div>
-              )}
+                  <LoadMore
+                    paged={strictPaged}
+                    noun="products"
+                    onClear={hasActive ? clearAll : undefined}
+                    pageBar={
+                      <PageBar
+                        page={strictPaged.page}
+                        pageCount={strictPaged.pageCount}
+                        onPage={strictPaged.goPage}
+                      />
+                    }
+                  />
 
-              {/* Out of stock — sunk to bottom with overlay */}
-              {oos.length > 0 && (
-                <div style={{ marginTop: 36 }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      margin: "0 0 14px",
-                      color: "var(--ink-500)",
-                    }}
-                  >
-                    <span style={{ flex: 1, height: 1, background: "var(--line-200)" }} />
-                    <span
-                      style={{ fontSize: ".8125rem", fontWeight: 700, color: "var(--ink-500)" }}
-                    >
-                      Coming Soon
-                    </span>
-                    <span style={{ flex: 1, height: 1, background: "var(--line-200)" }} />
-                  </div>
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(4,1fr)",
-                      gap: 18,
-                      opacity: 0.55,
-                    }}
-                    className="bz-grid-cards"
-                  >
-                    {oos.map((p) => (
-                      <ProductCard key={p.id} p={p} onClick={openProduct} />
-                    ))}
-                  </div>
-                </div>
+                  {/* Related accessories — pushed below strict matches */}
+                  {related.length > 0 && (
+                    <div style={{ marginTop: 36 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                          margin: "0 0 14px",
+                          color: "var(--ink-500)",
+                        }}
+                      >
+                        <span style={{ flex: 1, height: 1, background: "var(--line-200)" }} />
+                        <span
+                          style={{
+                            fontSize: ".8125rem",
+                            fontWeight: 700,
+                            color: "var(--ink-500)",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          Related accessories
+                        </span>
+                        <span style={{ flex: 1, height: 1, background: "var(--line-200)" }} />
+                      </div>
+                      <div
+                        className="bz-grid-cards"
+                        style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 18 }}
+                      >
+                        {related.map((p) => (
+                          <ProductCard key={p.id} p={p} onClick={openProduct} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Out of stock — sunk to bottom with overlay */}
+                  {oos.length > 0 && (
+                    <div style={{ marginTop: 36 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                          margin: "0 0 14px",
+                          color: "var(--ink-500)",
+                        }}
+                      >
+                        <span style={{ flex: 1, height: 1, background: "var(--line-200)" }} />
+                        <span
+                          style={{ fontSize: ".8125rem", fontWeight: 700, color: "var(--ink-500)" }}
+                        >
+                          Coming Soon
+                        </span>
+                        <span style={{ flex: 1, height: 1, background: "var(--line-200)" }} />
+                      </div>
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "repeat(4,1fr)",
+                          gap: 18,
+                          opacity: 0.55,
+                        }}
+                        className="bz-grid-cards"
+                      >
+                        {oos.map((p) => (
+                          <ProductCard key={p.id} p={p} onClick={openProduct} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </>
           )}

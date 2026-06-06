@@ -387,7 +387,7 @@ export function Search() {
           </div>
 
           {isFetching && !data ? (
-            <div style={gridStyle}>
+            <div className="bz-search-grid" style={gridStyle}>
               {Array.from({ length: 8 }).map((_, i) => (
                 <SkeletonCard key={i} />
               ))}
@@ -410,7 +410,7 @@ export function Search() {
             </div>
           ) : (
             <>
-              <div style={gridStyle}>
+              <div className="bz-search-grid" style={gridStyle}>
                 {items.map((p) => (
                   <ProductCard key={p.id} p={p} onClick={openProduct} />
                 ))}

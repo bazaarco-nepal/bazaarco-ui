@@ -74,6 +74,7 @@ import { useOrder } from "@/hooks/use-orders";
 import {
   selectedLines,
   allSelected,
+  cartLineKey,
   isLineSelected,
   toggleLine,
   toggleAll,
@@ -323,7 +324,7 @@ export function Cart() {
   const someSelected = selectedCount > 0 && !everySelected;
   const bd = priceBreakdown(selectedCart, deliveryTier);
 
-  const toggleOne = (id) => setSelectedCartIds((prev) => toggleLine(cart, prev, id));
+  const toggleOne = (key) => setSelectedCartIds((prev) => toggleLine(cart, prev, key));
   const toggleEvery = () => setSelectedCartIds((prev) => toggleAll(cart, prev));
 
   const goToCheckout = () => {
@@ -332,11 +333,11 @@ export function Cart() {
     else promptLogin("Please sign in to complete checkout.");
   };
 
-  const setQty = (id, q) => {
-    void updateCartQty(id, q);
+  const setQty = (line, q) => {
+    void updateCartQty(line.id, q, line.variantId);
   };
-  const remove = (id) => {
-    void removeFromCart(id).then(() => {
+  const remove = (line) => {
+    void removeFromCart(line.id, line.variantId).then(() => {
       setConfirm(null);
       toast("Removed from cart");
     });
@@ -475,10 +476,11 @@ export function Cart() {
           </div>
           {cart.map((it) => {
             const s = sellerOf(it);
-            const sel = isLineSelected(it.id, selectedCartIds);
+            const key = cartLineKey(it);
+            const sel = isLineSelected(key, selectedCartIds);
             return (
               <div
-                key={it.id}
+                key={key}
                 className="bz-cart-card"
                 style={{
                   display: "flex",
@@ -493,7 +495,7 @@ export function Cart() {
               >
                 <SelectCheck
                   checked={sel}
-                  onChange={() => toggleOne(it.id)}
+                  onChange={() => toggleOne(key)}
                   label={`${sel ? "Deselect" : "Select"} ${it.name}`}
                 />
                 <AppLink
@@ -530,6 +532,11 @@ export function Cart() {
                       style={{ cursor: "pointer", textDecoration: "none", minWidth: 0 }}
                     >
                       <div style={{ fontWeight: 600, fontSize: ".9375rem" }}>{it.name}</div>
+                      {it.variantName && (
+                        <div style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 2 }}>
+                          {it.variantName}
+                        </div>
+                      )}
                       <div
                         style={{
                           fontSize: ".75rem",
@@ -555,7 +562,7 @@ export function Cart() {
                       marginTop: 12,
                     }}
                   >
-                    <QtyStepper value={it.qty} onChange={(q) => setQty(it.id, q)} />
+                    <QtyStepper value={it.qty} onChange={(q) => setQty(it, q)} />
                     <button
                       onClick={() => setConfirm(it)}
                       style={{
@@ -707,7 +714,7 @@ export function Cart() {
           title="Remove item?"
           message={`Remove "${confirm.name}" from your cart?`}
           confirmLabel="Remove"
-          onConfirm={() => remove(confirm.id)}
+          onConfirm={() => remove(confirm)}
           onCancel={() => setConfirm(null)}
         />
       )}
@@ -834,8 +841,8 @@ export function Checkout() {
   const setSelectedCartIds = useBazaarStore((s) => s.setSelectedCartIds);
   // Removing an item here just deselects it from this order — it stays saved in
   // the cart for later (non-destructive), and the total drops immediately.
-  const removeFromOrder = (id) => {
-    setSelectedCartIds((prev) => toggleLine(cart, prev, id));
+  const removeFromOrder = (key) => {
+    setSelectedCartIds((prev) => toggleLine(cart, prev, key));
     toast("Removed from this order — still saved in your cart");
   };
   // Price and place only what the buyer selected in the cart, so the total
@@ -1016,7 +1023,7 @@ export function Checkout() {
               <div style={{ marginTop: 8 }}>
                 {selectedCart.map((it, i) => (
                   <div
-                    key={it.id}
+                    key={cartLineKey(it)}
                     style={{
                       display: "flex",
                       gap: 14,
@@ -1071,6 +1078,13 @@ export function Checkout() {
                           >
                             {it.name}
                           </div>
+                          {it.variantName && (
+                            <div
+                              style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 2 }}
+                            >
+                              {it.variantName}
+                            </div>
+                          )}
                           <div
                             className="tnum"
                             style={{ fontSize: ".8125rem", color: "var(--ink-400)", marginTop: 2 }}
@@ -1098,10 +1112,13 @@ export function Checkout() {
                           gap: 10,
                         }}
                       >
-                        <QtyStepper value={it.qty} onChange={(q) => updateCartQty(it.id, q)} />
+                        <QtyStepper
+                          value={it.qty}
+                          onChange={(q) => updateCartQty(it.id, q, it.variantId)}
+                        />
                         <button
                           type="button"
-                          onClick={() => removeFromOrder(it.id)}
+                          onClick={() => removeFromOrder(cartLineKey(it))}
                           style={{
                             background: "none",
                             border: "none",
@@ -1784,31 +1801,29 @@ export function OrderSuccess({ total }) {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-              {products
-                .slice(0, 3)
-                .map((p, i) =>
-                  p.img ? (
-                    <img
-                      key={p.id ?? i}
-                      src={p.img}
-                      alt={p.name}
-                      style={{
-                        width: 56,
-                        height: 56,
-                        objectFit: "cover",
-                        borderRadius: "var(--r-md)",
-                      }}
-                    />
-                  ) : (
-                    <Placeholder
-                      key={p.id ?? i}
-                      icon={p.icon}
-                      tint={p.tint}
-                      style={{ width: 56, height: 56 }}
-                      radius="var(--r-md)"
-                    />
-                  ),
-                )}
+              {products.slice(0, 3).map((p, i) =>
+                p.img ? (
+                  <img
+                    key={p.id ?? i}
+                    src={p.img}
+                    alt={p.name}
+                    style={{
+                      width: 56,
+                      height: 56,
+                      objectFit: "cover",
+                      borderRadius: "var(--r-md)",
+                    }}
+                  />
+                ) : (
+                  <Placeholder
+                    key={p.id ?? i}
+                    icon={p.icon}
+                    tint={p.tint}
+                    style={{ width: 56, height: 56 }}
+                    radius="var(--r-md)"
+                  />
+                ),
+              )}
               {extraCount > 0 && (
                 <span
                   className="tnum"

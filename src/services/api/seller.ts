@@ -10,13 +10,28 @@ export interface CreateProductVariantPayload {
   name: string;
   price: number;
   stock: number;
+  // Per-variant discount: `price` is the effective (sale) price, `original` the
+  // struck-through pre-discount price. The server is authoritative on the math.
+  original?: number | null;
+  discountType?: "amount" | "percent" | null;
+  discountPct?: number | null;
+  allowBargaining?: boolean;
+  minimumPrice?: number | null;
 }
 
-export interface UpdateProductPayload {
+// Discount fields: `price` is the effective (sale) price, `original` the
+// pre-discount price. `discountType`/`discountPct` record the seller's choice;
+// the server is authoritative on the numbers (it recomputes percentage prices).
+export interface DiscountFields {
+  original?: number | null;
+  discountType?: "amount" | "percent" | null;
+  discountPct?: number | null;
+}
+
+export interface UpdateProductPayload extends DiscountFields {
   name?: string;
   description?: string;
   price?: number;
-  original?: number | null;
   stock?: number;
   metadata?: Record<string, unknown>;
   variants?: CreateProductVariantPayload[];
@@ -57,12 +72,11 @@ export interface SellerOrder {
   awaitingOtherSellers?: boolean;
 }
 
-export interface CreateProductPayload {
+export interface CreateProductPayload extends DiscountFields {
   name: string;
   ne?: string;
   description?: string;
   price: number;
-  original?: number | null;
   categoryId: string;
   // 3–5 gallery images, cover first (enforced server-side). `img` is optional
   // and defaults to images[0] on the server.

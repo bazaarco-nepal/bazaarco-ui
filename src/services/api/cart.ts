@@ -10,16 +10,24 @@ export const cartApi = {
     return getData<CartResponse>("/cart");
   },
 
-  addItem(productId: string, quantity = 1): Promise<CartResponse> {
-    return postData<CartResponse>("/cart/items", { productId, quantity });
+  addItem(productId: string, quantity = 1, variantId?: string | null): Promise<CartResponse> {
+    return postData<CartResponse>("/cart/items", { productId, quantity, variantId });
   },
 
-  updateItem(productId: string, quantity: number): Promise<CartResponse> {
-    return patchData<CartResponse>(`/cart/items/${encodeURIComponent(productId)}`, { quantity });
+  updateItem(
+    productId: string,
+    quantity: number,
+    variantId?: string | null,
+  ): Promise<CartResponse> {
+    return patchData<CartResponse>(`/cart/items/${encodeURIComponent(productId)}`, {
+      quantity,
+      variantId,
+    });
   },
 
-  removeItem(productId: string): Promise<CartResponse> {
-    return deleteData<CartResponse>(`/cart/items/${encodeURIComponent(productId)}`);
+  removeItem(productId: string, variantId?: string | null): Promise<CartResponse> {
+    const qs = variantId ? `?variantId=${encodeURIComponent(variantId)}` : "";
+    return deleteData<CartResponse>(`/cart/items/${encodeURIComponent(productId)}${qs}`);
   },
 
   clear(): Promise<CartResponse> {

@@ -281,7 +281,16 @@ function TrackingSidebar({ nav, order }) {
   const lines = rawLines
     .map((li) => {
       const product = byId(li.productId);
-      return product ? { product, qty: li.quantity, lineTotal: product.price * li.quantity } : null;
+      if (!product) return null;
+      // Prefer the price actually charged (snapshot); fall back to live price.
+      const unitPrice = li.unitPrice ?? product.price;
+      return {
+        product,
+        qty: li.quantity,
+        unitPrice,
+        variantName: li.variantName ?? null,
+        lineTotal: unitPrice * li.quantity,
+      };
     })
     .filter(Boolean);
   const subtotal = lines.reduce((sum, l) => sum + l.lineTotal, 0);
@@ -333,9 +342,9 @@ function TrackingSidebar({ nav, order }) {
           }}
         >
           <div style={{ fontWeight: 700, fontSize: ".9375rem", marginBottom: 14 }}>Items</div>
-          {lines.map(({ product, qty, lineTotal }) => (
+          {lines.map(({ product, qty, lineTotal, unitPrice, variantName }, i) => (
             <div
-              key={product.id}
+              key={`${product.id}-${i}`}
               style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 14 }}
             >
               {product.img ? (
@@ -372,11 +381,16 @@ function TrackingSidebar({ nav, order }) {
                 >
                   {product.name}
                 </div>
+                {variantName && (
+                  <div style={{ fontSize: ".7rem", color: "var(--ink-500)", marginTop: 2 }}>
+                    {variantName}
+                  </div>
+                )}
                 <div
                   className="tnum"
                   style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 3 }}
                 >
-                  Qty {qty} × Rs.&nbsp;{product.price.toLocaleString("en-IN")}
+                  Qty {qty} × Rs.&nbsp;{unitPrice.toLocaleString("en-IN")}
                 </div>
               </div>
               <span
@@ -616,58 +630,21 @@ export function Bargains() {
         className="bz-container-pad"
         style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "28px 28px 96px" }}
       >
-        {/* On mobile, when there are offers, this icon header is hidden in favour
-            of the plain "Bargain" title below — matching the "My orders" header.
-            When empty, it stays exactly as-is on every viewport. */}
-        <div
-          className={offers.length > 0 ? "bz-hide-mobile" : undefined}
-          style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}
-        >
-          <div
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: "var(--r-md)",
-              background: "var(--red)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <Icon name="bargain" size={24} color="#fff" />
-          </div>
-          <div>
-            <h1
-              style={{
-                margin: 0,
-                fontSize: "1.375rem",
-                fontWeight: 800,
-                color: "var(--blue-deep)",
-              }}
-            >
-              Bargain
-            </h1>
-            <p style={{ margin: "2px 0 0", color: "var(--ink-500)", fontSize: ".875rem" }}>
-              Your offers and seller responses.
-            </p>
-          </div>
-        </div>
-
-        {offers.length > 0 && (
+        <div style={{ marginBottom: 20 }}>
           <h1
-            className="bz-show-mobile"
             style={{
-              display: "none",
-              margin: "0 0 24px",
-              fontSize: "1.5rem",
+              margin: 0,
+              fontSize: "clamp(1.25rem, 4vw, 1.5rem)",
               fontWeight: 800,
               color: "var(--blue-deep)",
             }}
           >
             Bargain
           </h1>
-        )}
+          <p style={{ margin: "4px 0 0", color: "var(--ink-500)", fontSize: ".875rem" }}>
+            Your offers and seller responses.
+          </p>
+        </div>
 
         {offers.length === 0 ? (
           <EmptyState

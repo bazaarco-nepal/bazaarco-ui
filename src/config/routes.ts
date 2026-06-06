@@ -1,6 +1,7 @@
 export const BUYER_SCREENS = new Set([
   "home",
   "browse",
+  "search",
   "pdp",
   "store",
   "video",
@@ -29,11 +30,11 @@ export const SELLER_SCREENS = new Set([
   "s-order-detail",
   "s-add",
   "s-edit",
+  "s-product-view",
   "s-products",
   "s-ledger",
   "s-chat",
   "s-bargain",
-  "s-promos",
   "s-reviews",
   "s-storefront",
   "s-videos",
@@ -74,6 +75,7 @@ const SCREEN_PATH: Record<string, string> = {
   "auth-callback": "/auth/callback",
   home: "/home",
   browse: "/browse",
+  search: "/search",
   pdp: "/product",
   store: "/store",
   video: "/video",
@@ -95,15 +97,15 @@ const SCREEN_PATH: Record<string, string> = {
   about: "/about",
   "s-onboarding": "/seller/onboarding",
   "s-dashboard": "/seller",
-  "s-inbox": "/seller/inbox",
+  "s-inbox": "/seller/orders",
   "s-order-detail": "/seller/orders/detail",
   "s-add": "/seller/products/add",
   "s-edit": "/seller/products/edit",
+  "s-product-view": "/seller/products/view",
   "s-products": "/seller/products",
   "s-ledger": "/seller/ledger",
   "s-chat": "/seller/chat",
   "s-bargain": "/seller/bargain",
-  "s-promos": "/seller/promos",
   "s-reviews": "/seller/reviews",
   "s-storefront": "/seller/storefront",
   "s-videos": "/seller/videos",
@@ -163,12 +165,19 @@ export function browsePath(options?: BrowsePathOptions): string {
   return qs ? `/browse?${qs}` : "/browse";
 }
 
+/** Build `/search` with an optional query param — the faceted search results page. */
+export function searchPath(options?: { q?: string }): string {
+  const q = options?.q?.trim();
+  return q ? `/search?q=${encodeURIComponent(q)}` : "/search";
+}
+
 // Browser-tab label per screen. Rendered as `BazaarCo - <label>`.
 const SCREEN_TITLES: Record<string, string> = {
   auth: "Sign In",
   "auth-callback": "Signing In",
   home: "Home",
   browse: "Browse Products",
+  search: "Search",
   pdp: "Product",
   store: "Store",
   video: "Watch",
@@ -190,15 +199,15 @@ const SCREEN_TITLES: Record<string, string> = {
   about: "About Us",
   "s-onboarding": "Become a Seller",
   "s-dashboard": "Seller Dashboard",
-  "s-inbox": "Seller Orders",
+  "s-inbox": "Orders",
   "s-order-detail": "Order Detail",
   "s-add": "Add Product",
   "s-edit": "Edit Product",
+  "s-product-view": "Product Details",
   "s-products": "Inventory",
   "s-ledger": "Ledger",
   "s-chat": "Seller Chat",
   "s-bargain": "Offers",
-  "s-promos": "Promotions",
   "s-reviews": "Store Reviews",
   "s-storefront": "Storefront",
   "s-videos": "Seller Videos",

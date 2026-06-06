@@ -13,22 +13,32 @@ export type CartSelection = string[] | null;
 
 interface LineLike {
   id: string;
+  variantId?: string | null;
 }
 
-/** Is a single line in the current selection? */
-export function isLineSelected(id: string, selection: CartSelection): boolean {
-  return selection === null || selection.includes(id);
+/**
+ * Stable per-line key that distinguishes two variants of the same product. A
+ * single-price line keys on the bare product id (so it matches the server, which
+ * does the same). Mirrors the backend `cartLineKey` in orders.service.
+ */
+export function cartLineKey(line: LineLike): string {
+  return line.variantId ? `${line.id}::${line.variantId}` : line.id;
+}
+
+/** Is a single line (by its key) in the current selection? */
+export function isLineSelected(key: string, selection: CartSelection): boolean {
+  return selection === null || selection.includes(key);
 }
 
 /** The lines that will be priced and ordered. */
 export function selectedLines<T extends LineLike>(cart: T[], selection: CartSelection): T[] {
   if (selection === null) return cart;
-  return cart.filter((line) => selection.includes(line.id));
+  return cart.filter((line) => selection.includes(cartLineKey(line)));
 }
 
-/** Explicit ids of the selected lines (resolves the `null` sentinel). */
+/** Explicit keys of the selected lines (resolves the `null` sentinel). */
 export function effectiveSelectedIds(cart: LineLike[], selection: CartSelection): string[] {
-  return selectedLines(cart, selection).map((line) => line.id);
+  return selectedLines(cart, selection).map(cartLineKey);
 }
 
 /** Are all (and at least one) cart lines selected? Empty cart ⇒ false. */
@@ -37,10 +47,10 @@ export function allSelected(cart: LineLike[], selection: CartSelection): boolean
   return selectedLines(cart, selection).length === cart.length;
 }
 
-/** Toggle one line, returning a materialized explicit selection. */
-export function toggleLine(cart: LineLike[], selection: CartSelection, id: string): string[] {
-  const base = selection === null ? cart.map((line) => line.id) : selection;
-  return base.includes(id) ? base.filter((x) => x !== id) : [...base, id];
+/** Toggle one line (by key), returning a materialized explicit selection. */
+export function toggleLine(cart: LineLike[], selection: CartSelection, key: string): string[] {
+  const base = selection === null ? cart.map(cartLineKey) : selection;
+  return base.includes(key) ? base.filter((x) => x !== key) : [...base, key];
 }
 
 /** Select-all toggle: all-selected ⇒ clear; otherwise select everything. */
@@ -49,19 +59,19 @@ export function toggleAll(cart: LineLike[], selection: CartSelection): CartSelec
 }
 
 /**
- * Drop ids that are no longer in the cart (e.g. an item was removed). Returns
+ * Drop keys that are no longer in the cart (e.g. an item was removed). Returns
  * the same reference when nothing changed so it's safe in a store updater /
  * effect without spurious re-renders. The `null` sentinel passes through.
  */
 export function pruneSelection(cart: LineLike[], selection: CartSelection): CartSelection {
   if (selection === null) return null;
-  const ids = new Set(cart.map((line) => line.id));
-  const pruned = selection.filter((id) => ids.has(id));
+  const keys = new Set(cart.map(cartLineKey));
+  const pruned = selection.filter((key) => keys.has(key));
   return pruned.length === selection.length ? selection : pruned;
 }
 
-/** Add a freshly-added line to an already-materialized selection. */
-export function selectLine(selection: CartSelection, id: string): CartSelection {
+/** Add a freshly-added line (by key) to an already-materialized selection. */
+export function selectLine(selection: CartSelection, key: string): CartSelection {
   if (selection === null) return null;
-  return selection.includes(id) ? selection : [...selection, id];
+  return selection.includes(key) ? selection : [...selection, key];
 }

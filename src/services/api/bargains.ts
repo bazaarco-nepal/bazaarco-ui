@@ -16,6 +16,7 @@ export interface BargainOffer {
 
 export interface CreateBargainOfferPayload {
   productId: string;
+  variantId?: string | null;
   yourOffer: number;
 }
 

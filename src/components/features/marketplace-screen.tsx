@@ -8,6 +8,7 @@ import {
   AuthCallback,
   Home,
   Browse,
+  Search,
   PDP,
   Store,
   VideoTheater,
@@ -29,8 +30,10 @@ import {
   SellerInbox,
   SellerOrderDetail,
   SellerAddProduct,
+  SellerProductView,
   SellerInventory,
   editProductRef,
+  viewProductRef,
   SellerLedger,
   SellerChat,
   SellerBargain,
@@ -130,6 +133,7 @@ export function MarketplaceScreen() {
   }
   if (screen === "home") return <Home />;
   if (screen === "browse") return <Browse />;
+  if (screen === "search") return <Search />;
   if (screen === "pdp") {
     if (!product) return <ScreenLoader />;
     return <PDP key={product.id} p={product} />;
@@ -168,6 +172,8 @@ export function MarketplaceScreen() {
       ) : (
         <SellerInventory />
       );
+    else if (screen === "s-product-view")
+      inner = <SellerProductView item={viewProductRef.current} />;
     else if (screen === "s-products") inner = <SellerInventory />;
     else if (screen === "s-ledger") inner = <SellerLedger />;
     else if (screen === "s-chat") inner = <SellerChat />;

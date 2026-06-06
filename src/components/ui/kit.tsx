@@ -73,6 +73,12 @@ export const ICON_PATHS = {
     </>
   ),
   play: <polygon points="7 4 20 12 7 20 7 4" />,
+  fastForward: (
+    <>
+      <polygon points="3 5 12 12 3 19 3 5" />
+      <polygon points="13 5 22 12 13 19 13 5" />
+    </>
+  ),
   pause: (
     <>
       <rect x="6" y="5" width="4" height="14" rx="1" />
@@ -1154,12 +1160,25 @@ export function VideoPlayer({
   fill,
   thumb,
   src,
+  externalMuted,
+  onMutedChange,
+  onLongPressStart,
+  onLongPressEnd,
+  playbackRate,
 }) {
   const videoRef = useRef(null);
   const [playing, setPlaying] = useState(!!autoplay);
   const [t, setT] = useState(0);
   const [dur, setDur] = useState(18);
-  const [muted, setMuted] = useState(true);
+  const [internalMuted, setInternalMuted] = useState(true);
+  const [fastForwarding, setFastForwarding] = useState(false);
+  const longPressTimer = useRef(null);
+  const muted = externalMuted !== undefined ? externalMuted : internalMuted;
+  const setMuted = (v) => {
+    const next = typeof v === "function" ? v(muted) : v;
+    if (onMutedChange) onMutedChange(next);
+    else setInternalMuted(next);
+  };
   const hasSrc = Boolean(src);
 
   useEffect(() => {
@@ -1182,6 +1201,13 @@ export function VideoPlayer({
   useEffect(() => {
     const el = videoRef.current;
     if (!el || !hasSrc) return;
+    const rate = playbackRate || (fastForwarding ? 2.0 : 1.0);
+    el.playbackRate = rate;
+  }, [fastForwarding, hasSrc, playbackRate]);
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el || !hasSrc) return;
     const onTime = () => setT(el.currentTime);
     const onMeta = () => setDur(el.duration || 18);
     el.addEventListener("timeupdate", onTime);
@@ -1191,6 +1217,25 @@ export function VideoPlayer({
       el.removeEventListener("loadedmetadata", onMeta);
     };
   }, [hasSrc, src]);
+
+  const handlePointerDown = (e) => {
+    if (!hasSrc) return;
+    longPressTimer.current = setTimeout(() => {
+      setFastForwarding(true);
+      if (onLongPressStart) onLongPressStart();
+    }, 300);
+  };
+
+  const handlePointerUp = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    if (fastForwarding) {
+      setFastForwarding(false);
+      if (onLongPressEnd) onLongPressEnd();
+    }
+  };
 
   const c = TINTS[tint] || TINTS.blue;
   const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
@@ -1206,9 +1251,39 @@ export function VideoPlayer({
         overflow: "hidden",
         background: thumb || src ? "#000" : `linear-gradient(160deg, ${c[1]}, ${c[0]})`,
         cursor: "pointer",
+        touchAction: "pan-y",
       }}
       onClick={togglePlay}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onPointerLeave={handlePointerUp}
+      onPointerCancel={handlePointerUp}
     >
+      {fastForwarding && (
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            zIndex: 10,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            background: "rgba(0,0,0,.6)",
+            padding: "8px 16px",
+            borderRadius: "var(--r-full)",
+            color: "#fff",
+            fontSize: 13,
+            fontWeight: 700,
+            backdropFilter: "blur(4px)",
+            pointerEvents: "none",
+          }}
+        >
+          <Icon name="fastForward" size={16} color="#fff" />
+          2x
+        </div>
+      )}
       {hasSrc ? (
         <video
           ref={videoRef}

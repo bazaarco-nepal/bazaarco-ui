@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   allSelected,
+  cartLineKey,
   effectiveSelectedIds,
   isLineSelected,
   pruneSelection,
@@ -14,6 +15,33 @@ import {
 // A cart line — only `id` matters to the selection helpers.
 const line = (id: string) => ({ id, price: 100, qty: 1 });
 const cart = [line("a"), line("b"), line("c")];
+
+describe("cart-selection — variant lines are addressed independently", () => {
+  // Two variants of one product share a product id but are distinct cart lines.
+  const vline = (id: string, variantId: string | null) => ({ id, variantId, price: 100, qty: 1 });
+  const small = vline("p1", "v-s");
+  const large = vline("p1", "v-l");
+  const single = vline("p2", null);
+  const vcart = [small, large, single];
+
+  it("keys variant lines by product+variant and single-price lines by product id", () => {
+    expect(cartLineKey(small)).toBe("p1::v-s");
+    expect(cartLineKey(large)).toBe("p1::v-l");
+    expect(cartLineKey(single)).toBe("p2");
+  });
+
+  it("selecting one variant does not select the other variant of the same product", () => {
+    const sel = toggleLine(vcart, null, cartLineKey(large)); // start from all, deselect large
+    expect(isLineSelected(cartLineKey(small), sel)).toBe(true);
+    expect(isLineSelected(cartLineKey(large), sel)).toBe(false);
+    expect(effectiveSelectedIds(vcart, sel)).toEqual(["p1::v-s", "p2"]);
+  });
+
+  it("prunes a removed variant line without touching the other variant", () => {
+    const sel: CartSelection = ["p1::v-s", "p1::v-l"];
+    expect(pruneSelection([small, single], sel)).toEqual(["p1::v-s"]);
+  });
+});
 
 describe("cart-selection — null sentinel means everything selected", () => {
   it("treats null as all lines selected", () => {

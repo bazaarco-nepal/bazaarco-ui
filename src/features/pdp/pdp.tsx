@@ -59,6 +59,7 @@ import {
   SellerRow,
 } from "@/components/common";
 import { useSeller } from "@/hooks/use-catalog";
+import { useSimilar } from "@/hooks/use-search";
 import { useCreateBargainOffer } from "@/hooks/use-bargains";
 import { ApiRequestError } from "@/services/api/http";
 import { resolveDelivery, deliveryEstimate } from "@/lib/delivery-options";
@@ -129,19 +130,28 @@ function TabbedPair({ items }: { items: TabItem[] }) {
 /* ============================================================
    BazaarCo — Product Detail Page (video-led)
    ============================================================ */
-function BargainModal({ p, onClose }) {
+function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
   const { addToCart, toast } = useBz();
   const { sellerOf } = useCatalog();
   const createOffer = useCreateBargainOffer();
-  const floor = p.minimumPrice ?? Math.round(p.price * 0.7);
-  const midpoint = Math.round((floor + p.price) / 2 / 10) * 10;
+  // Bargaining is conducted on the chosen variant's listed (discounted) price.
+  // Use per-variant minimumPrice when available; fall back to product-level.
+  const listed = listedPrice ?? p.price;
+  const variant = variantId && p.variants ? p.variants.find((v) => v.id === variantId) : null;
+  const variantFloor = variant?.minimumPrice;
+  const floor = variantFloor ?? p.minimumPrice ?? Math.round(listed * 0.7);
+  const midpoint = Math.round((floor + listed) / 2 / 10) * 10;
   const [offer, setOffer] = useState(midpoint);
   const [stage, setStage] = useState("offer"); // offer | thinking | counter | accepted
   const [counter, setCounter] = useState(midpoint);
   const submit = async () => {
     setStage("thinking");
     try {
-      const result = await createOffer.mutateAsync({ productId: p.id, yourOffer: offer });
+      const result = await createOffer.mutateAsync({
+        productId: p.id,
+        variantId,
+        yourOffer: offer,
+      });
       if (result.sellerCounter) setCounter(result.sellerCounter);
       setStage(result.status === "accepted" ? "accepted" : "counter");
     } catch (error) {
@@ -225,7 +235,7 @@ function BargainModal({ p, onClose }) {
           <div>
             <div style={{ fontWeight: 600 }}>{p.name}</div>
             <div style={{ marginTop: 4 }}>
-              <Price value={p.price} original={p.original} size="sm" />
+              <Price value={listed} original={original ?? undefined} size="sm" />
             </div>
             <div style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 2 }}>
               Listed price
@@ -263,7 +273,7 @@ function BargainModal({ p, onClose }) {
             <input
               type="range"
               min={floor}
-              max={p.price}
+              max={listed}
               step={10}
               value={offer}
               onChange={(e) => setOffer(+e.target.value)}
@@ -279,7 +289,7 @@ function BargainModal({ p, onClose }) {
               }}
             >
               <span className="tnum">Rs. {floor.toLocaleString()}</span>
-              <span className="tnum">Rs. {p.price.toLocaleString()}</span>
+              <span className="tnum">Rs. {listed.toLocaleString()}</span>
             </div>
             <div style={{ marginTop: 20 }}>
               <Button variant="primary" full size="lg" onClick={submit}>
@@ -336,7 +346,12 @@ function BargainModal({ p, onClose }) {
                 size="lg"
                 icon="cart"
                 onClick={async () => {
-                  await addToCart({ ...p, price: offer }, 1, "Added at bargained price!");
+                  await addToCart(
+                    { ...p, price: offer },
+                    1,
+                    "Added at bargained price!",
+                    variantId,
+                  );
                   onClose();
                 }}
               >
@@ -375,7 +390,7 @@ function BargainModal({ p, onClose }) {
                 variant="secondary"
                 full
                 onClick={() => {
-                  setOffer(Math.round((p.price * 0.9) / 10) * 10);
+                  setOffer(Math.round((listed * 0.9) / 10) * 10);
                   setStage("offer");
                 }}
               >
@@ -386,7 +401,7 @@ function BargainModal({ p, onClose }) {
                 full
                 icon="cart"
                 onClick={async () => {
-                  await addToCart({ ...p, price: counter }, 1, "Deal! Added to cart.");
+                  await addToCart({ ...p, price: counter }, 1, "Deal! Added to cart.", variantId);
                   onClose();
                 }}
               >
@@ -407,7 +422,16 @@ function BargainModal({ p, onClose }) {
    focused sheet to confirm the choice, then send them straight to
    checkout. Shows only the item price — never the summed total.
    ------------------------------------------------------------------ */
-function BuyNowSheet({ p, variants, variantSel, onPick, onConfirm, onClose }) {
+function BuyNowSheet({
+  p,
+  price,
+  original,
+  pricedVariants,
+  selVariantId,
+  onPickVariant,
+  onConfirm,
+  onClose,
+}) {
   return (
     <div
       role="dialog"
@@ -476,84 +500,60 @@ function BuyNowSheet({ p, variants, variantSel, onPick, onConfirm, onClose }) {
               {p.name}
             </div>
             <div style={{ marginTop: 6 }}>
-              <Price value={p.price} original={p.original} size="md" />
+              <Price value={price} original={original ?? undefined} size="md" />
             </div>
           </div>
         </div>
 
-        {/* variant pickers — large, tappable */}
-        {variants.map((v) => {
-          const sel = variantSel[v.name] ?? 0;
-          const isColor = v.kind === "swatch";
-          return (
-            <div key={v.name} style={{ marginBottom: 18 }}>
-              <div
-                style={{
-                  fontSize: ".9375rem",
-                  fontWeight: 700,
-                  color: "var(--ink-900)",
-                  marginBottom: 10,
-                }}
-              >
-                Choose {v.name}:{" "}
-                <span style={{ color: "var(--ink-500)", fontWeight: 600 }}>
-                  {isColor ? v.options[sel]?.label : v.options[sel]}
-                </span>
-              </div>
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                {v.options.map((opt, i) =>
-                  isColor ? (
-                    <button
-                      key={i}
-                      type="button"
-                      aria-label={opt.label}
-                      onClick={() => onPick(v.name, i)}
-                      style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: "50%",
-                        cursor: "pointer",
-                        border: `2.5px solid ${sel === i ? "var(--ink-900)" : "var(--line-200)"}`,
-                        padding: 4,
-                        background: "#fff",
-                      }}
-                    >
-                      <span
-                        style={{
-                          display: "block",
-                          width: "100%",
-                          height: "100%",
-                          borderRadius: "50%",
-                          background: TINTS[opt.tint][2],
-                        }}
-                      />
-                    </button>
-                  ) : (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => onPick(v.name, i)}
-                      style={{
-                        minWidth: 60,
-                        height: 50,
-                        padding: "0 18px",
-                        borderRadius: "var(--r-md)",
-                        cursor: "pointer",
-                        border: `2px solid ${sel === i ? "var(--ink-900)" : "var(--line-200)"}`,
-                        background: sel === i ? "var(--ink-900)" : "#fff",
-                        color: sel === i ? "#fff" : "var(--ink-800)",
-                        fontWeight: 700,
-                        fontSize: "1rem",
-                      }}
-                    >
-                      {opt}
-                    </button>
-                  ),
-                )}
-              </div>
+        {/* Priced-variant picker — choosing changes the price above. */}
+        {pricedVariants.length > 0 && (
+          <div style={{ marginBottom: 18 }}>
+            <div
+              style={{
+                fontSize: ".9375rem",
+                fontWeight: 700,
+                color: "var(--ink-900)",
+                marginBottom: 10,
+              }}
+            >
+              Choose an option
             </div>
-          );
-        })}
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              {pricedVariants.map((v) => {
+                const active = v.id === selVariantId;
+                const out = (v.stock ?? 0) <= 0;
+                return (
+                  <button
+                    key={v.id}
+                    type="button"
+                    disabled={out}
+                    onClick={() => onPickVariant(v.id)}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "baseline",
+                      gap: 6,
+                      minHeight: 50,
+                      padding: "0 18px",
+                      borderRadius: "var(--r-md)",
+                      cursor: out ? "not-allowed" : "pointer",
+                      border: `2px solid ${active ? "var(--ink-900)" : "var(--line-200)"}`,
+                      background: active ? "var(--ink-900)" : "#fff",
+                      color: out ? "var(--ink-300)" : active ? "#fff" : "var(--ink-800)",
+                      fontWeight: 700,
+                      fontSize: "1rem",
+                      textDecoration: out ? "line-through" : "none",
+                    }}
+                  >
+                    {v.name}
+                    <span className="tnum" style={{ fontSize: ".875rem", opacity: 0.85 }}>
+                      Rs.&nbsp;{v.price.toLocaleString("en-IN")}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <Button variant="primary" full size="lg" onClick={onConfirm}>
           Buy Now
@@ -595,7 +595,11 @@ export function PDP({ p: pProp }: PdpProps) {
   const { products, categories, sellerOf } = catalog;
   const { data: sellerFromApi } = useSeller(p.seller);
   const s = sellerOf(p) ?? sellerFromApi;
+  // Vector "find similar" (Typesense) for the recommendations rail; fall back to
+  // same-category products if the search service returns nothing / is unavailable.
+  const { data: similarFromSearch = [] } = useSimilar(productId, 10);
   const related = products.filter((x) => x.cat === p.cat && x.id !== p.id);
+  const similarItems = similarFromSearch.length > 0 ? similarFromSearch : related;
   const { variants = [], specs = [] } = profile ?? {};
   const desc = useMemo(() => {
     const fromListing = p.description?.trim();
@@ -658,12 +662,76 @@ export function PDP({ p: pProp }: PdpProps) {
   const [qty, setQty] = useState(1);
   const [buyNowSheet, setBuyNowSheet] = useState(false);
   const [bargain, setBargain] = useState(false);
-  const bargainingAvailable = Boolean(p.allowBargaining);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [descOpen, setDescOpen] = useState(false);
   const [deliverOpen, setDeliverOpen] = useState(false);
   const [variantSel, setVariantSel] = useState<Record<string, number>>({});
-  const disc = p.original ? Math.round((1 - p.price / p.original) * 100) : 0;
+
+  // Priced variants (the seller's real SKUs) drive the price a buyer pays and
+  // what's added to the cart. The cosmetic template swatches below are suppressed
+  // when these exist, so there's a single source of truth for the selection.
+  const pricedVariants = p.variants ?? [];
+  const hasPricedVariants = pricedVariants.length > 0;
+  const [selVariantId, setSelVariantId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!hasPricedVariants) {
+      setSelVariantId(null);
+      return;
+    }
+    const inStock = pricedVariants.filter((v) => (v.stock ?? 0) > 0);
+    const pool = inStock.length ? inStock : pricedVariants;
+    setSelVariantId(pool.reduce((m, v) => (v.price < m.price ? v : m), pool[0]).id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId, p.variants]);
+  const selVariant = hasPricedVariants
+    ? (pricedVariants.find((v) => v.id === selVariantId) ?? null)
+    : null;
+  const shownPrice = selVariant ? selVariant.price : p.price;
+  const shownOriginal = selVariant ? (selVariant.original ?? null) : p.original;
+  const disc = shownOriginal ? Math.round((1 - shownPrice / shownOriginal) * 100) : 0;
+  // Per-variant bargaining: check the selected variant's flag, falling back to product-level.
+  const bargainingAvailable = selVariant
+    ? Boolean(selVariant.allowBargaining ?? p.allowBargaining)
+    : Boolean(p.allowBargaining);
+
+  const variantPicker = hasPricedVariants ? (
+    <div style={{ marginTop: 18 }}>
+      <div style={{ fontSize: ".875rem", color: "var(--ink-500)", marginBottom: 10 }}>
+        Option: <span style={{ color: "var(--ink-900)", fontWeight: 700 }}>{selVariant?.name}</span>
+      </div>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        {pricedVariants.map((v) => {
+          const active = v.id === selVariantId;
+          const out = (v.stock ?? 0) <= 0;
+          return (
+            <button
+              key={v.id}
+              type="button"
+              disabled={out}
+              onClick={() => setSelVariantId(v.id)}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                minHeight: 48,
+                padding: "10px 20px",
+                borderRadius: "var(--r-md)",
+                cursor: out ? "not-allowed" : "pointer",
+                border: `1.5px solid ${active ? "var(--blue-deep)" : "var(--line-200)"}`,
+                background: active ? "var(--tint-blue-50)" : "#fff",
+                color: out ? "var(--ink-300)" : active ? "var(--blue-deep)" : "var(--ink-700)",
+                fontWeight: 700,
+                fontSize: ".9375rem",
+                textDecoration: out ? "line-through" : "none",
+                opacity: out ? 0.5 : 1,
+              }}
+            >
+              {v.name}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  ) : null;
 
   useEffect(() => {
     setMediaIdx(0);
@@ -910,81 +978,84 @@ export function PDP({ p: pProp }: PdpProps) {
               </div>
             </div>
             <div style={{ marginTop: 8 }}>
-              <Price value={p.price} original={p.original} size="lg" />
+              <Price value={shownPrice} original={shownOriginal ?? undefined} size="lg" />
             </div>
 
-            {/* Variants — color swatches + size pills, same logic as desktop */}
-            {variants.map((v) => {
-              const sel = variantSel[v.name] ?? 0;
-              const isColor = v.kind === "swatch";
-              return (
-                <div key={v.name} style={{ marginTop: 18 }}>
-                  <div
-                    style={{
-                      fontSize: ".8125rem",
-                      color: "var(--ink-500)",
-                      marginBottom: 8,
-                    }}
-                  >
-                    {v.name}:{" "}
-                    <span style={{ color: "var(--ink-900)", fontWeight: 600 }}>
-                      {isColor ? v.options[sel]?.label : v.options[sel]}
-                    </span>
-                  </div>
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    {v.options.map((opt, i) =>
-                      isColor ? (
-                        <button
-                          key={i}
-                          type="button"
-                          aria-label={opt.label}
-                          onClick={() => pickVariant(v.name, i)}
-                          style={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: "50%",
-                            cursor: "pointer",
-                            border: `2px solid ${sel === i ? "var(--ink-900)" : "var(--line-200)"}`,
-                            padding: 3,
-                            background: "#fff",
-                          }}
-                        >
-                          <span
+            {variantPicker}
+
+            {/* Cosmetic template swatches — hidden when priced variants exist */}
+            {!hasPricedVariants &&
+              variants.map((v) => {
+                const sel = variantSel[v.name] ?? 0;
+                const isColor = v.kind === "swatch";
+                return (
+                  <div key={v.name} style={{ marginTop: 18 }}>
+                    <div
+                      style={{
+                        fontSize: ".8125rem",
+                        color: "var(--ink-500)",
+                        marginBottom: 8,
+                      }}
+                    >
+                      {v.name}:{" "}
+                      <span style={{ color: "var(--ink-900)", fontWeight: 600 }}>
+                        {isColor ? v.options[sel]?.label : v.options[sel]}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      {v.options.map((opt, i) =>
+                        isColor ? (
+                          <button
+                            key={i}
+                            type="button"
+                            aria-label={opt.label}
+                            onClick={() => pickVariant(v.name, i)}
                             style={{
-                              display: "block",
-                              width: "100%",
-                              height: "100%",
+                              width: 40,
+                              height: 40,
                               borderRadius: "50%",
-                              background: TINTS[opt.tint][2],
+                              cursor: "pointer",
+                              border: `2px solid ${sel === i ? "var(--blue-deep)" : "var(--line-200)"}`,
+                              padding: 3,
+                              background: "#fff",
                             }}
-                          />
-                        </button>
-                      ) : (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => pickVariant(v.name, i)}
-                          style={{
-                            minWidth: 56,
-                            height: 44,
-                            padding: "0 16px",
-                            borderRadius: "var(--r-md)",
-                            cursor: "pointer",
-                            border: `1.5px solid ${sel === i ? "var(--ink-900)" : "var(--line-200)"}`,
-                            background: sel === i ? "var(--ink-900)" : "#fff",
-                            color: sel === i ? "#fff" : "var(--ink-800)",
-                            fontWeight: 700,
-                            fontSize: ".9375rem",
-                          }}
-                        >
-                          {opt}
-                        </button>
-                      ),
-                    )}
+                          >
+                            <span
+                              style={{
+                                display: "block",
+                                width: "100%",
+                                height: "100%",
+                                borderRadius: "50%",
+                                background: TINTS[opt.tint][2],
+                              }}
+                            />
+                          </button>
+                        ) : (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => pickVariant(v.name, i)}
+                            style={{
+                              minWidth: 56,
+                              minHeight: 48,
+                              padding: "10px 20px",
+                              borderRadius: "var(--r-md)",
+                              cursor: "pointer",
+                              border: `1.5px solid ${sel === i ? "var(--blue-deep)" : "var(--line-200)"}`,
+                              background: sel === i ? "var(--tint-blue-50)" : "#fff",
+                              color: sel === i ? "var(--blue-deep)" : "var(--ink-700)",
+                              fontWeight: 700,
+                              fontSize: ".9375rem",
+                            }}
+                          >
+                            {opt}
+                          </button>
+                        ),
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
 
             {/* Delivery fee — explicit (legal-safe) */}
             <div
@@ -1429,7 +1500,7 @@ export function PDP({ p: pProp }: PdpProps) {
                 flexWrap: "wrap",
               }}
             >
-              <Price value={p.price} original={p.original} size="lg" />
+              <Price value={shownPrice} original={shownOriginal ?? undefined} size="lg" />
               {disc > 0 && <Chip tone="red">-{disc}% OFF</Chip>}
             </div>
 
@@ -1543,78 +1614,81 @@ export function PDP({ p: pProp }: PdpProps) {
               </div>
             )}
 
-            {/* variants — driven by category profile, not hardcoded */}
-            {variants.map((v, vi) => {
-              const sel = variantSel[v.name] ?? 0;
-              return (
-                <div key={v.name} style={{ marginTop: vi === 0 ? 4 : 22 }}>
-                  <div
-                    style={{
-                      fontSize: ".875rem",
-                      fontWeight: 700,
-                      color: "var(--ink-800)",
-                      marginBottom: 10,
-                    }}
-                  >
-                    {v.name}
-                    {v.kind === "swatch" && (
-                      <span style={{ color: "var(--ink-500)", fontWeight: 500 }}>
-                        : {v.options[sel].label}
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                    {v.options.map((opt, i) =>
-                      v.kind === "swatch" ? (
-                        <button
-                          key={i}
-                          onClick={() => pickVariant(v.name, i)}
-                          aria-label={opt.label}
-                          style={{
-                            width: 48,
-                            height: 48,
-                            borderRadius: "var(--r-md)",
-                            cursor: "pointer",
-                            border: `2px solid ${sel === i ? "var(--blue)" : "var(--line-200)"}`,
-                            padding: 3,
-                            background: "#fff",
-                          }}
-                        >
-                          <span
+            {variantPicker}
+
+            {/* Cosmetic template swatches — hidden when priced variants exist */}
+            {!hasPricedVariants &&
+              variants.map((v, vi) => {
+                const sel = variantSel[v.name] ?? 0;
+                return (
+                  <div key={v.name} style={{ marginTop: vi === 0 ? 4 : 22 }}>
+                    <div
+                      style={{
+                        fontSize: ".875rem",
+                        fontWeight: 700,
+                        color: "var(--ink-800)",
+                        marginBottom: 10,
+                      }}
+                    >
+                      {v.name}
+                      {v.kind === "swatch" && (
+                        <span style={{ color: "var(--ink-500)", fontWeight: 500 }}>
+                          : {v.options[sel].label}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      {v.options.map((opt, i) =>
+                        v.kind === "swatch" ? (
+                          <button
+                            key={i}
+                            onClick={() => pickVariant(v.name, i)}
+                            aria-label={opt.label}
                             style={{
-                              display: "block",
-                              width: "100%",
-                              height: "100%",
-                              borderRadius: 5,
-                              background: TINTS[opt.tint][2],
+                              width: 48,
+                              height: 48,
+                              borderRadius: "var(--r-md)",
+                              cursor: "pointer",
+                              border: `2px solid ${sel === i ? "var(--blue-deep)" : "var(--line-200)"}`,
+                              padding: 3,
+                              background: "#fff",
                             }}
-                          />
-                        </button>
-                      ) : (
-                        <button
-                          key={i}
-                          onClick={() => pickVariant(v.name, i)}
-                          style={{
-                            minWidth: 56,
-                            height: 46,
-                            padding: "0 16px",
-                            borderRadius: "var(--r-md)",
-                            cursor: "pointer",
-                            border: `1.5px solid ${sel === i ? "var(--blue)" : "var(--line-200)"}`,
-                            background: sel === i ? "var(--tint-blue-50)" : "#fff",
-                            color: sel === i ? "var(--blue)" : "var(--ink-700)",
-                            fontWeight: 700,
-                            fontSize: ".9375rem",
-                          }}
-                        >
-                          {opt}
-                        </button>
-                      ),
-                    )}
+                          >
+                            <span
+                              style={{
+                                display: "block",
+                                width: "100%",
+                                height: "100%",
+                                borderRadius: 5,
+                                background: TINTS[opt.tint][2],
+                              }}
+                            />
+                          </button>
+                        ) : (
+                          <button
+                            key={i}
+                            onClick={() => pickVariant(v.name, i)}
+                            style={{
+                              minWidth: 56,
+                              minHeight: 48,
+                              padding: "10px 20px",
+                              borderRadius: "var(--r-md)",
+                              cursor: "pointer",
+                              border: `1.5px solid ${sel === i ? "var(--blue-deep)" : "var(--line-200)"}`,
+                              background: sel === i ? "var(--tint-blue-50)" : "#fff",
+                              color: sel === i ? "var(--blue-deep)" : "var(--ink-700)",
+                              fontWeight: 700,
+                              fontSize: ".9375rem",
+                            }}
+                          >
+                            {opt}
+                          </button>
+                        ),
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
 
             {/* Quantity row */}
             <div
@@ -1641,11 +1715,11 @@ export function PDP({ p: pProp }: PdpProps) {
                 size="lg"
                 full
                 icon="cart"
-                onClick={() => void addToCart(p, qty)}
+                onClick={() => void addToCart(p, qty, undefined, selVariantId)}
               >
                 Add to Cart
               </Button>
-              <Button variant="primary" size="lg" full onClick={() => buyNow(p, qty)}>
+              <Button variant="primary" size="lg" full onClick={() => buyNow(p, qty, selVariantId)}>
                 Buy Now
               </Button>
             </div>
@@ -1888,18 +1962,26 @@ export function PDP({ p: pProp }: PdpProps) {
           </div>
         </div>
 
-        {related.length > 0 && (
+        {similarItems.length > 0 && (
           <div style={{ marginTop: 52, paddingBottom: 100 }}>
-            <SectionHead title="Customers also" accent="bought" />
+            <SectionHead title="Similar items to" accent={p.name} />
             <div className="bz-picks-grid">
-              {related.map((rp) => (
+              {similarItems.map((rp) => (
                 <ProductCard key={rp.id} p={rp} onClick={openProduct} />
               ))}
             </div>
           </div>
         )}
 
-        {bargain && bargainingAvailable && <BargainModal p={p} onClose={() => setBargain(false)} />}
+        {bargain && bargainingAvailable && (
+          <BargainModal
+            p={p}
+            variantId={selVariantId}
+            listedPrice={shownPrice}
+            original={shownOriginal}
+            onClose={() => setBargain(false)}
+          />
+        )}
         {lightboxOpen && gallery.length > 0 && (
           <ImageLightbox
             images={gallery}
@@ -1913,19 +1995,23 @@ export function PDP({ p: pProp }: PdpProps) {
         {/* Mobile sticky buy bar — Buy Now opens an option sheet when the
             product has choices; otherwise it goes straight to checkout. */}
         <MobileBuyBar
-          onAdd={() => void addToCart(p, qty)}
-          onBuy={() => (variants.length > 0 ? setBuyNowSheet(true) : void buyNow(p, qty))}
+          onAdd={() => void addToCart(p, qty, undefined, selVariantId)}
+          onBuy={() =>
+            hasPricedVariants ? setBuyNowSheet(true) : void buyNow(p, qty, selVariantId)
+          }
         />
 
         {buyNowSheet && (
           <BuyNowSheet
             p={p}
-            variants={variants}
-            variantSel={variantSel}
-            onPick={pickVariant}
+            price={shownPrice}
+            original={shownOriginal}
+            pricedVariants={pricedVariants}
+            selVariantId={selVariantId}
+            onPickVariant={setSelVariantId}
             onConfirm={() => {
               setBuyNowSheet(false);
-              void buyNow(p, qty);
+              void buyNow(p, qty, selVariantId);
             }}
             onClose={() => setBuyNowSheet(false)}
           />

@@ -14,10 +14,15 @@ export interface BazaarContextValue {
   openTracking: (orderId: string) => void;
   cart: CartLine[];
   cartLoading: boolean;
-  addToCart: (product: Product, qty?: number, successMessage?: string) => Promise<void>;
-  updateCartQty: (productId: string, qty: number) => Promise<void>;
-  removeFromCart: (productId: string) => Promise<void>;
-  buyNow: (product: Product, qty?: number) => Promise<void>;
+  addToCart: (
+    product: Product,
+    qty?: number,
+    successMessage?: string,
+    variantId?: string | null,
+  ) => Promise<void>;
+  updateCartQty: (productId: string, qty: number, variantId?: string | null) => Promise<void>;
+  removeFromCart: (productId: string, variantId?: string | null) => Promise<void>;
+  buyNow: (product: Product, qty?: number, variantId?: string | null) => Promise<void>;
   cartCount: number;
   wish: string[];
   wishSellers: string[];

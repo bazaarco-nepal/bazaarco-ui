@@ -69,19 +69,33 @@ describe("useCartMutations", () => {
 
     await result.current.addItem.mutateAsync({ product: { id: "p1" } as Product, qty: 2 });
 
-    expect(mockedCart.addItem).toHaveBeenCalledWith("p1", 2);
+    // variantId is threaded through (undefined here for a single-price product).
+    expect(mockedCart.addItem).toHaveBeenCalledWith("p1", 2, undefined);
     expect(useBazaarStore.getState().cart).toEqual(sampleItems);
   });
 
-  it("updateQty and removeItem forward the right args", async () => {
+  it("addItem forwards the chosen variantId", async () => {
+    mockedCart.addItem.mockResolvedValue({ items: sampleItems });
+    const { result } = renderHook(() => useCartMutations(), { wrapper: wrapper() });
+
+    await result.current.addItem.mutateAsync({
+      product: { id: "p1" } as Product,
+      qty: 1,
+      variantId: "v-l",
+    });
+
+    expect(mockedCart.addItem).toHaveBeenCalledWith("p1", 1, "v-l");
+  });
+
+  it("updateQty and removeItem forward the right args (incl. variantId)", async () => {
     mockedCart.updateItem.mockResolvedValue({ items: [] });
     mockedCart.removeItem.mockResolvedValue({ items: [] });
     const { result } = renderHook(() => useCartMutations(), { wrapper: wrapper() });
 
-    await result.current.updateQty.mutateAsync({ productId: "p1", qty: 5 });
-    await result.current.removeItem.mutateAsync("p1");
+    await result.current.updateQty.mutateAsync({ productId: "p1", qty: 5, variantId: "v-l" });
+    await result.current.removeItem.mutateAsync({ productId: "p1", variantId: "v-l" });
 
-    expect(mockedCart.updateItem).toHaveBeenCalledWith("p1", 5);
-    expect(mockedCart.removeItem).toHaveBeenCalledWith("p1");
+    expect(mockedCart.updateItem).toHaveBeenCalledWith("p1", 5, "v-l");
+    expect(mockedCart.removeItem).toHaveBeenCalledWith("p1", "v-l");
   });
 });

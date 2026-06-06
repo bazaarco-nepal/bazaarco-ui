@@ -50,6 +50,7 @@ import {
 import { usePendingSellerVerifications, useReviewSellerVerification } from "@/hooks/use-admin";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { displayName, userInitial } from "@/lib/display";
+import { saleEffective, saleValid as isSaleValid, buildPricing } from "@/lib/discount";
 import {
   clearDeferredSellerOnboarding,
   deferSellerOnboarding,
@@ -73,7 +74,6 @@ import {
   useSellerInventory,
   useSellerBargains,
   useSellerReviews,
-  useSellerPromotions,
   useSellerVideos,
   useSellerAnalytics,
   useSellerNotifications,
@@ -149,6 +149,9 @@ export const sellerOrderRef = { current: null as SellerInboxOrderItem | null };
 // the full product (description, category, specs) is fetched by id on the screen.
 export const editProductRef = { current: null as SellerInventoryItem | null };
 
+// Threads the inventory row a seller tapped "View" on through to the view screen.
+export const viewProductRef = { current: null as SellerInventoryItem | null };
+
 export const SELLER_NAV = [
   {
     group: "My shop",
@@ -166,7 +169,6 @@ export const SELLER_NAV = [
     items: [
       { id: "s-storefront", icon: "palette", en: "My Store" },
       { id: "s-bargain", icon: "bargain", en: "Bargaining", badgeKey: "bargain" },
-      { id: "s-promos", icon: "megaphone", en: "Offers" },
       { id: "s-ledger", icon: "wallet", en: "My money" },
       { id: "s-analytics", icon: "trendingUp", en: "Analytics" },
       { id: "s-reviews", icon: "star", en: "Reviews" },
@@ -2505,21 +2507,22 @@ export function SellerInbox() {
   const counts = {
     all: baseFiltered.length,
     placed: baseFiltered.filter((o) => o.status === "placed").length,
-    packaging: baseFiltered.filter((o) =>
+    processing: baseFiltered.filter((o) =>
       ["accepted", "packaging_started", "ready_for_pickup"].includes(o.status),
     ).length,
-    transit: baseFiltered.filter((o) =>
+    shipped: baseFiltered.filter((o) =>
       ["picked_up", "arrived_at_hub", "out_for_delivery"].includes(o.status),
     ).length,
-    delivered: baseFiltered.filter((o) => o.status === "delivered").length,
+    completed: baseFiltered.filter((o) => o.status === "delivered").length,
     cancelled: baseFiltered.filter((o) => o.status === "cancelled").length,
   };
   const list = baseFiltered.filter((o) => {
     if (tab === "all") return true;
-    if (tab === "packaging")
+    if (tab === "processing")
       return ["accepted", "packaging_started", "ready_for_pickup"].includes(o.status);
-    if (tab === "transit")
+    if (tab === "shipped")
       return ["picked_up", "arrived_at_hub", "out_for_delivery"].includes(o.status);
+    if (tab === "completed") return o.status === "delivered";
     return o.status === tab;
   });
   const openOrder = (o: SellerInboxOrderItem) => {
@@ -2537,9 +2540,9 @@ export function SellerInbox() {
   const tabs = [
     { id: "all", label: "All" },
     { id: "placed", label: "New" },
-    { id: "packaging", label: "Packaging" },
-    { id: "transit", label: "In transit" },
-    { id: "delivered", label: "Delivered" },
+    { id: "processing", label: "Processing" },
+    { id: "shipped", label: "Shipped" },
+    { id: "completed", label: "Completed" },
     { id: "cancelled", label: "Cancelled" },
   ];
 
@@ -2702,64 +2705,29 @@ export function SellerInbox() {
           )}
         </div>
 
-        {/* Status tabs with counts */}
-        <div
-          style={{ display: "flex", gap: 6, overflowX: "auto", marginBottom: 16, paddingBottom: 4 }}
-        >
-          {tabs.map((t) => {
-            const c = counts[t.id];
-            const active = tab === t.id;
-            return (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "8px 14px",
-                  background: active ? "var(--ink-900)" : "#fff",
-                  color: active ? "#fff" : "var(--ink-700)",
-                  border: `1.5px solid ${active ? "var(--ink-900)" : "var(--line-200)"}`,
-                  borderRadius: 999,
-                  cursor: "pointer",
-                  fontWeight: 700,
-                  fontSize: ".8125rem",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {t.label}
-                <span
-                  className="tnum"
-                  style={{
-                    background: active ? "rgba(255,255,255,.2)" : "var(--line-100)",
-                    padding: "1px 8px",
-                    borderRadius: 999,
-                    fontSize: ".7rem",
-                    fontWeight: 800,
-                  }}
-                >
-                  {c}
-                </span>
-              </button>
-            );
-          })}
+        {/* Status pills */}
+        <div style={{ marginBottom: 16 }}>
+          <ChipGroup
+            options={tabs.map((t) => ({ value: t.id, label: `${t.label} (${counts[t.id]})` }))}
+            value={tab}
+            onChange={setTab}
+          />
         </div>
 
         {view === "kanban" ? (
           <div className="bz-kanban">
             {[
               { id: "placed", statuses: ["placed"] },
-              { id: "packaging", statuses: ["accepted", "packaging_started", "ready_for_pickup"] },
-              { id: "transit", statuses: ["picked_up", "arrived_at_hub", "out_for_delivery"] },
-              { id: "delivered", statuses: ["delivered"] },
+              { id: "processing", statuses: ["accepted", "packaging_started", "ready_for_pickup"] },
+              { id: "shipped", statuses: ["picked_up", "arrived_at_hub", "out_for_delivery"] },
+              { id: "completed", statuses: ["delivered"] },
             ].map((col) => {
               const sampleStatus = col.statuses[0] as OrderStatus;
               const lbl =
-                col.id === "packaging"
-                  ? { en: "Packaging", icon: "package" }
-                  : col.id === "transit"
-                    ? { en: "In transit", icon: "truck" }
+                col.id === "processing"
+                  ? { en: "Processing", icon: "package" }
+                  : col.id === "shipped"
+                    ? { en: "Shipped", icon: "truck" }
                     : INBOX_LABEL[sampleStatus];
               const tone = INBOX_TONE[sampleStatus];
               const items = baseFiltered.filter((o) => col.statuses.includes(o.status));
@@ -2836,9 +2804,18 @@ export function SellerInbox() {
           <>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {list.length === 0 && (
-                <div style={{ textAlign: "center", padding: "40px 0", color: "var(--ink-500)" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "60px 20px",
+                    color: "var(--ink-500)",
+                  }}
+                >
                   <Icon name="package" size={48} color="var(--ink-300)" />
-                  <p style={{ marginTop: 12 }}>No orders here yet</p>
+                  <p style={{ marginTop: 12, fontWeight: 600 }}>No orders here yet</p>
                 </div>
               )}
               {ordersPaged.visible.map((o) => (
@@ -3594,7 +3571,18 @@ export function SellerAddProduct({
   const [stock, setStock] = useState("");
   const [hasVariants, setHasVariants] = useState(false);
   const [variants, setVariants] = useState<
-    Array<{ id: string | number; name: string; price: string; stock: string }>
+    Array<{
+      id: string | number;
+      name: string;
+      price: string;
+      stock: string;
+      onSale?: boolean;
+      saleMode?: "amount" | "percent";
+      salePrice?: string;
+      salePct?: string;
+      allowBargaining?: boolean;
+      minimumPrice?: string;
+    }>
   >([
     { id: 1, name: "Small", price: "", stock: "" },
     { id: 2, name: "Medium", price: "", stock: "" },
@@ -3602,6 +3590,13 @@ export function SellerAddProduct({
   ]);
   const [bargainOk, setBargainOk] = useState(true);
   const [bargainMinPrice, setBargainMinPrice] = useState("");
+  // Discount (single-price products only). `price` above holds the regular
+  // price; on sale it becomes the struck-through `original` and the effective
+  // price is `salePrice` (amount mode) or computed from `salePct` (percent mode).
+  const [onSale, setOnSale] = useState(false);
+  const [saleMode, setSaleMode] = useState<"amount" | "percent">("percent");
+  const [salePrice, setSalePrice] = useState("");
+  const [salePct, setSalePct] = useState("");
   const [attrs, setAttrs] = useState<Record<string, unknown>>({});
 
   // Prefill once from the existing product when editing. The inventory row
@@ -3623,16 +3618,42 @@ export function SellerAddProduct({
     if (editing?.hasVariants && editing.variants?.length) {
       setHasVariants(true);
       setVariants(
-        editing.variants.map((v) => ({
-          id: v.id,
-          name: v.name,
-          price: String(v.price),
-          stock: String(v.stock),
-        })),
+        editing.variants.map((v) => {
+          // On sale: `price` is effective and `original` the base; the Price
+          // field shows the base, and the sale inputs hold the discount.
+          const onSale = Boolean(v.discountType && v.original);
+          return {
+            id: v.id,
+            name: v.name,
+            price: String(onSale ? v.original : v.price),
+            stock: String(v.stock),
+            onSale,
+            saleMode: v.discountType === "amount" ? "amount" : "percent",
+            salePrice: v.discountType === "amount" ? String(v.price) : "",
+            salePct: v.discountType === "percent" ? String(v.discountPct ?? "") : "",
+            allowBargaining: v.allowBargaining ?? false,
+            minimumPrice: v.minimumPrice ? String(v.minimumPrice) : "",
+          };
+        }),
       );
     } else {
       setHasVariants(false);
-      setPrice(String(editingProduct.price ?? editing?.price ?? ""));
+      // When on sale, `price` (effective) and `original` (base) are stored
+      // separately; the Price field always shows the regular (base) price.
+      const dType = editingProduct.discountType ?? null;
+      if (dType && editingProduct.original) {
+        setOnSale(true);
+        setPrice(String(editingProduct.original));
+        if (dType === "percent") {
+          setSaleMode("percent");
+          setSalePct(editingProduct.discountPct ? String(editingProduct.discountPct) : "");
+        } else {
+          setSaleMode("amount");
+          setSalePrice(String(editingProduct.price));
+        }
+      } else {
+        setPrice(String(editingProduct.price ?? editing?.price ?? ""));
+      }
       setStock(String(editing?.stock ?? ""));
     }
   }, [isEdit, editingProduct, editing]);
@@ -3649,15 +3670,44 @@ export function SellerAddProduct({
   const descriptionOk = description.trim().length >= 10;
   const categoryOk = Boolean(category);
   const specsOk = true;
-  const variantsOk = !hasVariants || variants.every((v) => v.price && v.stock);
+  // Sale input for a variant row (the variant's Price field is its regular price).
+  const variantSaleInput = (v: {
+    price: string;
+    saleMode?: string;
+    salePrice?: string;
+    salePct?: string;
+  }) => ({
+    base: Number(v.price) || 0,
+    mode: (v.saleMode ?? "percent") as "amount" | "percent",
+    salePrice: Number(v.salePrice) || 0,
+    salePct: Number(v.salePct) || 0,
+  });
+  const variantsOk =
+    !hasVariants ||
+    variants.every((v) => v.price && v.stock && (!v.onSale || isSaleValid(variantSaleInput(v))));
   // Editing keeps the existing gallery — the update endpoint never touches images.
   const photosOk = isEdit ? true : productPhotos.length >= 3 && productPhotos.length <= 5;
+
+  // Discount (single-price only). Pure math lives in @/lib/discount and mirrors
+  // the server's authoritative rules so the seller gets immediate feedback.
+  const applyDiscount = onSale && !hasVariants;
+  const baseNum = Number(price) || 0;
+  const saleInput = {
+    base: baseNum,
+    mode: saleMode,
+    salePrice: Number(salePrice) || 0,
+    salePct: Number(salePct) || 0,
+  };
+  const saleEffectivePrice = saleEffective(saleInput);
+  const saleValid = !applyDiscount || isSaleValid(saleInput);
+
   const canPublish =
     photosOk &&
     titleOk &&
     descriptionOk &&
     specsOk &&
     categoryOk &&
+    saleValid &&
     (hasVariants ? variantsOk : price && stock);
 
   const publishMissing: string[] = [];
@@ -3671,6 +3721,13 @@ export function SellerAddProduct({
     if (!price) publishMissing.push("price (Rs.)");
     if (!stock) publishMissing.push("stock quantity");
   }
+  if (!saleValid) {
+    publishMissing.push(
+      saleMode === "percent"
+        ? "a discount percentage between 1 and 99"
+        : "a discounted price below the regular price",
+    );
+  }
   const categoryMeta = categories.find((c) => c.id === category);
   const displayPrice = hasVariants ? variants.find((v) => v.price)?.price : price;
   const displayStock = hasVariants
@@ -3680,8 +3737,37 @@ export function SellerAddProduct({
   const updateVariant = (id, key, val) =>
     setVariants((arr) => arr.map((v) => (v.id === id ? { ...v, [key]: val } : v)));
   const addVariant = () =>
-    setVariants((arr) => [...arr, { id: Date.now(), name: "", price: "", stock: "" }]);
+    setVariants((arr) => [
+      ...arr,
+      {
+        id: Date.now(),
+        name: "",
+        price: "",
+        stock: "",
+        onSale: false,
+        saleMode: "percent",
+        salePrice: "",
+        salePct: "",
+        allowBargaining: false,
+        minimumPrice: "",
+      },
+    ]);
   const removeVariant = (id) => setVariants((arr) => arr.filter((v) => v.id !== id));
+
+  // Pricing in the API's shape (price = effective/sale price, original = struck
+  // base price). Variant products keep their existing product-level price and
+  // carry no product-level discount in this phase. Shared by create and edit.
+  const buildPricingPayload = () => {
+    if (hasVariants) {
+      return {
+        price: Number(price || displayPrice || 0),
+        original: null,
+        discountType: null,
+        discountPct: null,
+      };
+    }
+    return buildPricing(applyDiscount, saleInput);
+  };
 
   // Variants the seller actually filled, in the API's shape. Shared by create
   // and edit so both paths agree on what a "complete" variant is.
@@ -3689,12 +3775,19 @@ export function SellerAddProduct({
     hasVariants
       ? variants
           .filter((v) => v.name && v.price && v.stock)
-          .map((v) => ({
-            id: String(v.id),
-            name: v.name.trim(),
-            price: Number(v.price),
-            stock: Number(v.stock),
-          }))
+          .map((v) => {
+            const pricing = v.onSale
+              ? buildPricing(true, variantSaleInput(v))
+              : { price: Number(v.price), original: null, discountType: null, discountPct: null };
+            return {
+              id: String(v.id),
+              name: v.name.trim(),
+              stock: Number(v.stock),
+              ...pricing,
+              allowBargaining: v.allowBargaining ?? false,
+              minimumPrice: v.allowBargaining && v.minimumPrice ? Number(v.minimumPrice) : null,
+            };
+          })
       : undefined;
 
   // Publish: upload every photo (3–5, cover first), then create the product.
@@ -3709,12 +3802,16 @@ export function SellerAddProduct({
           id: editing.id,
           name: title.trim(),
           description: description.trim(),
-          price: Number(price || displayPrice || 0),
+          ...buildPricingPayload(),
           metadata: attrs,
           stock: hasVariants ? undefined : Number(stock) || 0,
           variants: buildVariants(),
-          allowBargaining: bargainOk,
-          minimumPrice: bargainOk && bargainMinPrice ? Number(bargainMinPrice) : null,
+          allowBargaining: hasVariants ? variants.some((v) => v.allowBargaining) : bargainOk,
+          minimumPrice: hasVariants
+            ? null
+            : bargainOk && bargainMinPrice
+              ? Number(bargainMinPrice)
+              : null,
         });
         toast("Product updated");
         nav("s-products");
@@ -3731,15 +3828,19 @@ export function SellerAddProduct({
       await createProduct.mutateAsync({
         name: title.trim(),
         description: description.trim(),
-        price: Number(price || displayPrice || 0),
+        ...buildPricingPayload(),
         categoryId: category,
         images,
         img: images[0],
         metadata: attrs,
         stock: hasVariants ? undefined : Number(stock) || 0,
         variants: buildVariants(),
-        allowBargaining: bargainOk,
-        maxDiscountPct: bargainOk ? bargainPct : 0,
+        allowBargaining: hasVariants ? variants.some((v) => v.allowBargaining) : bargainOk,
+        minimumPrice: hasVariants
+          ? null
+          : bargainOk && bargainMinPrice
+            ? Number(bargainMinPrice)
+            : null,
       });
       toast("Product published!");
       nav("s-products");
@@ -3961,7 +4062,7 @@ export function SellerAddProduct({
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Green cotton kurta — size XL"
+              placeholder="e.g. iPhone 17 Pro Max 1TB"
               style={{
                 width: "100%",
                 height: 56,
@@ -3989,7 +4090,7 @@ export function SellerAddProduct({
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Tell buyers what makes it special — material, size, what's included… (min. 10 characters)"
+              placeholder="Description of this product, which they can see to understand about it."
               rows={4}
               required
               minLength={10}
@@ -4158,70 +4259,220 @@ export function SellerAddProduct({
             </div>
 
             {!hasVariants ? (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div>
+                    <label
+                      style={{
+                        fontSize: ".8125rem",
+                        fontWeight: 700,
+                        color: "var(--ink-700)",
+                        display: "block",
+                        marginBottom: 6,
+                      }}
+                    >
+                      Price (Rs.)
+                    </label>
+                    <input
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value.replace(/\D/g, ""))}
+                      inputMode="numeric"
+                      placeholder="1200"
+                      className="tnum"
+                      style={{
+                        width: "100%",
+                        height: 64,
+                        fontSize: "1.5rem",
+                        fontWeight: 800,
+                        textAlign: "center",
+                        border: "1.5px solid var(--line-200)",
+                        borderRadius: "var(--r-md)",
+                        fontFamily: "var(--font-sans)",
+                        outline: "none",
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      style={{
+                        fontSize: ".8125rem",
+                        fontWeight: 700,
+                        color: "var(--ink-700)",
+                        display: "block",
+                        marginBottom: 6,
+                      }}
+                    >
+                      Stock
+                    </label>
+                    <input
+                      value={stock}
+                      onChange={(e) => setStock(e.target.value.replace(/\D/g, ""))}
+                      inputMode="numeric"
+                      placeholder="15"
+                      className="tnum"
+                      style={{
+                        width: "100%",
+                        height: 64,
+                        fontSize: "1.5rem",
+                        fontWeight: 800,
+                        textAlign: "center",
+                        border: "1.5px solid var(--line-200)",
+                        borderRadius: "var(--r-md)",
+                        fontFamily: "var(--font-sans)",
+                        outline: "none",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Discount (sale) — single-price products. The Price above is the
+                  regular price; this sets the discounted price buyers see. */}
+                <div
+                  style={{
+                    marginTop: 14,
+                    border: "1.5px solid var(--line-200)",
+                    borderRadius: "var(--r-md)",
+                    padding: 14,
+                  }}
+                >
                   <label
                     style={{
-                      fontSize: ".8125rem",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      cursor: "pointer",
                       fontWeight: 700,
                       color: "var(--ink-700)",
-                      display: "block",
-                      marginBottom: 6,
+                      fontSize: ".9375rem",
                     }}
                   >
-                    Price (Rs.)
+                    <input
+                      type="checkbox"
+                      checked={onSale}
+                      onChange={(e) => setOnSale(e.target.checked)}
+                    />
+                    Put this product on sale
                   </label>
-                  <input
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value.replace(/\D/g, ""))}
-                    inputMode="numeric"
-                    placeholder="1200"
-                    className="tnum"
-                    style={{
-                      width: "100%",
-                      height: 64,
-                      fontSize: "1.5rem",
-                      fontWeight: 800,
-                      textAlign: "center",
-                      border: "1.5px solid var(--line-200)",
-                      borderRadius: "var(--r-md)",
-                      fontFamily: "var(--font-sans)",
-                      outline: "none",
-                    }}
-                  />
+
+                  {onSale && (
+                    <div style={{ marginTop: 12 }}>
+                      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                        {(
+                          [
+                            ["percent", "% off"],
+                            ["amount", "Set sale price"],
+                          ] as const
+                        ).map(([mode, label]) => (
+                          <button
+                            key={mode}
+                            type="button"
+                            onClick={() => setSaleMode(mode)}
+                            style={{
+                              flex: 1,
+                              height: 40,
+                              borderRadius: "var(--r-md)",
+                              border:
+                                saleMode === mode
+                                  ? "1.5px solid var(--blue-deep)"
+                                  : "1.5px solid var(--line-200)",
+                              background: saleMode === mode ? "var(--blue-50, #eef4ff)" : "#fff",
+                              color: saleMode === mode ? "var(--blue-deep)" : "var(--ink-600)",
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              fontFamily: "var(--font-sans)",
+                            }}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {saleMode === "percent" ? (
+                        <div>
+                          <label
+                            style={{
+                              fontSize: ".8125rem",
+                              fontWeight: 700,
+                              color: "var(--ink-700)",
+                              display: "block",
+                              marginBottom: 6,
+                            }}
+                          >
+                            Discount (%)
+                          </label>
+                          <input
+                            value={salePct}
+                            onChange={(e) =>
+                              setSalePct(e.target.value.replace(/\D/g, "").slice(0, 2))
+                            }
+                            inputMode="numeric"
+                            placeholder="e.g. 20"
+                            className="tnum"
+                            style={{
+                              width: "100%",
+                              height: 48,
+                              padding: "0 12px",
+                              border: "1.5px solid var(--line-200)",
+                              borderRadius: "var(--r-md)",
+                              fontFamily: "var(--font-sans)",
+                              outline: "none",
+                              textAlign: "center",
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div>
+                          <label
+                            style={{
+                              fontSize: ".8125rem",
+                              fontWeight: 700,
+                              color: "var(--ink-700)",
+                              display: "block",
+                              marginBottom: 6,
+                            }}
+                          >
+                            Sale price (Rs.)
+                          </label>
+                          <input
+                            value={salePrice}
+                            onChange={(e) => setSalePrice(e.target.value.replace(/\D/g, ""))}
+                            inputMode="numeric"
+                            placeholder="e.g. 960"
+                            className="tnum"
+                            style={{
+                              width: "100%",
+                              height: 48,
+                              padding: "0 12px",
+                              border: "1.5px solid var(--line-200)",
+                              borderRadius: "var(--r-md)",
+                              fontFamily: "var(--font-sans)",
+                              outline: "none",
+                              textAlign: "center",
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      <p
+                        style={{
+                          margin: "10px 0 0",
+                          fontSize: ".8125rem",
+                          color: saleValid ? "var(--ink-600)" : "var(--danger, #d23)",
+                        }}
+                      >
+                        {!saleValid
+                          ? saleMode === "percent"
+                            ? "Enter a percentage between 1 and 99."
+                            : "Sale price must be a positive number below the regular price."
+                          : `Buyers pay Rs. ${saleEffectivePrice.toLocaleString("en-IN")} ` +
+                            `(was Rs. ${baseNum.toLocaleString("en-IN")}, −${
+                              baseNum > 0 ? Math.round((1 - saleEffectivePrice / baseNum) * 100) : 0
+                            }%).`}
+                      </p>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <label
-                    style={{
-                      fontSize: ".8125rem",
-                      fontWeight: 700,
-                      color: "var(--ink-700)",
-                      display: "block",
-                      marginBottom: 6,
-                    }}
-                  >
-                    Stock
-                  </label>
-                  <input
-                    value={stock}
-                    onChange={(e) => setStock(e.target.value.replace(/\D/g, ""))}
-                    inputMode="numeric"
-                    placeholder="15"
-                    className="tnum"
-                    style={{
-                      width: "100%",
-                      height: 64,
-                      fontSize: "1.5rem",
-                      fontWeight: 800,
-                      textAlign: "center",
-                      border: "1.5px solid var(--line-200)",
-                      borderRadius: "var(--r-md)",
-                      fontFamily: "var(--font-sans)",
-                      outline: "none",
-                    }}
-                  />
-                </div>
-              </div>
+              </>
             ) : (
               <div>
                 <p style={{ margin: "0 0 10px", fontSize: ".8125rem", color: "var(--ink-500)" }}>
@@ -4232,83 +4483,198 @@ export function SellerAddProduct({
                     <div
                       key={v.id}
                       style={{
-                        display: "grid",
-                        gridTemplateColumns: "1.4fr 1fr 1fr auto",
+                        border: "1.5px solid var(--line-200)",
+                        borderRadius: "var(--r-md)",
+                        padding: 10,
+                        display: "flex",
+                        flexDirection: "column",
                         gap: 8,
-                        alignItems: "center",
                       }}
                     >
-                      <input
-                        value={v.name}
-                        onChange={(e) => updateVariant(v.id, "name", e.target.value)}
-                        placeholder="Variant (e.g. Large, Red)"
+                      <div
                         style={{
-                          width: "100%",
-                          minWidth: 0,
-                          height: 48,
-                          padding: "0 12px",
-                          border: "1.5px solid var(--line-200)",
-                          borderRadius: "var(--r-md)",
-                          fontFamily: "var(--font-sans)",
-                          outline: "none",
-                        }}
-                      />
-                      <input
-                        value={v.price}
-                        onChange={(e) =>
-                          updateVariant(v.id, "price", e.target.value.replace(/\D/g, ""))
-                        }
-                        inputMode="numeric"
-                        placeholder="Price"
-                        className="tnum"
-                        style={{
-                          width: "100%",
-                          minWidth: 0,
-                          height: 48,
-                          padding: "0 12px",
-                          border: "1.5px solid var(--line-200)",
-                          borderRadius: "var(--r-md)",
-                          fontFamily: "var(--font-sans)",
-                          outline: "none",
-                          textAlign: "center",
-                        }}
-                      />
-                      <input
-                        value={v.stock}
-                        onChange={(e) =>
-                          updateVariant(v.id, "stock", e.target.value.replace(/\D/g, ""))
-                        }
-                        inputMode="numeric"
-                        placeholder="Stock"
-                        className="tnum"
-                        style={{
-                          width: "100%",
-                          minWidth: 0,
-                          height: 48,
-                          padding: "0 12px",
-                          border: "1.5px solid var(--line-200)",
-                          borderRadius: "var(--r-md)",
-                          fontFamily: "var(--font-sans)",
-                          outline: "none",
-                          textAlign: "center",
-                        }}
-                      />
-                      <button
-                        onClick={() => removeVariant(v.id)}
-                        disabled={variants.length <= 1}
-                        style={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: "var(--r-md)",
-                          border: "1.5px solid var(--line-200)",
-                          background: "#fff",
-                          cursor: variants.length <= 1 ? "default" : "pointer",
-                          color: "var(--danger)",
-                          opacity: variants.length <= 1 ? 0.3 : 1,
+                          display: "grid",
+                          gridTemplateColumns: "1.4fr 1fr 1fr auto",
+                          gap: 8,
+                          alignItems: "center",
                         }}
                       >
-                        <Icon name="trash" size={16} color="var(--danger)" />
-                      </button>
+                        <input
+                          value={v.name}
+                          onChange={(e) => updateVariant(v.id, "name", e.target.value)}
+                          placeholder="Variant (e.g. Large, Red)"
+                          style={{
+                            width: "100%",
+                            minWidth: 0,
+                            height: 48,
+                            padding: "0 12px",
+                            border: "1.5px solid var(--line-200)",
+                            borderRadius: "var(--r-md)",
+                            fontFamily: "var(--font-sans)",
+                            outline: "none",
+                          }}
+                        />
+                        <input
+                          value={v.price}
+                          onChange={(e) =>
+                            updateVariant(v.id, "price", e.target.value.replace(/\D/g, ""))
+                          }
+                          inputMode="numeric"
+                          placeholder="Price"
+                          className="tnum"
+                          style={{
+                            width: "100%",
+                            minWidth: 0,
+                            height: 48,
+                            padding: "0 12px",
+                            border: "1.5px solid var(--line-200)",
+                            borderRadius: "var(--r-md)",
+                            fontFamily: "var(--font-sans)",
+                            outline: "none",
+                            textAlign: "center",
+                          }}
+                        />
+                        <input
+                          value={v.stock}
+                          onChange={(e) =>
+                            updateVariant(v.id, "stock", e.target.value.replace(/\D/g, ""))
+                          }
+                          inputMode="numeric"
+                          placeholder="Stock"
+                          className="tnum"
+                          style={{
+                            width: "100%",
+                            minWidth: 0,
+                            height: 48,
+                            padding: "0 12px",
+                            border: "1.5px solid var(--line-200)",
+                            borderRadius: "var(--r-md)",
+                            fontFamily: "var(--font-sans)",
+                            outline: "none",
+                            textAlign: "center",
+                          }}
+                        />
+                        <button
+                          onClick={() => removeVariant(v.id)}
+                          disabled={variants.length <= 1}
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: "var(--r-md)",
+                            border: "1.5px solid var(--line-200)",
+                            background: "#fff",
+                            cursor: variants.length <= 1 ? "default" : "pointer",
+                            color: "var(--danger)",
+                            opacity: variants.length <= 1 ? 0.3 : 1,
+                          }}
+                        >
+                          <Icon name="trash" size={16} color="var(--danger)" />
+                        </button>
+                      </div>
+
+                      {/* Per-variant discount. The Price field above is the
+                          regular price; this sets the discounted price for this
+                          variant only (removable any time). */}
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          fontSize: ".8125rem",
+                          fontWeight: 700,
+                          color: "var(--ink-600)",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={Boolean(v.onSale)}
+                          onChange={(e) => updateVariant(v.id, "onSale", e.target.checked)}
+                        />
+                        Put this variant on sale
+                      </label>
+                      {v.onSale && (
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 8,
+                            alignItems: "center",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <select
+                            value={v.saleMode ?? "percent"}
+                            onChange={(e) => updateVariant(v.id, "saleMode", e.target.value)}
+                            style={{
+                              height: 40,
+                              borderRadius: "var(--r-md)",
+                              border: "1.5px solid var(--line-200)",
+                              padding: "0 8px",
+                              fontFamily: "var(--font-sans)",
+                            }}
+                          >
+                            <option value="percent">% off</option>
+                            <option value="amount">Sale price</option>
+                          </select>
+                          {(v.saleMode ?? "percent") === "percent" ? (
+                            <input
+                              value={v.salePct ?? ""}
+                              onChange={(e) =>
+                                updateVariant(
+                                  v.id,
+                                  "salePct",
+                                  e.target.value.replace(/\D/g, "").slice(0, 2),
+                                )
+                              }
+                              inputMode="numeric"
+                              placeholder="% e.g. 20"
+                              className="tnum"
+                              style={{
+                                flex: 1,
+                                minWidth: 80,
+                                height: 40,
+                                padding: "0 10px",
+                                border: "1.5px solid var(--line-200)",
+                                borderRadius: "var(--r-md)",
+                                textAlign: "center",
+                                fontFamily: "var(--font-sans)",
+                              }}
+                            />
+                          ) : (
+                            <input
+                              value={v.salePrice ?? ""}
+                              onChange={(e) =>
+                                updateVariant(v.id, "salePrice", e.target.value.replace(/\D/g, ""))
+                              }
+                              inputMode="numeric"
+                              placeholder="Sale Rs."
+                              className="tnum"
+                              style={{
+                                flex: 1,
+                                minWidth: 80,
+                                height: 40,
+                                padding: "0 10px",
+                                border: "1.5px solid var(--line-200)",
+                                borderRadius: "var(--r-md)",
+                                textAlign: "center",
+                                fontFamily: "var(--font-sans)",
+                              }}
+                            />
+                          )}
+                          <span
+                            style={{
+                              fontSize: ".75rem",
+                              color: isSaleValid(variantSaleInput(v))
+                                ? "var(--ink-500)"
+                                : "var(--danger, #d23)",
+                            }}
+                          >
+                            {isSaleValid(variantSaleInput(v))
+                              ? `Buyers pay Rs. ${saleEffective(variantSaleInput(v)).toLocaleString("en-IN")}`
+                              : "Enter a valid discount below the price"}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -4358,47 +4724,137 @@ export function SellerAddProduct({
                   </span>
                 </h3>
               </div>
-              <label
-                style={{ display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer" }}
-              >
-                <input
-                  type="checkbox"
-                  checked={bargainOk}
-                  onChange={(e) => setBargainOk(e.target.checked)}
-                  style={{ width: 18, height: 18, accentColor: "var(--red)" }}
-                />
-              </label>
-            </div>
-            {bargainOk && (
-              <>
+              {!hasVariants && (
                 <label
                   style={{
-                    fontSize: ".8125rem",
-                    color: "var(--ink-700)",
-                    display: "block",
-                    marginBottom: 6,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    cursor: "pointer",
                   }}
                 >
-                  Lowest price you'll accept (Rs.)
+                  <input
+                    type="checkbox"
+                    checked={bargainOk}
+                    onChange={(e) => setBargainOk(e.target.checked)}
+                    style={{ width: 18, height: 18, accentColor: "var(--red)" }}
+                  />
                 </label>
-                <input
-                  type="number"
-                  min={1}
-                  placeholder="e.g. 800"
-                  value={bargainMinPrice}
-                  onChange={(e) => setBargainMinPrice(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: "1.5px solid var(--line-200)",
-                    borderRadius: "var(--r-md)",
-                    fontSize: ".875rem",
-                  }}
-                />
-                <p style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 4 }}>
-                  Offers at or above this price are auto-accepted. Buyers never see this limit.
+              )}
+            </div>
+
+            {hasVariants ? (
+              <>
+                <p style={{ fontSize: ".8125rem", color: "var(--ink-500)", margin: "0 0 12px" }}>
+                  Configure bargaining per variant — each can have its own floor price.
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {variants
+                    .filter((v) => v.name && v.price)
+                    .map((v) => (
+                      <div
+                        key={v.id}
+                        style={{
+                          border: `1.5px solid ${v.allowBargaining ? "var(--red)" : "var(--line-200)"}`,
+                          borderRadius: "var(--r-md)",
+                          padding: "10px 12px",
+                          background: v.allowBargaining ? "rgba(220,38,38,.03)" : "#fff",
+                        }}
+                      >
+                        <label
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                            cursor: "pointer",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={Boolean(v.allowBargaining)}
+                            onChange={(e) =>
+                              updateVariant(v.id, "allowBargaining", e.target.checked)
+                            }
+                            style={{ width: 16, height: 16, accentColor: "var(--red)" }}
+                          />
+                          <span style={{ fontWeight: 700, fontSize: ".875rem", flex: 1 }}>
+                            {v.name}
+                          </span>
+                          <span
+                            className="tnum"
+                            style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}
+                          >
+                            Rs. {Number(v.price).toLocaleString("en-IN")}
+                          </span>
+                        </label>
+                        {v.allowBargaining && (
+                          <div style={{ marginTop: 8, paddingLeft: 26 }}>
+                            <label
+                              style={{
+                                fontSize: ".75rem",
+                                color: "var(--ink-600)",
+                                display: "block",
+                                marginBottom: 4,
+                              }}
+                            >
+                              Min. price (Rs.)
+                            </label>
+                            <input
+                              type="number"
+                              min={1}
+                              placeholder="e.g. 800"
+                              value={v.minimumPrice ?? ""}
+                              onChange={(e) => updateVariant(v.id, "minimumPrice", e.target.value)}
+                              style={{
+                                width: "100%",
+                                maxWidth: 200,
+                                padding: "8px 10px",
+                                border: "1.5px solid var(--line-200)",
+                                borderRadius: "var(--r-md)",
+                                fontSize: ".8125rem",
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                </div>
+                <p style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 8 }}>
+                  Offers at or above the min price are auto-accepted. Buyers never see this limit.
                 </p>
               </>
+            ) : (
+              bargainOk && (
+                <>
+                  <label
+                    style={{
+                      fontSize: ".8125rem",
+                      color: "var(--ink-700)",
+                      display: "block",
+                      marginBottom: 6,
+                    }}
+                  >
+                    Lowest price you'll accept (Rs.)
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    placeholder="e.g. 800"
+                    value={bargainMinPrice}
+                    onChange={(e) => setBargainMinPrice(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      border: "1.5px solid var(--line-200)",
+                      borderRadius: "var(--r-md)",
+                      fontSize: ".875rem",
+                    }}
+                  />
+                  <p style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 4 }}>
+                    Offers at or above this price are auto-accepted. Buyers never see this limit.
+                  </p>
+                </>
+              )
             )}
           </div>
 
@@ -4434,6 +4890,454 @@ export function SellerAddProduct({
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ---------- 4.4b Product View (read-only) ---------- */
+export function SellerProductView({ item }: { item: SellerInventoryItem | null }) {
+  const { nav } = useBz();
+  const { data: product, isLoading, isError, error } = useProduct(item?.id ?? null);
+
+  if (!item) {
+    return (
+      <div
+        style={{
+          maxWidth: "var(--container)",
+          margin: "0 auto",
+          padding: "20px clamp(14px, 4vw, 28px) 100px",
+        }}
+      >
+        <SellerHelpBar />
+        <EmptyState
+          icon="package"
+          title="No product selected"
+          description="Go back to your inventory and select a product to view."
+          cta="Back to products"
+          onCta={() => nav("s-products")}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <ApiState isLoading={isLoading} isError={isError} error={error}>
+      <div
+        style={{
+          maxWidth: "var(--container)",
+          margin: "0 auto",
+          padding: "20px clamp(14px, 4vw, 28px) 100px",
+        }}
+      >
+        <SellerHelpBar />
+
+        {/* Back + actions header */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            marginBottom: 20,
+            flexWrap: "wrap",
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => nav("s-products")}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--blue)",
+              fontWeight: 700,
+              fontSize: ".875rem",
+              padding: 0,
+            }}
+          >
+            <Icon name="chevronLeft" size={18} color="var(--blue)" />
+            Back to products
+          </button>
+          <div style={{ flex: 1 }} />
+          <Button
+            variant="secondary"
+            icon="edit"
+            onClick={() => {
+              editProductRef.current = item;
+              nav("s-edit");
+            }}
+          >
+            Edit
+          </Button>
+        </div>
+
+        {/* Product images */}
+        {product && (product.images?.length || product.img) ? (
+          <div style={{ marginBottom: 24 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+                gap: 10,
+              }}
+            >
+              {(product.images ?? (product.img ? [product.img] : [])).map((src, i) => (
+                <div
+                  key={i}
+                  style={{
+                    aspectRatio: "1",
+                    borderRadius: "var(--r-md)",
+                    overflow: "hidden",
+                    border: "1.5px solid var(--line-200)",
+                    background: "var(--line-100)",
+                  }}
+                >
+                  <img
+                    src={src}
+                    alt={`${item.name} photo ${i + 1}`}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : item.img ? (
+          <div style={{ marginBottom: 24 }}>
+            <img
+              src={item.img}
+              alt={item.name}
+              style={{
+                width: "100%",
+                maxWidth: 320,
+                height: 240,
+                objectFit: "cover",
+                borderRadius: "var(--r-md)",
+                border: "1.5px solid var(--line-200)",
+              }}
+            />
+          </div>
+        ) : (
+          <div style={{ marginBottom: 24 }}>
+            <Placeholder
+              icon={item.icon}
+              tint={item.tint}
+              style={{ width: 120, height: 120 }}
+              radius="var(--r-md)"
+            />
+          </div>
+        )}
+
+        {/* Title + price */}
+        <h1
+          style={{
+            margin: "0 0 4px",
+            fontSize: "clamp(1.25rem, 4vw, 1.5rem)",
+            fontWeight: 800,
+            color: "var(--ink-900)",
+          }}
+        >
+          {product?.name ?? item.name}
+        </h1>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            gap: 10,
+            flexWrap: "wrap",
+            marginBottom: 16,
+          }}
+        >
+          <span
+            className="tnum"
+            style={{ fontSize: "1.25rem", fontWeight: 800, color: "var(--blue-deep)" }}
+          >
+            Rs. {(product?.price ?? item.price).toLocaleString()}
+          </span>
+          {product?.original && product.original > product.price && (
+            <span
+              className="tnum"
+              style={{
+                fontSize: ".875rem",
+                color: "var(--ink-400)",
+                textDecoration: "line-through",
+              }}
+            >
+              Rs. {product.original.toLocaleString()}
+            </span>
+          )}
+          {product?.discountPct && (
+            <span
+              style={{
+                fontSize: ".8125rem",
+                fontWeight: 700,
+                color: "var(--success)",
+                background: "rgba(22,163,74,.08)",
+                padding: "2px 8px",
+                borderRadius: 999,
+              }}
+            >
+              {product.discountPct}% off
+            </span>
+          )}
+        </div>
+
+        {/* Details grid */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+            gap: 12,
+            marginBottom: 24,
+          }}
+        >
+          {/* Stock */}
+          <DetailTile
+            label="Stock"
+            value={String(item.stock)}
+            tone={item.stock === 0 ? "danger" : item.stock <= 3 ? "saffron" : "success"}
+            sub={item.stock === 0 ? "Out of stock" : item.stock <= 3 ? "Low stock" : "In stock"}
+          />
+          {/* Rating */}
+          {product && product.rating > 0 && (
+            <DetailTile
+              label="Rating"
+              value={product.rating.toFixed(1)}
+              sub={`${product.reviews} review${product.reviews === 1 ? "" : "s"}`}
+            />
+          )}
+          {/* Bargaining */}
+          <DetailTile
+            label="Bargaining"
+            value={product?.allowBargaining ? "Enabled" : "Disabled"}
+            sub={
+              product?.minimumPrice ? `Min Rs. ${product.minimumPrice.toLocaleString()}` : undefined
+            }
+          />
+          {/* Category */}
+          {product?.cat && <DetailTile label="Category" value={product.cat} />}
+        </div>
+
+        {/* Variants */}
+        {product?.variants && product.variants.length > 0 && (
+          <div style={{ marginBottom: 24 }}>
+            <h3
+              style={{
+                margin: "0 0 10px",
+                fontSize: ".875rem",
+                fontWeight: 700,
+                color: "var(--ink-700)",
+              }}
+            >
+              Options
+            </h3>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+              {product.variants.map((v, i) => (
+                <div
+                  key={v.id}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "12px 20px",
+                    background: i === 0 ? "var(--blue-deep)" : "#fff",
+                    color: i === 0 ? "#fff" : "var(--ink-900)",
+                    border: `1.5px solid ${i === 0 ? "var(--blue-deep)" : "var(--line-200)"}`,
+                    borderRadius: "var(--r-md)",
+                    minHeight: 52,
+                  }}
+                >
+                  <span style={{ fontWeight: 700, fontSize: ".9375rem" }}>{v.name}</span>
+                  <span
+                    className="tnum"
+                    style={{
+                      fontWeight: 700,
+                      fontSize: ".875rem",
+                      opacity: i === 0 ? 0.85 : 1,
+                      color: i === 0 ? "#fff" : "var(--ink-600)",
+                    }}
+                  >
+                    Rs. {v.price.toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+            {/* Stock per variant */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+              {product.variants.map((v) => (
+                <span
+                  key={v.id}
+                  className="tnum"
+                  style={{
+                    fontSize: ".75rem",
+                    fontWeight: 700,
+                    padding: "4px 10px",
+                    borderRadius: 999,
+                    background:
+                      v.stock === 0
+                        ? "rgba(220,38,38,.08)"
+                        : v.stock <= 3
+                          ? "rgba(247,127,0,.08)"
+                          : "var(--line-100)",
+                    color:
+                      v.stock === 0
+                        ? "var(--danger)"
+                        : v.stock <= 3
+                          ? "var(--saffron)"
+                          : "var(--ink-500)",
+                  }}
+                >
+                  {v.name}: {v.stock} in stock
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Description */}
+        {product?.description && (
+          <div style={{ marginBottom: 24 }}>
+            <h3
+              style={{
+                margin: "0 0 8px",
+                fontSize: ".875rem",
+                fontWeight: 700,
+                color: "var(--ink-700)",
+              }}
+            >
+              Description
+            </h3>
+            <p
+              style={{
+                margin: 0,
+                fontSize: ".875rem",
+                color: "var(--ink-600)",
+                lineHeight: 1.6,
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {product.description}
+            </p>
+          </div>
+        )}
+
+        {/* Specifications */}
+        {product?.metadata && Object.keys(product.metadata).length > 0 && (
+          <div style={{ marginBottom: 24 }}>
+            <h3
+              style={{
+                margin: "0 0 8px",
+                fontSize: ".875rem",
+                fontWeight: 700,
+                color: "var(--ink-700)",
+              }}
+            >
+              Specifications
+            </h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {Object.entries(product.metadata).map(([key, val]) => (
+                <div
+                  key={key}
+                  style={{
+                    display: "flex",
+                    gap: 12,
+                    padding: "8px 12px",
+                    background: "var(--line-50, #fafafa)",
+                    borderRadius: "var(--r-sm)",
+                    fontSize: ".8125rem",
+                  }}
+                >
+                  <span style={{ fontWeight: 700, color: "var(--ink-600)", minWidth: 100 }}>
+                    {key}
+                  </span>
+                  <span style={{ color: "var(--ink-800)" }}>{String(val)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Video */}
+        {product?.hasVideo && product?.videoUrl && (
+          <div style={{ marginBottom: 24 }}>
+            <h3
+              style={{
+                margin: "0 0 8px",
+                fontSize: ".875rem",
+                fontWeight: 700,
+                color: "var(--ink-700)",
+              }}
+            >
+              Product Video
+            </h3>
+            <VideoPlayer src={product.videoUrl} poster={product.videoThumb} />
+          </div>
+        )}
+
+        {/* Footer info */}
+        {product?.createdAt && (
+          <div style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 8 }}>
+            Listed on{" "}
+            {new Date(product.createdAt).toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            })}
+          </div>
+        )}
+      </div>
+    </ApiState>
+  );
+}
+
+function DetailTile({
+  label,
+  value,
+  tone,
+  sub,
+}: {
+  label: string;
+  value: string;
+  tone?: string;
+  sub?: string;
+}) {
+  const color =
+    tone === "danger"
+      ? "var(--danger)"
+      : tone === "saffron"
+        ? "var(--saffron)"
+        : tone === "success"
+          ? "var(--success)"
+          : "var(--ink-900)";
+  return (
+    <div
+      style={{
+        padding: "12px 14px",
+        background: "#fff",
+        border: "1.5px solid var(--line-200)",
+        borderRadius: "var(--r-md)",
+      }}
+    >
+      <div
+        style={{
+          fontSize: ".75rem",
+          fontWeight: 700,
+          color: "var(--ink-500)",
+          marginBottom: 4,
+          textTransform: "uppercase",
+          letterSpacing: ".03em",
+        }}
+      >
+        {label}
+      </div>
+      <div className="tnum" style={{ fontSize: "1.125rem", fontWeight: 800, color }}>
+        {value}
+      </div>
+      {sub && (
+        <div style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 2 }}>{sub}</div>
+      )}
     </div>
   );
 }
@@ -4499,6 +5403,38 @@ export function SellerInventory() {
     toast("Sold one in shop · −1 stock");
   };
 
+  const persistVariantStock = useCallback(
+    async (productId: string, variantId: string, newStock: number) => {
+      if (newStock < 0 || savingId) return;
+      const prev = items.find((it) => it.id === productId);
+      if (!prev || !prev.variants) return;
+      const variantIdx = prev.variants.findIndex((v) => v.id === variantId);
+      if (variantIdx < 0) return;
+      const oldVariantStock = prev.variants[variantIdx].stock;
+      if (newStock === oldVariantStock) return;
+      const updatedVariants = prev.variants.map((v) =>
+        v.id === variantId ? { ...v, stock: newStock } : v,
+      );
+      const newTotalStock = updatedVariants.reduce((sum, v) => sum + v.stock, 0);
+      setItems((list) =>
+        list.map((it) =>
+          it.id === productId ? { ...it, stock: newTotalStock, variants: updatedVariants } : it,
+        ),
+      );
+      setSavingId(productId);
+      try {
+        await updateProduct.mutateAsync({ id: productId, variants: updatedVariants });
+        toast("Stock saved");
+      } catch (err) {
+        setItems((list) => list.map((it) => (it.id === productId ? prev : it)));
+        toast(err instanceof Error ? err.message : "Could not update stock");
+      } finally {
+        setSavingId(null);
+      }
+    },
+    [items, updateProduct, toast, savingId],
+  );
+
   const savePrice = async (id) => {
     const it = items.find((i) => i.id === id);
     const raw = String(priceDraft[id] ?? it?.price ?? "").replace(/\D/g, "");
@@ -4529,17 +5465,15 @@ export function SellerInventory() {
     });
   };
 
-  const bucket = (it) => (it.stock === 0 ? "oos" : it.stock <= 3 ? "low" : "active");
+  const bucket = (it) => (it.stock === 0 ? "oos" : "active");
   const counts = {
     all: items.length,
     active: items.filter((it) => bucket(it) === "active").length,
-    low: items.filter((it) => bucket(it) === "low").length,
     oos: items.filter((it) => bucket(it) === "oos").length,
   };
   const statusTabs = [
     { id: "all", label: "All", tone: "ink" },
     { id: "active", label: "Active", tone: "success" },
-    { id: "low", label: "Low stock", tone: "saffron" },
     { id: "oos", label: "Out of stock", tone: "danger" },
   ];
 
@@ -4612,56 +5546,16 @@ export function SellerInventory() {
           <span>Tap any item to change stock or edit. Items running low are marked orange.</span>
         </div>
 
-        {/* Status chips with counts */}
-        <div
-          style={{ display: "flex", gap: 6, overflowX: "auto", marginBottom: 12, paddingBottom: 4 }}
-        >
-          {statusTabs.map((t) => {
-            const active = status === t.id;
-            const tone =
-              t.tone === "ink"
-                ? "var(--ink-900)"
-                : t.tone === "success"
-                  ? "var(--success)"
-                  : t.tone === "saffron"
-                    ? "var(--saffron)"
-                    : "var(--danger)";
-            return (
-              <button
-                key={t.id}
-                onClick={() => setStatus(t.id)}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "8px 14px",
-                  minHeight: 40,
-                  background: active ? tone : "#fff",
-                  color: active ? "#fff" : "var(--ink-700)",
-                  border: `1.5px solid ${active ? tone : "var(--line-200)"}`,
-                  borderRadius: 999,
-                  cursor: "pointer",
-                  fontWeight: 700,
-                  fontSize: ".8125rem",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {t.label}
-                <span
-                  className="tnum"
-                  style={{
-                    background: active ? "rgba(255,255,255,.2)" : "var(--line-100)",
-                    padding: "1px 8px",
-                    borderRadius: 999,
-                    fontSize: ".7rem",
-                    fontWeight: 800,
-                  }}
-                >
-                  {counts[t.id]}
-                </span>
-              </button>
-            );
-          })}
+        {/* Status pills */}
+        <div style={{ marginBottom: 14 }}>
+          <ChipGroup
+            options={statusTabs.map((t) => ({
+              value: t.id,
+              label: `${t.label} (${counts[t.id]})`,
+            }))}
+            value={status}
+            onChange={setStatus}
+          />
         </div>
 
         {/* Search + sort row */}
@@ -4895,113 +5789,281 @@ export function SellerInventory() {
                       <div
                         style={{ padding: "0 14px 14px", borderTop: "1px dashed var(--line-200)" }}
                       >
-                        {it.hasVariants && (
-                          <p
-                            style={{
-                              margin: "12px 0 0",
-                              fontSize: ".75rem",
-                              color: "var(--ink-500)",
-                            }}
-                          >
-                            This product has size variants — stock changes apply to total inventory.
-                          </p>
-                        )}
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            padding: "14px 0",
-                            gap: 12,
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <div style={{ fontWeight: 700, fontSize: ".875rem" }}>
-                            Change stock
-                            {savingId === it.id && (
-                              <span
-                                style={{
-                                  marginLeft: 8,
-                                  fontSize: ".75rem",
-                                  color: "var(--ink-400)",
-                                  fontWeight: 600,
-                                }}
-                              >
-                                Saving…
-                              </span>
-                            )}
-                          </div>
-                          <div
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              border: "1.5px solid var(--line-200)",
-                              borderRadius: "var(--r-md)",
-                              overflow: "hidden",
-                              background: "#fff",
-                              opacity: savingId === it.id ? 0.6 : 1,
-                            }}
-                          >
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                dec(it.id);
-                              }}
-                              disabled={it.stock === 0 || savingId === it.id}
+                        {it.hasVariants && it.variants?.length ? (
+                          <>
+                            <div
                               style={{
-                                width: 44,
-                                height: 48,
-                                background: "#fff",
-                                border: "none",
-                                cursor:
-                                  it.stock === 0 || savingId === it.id ? "not-allowed" : "pointer",
-                                color: "var(--ink-700)",
+                                fontWeight: 700,
+                                fontSize: ".875rem",
+                                margin: "14px 0 10px",
                               }}
                             >
-                              <Icon name="minus" size={18} />
-                            </button>
-                            <span
+                              Stock by variant
+                              {savingId === it.id && (
+                                <span
+                                  style={{
+                                    marginLeft: 8,
+                                    fontSize: ".75rem",
+                                    color: "var(--ink-400)",
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  Saving…
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                              {it.variants.map((v) => {
+                                const vLow = v.stock <= 3 && v.stock > 0;
+                                const vOos = v.stock === 0;
+                                return (
+                                  <div
+                                    key={v.id}
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: 10,
+                                      padding: "8px 10px",
+                                      border: `1.5px solid ${vLow ? "var(--saffron)" : "var(--line-200)"}`,
+                                      borderRadius: "var(--r-md)",
+                                      background: vOos ? "var(--line-50)" : "#fff",
+                                    }}
+                                  >
+                                    <span style={{ flex: 1, fontWeight: 600, fontSize: ".875rem" }}>
+                                      {v.name}
+                                      {vOos && (
+                                        <span
+                                          style={{
+                                            color: "var(--danger)",
+                                            marginLeft: 6,
+                                            fontSize: ".75rem",
+                                          }}
+                                        >
+                                          Out
+                                        </span>
+                                      )}
+                                      {vLow && !vOos && (
+                                        <span
+                                          style={{
+                                            color: "var(--saffron)",
+                                            marginLeft: 6,
+                                            fontSize: ".75rem",
+                                          }}
+                                        >
+                                          Low
+                                        </span>
+                                      )}
+                                    </span>
+                                    <div
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        border: "1.5px solid var(--line-200)",
+                                        borderRadius: "var(--r-md)",
+                                        overflow: "hidden",
+                                        background: "#fff",
+                                        opacity: savingId === it.id ? 0.6 : 1,
+                                      }}
+                                    >
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          void persistVariantStock(it.id, v.id, v.stock - 1);
+                                        }}
+                                        disabled={v.stock === 0 || savingId === it.id}
+                                        style={{
+                                          width: 36,
+                                          height: 40,
+                                          background: "#fff",
+                                          border: "none",
+                                          cursor:
+                                            v.stock === 0 || savingId === it.id
+                                              ? "not-allowed"
+                                              : "pointer",
+                                          color: "var(--ink-700)",
+                                          display: "flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                        }}
+                                      >
+                                        <Icon name="minus" size={14} />
+                                      </button>
+                                      <span
+                                        className="tnum"
+                                        style={{
+                                          width: 36,
+                                          textAlign: "center",
+                                          fontWeight: 800,
+                                          fontSize: ".9375rem",
+                                        }}
+                                      >
+                                        {v.stock}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          void persistVariantStock(it.id, v.id, v.stock + 1);
+                                        }}
+                                        disabled={savingId === it.id}
+                                        style={{
+                                          width: 36,
+                                          height: 40,
+                                          background: "#fff",
+                                          border: "none",
+                                          cursor: savingId === it.id ? "not-allowed" : "pointer",
+                                          color: "var(--ink-700)",
+                                          display: "flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                        }}
+                                      >
+                                        <Icon name="plus" size={14} />
+                                      </button>
+                                    </div>
+                                    {!vOos && (
+                                      <button
+                                        type="button"
+                                        disabled={savingId === it.id}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          void persistVariantStock(it.id, v.id, v.stock - 1);
+                                          toast(`Sold one ${v.name} in shop`);
+                                        }}
+                                        style={{
+                                          height: 32,
+                                          padding: "0 10px",
+                                          borderRadius: "var(--r-md)",
+                                          border: "1.5px solid var(--line-200)",
+                                          background: "#fff",
+                                          color: "var(--ink-600)",
+                                          fontSize: ".75rem",
+                                          fontWeight: 700,
+                                          cursor: savingId === it.id ? "not-allowed" : "pointer",
+                                          whiteSpace: "nowrap",
+                                        }}
+                                      >
+                                        −1 shop
+                                      </button>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <div
                               className="tnum"
                               style={{
-                                width: 48,
-                                textAlign: "center",
-                                fontWeight: 800,
-                                fontSize: "1.125rem",
+                                fontSize: ".8125rem",
+                                color: "var(--ink-500)",
+                                marginTop: 8,
+                                fontWeight: 600,
                               }}
                             >
-                              {it.stock}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                inc(it.id);
-                              }}
-                              disabled={savingId === it.id}
+                              Total: {it.stock} units
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div
                               style={{
-                                width: 44,
-                                height: 48,
-                                background: "#fff",
-                                border: "none",
-                                cursor: savingId === it.id ? "not-allowed" : "pointer",
-                                color: "var(--ink-700)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                padding: "14px 0",
+                                gap: 12,
+                                flexWrap: "wrap",
                               }}
                             >
-                              <Icon name="plus" size={18} />
-                            </button>
-                          </div>
-                        </div>
-                        {!oos && (
-                          <Button
-                            variant="secondary"
-                            full
-                            disabled={savingId === it.id}
-                            onClick={() => sellInShop(it.id)}
-                            icon="store"
-                          >
-                            Sold one in my shop (−1)
-                          </Button>
+                              <div style={{ fontWeight: 700, fontSize: ".875rem" }}>
+                                Change stock
+                                {savingId === it.id && (
+                                  <span
+                                    style={{
+                                      marginLeft: 8,
+                                      fontSize: ".75rem",
+                                      color: "var(--ink-400)",
+                                      fontWeight: 600,
+                                    }}
+                                  >
+                                    Saving…
+                                  </span>
+                                )}
+                              </div>
+                              <div
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  border: "1.5px solid var(--line-200)",
+                                  borderRadius: "var(--r-md)",
+                                  overflow: "hidden",
+                                  background: "#fff",
+                                  opacity: savingId === it.id ? 0.6 : 1,
+                                }}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    dec(it.id);
+                                  }}
+                                  disabled={it.stock === 0 || savingId === it.id}
+                                  style={{
+                                    width: 44,
+                                    height: 48,
+                                    background: "#fff",
+                                    border: "none",
+                                    cursor:
+                                      it.stock === 0 || savingId === it.id
+                                        ? "not-allowed"
+                                        : "pointer",
+                                    color: "var(--ink-700)",
+                                  }}
+                                >
+                                  <Icon name="minus" size={18} />
+                                </button>
+                                <span
+                                  className="tnum"
+                                  style={{
+                                    width: 48,
+                                    textAlign: "center",
+                                    fontWeight: 800,
+                                    fontSize: "1.125rem",
+                                  }}
+                                >
+                                  {it.stock}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    inc(it.id);
+                                  }}
+                                  disabled={savingId === it.id}
+                                  style={{
+                                    width: 44,
+                                    height: 48,
+                                    background: "#fff",
+                                    border: "none",
+                                    cursor: savingId === it.id ? "not-allowed" : "pointer",
+                                    color: "var(--ink-700)",
+                                  }}
+                                >
+                                  <Icon name="plus" size={18} />
+                                </button>
+                              </div>
+                            </div>
+                            {!oos && (
+                              <Button
+                                variant="secondary"
+                                disabled={savingId === it.id}
+                                onClick={() => sellInShop(it.id)}
+                                icon="store"
+                              >
+                                Sold one in shop (−1)
+                              </Button>
+                            )}
+                          </>
                         )}
                         <div style={{ marginTop: 14 }}>
                           <div
@@ -5055,11 +6117,24 @@ export function SellerInventory() {
                             marginTop: 14,
                             borderTop: "1px dashed var(--line-200)",
                             paddingTop: 14,
+                            display: "flex",
+                            gap: 10,
+                            flexWrap: "wrap",
                           }}
                         >
                           <Button
                             variant="secondary"
-                            full
+                            icon="eye"
+                            disabled={savingId === it.id}
+                            onClick={() => {
+                              viewProductRef.current = it;
+                              nav("s-product-view");
+                            }}
+                          >
+                            View
+                          </Button>
+                          <Button
+                            variant="secondary"
                             icon="edit"
                             disabled={savingId === it.id}
                             onClick={() => {
@@ -5067,18 +6142,8 @@ export function SellerInventory() {
                               nav("s-edit");
                             }}
                           >
-                            Edit full details
+                            Edit
                           </Button>
-                          <p
-                            style={{
-                              margin: "8px 0 0",
-                              fontSize: ".75rem",
-                              color: "var(--ink-400)",
-                              textAlign: "center",
-                            }}
-                          >
-                            Change name, description, specs, variants &amp; bargaining.
-                          </p>
                         </div>
                       </div>
                     )}
@@ -5546,6 +6611,21 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
     return (
       <div className="bz-chat-page">
         {!buyerMode ? <SellerHelpBar /> : null}
+        <h1
+          style={{
+            margin: "0 0 4px",
+            fontSize: "clamp(1.25rem, 4vw, 1.5rem)",
+            fontWeight: 800,
+            color: "var(--blue-deep)",
+          }}
+        >
+          {buyerMode ? "Messages" : "Messages"}
+        </h1>
+        <p style={{ margin: "0 0 24px", fontSize: ".875rem", color: "var(--ink-500)" }}>
+          {buyerMode
+            ? "Chat directly with sellers about products and orders."
+            : "Reply fast. Buyers who wait > 1hr usually leave."}
+        </p>
         <EmptyState
           title="No conversations yet"
           message="When buyers message you, chats will appear here."
@@ -6302,150 +7382,13 @@ export function SellerBargain() {
   );
 }
 
-/* ---------- 4.9 Promotions ---------- */
+/* ---------- 4.9 Promotions (removed) ---------- */
 export function SellerPromotions() {
-  const { toast } = useBz();
-  const { data: promos, isLoading, isError, error } = useSellerPromotions();
-  const [activeTab, setActiveTab] = useState("active");
-  const promoTypes = promos?.promoTypes ?? [];
-  const active = promos?.active ?? [];
-
-  return (
-    <ApiState isLoading={isLoading} isError={isError} error={error}>
-      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
-        <SellerHelpBar />
-        <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-          Promotions
-        </h1>
-        <p style={{ margin: "4px 0 18px", fontSize: ".875rem", color: "var(--ink-500)" }}>
-          Move slow stock. Reward repeat buyers. Get a sales bump for a few days.
-        </p>
-
-        <h2 style={{ margin: "0 0 10px", fontSize: "1rem", fontWeight: 800 }}>
-          Start a new promotion
-        </h2>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: 12,
-            marginBottom: 24,
-          }}
-        >
-          {promoTypes.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => toast(`${p.en} wizard — coming soon`)}
-              style={{
-                background: "#fff",
-                border: "1.5px solid var(--line-200)",
-                borderRadius: "var(--r-lg)",
-                padding: 16,
-                cursor: "pointer",
-                textAlign: "left",
-                display: "flex",
-                gap: 12,
-                alignItems: "flex-start",
-              }}
-            >
-              <span
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: "var(--r-md)",
-                  background: "var(--tint-red-50)",
-                  color: "var(--red)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <Icon name={p.icon} size={22} color="var(--red)" />
-              </span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 800 }}>{p.en}</div>
-                <div style={{ fontSize: ".75rem", color: "var(--ink-700)", marginTop: 6 }}>
-                  {p.desc}
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
-
-        <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
-          {[
-            { id: "active", label: `Active (${active.length})` },
-            { id: "scheduled", label: "Scheduled (0)" },
-            { id: "ended", label: "Ended (4)" },
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id)}
-              style={{
-                padding: "8px 14px",
-                background: activeTab === t.id ? "var(--ink-900)" : "#fff",
-                color: activeTab === t.id ? "#fff" : "var(--ink-700)",
-                border: `1.5px solid ${activeTab === t.id ? "var(--ink-900)" : "var(--line-200)"}`,
-                borderRadius: 999,
-                cursor: "pointer",
-                fontWeight: 700,
-                fontSize: ".8125rem",
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {active.map((p) => (
-            <div
-              key={p.name}
-              style={{
-                background: "#fff",
-                border: "1.5px solid var(--line-200)",
-                borderRadius: "var(--r-lg)",
-                padding: 14,
-                display: "flex",
-                gap: 12,
-                alignItems: "center",
-              }}
-            >
-              <span style={{ width: 6, height: 60, background: p.color, borderRadius: 3 }} />
-              <div style={{ flex: 1 }}>
-                <div
-                  style={{
-                    fontSize: ".7rem",
-                    color: "var(--ink-500)",
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: ".06em",
-                  }}
-                >
-                  {p.type}
-                </div>
-                <div style={{ fontWeight: 800, marginTop: 2 }}>{p.name}</div>
-                <div style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 2 }}>
-                  Ends {p.ends} ·{" "}
-                  <span className="tnum">
-                    {p.uses}/{p.max}
-                  </span>{" "}
-                  uses
-                </div>
-              </div>
-              <Button variant="ghost" size="sm" icon="edit">
-                Edit
-              </Button>
-              <Button variant="danger" size="sm" icon="trash">
-                Stop
-              </Button>
-            </div>
-          ))}
-        </div>
-      </div>
-    </ApiState>
-  );
+  const { nav } = useBz();
+  useEffect(() => {
+    nav("s-dashboard");
+  }, [nav]);
+  return null;
 }
 
 /* ---------- 4.10 Reviews ---------- */
@@ -6509,30 +7452,16 @@ export function SellerReviews() {
           ))}
         </div>
 
-        <div style={{ display: "flex", gap: 6, marginBottom: 14, overflowX: "auto" }}>
-          {[
-            { id: "all", label: "All" },
-            { id: "unreplied", label: "Needs reply" },
-            { id: "low", label: "Low (≤ 3★)" },
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setFilter(t.id)}
-              style={{
-                padding: "8px 14px",
-                background: filter === t.id ? "var(--ink-900)" : "#fff",
-                color: filter === t.id ? "#fff" : "var(--ink-700)",
-                border: `1.5px solid ${filter === t.id ? "var(--ink-900)" : "var(--line-200)"}`,
-                borderRadius: 999,
-                cursor: "pointer",
-                fontWeight: 700,
-                fontSize: ".8125rem",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
+        <div style={{ marginBottom: 14 }}>
+          <ChipGroup
+            options={[
+              { value: "all", label: "All" },
+              { value: "unreplied", label: "Needs reply" },
+              { value: "low", label: "Low (≤ 3★)" },
+            ]}
+            value={filter}
+            onChange={setFilter}
+          />
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -6722,205 +7651,303 @@ export function SellerStorefront() {
           onConfirm={(file) => void saveLogoCrop(file)}
         />
       ) : null}
-      <div style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}>
+      <div
+        style={{
+          maxWidth: "var(--container)",
+          margin: "0 auto",
+          padding: "20px clamp(14px, 4vw, 28px) 100px",
+        }}
+      >
         <SellerHelpBar />
-        <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-          Storefront
-        </h1>
-        <p style={{ margin: "4px 0 18px", fontSize: ".875rem", color: "var(--ink-500)" }}>
-          Customize how buyers see your shop. Changes go live in 5 minutes.
-        </p>
-
-        <div className="bz-seller-grid" style={{ maxWidth: 560 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+            flexWrap: "wrap",
+            marginBottom: 20,
+          }}
+        >
           <div>
-            <div
+            <h1
               style={{
-                background: "#fff",
-                border: "1.5px solid var(--line-200)",
-                borderRadius: "var(--r-lg)",
-                padding: 16,
-                marginBottom: 14,
+                margin: 0,
+                fontSize: "clamp(1.25rem, 4vw, 1.5rem)",
+                fontWeight: 800,
+                color: "var(--blue-deep)",
               }}
             >
-              <h3 style={{ margin: "0 0 12px", fontSize: ".9375rem", fontWeight: 800 }}>
-                Shop logo &amp; banner
-              </h3>
-              <input
-                ref={logoInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                style={{ display: "none" }}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) void pickImage(file, "logo");
-                  e.target.value = "";
-                }}
+              My Store
+            </h1>
+            <p style={{ margin: "4px 0 0", fontSize: ".875rem", color: "var(--ink-500)" }}>
+              Customize how buyers see your shop.
+            </p>
+          </div>
+          <Button variant="primary" disabled={busy} onClick={() => void publish()}>
+            {updateStorefront.isPending ? "Publishing…" : "Publish"}
+          </Button>
+        </div>
+
+        <input
+          ref={logoInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          style={{ display: "none" }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) void pickImage(file, "logo");
+            e.target.value = "";
+          }}
+        />
+        <input
+          ref={bannerInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          style={{ display: "none" }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) void pickImage(file, "banner");
+            e.target.value = "";
+          }}
+        />
+
+        {/* Live preview card */}
+        <div
+          style={{
+            background: "#fff",
+            border: "1.5px solid var(--line-200)",
+            borderRadius: "var(--r-lg)",
+            overflow: "hidden",
+            marginBottom: 24,
+          }}
+        >
+          {/* Banner */}
+          <div
+            style={{
+              position: "relative",
+              height: "clamp(100px, 20vw, 160px)",
+              background: "var(--line-100)",
+            }}
+          >
+            {bannerUrl ? (
+              <img
+                src={bannerUrl}
+                alt=""
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
               />
-              <input
-                ref={bannerInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                style={{ display: "none" }}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) void pickImage(file, "banner");
-                  e.target.value = "";
+            ) : (
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
-              />
-              <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}>
+              >
+                <Icon name="image" size={32} color="var(--ink-300)" />
+              </div>
+            )}
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => bannerInputRef.current?.click()}
+              style={{
+                position: "absolute",
+                bottom: 10,
+                right: 10,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "6px 12px",
+                borderRadius: "var(--r-md)",
+                background: "rgba(255,255,255,.9)",
+                border: "1px solid var(--line-200)",
+                fontWeight: 700,
+                fontSize: ".75rem",
+                cursor: "pointer",
+                color: "var(--ink-700)",
+              }}
+            >
+              <Icon name="image" size={14} color="var(--ink-600)" />
+              {uploadBanner.isPending ? "Uploading…" : "Change banner"}
+            </button>
+          </div>
+
+          {/* Logo + name row */}
+          <div style={{ padding: "0 20px 20px", marginTop: -32 }}>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 14, marginBottom: 16 }}>
+              <div style={{ position: "relative", flexShrink: 0 }}>
                 {logoUrl ? (
                   <img
                     src={logoUrl}
                     alt=""
                     style={{
-                      width: 64,
-                      height: 64,
+                      width: 72,
+                      height: 72,
                       borderRadius: "50%",
                       objectFit: "cover",
-                      border: "1px solid var(--line-200)",
+                      border: "3px solid #fff",
+                      boxShadow: "0 2px 8px rgba(0,0,0,.1)",
                     }}
                   />
                 ) : (
-                  <Placeholder
-                    icon="store"
-                    tint="red"
-                    style={{ width: 64, height: 64 }}
-                    radius="50%"
-                  />
-                )}
-                <div>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      icon="image"
-                      disabled={busy}
-                      onClick={() => logoInputRef.current?.click()}
-                    >
-                      {uploadLogo.isPending ? "Uploading…" : logoUrl ? "Change logo" : "Add logo"}
-                    </Button>
-                    {logoUrl ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={busy}
-                        onClick={() => void handleRemoveLogo()}
-                      >
-                        {removeLogo.isPending ? "Removing…" : "Remove"}
-                      </Button>
-                    ) : null}
+                  <div
+                    style={{
+                      width: 72,
+                      height: 72,
+                      borderRadius: "50%",
+                      background: "var(--line-100)",
+                      border: "3px solid #fff",
+                      boxShadow: "0 2px 8px rgba(0,0,0,.1)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Icon name="store" size={28} color="var(--ink-300)" />
                   </div>
-                  <p style={{ margin: "6px 0 0", fontSize: ".75rem", color: "var(--ink-400)" }}>
-                    Your shop logo — shown to buyers and in your dashboard. You can crop before
-                    saving.
-                  </p>
-                </div>
-              </div>
-              {bannerUrl ? (
-                <img
-                  src={bannerUrl}
-                  alt=""
+                )}
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => logoInputRef.current?.click()}
+                  aria-label="Change logo"
                   style={{
-                    width: "100%",
-                    height: 100,
-                    objectFit: "cover",
-                    borderRadius: "var(--r-md)",
-                    border: "1px solid var(--line-200)",
+                    position: "absolute",
+                    bottom: -2,
+                    right: -2,
+                    width: 28,
+                    height: 28,
+                    borderRadius: "50%",
+                    background: "#fff",
+                    border: "1.5px solid var(--line-200)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
                   }}
-                />
-              ) : (
-                <Placeholder
-                  icon="image"
-                  tint="blue"
-                  style={{ width: "100%", height: 100 }}
-                  radius="var(--r-md)"
-                />
+                >
+                  <Icon name="edit" size={13} color="var(--ink-600)" />
+                </button>
+              </div>
+              <div style={{ flex: 1, minWidth: 0, paddingBottom: 4 }}>
+                <div style={{ fontWeight: 800, fontSize: "1.125rem", color: "var(--ink-900)" }}>
+                  {shopName || "Your store name"}
+                </div>
+                {storefront?.city && (
+                  <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 2 }}>
+                    {storefront.city}
+                  </div>
+                )}
+              </div>
+              {logoUrl && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void handleRemoveLogo()}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "var(--ink-400)",
+                    fontSize: ".75rem",
+                    fontWeight: 600,
+                    textDecoration: "underline",
+                    padding: 0,
+                  }}
+                >
+                  {removeLogo.isPending ? "Removing…" : "Remove logo"}
+                </button>
               )}
-              <Button
-                variant="secondary"
-                size="sm"
-                icon="image"
-                disabled={busy}
-                onClick={() => bannerInputRef.current?.click()}
-                style={{ marginTop: 8 }}
-              >
-                {uploadBanner.isPending ? "Uploading…" : "Change banner"}
-              </Button>
             </div>
+          </div>
+        </div>
 
-            <div
+        {/* Edit fields */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+            gap: 16,
+          }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              border: "1.5px solid var(--line-200)",
+              borderRadius: "var(--r-lg)",
+              padding: 20,
+            }}
+          >
+            <label
               style={{
-                background: "#fff",
-                border: "1.5px solid var(--line-200)",
-                borderRadius: "var(--r-lg)",
-                padding: 16,
-                marginBottom: 14,
+                display: "block",
+                fontSize: ".8125rem",
+                fontWeight: 700,
+                color: "var(--ink-600)",
+                marginBottom: 8,
               }}
             >
-              <h3 style={{ margin: "0 0 4px", fontSize: ".9375rem", fontWeight: 800 }}>
-                Store name
-              </h3>
-              <p style={{ margin: "0 0 12px", fontSize: ".75rem", color: "var(--ink-500)" }}>
-                This is what buyers see. Your owner name stays private — edit it in Profile.
-              </p>
-              <input
-                value={shopName}
-                onChange={(e) => setShopName(e.target.value)}
-                placeholder="e.g. Bhaktapur Handicraft"
-                maxLength={256}
-                style={{
-                  width: "100%",
-                  height: 44,
-                  padding: "0 12px",
-                  border: "1.5px solid var(--line-200)",
-                  borderRadius: "var(--r-md)",
-                  fontFamily: "var(--font-sans)",
-                  fontSize: ".9375rem",
-                  outline: "none",
-                }}
-              />
-            </div>
-
-            <div
+              Store name
+            </label>
+            <input
+              value={shopName}
+              onChange={(e) => setShopName(e.target.value)}
+              placeholder="e.g. Bhaktapur Handicraft"
+              maxLength={256}
               style={{
-                background: "#fff",
+                width: "100%",
+                height: 44,
+                padding: "0 12px",
                 border: "1.5px solid var(--line-200)",
-                borderRadius: "var(--r-lg)",
-                padding: 16,
-                marginBottom: 14,
+                borderRadius: "var(--r-md)",
+                fontFamily: "var(--font-sans)",
+                fontSize: ".9375rem",
+                outline: "none",
+              }}
+            />
+            <p style={{ margin: "8px 0 0", fontSize: ".75rem", color: "var(--ink-400)" }}>
+              Visible to buyers on your store page and product listings.
+            </p>
+          </div>
+
+          <div
+            style={{
+              background: "#fff",
+              border: "1.5px solid var(--line-200)",
+              borderRadius: "var(--r-lg)",
+              padding: 20,
+            }}
+          >
+            <label
+              style={{
+                display: "block",
+                fontSize: ".8125rem",
+                fontWeight: 700,
+                color: "var(--ink-600)",
+                marginBottom: 8,
               }}
             >
-              <h3 style={{ margin: "0 0 12px", fontSize: ".9375rem", fontWeight: 800 }}>
-                About us
-              </h3>
-              <textarea
-                value={about}
-                onChange={(e) => setAbout(e.target.value)}
-                placeholder="Tell buyers your story. e.g. Family-run handicraft shop in Bhaktapur since 2018..."
-                style={{
-                  width: "100%",
-                  minHeight: 80,
-                  padding: 12,
-                  border: "1.5px solid var(--line-200)",
-                  borderRadius: "var(--r-md)",
-                  fontFamily: "var(--font-sans)",
-                  fontSize: ".875rem",
-                  outline: "none",
-                  resize: "vertical",
-                }}
-              />
-            </div>
-
-            <Button
-              variant="primary"
-              size="lg"
-              full
-              disabled={busy}
-              onClick={() => void publish()}
-              style={{ marginTop: 14 }}
-            >
-              {updateStorefront.isPending ? "Publishing…" : "Publish changes"}
-            </Button>
+              About your store
+            </label>
+            <textarea
+              value={about}
+              onChange={(e) => setAbout(e.target.value)}
+              placeholder="Tell buyers your story..."
+              style={{
+                width: "100%",
+                minHeight: 100,
+                padding: 12,
+                border: "1.5px solid var(--line-200)",
+                borderRadius: "var(--r-md)",
+                fontFamily: "var(--font-sans)",
+                fontSize: ".875rem",
+                outline: "none",
+                resize: "vertical",
+              }}
+            />
           </div>
         </div>
       </div>

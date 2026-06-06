@@ -32,8 +32,15 @@ export function useCartMutations() {
   };
 
   const addItem = useMutation({
-    mutationFn: ({ product, qty }: { product: Product; qty: number }) =>
-      cartApi.addItem(product.id, qty),
+    mutationFn: ({
+      product,
+      qty,
+      variantId,
+    }: {
+      product: Product;
+      qty: number;
+      variantId?: string | null;
+    }) => cartApi.addItem(product.id, qty, variantId),
     onSuccess: (data) => {
       syncCartToStore(data.items);
       void invalidate();
@@ -41,8 +48,15 @@ export function useCartMutations() {
   });
 
   const updateQty = useMutation({
-    mutationFn: ({ productId, qty }: { productId: string; qty: number }) =>
-      cartApi.updateItem(productId, qty),
+    mutationFn: ({
+      productId,
+      qty,
+      variantId,
+    }: {
+      productId: string;
+      qty: number;
+      variantId?: string | null;
+    }) => cartApi.updateItem(productId, qty, variantId),
     onSuccess: (data) => {
       syncCartToStore(data.items);
       void invalidate();
@@ -50,7 +64,8 @@ export function useCartMutations() {
   });
 
   const removeItem = useMutation({
-    mutationFn: (productId: string) => cartApi.removeItem(productId),
+    mutationFn: ({ productId, variantId }: { productId: string; variantId?: string | null }) =>
+      cartApi.removeItem(productId, variantId),
     onSuccess: (data) => {
       syncCartToStore(data.items);
       void invalidate();

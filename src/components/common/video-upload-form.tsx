@@ -5,6 +5,7 @@ import { Button, Chip, Icon, Spinner } from "@/components/ui";
 import { useCreateSellerVideo, useUploadVideo } from "@/hooks/use-media-upload";
 import { parseHashtags } from "@/lib/parse-hashtags";
 
+const MIN_DURATION_SEC = 20;
 const MAX_DURATION_SEC = 30;
 
 interface VideoUploadFormProps {
@@ -71,6 +72,12 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
       setError("Title and product name are required.");
       return;
     }
+    if (durationSec !== null && durationSec < MIN_DURATION_SEC) {
+      setError(
+        `Video is ${Math.ceil(durationSec)}s — must be at least ${MIN_DURATION_SEC} seconds long.`,
+      );
+      return;
+    }
     if (durationSec !== null && durationSec > MAX_DURATION_SEC) {
       setError(
         `Video is ${Math.ceil(durationSec)}s — trim to ${MAX_DURATION_SEC}s or less in your phone editor before uploading.`,
@@ -92,6 +99,7 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
         publicId: uploaded.publicId,
         hashtags: hashtags.length > 0 ? hashtags : parseHashtags(hashtagInput),
         status,
+        duration: durationSec ?? 0,
       });
       setProgress(null);
       onSuccess(status);
@@ -166,7 +174,7 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
           }}
         >
           <li>
-            Trim to <strong>30 seconds or less</strong> (Photos / Gallery → Edit).
+            Video must be <strong>20–30 seconds</strong> (Photos / Gallery → Edit).
           </li>
           <li>
             Crop to vertical <strong>9:16</strong> so it looks good in the video feed.
@@ -177,7 +185,7 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
       </div>
 
       <label style={{ display: "block", fontSize: ".8125rem", fontWeight: 600, marginBottom: 6 }}>
-        Video file (max 100 MB, ≤ 30 sec)
+        Video file (max 100 MB, 20–30 sec)
       </label>
       <input
         ref={fileRef}
@@ -214,13 +222,21 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
                 padding: "8px 10px",
                 fontSize: ".75rem",
                 fontWeight: 600,
-                color: durationSec > MAX_DURATION_SEC ? "#fff" : "var(--ink-300)",
-                background: durationSec > MAX_DURATION_SEC ? "var(--danger)" : "rgba(0,0,0,.6)",
+                color:
+                  durationSec < MIN_DURATION_SEC || durationSec > MAX_DURATION_SEC
+                    ? "#fff"
+                    : "var(--ink-300)",
+                background:
+                  durationSec < MIN_DURATION_SEC || durationSec > MAX_DURATION_SEC
+                    ? "var(--danger)"
+                    : "rgba(0,0,0,.6)",
               }}
             >
-              {durationSec > MAX_DURATION_SEC
-                ? `Too long (${Math.ceil(durationSec)}s) — trim before publishing`
-                : `Duration: ${Math.ceil(durationSec)}s · looks good`}
+              {durationSec < MIN_DURATION_SEC
+                ? `Too short (${Math.ceil(durationSec)}s) — must be at least ${MIN_DURATION_SEC}s`
+                : durationSec > MAX_DURATION_SEC
+                  ? `Too long (${Math.ceil(durationSec)}s) — trim before publishing`
+                  : `Duration: ${Math.ceil(durationSec)}s · looks good`}
             </div>
           )}
         </div>

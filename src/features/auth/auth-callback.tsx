@@ -95,7 +95,7 @@ export function AuthCallback() {
     return () => {
       cancelled = true;
     };
-  }, [nav, searchParams, setAuthed, setUser, toast]);
+  }, [nav, router, searchParams, setAuthed, setUser, toast]);
 
   return (
     <div

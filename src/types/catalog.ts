@@ -42,6 +42,10 @@ export interface Product {
   metadata?: Record<string, unknown>;
   price: number;
   original?: number;
+  // How the active discount was entered (so the seller edit form round-trips).
+  // null/absent = no discount; 'amount' = a discounted price; 'percent' = % off.
+  discountType?: "amount" | "percent" | null;
+  discountPct?: number | null;
   cat: string;
   seller: string;
   icon: string;
@@ -61,11 +65,27 @@ export interface Product {
   allowBargaining?: boolean;
   maxDiscountPct?: number;
   minimumPrice?: number | null;
+  // Priced variants (Small/Medium/Large, etc.). `price` is the effective
+  // (possibly discounted) variant price; `original` the struck-through price.
+  variants?: PricedVariant[];
   createdAt?: string;
+}
+
+export interface PricedVariant {
+  id: string;
+  name: string;
+  price: number;
+  stock: number;
+  original?: number | null;
+  allowBargaining?: boolean;
+  minimumPrice?: number | null;
 }
 
 export interface CartLine extends Product {
   qty: number;
+  // The chosen variant for this line (null/absent for single-price products).
+  variantId?: string | null;
+  variantName?: string | null;
 }
 
 export interface ProductReview {

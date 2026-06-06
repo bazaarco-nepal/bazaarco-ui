@@ -5,8 +5,10 @@ import type { Product } from "@/types";
 export interface SearchParams {
   query: string;
   categories?: string[];
+  sellers?: string[];
   price_min?: number;
   price_max?: number;
+  rating?: number;
   rating4?: boolean;
   free?: boolean;
   sort?: "relevance" | "price_low" | "price_high" | "rating";
@@ -18,6 +20,18 @@ export interface SearchProductHit extends Product {
   score: number;
 }
 
+export interface Facet {
+  value: string;
+  count: number;
+}
+
+export interface SearchFacets {
+  categories: Facet[];
+  sellers: Facet[];
+  rating: Facet[];
+  price?: { min: number; max: number };
+}
+
 export interface SearchResponse {
   query: string;
   correction?: string | null;
@@ -25,6 +39,8 @@ export interface SearchResponse {
   limit: number;
   total: number;
   page_count: number;
+  search_time_ms?: number;
+  facets?: SearchFacets;
   items: SearchProductHit[];
 }
 
@@ -32,5 +48,13 @@ export const searchApi = {
   async search(params: SearchParams): Promise<SearchResponse> {
     const { data } = await apiClient.post<ApiSuccessResponse<SearchResponse>>("/search", params);
     return data.data;
+  },
+
+  async similar(id: string, limit = 10): Promise<SearchProductHit[]> {
+    const { data } = await apiClient.get<ApiSuccessResponse<{ items: SearchProductHit[] }>>(
+      `/search/similar/${encodeURIComponent(id)}`,
+      { params: { limit } },
+    );
+    return data.data.items;
   },
 };

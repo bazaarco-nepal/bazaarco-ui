@@ -39,6 +39,7 @@ import {
 import { pathFromScreen } from "@/config/routes";
 import { useVideoFeed } from "@/hooks/use-video-feed";
 import { useVideoLike } from "@/hooks/use-video-like";
+import { videosApi } from "@/services/api/videos";
 import type { VideoFeedItem } from "@/types/video";
 import {
   BazaarCtx,
@@ -144,28 +145,6 @@ function ReelAction({ icon, label, count, active, onClick, danger, inside }) {
   );
 }
 
-function EqBars({ size = 12, color = "#fff", playing = true }) {
-  return (
-    <span style={{ display: "inline-flex", alignItems: "flex-end", gap: 2, height: size }}>
-      {[0, 1, 2, 3].map((i) => (
-        <span
-          key={i}
-          style={{
-            width: 2,
-            height: size,
-            background: color,
-            borderRadius: 1,
-            transformOrigin: "bottom",
-            animation: playing
-              ? `bz-eq ${0.7 + i * 0.15}s ease-in-out ${i * 0.07}s infinite`
-              : "none",
-          }}
-        />
-      ))}
-    </span>
-  );
-}
-
 function ReelThumb({ v, active, onClick }) {
   return (
     <button
@@ -256,6 +235,7 @@ function ReelItem({
   liked,
   onToggleLike,
   muted,
+  onMutedChange,
   radius,
   hideMuteBadge,
 }) {
@@ -271,8 +251,11 @@ function ReelItem({
 
   const [bursts, setBursts] = useState([]);
   const [capExpand, setCapExpand] = useState(false);
+  const [fastFwd, setFastFwd] = useState(false);
   const stageRef = useRef(null);
   const lastTap = useRef(0);
+  const longPressRef = useRef(null);
+  const wasLongPress = useRef(false);
 
   const spawnBurst = (x, y) => {
     const id = Date.now() + Math.random();
@@ -281,6 +264,10 @@ function ReelItem({
   };
 
   const onStageTap = (e) => {
+    if (wasLongPress.current) {
+      wasLongPress.current = false;
+      return;
+    }
     const now = Date.now();
     if (now - lastTap.current < 300) {
       const rect = stageRef.current.getBoundingClientRect();
@@ -294,10 +281,29 @@ function ReelItem({
     }
   };
 
+  const onPointerDown = () => {
+    longPressRef.current = setTimeout(() => {
+      setFastFwd(true);
+      wasLongPress.current = true;
+    }, 400);
+  };
+
+  const onPointerUp = () => {
+    if (longPressRef.current) {
+      clearTimeout(longPressRef.current);
+      longPressRef.current = null;
+    }
+    if (fastFwd) setFastFwd(false);
+  };
+
   return (
     <div
       ref={stageRef}
       onClick={onStageTap}
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+      onPointerLeave={onPointerUp}
+      onPointerCancel={onPointerUp}
       style={{
         position: "relative",
         width: "100%",
@@ -306,8 +312,34 @@ function ReelItem({
         overflow: "hidden",
         boxShadow: isMobile ? "none" : "0 24px 80px rgba(0,0,0,.5)",
         background: "var(--ink-900)",
+        touchAction: "pan-y",
       }}
     >
+      {fastFwd && (
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            zIndex: 10,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            background: "rgba(0,0,0,.65)",
+            padding: "10px 20px",
+            borderRadius: "var(--r-full)",
+            color: "#fff",
+            fontSize: 14,
+            fontWeight: 700,
+            backdropFilter: "blur(6px)",
+            pointerEvents: "none",
+          }}
+        >
+          <Icon name="fastForward" size={18} color="#fff" />
+          2x Speed
+        </div>
+      )}
       <VideoPlayer
         key={p.id}
         tint={p.tint}
@@ -319,6 +351,9 @@ function ReelItem({
         label={false}
         thumb={p.videoThumb}
         src={p.videoUrl}
+        externalMuted={muted}
+        onMutedChange={onMutedChange}
+        playbackRate={fastFwd ? 2.0 : 1.0}
       />
 
       {/* index pill */}
@@ -346,7 +381,12 @@ function ReelItem({
       </div>
 
       {!hideMuteBadge && (
-        <div
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onMutedChange) onMutedChange(!muted);
+          }}
+          aria-label={muted ? "Unmute" : "Mute"}
           style={{
             position: "absolute",
             top: 14,
@@ -361,11 +401,13 @@ function ReelItem({
             alignItems: "center",
             justifyContent: "center",
             backdropFilter: "blur(4px)",
-            pointerEvents: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: 0,
           }}
         >
           <Icon name={muted ? "mute" : "volume"} size={18} />
-        </div>
+        </button>
       )}
 
       {/* product mini-pill */}
@@ -607,36 +649,6 @@ function ReelItem({
             ))}
           </div>
         </div>
-
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            pointerEvents: "auto",
-            background: "rgba(0,0,0,.35)",
-            padding: "5px 10px",
-            borderRadius: "var(--r-full)",
-            backdropFilter: "blur(4px)",
-            width: "fit-content",
-            maxWidth: "100%",
-          }}
-        >
-          <Icon name="headphones" size={14} color="#fff" />
-          <span
-            style={{
-              fontSize: ".75rem",
-              fontWeight: 600,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              maxWidth: 180,
-            }}
-          >
-            Original sound · {s.name}
-          </span>
-          <EqBars size={11} playing={isActive} />
-        </div>
       </div>
 
       {/* action rail */}
@@ -681,7 +693,17 @@ function ReelItem({
           label="Share"
           count={metrics.shares}
           inside={isMobile}
-          onClick={() => toast("Link copied to clipboard")}
+          onClick={() => {
+            const url = `${window.location.origin}/product/${p.id}`;
+            if (navigator.share) {
+              navigator.share({ title: p.name, url }).catch(() => {});
+            } else {
+              navigator.clipboard
+                .writeText(url)
+                .then(() => toast("Link copied!"))
+                .catch(() => {});
+            }
+          }}
         />
         <ReelAction
           icon="tag"
@@ -762,12 +784,11 @@ export function VideoTheater() {
               wasLiked ? n.add(videoId) : n.delete(videoId);
               return n;
             });
-            toast("Could not update like");
           },
         },
       );
     },
-    [authed, liked, likeMutation, promptLogin, toast],
+    [authed, liked, likeMutation, promptLogin],
   );
   const [muted, setMuted] = useState(true);
   const isMobile = useIsMobile();
@@ -786,18 +807,27 @@ export function VideoTheater() {
     if (vids.length > 0 && activeIndex >= vids.length) setActiveIndex(0);
   }, [vids.length, activeIndex]);
 
+  useEffect(() => {
+    const current = vids[activeIndex];
+    if (!current) return;
+    const timer = setTimeout(() => {
+      videosApi.recordView(current.id).catch(() => {});
+    }, 10_000);
+    return () => clearTimeout(timer);
+  }, [activeIndex, vids]);
+
   const toggleFollow = (sellerId) => {
     if (!authed) {
       promptLogin("Please sign in to follow sellers.");
       return;
     }
+    const wasFollowing = follows.has(sellerId);
     setFollows((set) => {
       const n = new Set(set);
-      const has = n.has(sellerId);
-      has ? n.delete(sellerId) : n.add(sellerId);
-      toast(has ? "Unfollowed" : `Following ${p?.seller?.name ?? "seller"}`);
+      wasFollowing ? n.delete(sellerId) : n.add(sellerId);
       return n;
     });
+    toast(wasFollowing ? "Unfollowed" : `Following ${p?.seller?.name ?? "seller"}`);
   };
 
   // Scroll programmatically to a target reel index (smooth)
@@ -911,6 +941,7 @@ export function VideoTheater() {
             liked={liked.has(v.id)}
             onToggleLike={toggleLike}
             muted={muted}
+            onMutedChange={setMuted}
             radius={radius || 0}
             hideMuteBadge={!isMobile}
           />
@@ -1006,135 +1037,87 @@ export function VideoTheater() {
       style={{
         background: "#fff",
         borderRadius: "var(--r-xl)",
-        padding: 22,
+        padding: 18,
         border: "1px solid var(--line-200)",
         boxShadow: "0 16px 48px rgba(0,0,0,.35)",
-        maxHeight: "min(680px, calc(100dvh - 200px))",
-        overflowY: "auto",
+        overflow: "hidden",
         animation: "bz-slide-up .35s var(--ease) both",
       }}
     >
-      <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
-        <Chip tone="red" icon="video">
-          Featured in video
-        </Chip>
-        {p.original && <Chip tone="saffron">-{Math.round((1 - p.price / p.original) * 100)}%</Chip>}
-      </div>
+      {p.img && (
+        <div
+          style={{
+            width: "100%",
+            aspectRatio: "4 / 3",
+            borderRadius: "var(--r-lg)",
+            overflow: "hidden",
+            marginBottom: 14,
+            background: "var(--ink-50)",
+          }}
+        >
+          <img
+            src={p.img}
+            alt={p.name}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        </div>
+      )}
       <h2
         style={{
           margin: 0,
-          fontSize: "1.25rem",
+          fontSize: "1.1rem",
           fontWeight: 700,
           lineHeight: 1.3,
           color: "var(--blue-deep)",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
         }}
       >
         {p.name}
       </h2>
-      <div style={{ margin: "14px 0" }}>
+      <div style={{ margin: "8px 0" }}>
         <Price value={p.price} original={p.original} size="lg" />
       </div>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          paddingBottom: 14,
-          borderBottom: "1px solid var(--line-200)",
-        }}
-      >
-        <RatingStars value={p.rating} size={15} showVal count={p.reviews} />
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+        <RatingStars value={p.rating} size={14} showVal count={p.reviews} />
       </div>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "14px 0" }}>
-        <Chip tone="blue" icon="truck">
-          By {p.eta}
-        </Chip>
-        <Chip tone="success" icon="returns">
-          7-day returns
-        </Chip>
-        <Chip tone="neutral" icon="wallet">
-          Cash on delivery
-        </Chip>
-      </div>
-      <p
-        style={{
-          color: "var(--ink-500)",
-          fontSize: ".875rem",
-          lineHeight: 1.6,
-          margin: "0 0 18px",
-        }}
-      >
-        {caption}
-      </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {caption && (
+        <p
+          style={{
+            color: "var(--ink-500)",
+            fontSize: ".8125rem",
+            lineHeight: 1.4,
+            margin: "0 0 12px",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}
+        >
+          {caption}
+        </p>
+      )}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <Button
           variant="primary"
-          size="lg"
+          size="md"
           full
           icon="cart"
           onClick={() => void addToCart(p, 1, "Added from video")}
         >
           Add to Cart
         </Button>
-        <div style={{ display: "flex", gap: 10, flexDirection: "column" }}>
-          {p.allowBargaining ? (
-            <div style={{ display: "flex", gap: 10 }}>
-              <Button
-                variant="secondary"
-                full
-                icon="bargain"
-                href={pathFromScreen("pdp", p.id)}
-                onNavigate={() => openProduct(p)}
-              >
-                Bargain
-              </Button>
-              <Button
-                variant="ghost"
-                full
-                iconRight="arrowRight"
-                href={pathFromScreen("pdp", p.id)}
-                onNavigate={() => openProduct(p)}
-              >
-                Full details
-              </Button>
-            </div>
-          ) : (
-            <>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: ".8125rem",
-                  color: "var(--ink-500)",
-                  fontWeight: 600,
-                }}
-              >
-                Bargaining is not available for this product
-              </p>
-              <Button
-                variant="ghost"
-                full
-                iconRight="arrowRight"
-                href={pathFromScreen("pdp", p.id)}
-                onNavigate={() => openProduct(p)}
-              >
-                Full details
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
-      <div
-        style={{
-          marginTop: 18,
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          justifyContent: "center",
-          color: "var(--ink-400)",
-          fontSize: ".75rem",
-        }}
-      >
-        <Icon name="lock" size={14} color="var(--ink-400)" /> Secure payment · all payment options
+        <Button
+          variant="ghost"
+          size="sm"
+          full
+          iconRight="arrowRight"
+          href={pathFromScreen("pdp", p.id)}
+          onNavigate={() => openProduct(p)}
+        >
+          View product
+        </Button>
       </div>
     </div>
   );

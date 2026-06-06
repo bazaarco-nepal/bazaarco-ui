@@ -6,6 +6,11 @@ export interface VideoLikeResult {
   liked: boolean;
 }
 
+export interface VideoViewResult {
+  videoId: string;
+  viewed: boolean;
+}
+
 export const videosApi = {
   getFeed(tab: VideoFeedTab = "foryou"): Promise<VideoFeedResponse> {
     return getData<VideoFeedResponse>("/videos/feed", { tab });
@@ -15,5 +20,8 @@ export const videosApi = {
   },
   unlike(videoId: string): Promise<VideoLikeResult> {
     return deleteData<VideoLikeResult>(`/videos/${videoId}/like`);
+  },
+  recordView(videoId: string): Promise<VideoViewResult> {
+    return postData<VideoViewResult>(`/videos/${videoId}/view`);
   },
 };

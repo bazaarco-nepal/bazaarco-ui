@@ -8,12 +8,23 @@ import { useCurrentUser } from "@/hooks/use-auth";
 import { useCartMutations, useCartQuery } from "@/hooks/use-cart";
 import { useWishlistMutations, useWishlistQuery } from "@/hooks/use-wishlist";
 import { useProduct } from "@/hooks/use-catalog";
-import { browsePath, pathFromScreen, productIdFromPath, screenFromPath } from "@/config/routes";
+import {
+  browsePath,
+  searchPath,
+  pathFromScreen,
+  productIdFromPath,
+  screenFromPath,
+} from "@/config/routes";
 import { ordersApi } from "@/services/api/orders";
 import { ApiRequestError } from "@/services/api/http";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { queryKeys } from "@/services/api/query-keys";
-import { effectiveSelectedIds, pruneSelection, selectLine } from "@/lib/cart-selection";
+import {
+  cartLineKey,
+  effectiveSelectedIds,
+  pruneSelection,
+  selectLine,
+} from "@/lib/cart-selection";
 import type { CheckoutPayload } from "@/services/api/orders";
 import type { Product } from "@/types";
 
@@ -58,7 +69,8 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   const urlQuery = searchParams.get("q")?.trim() ?? "";
   const setQuery = useBazaarStore((s) => s.setQuery);
   useEffect(() => {
-    if (screenFromPath(pathname) === "browse" && urlQuery) {
+    const s = screenFromPath(pathname);
+    if ((s === "browse" || s === "search") && urlQuery) {
       const current = useBazaarStore.getState().query;
       if (urlQuery !== current) {
         setQuery(urlQuery);
@@ -215,8 +227,8 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
 
   const submitSearch = useCallback(() => {
     const q = useBazaarStore.getState().query.trim();
-    useBazaarStore.getState().setScreenOverride("browse");
-    router.push(browsePath({ q: q || undefined }));
+    useBazaarStore.getState().setScreenOverride("search");
+    router.push(searchPath({ q: q || undefined }));
     setTimeout(scrollTop, 0);
   }, [router, scrollTop]);
 
@@ -247,13 +259,13 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addToCart = useCallback(
-    async (product: Product, qty = 1, successMessage?: string) => {
+    async (product: Product, qty = 1, successMessage?: string, variantId?: string | null) => {
       if (!ensureAuthed("Please sign in to add items to your cart.")) return;
       try {
-        await addItem.mutateAsync({ product, qty });
+        await addItem.mutateAsync({ product, qty, variantId });
         // A freshly-added item should be selected for checkout. No-op while the
         // selection is still the "all" sentinel.
-        setSelectedCartIds((prev) => selectLine(prev, product.id));
+        setSelectedCartIds((prev) => selectLine(prev, cartLineKey({ id: product.id, variantId })));
         const defaultMsg = qty > 1 ? `${qty} added to cart` : "Added to cart";
         toast(successMessage ?? defaultMsg);
       } catch (error) {
@@ -266,14 +278,14 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   );
 
   const updateCartQty = useCallback(
-    async (productId: string, qty: number) => {
+    async (productId: string, qty: number, variantId?: string | null) => {
       if (!useBazaarStore.getState().authed) return;
       try {
         if (qty < 1) {
-          await removeItem.mutateAsync(productId);
+          await removeItem.mutateAsync({ productId, variantId });
           return;
         }
-        await updateQty.mutateAsync({ productId, qty });
+        await updateQty.mutateAsync({ productId, qty, variantId });
       } catch (error) {
         const msg = error instanceof ApiRequestError ? error.message : "Could not update cart";
         toast(msg);
@@ -283,10 +295,10 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   );
 
   const removeFromCart = useCallback(
-    async (productId: string) => {
+    async (productId: string, variantId?: string | null) => {
       if (!useBazaarStore.getState().authed) return;
       try {
-        await removeItem.mutateAsync(productId);
+        await removeItem.mutateAsync({ productId, variantId });
       } catch (error) {
         const msg = error instanceof ApiRequestError ? error.message : "Could not remove item";
         toast(msg);
@@ -296,10 +308,10 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   );
 
   const buyNow = useCallback(
-    async (product: Product, qty = 1) => {
+    async (product: Product, qty = 1, variantId?: string | null) => {
       if (!ensureAuthed("Please sign in to buy now and checkout.")) return;
       try {
-        await addItem.mutateAsync({ product, qty });
+        await addItem.mutateAsync({ product, qty, variantId });
         nav("checkout");
       } catch (error) {
         const msg = error instanceof ApiRequestError ? error.message : "Could not add to cart";
@@ -320,10 +332,11 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
         const order = await ordersApi.checkout({ ...payload, selectedItemIds });
         setOrderTotal(order.total);
         setLastOrderId(order.id);
-        // Remove only the items that were actually ordered; leave the rest in
-        // the cart. `order.items` is the list of ordered product ids.
-        const ordered = new Set(order.items);
-        setCart((prev) => prev.filter((line) => !ordered.has(line.id)));
+        // Remove only the lines actually ordered; leave the rest (incl. other
+        // variants of the same product). `selectedItemIds` are composite line
+        // keys; the cart query refetch below reconciles with the server.
+        const orderedKeys = new Set(selectedItemIds);
+        setCart((prev) => prev.filter((line) => !orderedKeys.has(cartLineKey(line))));
         setSelectedCartIds(null);
         // Reconcile with the server (it cleared only the ordered rows).
         void queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });

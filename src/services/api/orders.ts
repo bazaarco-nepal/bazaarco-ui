@@ -34,6 +34,12 @@ export interface CheckoutPayload {
 export interface OrderLineItem {
   productId: string;
   quantity: number;
+  // Chosen variant + price snapshotted at checkout (null on legacy rows). When
+  // unitPrice is present, prefer it over the live catalog price.
+  variantId?: string | null;
+  variantName?: string | null;
+  unitPrice?: number | null;
+  unitOriginal?: number | null;
 }
 
 export interface Order {

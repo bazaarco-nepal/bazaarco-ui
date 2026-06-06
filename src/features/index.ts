@@ -1,6 +1,7 @@
 export * from "@/features/auth";
 export * from "@/features/home";
 export * from "@/features/browse";
+export * from "@/features/search";
 export * from "@/features/pdp";
 export * from "@/features/store";
 export * from "@/features/video";

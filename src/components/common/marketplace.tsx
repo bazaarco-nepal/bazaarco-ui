@@ -717,6 +717,7 @@ export function Navbar() {
   const hasSavedAddress = savedAddresses.length > 0;
   const desktopMenuRef = useRef(null);
   const mobileSheetRef = useRef(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -861,7 +862,8 @@ export function Navbar() {
             <Icon name="search" size={19} />
           </button>
           <input
-            className="bz-navbar__search-input"
+            ref={searchInputRef}
+            className={`bz-navbar__search-input${query ? " has-clear" : ""}`}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
@@ -870,6 +872,19 @@ export function Navbar() {
             placeholder="Search"
             aria-label="Search products"
           />
+          {query && (
+            <button
+              type="button"
+              aria-label="Clear search"
+              className="bz-navbar__search-clear"
+              onClick={() => {
+                setQuery("");
+                searchInputRef.current?.focus();
+              }}
+            >
+              <Icon name="x" size={16} />
+            </button>
+          )}
         </div>
 
         <div className="bz-navbar__mobile-actions">

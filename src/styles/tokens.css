@@ -293,8 +293,34 @@ body {
   transition: border-color var(--dur-standard) var(--ease);
 }
 
+.bz-navbar__search-input.has-clear {
+  padding-right: 44px;
+}
+
 .bz-navbar__search-input:focus {
   border-color: var(--red);
+}
+
+.bz-navbar__search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-400);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bz-navbar__search-clear:hover {
+  background: var(--line-100);
+  color: var(--ink-700);
 }
 
 .bz-navbar__nav {

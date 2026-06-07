@@ -1,4 +1,4 @@
-import { getData, patchData, postData } from "./http";
+import { deleteData, getData, patchData, postData } from "./http";
 import type { Product } from "@/types";
 import type { StorefrontData } from "./storefront";
 import type { OrderStatus } from "@/lib/order-utils";
@@ -37,6 +37,9 @@ export interface UpdateProductPayload extends DiscountFields {
   variants?: CreateProductVariantPayload[];
   allowBargaining?: boolean;
   minimumPrice?: number | null;
+  // 3–5 gallery images, cover first. Replaces the whole gallery; the server
+  // re-derives the cover from images[0]. Omit to leave photos untouched.
+  images?: string[];
 }
 
 export interface SellerInventoryItem {
@@ -96,6 +99,14 @@ export const sellerApi = {
 
   updateProduct(id: string, payload: UpdateProductPayload): Promise<Product> {
     return patchData<Product>(`/seller/products/${encodeURIComponent(id)}`, payload);
+  },
+
+  // Hard-deletes the listing and cascades its reviews, Q&A, bargains, wishlist
+  // entries and cart lines server-side. Rejected (409) when the product has
+  // order history — order records must stay intact, so the UI surfaces the
+  // server message instead.
+  deleteProduct(id: string): Promise<{ id: string }> {
+    return deleteData<{ id: string }>(`/seller/products/${encodeURIComponent(id)}`);
   },
 
   getDashboard<T = unknown>(range?: string): Promise<T> {

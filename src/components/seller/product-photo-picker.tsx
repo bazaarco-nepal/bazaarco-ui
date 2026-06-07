@@ -8,8 +8,12 @@ import { Icon } from "@/components/ui";
 export type ProductPhoto = {
   id: string;
   previewUrl: string;
-  file: File;
   sourceName: string;
+  // A freshly captured photo carries a `file` to upload. A photo already hosted
+  // on the CDN (editing an existing listing) carries `remoteUrl` instead and is
+  // reused as-is on save, never re-uploaded.
+  file?: File;
+  remoteUrl?: string;
 };
 
 const MAX_PHOTOS = 5;
@@ -374,7 +378,7 @@ export function ProductPhotoPicker({
     const incomingName = normalizeFileName(file.name);
     const duplicate = photos.some((photo, index) => {
       if (pickIndex !== null && index === pickIndex) return false;
-      return normalizeFileName(photo.sourceName || photo.file.name) === incomingName;
+      return normalizeFileName(photo.sourceName || photo.file?.name || "") === incomingName;
     });
     if (duplicate) {
       setError("You are not allowed to use the same photo twice.");
@@ -391,14 +395,19 @@ export function ProductPhotoPicker({
     setCropDraft(null);
   };
 
+  // Only object URLs we minted need revoking; a remote (CDN) preview must be
+  // left intact so the image survives a remove/replace elsewhere in the gallery.
+  const revokeLocalPreview = (photo: ProductPhoto | undefined) => {
+    if (photo?.file) revoke(photo.previewUrl);
+  };
+
   const onCropConfirm = (file: File, previewUrl: string) => {
     if (!cropDraft) return;
     revoke(cropDraft.objectUrl);
     const id = crypto.randomUUID?.() ?? String(Date.now());
     const next: ProductPhoto = { id, previewUrl, file, sourceName: cropDraft.sourceName };
     if (cropDraft.replaceIndex !== null) {
-      const prev = photos[cropDraft.replaceIndex];
-      if (prev) revoke(prev.previewUrl);
+      revokeLocalPreview(photos[cropDraft.replaceIndex]);
       onChange(photos.map((p, i) => (i === cropDraft.replaceIndex ? next : p)));
     } else {
       onChange([...photos, next]);
@@ -407,14 +416,15 @@ export function ProductPhotoPicker({
   };
 
   const removePhoto = (index: number) => {
-    const removed = photos[index];
-    if (removed) revoke(removed.previewUrl);
+    revokeLocalPreview(photos[index]);
     onChange(photos.filter((_, i) => i !== index));
   };
 
   useEffect(() => {
     return () => {
-      photosRef.current.forEach((p) => revoke(p.previewUrl));
+      photosRef.current.forEach((p) => {
+        if (p.file) revoke(p.previewUrl);
+      });
     };
   }, []);
 

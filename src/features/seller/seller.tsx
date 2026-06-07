@@ -36,6 +36,7 @@ import {
   AppLink,
 } from "@/components/ui";
 import { ProductPhotoPicker, type ProductPhoto } from "@/components/seller/product-photo-picker";
+import { ProductDeleteConfirmModal } from "@/components/seller/product-delete-confirm-modal";
 import { SellerVideoLibrary } from "@/components/seller/seller-video-library";
 import {
   SellerVerificationBanner,
@@ -69,6 +70,7 @@ import type { OrderStatus } from "@/lib/order-utils";
 import {
   useCreateProduct,
   useUpdateProduct,
+  useDeleteProduct,
   useSellerDashboard,
   useSellerInbox,
   useSellerInventory,
@@ -3565,8 +3567,22 @@ export const attrFilled = (f: { t: string }, v: unknown) => {
 /* ---------- 4.4 Add / Edit Product — Three-Tap Listing ---------- */
 // One form for both create and edit. In edit mode (`editing` set, threaded via
 // `editProductRef`) the screen prefills from the existing product, locks the
-// category and photos (the update endpoint changes neither — recategorizing is
-// unsupported and media has its own flow), and PATCHes instead of POSTing.
+// category (recategorizing is unsupported), and PATCHes instead of POSTing.
+// Photos are editable in both modes; existing ones are seeded as remote entries
+// so unchanged images are reused rather than re-uploaded.
+
+// Seeds the photo picker from images already hosted on the CDN. `remoteUrl`
+// marks them as upload-free; sourceName (from the URL) keeps duplicate
+// detection working against newly added files.
+function remotePhotoFromUrl(url: string, index: number): ProductPhoto {
+  return {
+    id: `existing-${index}-${url}`,
+    previewUrl: url,
+    remoteUrl: url,
+    sourceName: url.split("/").pop()?.split("?")[0] || `photo-${index + 1}`,
+  };
+}
+
 export function SellerAddProduct({
   editing = null,
 }: { editing?: SellerInventoryItem | null } = {}) {
@@ -3631,6 +3647,10 @@ export function SellerAddProduct({
   useEffect(() => {
     if (!isEdit || prefilled.current || !editingProduct) return;
     prefilled.current = true;
+    const existingImages = editingProduct.images?.length
+      ? editingProduct.images
+      : [editingProduct.img, ...(editing?.images ?? [])].filter(Boolean);
+    setProductPhotos(existingImages.map((url, i) => remotePhotoFromUrl(url as string, i)));
     setTitle(editingProduct.name ?? "");
     setDescription(editingProduct.description ?? "");
     setCategory(editingProduct.cat ?? "");
@@ -3709,8 +3729,9 @@ export function SellerAddProduct({
   const variantsOk =
     !hasVariants ||
     variants.every((v) => v.price && v.stock && (!v.onSale || isSaleValid(variantSaleInput(v))));
-  // Editing keeps the existing gallery — the update endpoint never touches images.
-  const photosOk = isEdit ? true : productPhotos.length >= 3 && productPhotos.length <= 5;
+  // Same 3–5 rule for new listings and edits — an edit can swap photos but must
+  // still end with a valid gallery.
+  const photosOk = productPhotos.length >= 3 && productPhotos.length <= 5;
 
   // Discount (single-price only). Pure math lives in @/lib/discount and mirrors
   // the server's authoritative rules so the seller gets immediate feedback.
@@ -3815,18 +3836,29 @@ export function SellerAddProduct({
       : undefined;
 
   // Publish: upload every photo (3–5, cover first), then create the product.
-  // Edit: PATCH the changed fields (images/category are never sent). Postgres is
-  // the source of truth; the server re-indexes it into search in the background.
+  // Edit: upload any newly added photos, then PATCH the changed fields (category
+  // is never sent). Postgres is the source of truth; the server re-indexes it
+  // into search in the background.
   const publishing = uploadImage.isPending || createProduct.isPending || updateProduct.isPending;
   const handlePublish = async () => {
     if (!canPublish || publishing) return;
     if (isEdit && editing) {
       try {
+        // Upload only the newly captured photos; reuse already-hosted ones by
+        // their CDN URL so an edit that doesn't touch photos costs no uploads.
+        const images = await Promise.all(
+          productPhotos.map(async (photo) => {
+            if (!photo.file) return photo.remoteUrl as string;
+            const uploaded = await uploadImage.mutateAsync({ file: photo.file });
+            return uploaded.url;
+          }),
+        );
         await updateProduct.mutateAsync({
           id: editing.id,
           name: title.trim(),
           description: description.trim(),
           ...buildPricingPayload(),
+          images,
           metadata: attrs,
           stock: hasVariants ? undefined : Number(stock) || 0,
           variants: buildVariants(),
@@ -3998,45 +4030,17 @@ export function SellerAddProduct({
                 <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>
                   {isEdit ? "Photos" : "Add photos"}{" "}
                   <span style={{ fontSize: ".75rem", color: "var(--ink-400)", fontWeight: 600 }}>
-                    {isEdit ? "can't be changed here" : "3 required · up to 5"}
+                    3 required · up to 5
                   </span>
                 </h3>
               </div>
             </div>
-            {isEdit ? (
-              <>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {(editingProduct?.images?.length
-                    ? editingProduct.images
-                    : [editing?.img, ...(editing?.images ?? [])].filter(Boolean)
-                  ).map((src, i) => (
-                    <img
-                      key={`${src}-${i}`}
-                      src={src as string}
-                      alt=""
-                      style={{
-                        width: 72,
-                        height: 72,
-                        objectFit: "cover",
-                        borderRadius: "var(--r-md)",
-                        border: "1px solid var(--line-200)",
-                        background: "var(--line-100)",
-                      }}
-                    />
-                  ))}
-                </div>
-                <p style={{ fontSize: ".75rem", color: "var(--ink-400)", margin: "10px 0 0" }}>
-                  To change photos, remove this product and list it again.
-                </p>
-              </>
-            ) : (
-              <ProductPhotoPicker
-                photos={productPhotos}
-                onChange={setProductPhotos}
-                min={3}
-                max={5}
-              />
-            )}
+            <ProductPhotoPicker
+              photos={productPhotos}
+              onChange={setProductPhotos}
+              min={3}
+              max={5}
+            />
           </div>
 
           {/* Step 2 — Describe */}
@@ -5382,6 +5386,8 @@ export function SellerInventory() {
   const { nav, toast } = useBz();
   const { data: inventoryData = EMPTY_INVENTORY, isLoading, isError, error } = useSellerInventory();
   const updateProduct = useUpdateProduct();
+  const deleteProduct = useDeleteProduct();
+  const [deleteTarget, setDeleteTarget] = useState<SellerInventoryItem | null>(null);
   const [items, setItems] = useState([]);
   useEffect(() => {
     setItems(inventoryData);
@@ -5427,6 +5433,24 @@ export function SellerInventory() {
     if (!it || it.stock <= 0 || savingId) return;
     void persistStock(id, it.stock - 1);
     toast("Sold one in shop · −1 stock");
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget || deleteProduct.isPending) return;
+    const { id, name } = deleteTarget;
+    try {
+      await deleteProduct.mutateAsync(id);
+      // Drop it from the local optimistic list so the row disappears before the
+      // inventory refetch lands.
+      setItems((list) => list.filter((it) => it.id !== id));
+      setExpanded((cur) => (cur === id ? null : cur));
+      setDeleteTarget(null);
+      toast(`${name} deleted`);
+    } catch (err) {
+      // 409 = product has order history (server keeps it to protect orders).
+      // Keep the dialog open so the seller reads why and can cancel.
+      toast(err instanceof Error ? err.message : "Could not delete this product");
+    }
   };
 
   const persistVariantStock = useCallback(
@@ -5521,489 +5545,320 @@ export function SellerInventory() {
   const invPaged = usePages(visible, 8, `${status}|${search}|${sort}`);
 
   return (
-    <ApiState isLoading={isLoading} isError={isError} error={error}>
-      <div
-        className="bz-container-pad"
-        style={{
-          maxWidth: "var(--container)",
-          margin: "0 auto",
-          padding: "20px clamp(14px, 4vw, 28px) 100px",
-        }}
-      >
-        <SellerHelpBar />
-
+    <>
+      <ApiState isLoading={isLoading} isError={isError} error={error}>
         <div
+          className="bz-container-pad"
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 12,
-            flexWrap: "wrap",
-            marginBottom: 14,
+            maxWidth: "var(--container)",
+            margin: "0 auto",
+            padding: "20px clamp(14px, 4vw, 28px) 100px",
           }}
         >
-          <h1
+          <SellerHelpBar />
+
+          <div
             style={{
-              margin: 0,
-              fontSize: "clamp(1.25rem, 4vw, 1.5rem)",
-              fontWeight: 800,
-              color: "var(--blue-deep)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 12,
+              flexWrap: "wrap",
+              marginBottom: 14,
             }}
           >
-            My products
-          </h1>
-          <Button variant="primary" icon="plus" href={pathFromScreen("s-add")}>
-            Add
-          </Button>
-        </div>
-
-        <div
-          style={{
-            background: "var(--tint-blue-50)",
-            padding: 12,
-            borderRadius: "var(--r-md)",
-            fontSize: ".8125rem",
-            color: "var(--blue-deep)",
-            marginBottom: 14,
-            display: "flex",
-            gap: 10,
-          }}
-        >
-          <Icon name="badgeCheck" size={18} color="var(--blue)" />
-          <span>Tap any item to change stock or edit. Items running low are marked orange.</span>
-        </div>
-
-        {/* Status pills */}
-        <div style={{ marginBottom: 14 }}>
-          <ChipGroup
-            options={statusTabs.map((t) => ({
-              value: t.id,
-              label: `${t.label} (${counts[t.id]})`,
-            }))}
-            value={status}
-            onChange={setStatus}
-          />
-        </div>
-
-        {/* Search + sort row */}
-        <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
-          <div style={{ flex: "1 1 220px", position: "relative", minWidth: 200 }}>
-            <Icon
-              name="search"
-              size={16}
-              color="var(--ink-400)"
-              style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }}
-            />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search products by name"
+            <h1
               style={{
-                width: "100%",
-                padding: "10px 12px 10px 36px",
-                height: 40,
-                border: "1.5px solid var(--line-200)",
-                borderRadius: "var(--r-md)",
-                fontSize: ".875rem",
-                background: "#fff",
-                color: "var(--ink-900)",
-                outline: "none",
+                margin: 0,
+                fontSize: "clamp(1.25rem, 4vw, 1.5rem)",
+                fontWeight: 800,
+                color: "var(--blue-deep)",
               }}
+            >
+              My products
+            </h1>
+            <Button variant="primary" icon="plus" href={pathFromScreen("s-add")}>
+              Add
+            </Button>
+          </div>
+
+          <div
+            style={{
+              background: "var(--tint-blue-50)",
+              padding: 12,
+              borderRadius: "var(--r-md)",
+              fontSize: ".8125rem",
+              color: "var(--blue-deep)",
+              marginBottom: 14,
+              display: "flex",
+              gap: 10,
+            }}
+          >
+            <Icon name="badgeCheck" size={18} color="var(--blue)" />
+            <span>Tap any item to change stock or edit. Items running low are marked orange.</span>
+          </div>
+
+          {/* Status pills */}
+          <div style={{ marginBottom: 14 }}>
+            <ChipGroup
+              options={statusTabs.map((t) => ({
+                value: t.id,
+                label: `${t.label} (${counts[t.id]})`,
+              }))}
+              value={status}
+              onChange={setStatus}
             />
-            {search && (
-              <button
-                onClick={() => setSearch("")}
-                aria-label="Clear search"
+          </div>
+
+          {/* Search + sort row */}
+          <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
+            <div style={{ flex: "1 1 220px", position: "relative", minWidth: 200 }}>
+              <Icon
+                name="search"
+                size={16}
+                color="var(--ink-400)"
                 style={{
                   position: "absolute",
-                  right: 8,
+                  left: 12,
                   top: "50%",
                   transform: "translateY(-50%)",
-                  width: 24,
-                  height: 24,
-                  borderRadius: "var(--r-full)",
+                }}
+              />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search products by name"
+                style={{
+                  width: "100%",
+                  padding: "10px 12px 10px 36px",
+                  height: 40,
+                  border: "1.5px solid var(--line-200)",
+                  borderRadius: "var(--r-md)",
+                  fontSize: ".875rem",
+                  background: "#fff",
+                  color: "var(--ink-900)",
+                  outline: "none",
+                }}
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  aria-label="Clear search"
+                  style={{
+                    position: "absolute",
+                    right: 8,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    width: 24,
+                    height: 24,
+                    borderRadius: "var(--r-full)",
+                    border: "none",
+                    background: "var(--line-200)",
+                    color: "var(--ink-700)",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Icon name="x" size={12} color="var(--ink-700)" />
+                </button>
+              )}
+            </div>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              style={{
+                height: 40,
+                padding: "0 12px",
+                border: "1.5px solid var(--line-200)",
+                borderRadius: "var(--r-md)",
+                fontSize: ".8125rem",
+                background: "#fff",
+                color: "var(--ink-900)",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              {INV_SORTS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  Sort: {o.label}
+                </option>
+              ))}
+            </select>
+            {filtersActive && (
+              <button
+                onClick={clearFilters}
+                style={{
+                  height: 40,
+                  padding: "0 14px",
                   border: "none",
-                  background: "var(--line-200)",
-                  color: "var(--ink-700)",
+                  background: "none",
+                  color: "var(--ink-500)",
+                  fontWeight: 700,
+                  fontSize: ".8125rem",
                   cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  textDecoration: "underline",
                 }}
               >
-                <Icon name="x" size={12} color="var(--ink-700)" />
+                Clear filters
               </button>
             )}
           </div>
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value)}
+
+          <div
+            className="tnum"
             style={{
-              height: 40,
-              padding: "0 12px",
-              border: "1.5px solid var(--line-200)",
-              borderRadius: "var(--r-md)",
               fontSize: ".8125rem",
-              background: "#fff",
-              color: "var(--ink-900)",
+              color: "var(--ink-500)",
+              marginBottom: 12,
               fontWeight: 700,
-              cursor: "pointer",
             }}
           >
-            {INV_SORTS.map((o) => (
-              <option key={o.value} value={o.value}>
-                Sort: {o.label}
-              </option>
-            ))}
-          </select>
-          {filtersActive && (
-            <button
-              onClick={clearFilters}
+            {visible.length} of {items.length} product{items.length === 1 ? "" : "s"}
+          </div>
+
+          {visible.length === 0 ? (
+            <div
               style={{
-                height: 40,
-                padding: "0 14px",
-                border: "none",
-                background: "none",
-                color: "var(--ink-500)",
-                fontWeight: 700,
-                fontSize: ".8125rem",
-                cursor: "pointer",
-                textDecoration: "underline",
+                textAlign: "center",
+                padding: "32px 16px",
+                border: "1.5px dashed var(--line-200)",
+                borderRadius: "var(--r-lg)",
               }}
             >
-              Clear filters
-            </button>
-          )}
-        </div>
-
-        <div
-          className="tnum"
-          style={{
-            fontSize: ".8125rem",
-            color: "var(--ink-500)",
-            marginBottom: 12,
-            fontWeight: 700,
-          }}
-        >
-          {visible.length} of {items.length} product{items.length === 1 ? "" : "s"}
-        </div>
-
-        {visible.length === 0 ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "32px 16px",
-              border: "1.5px dashed var(--line-200)",
-              borderRadius: "var(--r-lg)",
-            }}
-          >
-            <Icon name="package" size={40} color="var(--ink-300)" />
-            <div style={{ marginTop: 10, fontWeight: 800, color: "var(--ink-900)" }}>
-              No products match
+              <Icon name="package" size={40} color="var(--ink-300)" />
+              <div style={{ marginTop: 10, fontWeight: 800, color: "var(--ink-900)" }}>
+                No products match
+              </div>
+              <div style={{ color: "var(--ink-500)", fontSize: ".8125rem", margin: "4px 0 14px" }}>
+                Try clearing search or status filter.
+              </div>
+              <Button variant="secondary" onClick={clearFilters}>
+                Clear filters
+              </Button>
             </div>
-            <div style={{ color: "var(--ink-500)", fontSize: ".8125rem", margin: "4px 0 14px" }}>
-              Try clearing search or status filter.
-            </div>
-            <Button variant="secondary" onClick={clearFilters}>
-              Clear filters
-            </Button>
-          </div>
-        ) : (
-          <>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {invPaged.visible.map((it) => {
-                const low = it.stock <= 3 && it.stock > 0;
-                const oos = it.stock === 0;
-                const isOpen = expanded === it.id;
-                return (
-                  <div
-                    key={it.id}
-                    style={{
-                      background: oos ? "var(--line-100)" : low ? "rgba(247,127,0,.08)" : "#fff",
-                      border: `1.5px solid ${low ? "var(--saffron)" : "var(--line-200)"}`,
-                      borderRadius: "var(--r-lg)",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => toggleExpanded(it.id)}
+          ) : (
+            <>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {invPaged.visible.map((it) => {
+                  const low = it.stock <= 3 && it.stock > 0;
+                  const oos = it.stock === 0;
+                  const isOpen = expanded === it.id;
+                  return (
+                    <div
+                      key={it.id}
                       style={{
-                        width: "100%",
-                        display: "flex",
-                        gap: 14,
-                        alignItems: "center",
-                        padding: 14,
-                        background: "transparent",
-                        border: "none",
-                        cursor: "pointer",
-                        textAlign: "left",
+                        background: oos ? "var(--line-100)" : low ? "rgba(247,127,0,.08)" : "#fff",
+                        border: `1.5px solid ${low ? "var(--saffron)" : "var(--line-200)"}`,
+                        borderRadius: "var(--r-lg)",
+                        overflow: "hidden",
                       }}
                     >
-                      {it.img ? (
-                        <img
-                          src={it.img}
-                          alt=""
-                          style={{
-                            width: 72,
-                            height: 72,
-                            flexShrink: 0,
-                            borderRadius: "var(--r-md)",
-                            objectFit: "cover",
-                            border: "1px solid var(--line-200)",
-                            background: "var(--line-100)",
-                          }}
-                        />
-                      ) : (
-                        <Placeholder
-                          icon={it.icon}
-                          tint={it.tint}
-                          style={{ width: 72, height: 72, flexShrink: 0 }}
-                          radius="var(--r-md)"
-                        />
-                      )}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 700, fontSize: "1rem" }}>{it.name}</div>
-                        <div
-                          className="tnum"
-                          style={{
-                            fontSize: ".875rem",
-                            color: "var(--blue-deep)",
-                            fontWeight: 800,
-                            marginTop: 2,
-                          }}
-                        >
-                          Rs. {it.price.toLocaleString()}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: ".8125rem",
-                            color: oos
-                              ? "var(--danger)"
-                              : low
-                                ? "var(--saffron)"
-                                : "var(--ink-500)",
-                            marginTop: 2,
-                            fontWeight: 700,
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 4,
-                          }}
-                        >
-                          {oos ? (
-                            <>
-                              <Icon name="zap" size={14} color="var(--danger)" /> Out of stock
-                            </>
-                          ) : low ? (
-                            <>
-                              <Icon name="zap" size={14} color="var(--saffron)" /> Only {it.stock}{" "}
-                              left
-                            </>
-                          ) : (
-                            <>Stock: {it.stock}</>
-                          )}
-                        </div>
-                      </div>
-                      <Icon
-                        name={isOpen ? "chevronDown" : "chevronRight"}
-                        size={22}
-                        color="var(--ink-400)"
-                      />
-                    </button>
-
-                    {isOpen && (
-                      <div
-                        style={{ padding: "0 14px 14px", borderTop: "1px dashed var(--line-200)" }}
+                      <button
+                        type="button"
+                        onClick={() => toggleExpanded(it.id)}
+                        style={{
+                          width: "100%",
+                          display: "flex",
+                          gap: 14,
+                          alignItems: "center",
+                          padding: 14,
+                          background: "transparent",
+                          border: "none",
+                          cursor: "pointer",
+                          textAlign: "left",
+                        }}
                       >
-                        {it.hasVariants && it.variants?.length ? (
-                          <>
-                            <div
-                              style={{
-                                fontWeight: 700,
-                                fontSize: ".875rem",
-                                margin: "14px 0 10px",
-                              }}
-                            >
-                              Stock by variant
-                              {savingId === it.id && (
-                                <span
-                                  style={{
-                                    marginLeft: 8,
-                                    fontSize: ".75rem",
-                                    color: "var(--ink-400)",
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  Saving…
-                                </span>
-                              )}
-                            </div>
-                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                              {it.variants.map((v) => {
-                                const vLow = v.stock <= 3 && v.stock > 0;
-                                const vOos = v.stock === 0;
-                                return (
-                                  <div
-                                    key={v.id}
-                                    style={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: 10,
-                                      padding: "8px 10px",
-                                      border: `1.5px solid ${vLow ? "var(--saffron)" : "var(--line-200)"}`,
-                                      borderRadius: "var(--r-md)",
-                                      background: vOos ? "var(--line-50)" : "#fff",
-                                    }}
-                                  >
-                                    <span style={{ flex: 1, fontWeight: 600, fontSize: ".875rem" }}>
-                                      {v.name}
-                                      {vOos && (
-                                        <span
-                                          style={{
-                                            color: "var(--danger)",
-                                            marginLeft: 6,
-                                            fontSize: ".75rem",
-                                          }}
-                                        >
-                                          Out
-                                        </span>
-                                      )}
-                                      {vLow && !vOos && (
-                                        <span
-                                          style={{
-                                            color: "var(--saffron)",
-                                            marginLeft: 6,
-                                            fontSize: ".75rem",
-                                          }}
-                                        >
-                                          Low
-                                        </span>
-                                      )}
-                                    </span>
-                                    <div
-                                      style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        border: "1.5px solid var(--line-200)",
-                                        borderRadius: "var(--r-md)",
-                                        overflow: "hidden",
-                                        background: "#fff",
-                                        opacity: savingId === it.id ? 0.6 : 1,
-                                      }}
-                                    >
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          void persistVariantStock(it.id, v.id, v.stock - 1);
-                                        }}
-                                        disabled={v.stock === 0 || savingId === it.id}
-                                        style={{
-                                          width: 36,
-                                          height: 40,
-                                          background: "#fff",
-                                          border: "none",
-                                          cursor:
-                                            v.stock === 0 || savingId === it.id
-                                              ? "not-allowed"
-                                              : "pointer",
-                                          color: "var(--ink-700)",
-                                          display: "flex",
-                                          alignItems: "center",
-                                          justifyContent: "center",
-                                        }}
-                                      >
-                                        <Icon name="minus" size={14} />
-                                      </button>
-                                      <span
-                                        className="tnum"
-                                        style={{
-                                          width: 36,
-                                          textAlign: "center",
-                                          fontWeight: 800,
-                                          fontSize: ".9375rem",
-                                        }}
-                                      >
-                                        {v.stock}
-                                      </span>
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          void persistVariantStock(it.id, v.id, v.stock + 1);
-                                        }}
-                                        disabled={savingId === it.id}
-                                        style={{
-                                          width: 36,
-                                          height: 40,
-                                          background: "#fff",
-                                          border: "none",
-                                          cursor: savingId === it.id ? "not-allowed" : "pointer",
-                                          color: "var(--ink-700)",
-                                          display: "flex",
-                                          alignItems: "center",
-                                          justifyContent: "center",
-                                        }}
-                                      >
-                                        <Icon name="plus" size={14} />
-                                      </button>
-                                    </div>
-                                    {!vOos && (
-                                      <button
-                                        type="button"
-                                        disabled={savingId === it.id}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          void persistVariantStock(it.id, v.id, v.stock - 1);
-                                          toast(`Sold one ${v.name} in shop`);
-                                        }}
-                                        style={{
-                                          height: 32,
-                                          padding: "0 10px",
-                                          borderRadius: "var(--r-md)",
-                                          border: "1.5px solid var(--line-200)",
-                                          background: "#fff",
-                                          color: "var(--ink-600)",
-                                          fontSize: ".75rem",
-                                          fontWeight: 700,
-                                          cursor: savingId === it.id ? "not-allowed" : "pointer",
-                                          whiteSpace: "nowrap",
-                                        }}
-                                      >
-                                        −1 shop
-                                      </button>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                            <div
-                              className="tnum"
-                              style={{
-                                fontSize: ".8125rem",
-                                color: "var(--ink-500)",
-                                marginTop: 8,
-                                fontWeight: 600,
-                              }}
-                            >
-                              Total: {it.stock} units
-                            </div>
-                          </>
+                        {it.img ? (
+                          <img
+                            src={it.img}
+                            alt=""
+                            style={{
+                              width: 72,
+                              height: 72,
+                              flexShrink: 0,
+                              borderRadius: "var(--r-md)",
+                              objectFit: "cover",
+                              border: "1px solid var(--line-200)",
+                              background: "var(--line-100)",
+                            }}
+                          />
                         ) : (
-                          <>
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                padding: "14px 0",
-                                gap: 12,
-                                flexWrap: "wrap",
-                              }}
-                            >
-                              <div style={{ fontWeight: 700, fontSize: ".875rem" }}>
-                                Change stock
+                          <Placeholder
+                            icon={it.icon}
+                            tint={it.tint}
+                            style={{ width: 72, height: 72, flexShrink: 0 }}
+                            radius="var(--r-md)"
+                          />
+                        )}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: "1rem" }}>{it.name}</div>
+                          <div
+                            className="tnum"
+                            style={{
+                              fontSize: ".875rem",
+                              color: "var(--blue-deep)",
+                              fontWeight: 800,
+                              marginTop: 2,
+                            }}
+                          >
+                            Rs. {it.price.toLocaleString()}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: ".8125rem",
+                              color: oos
+                                ? "var(--danger)"
+                                : low
+                                  ? "var(--saffron)"
+                                  : "var(--ink-500)",
+                              marginTop: 2,
+                              fontWeight: 700,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 4,
+                            }}
+                          >
+                            {oos ? (
+                              <>
+                                <Icon name="zap" size={14} color="var(--danger)" /> Out of stock
+                              </>
+                            ) : low ? (
+                              <>
+                                <Icon name="zap" size={14} color="var(--saffron)" /> Only {it.stock}{" "}
+                                left
+                              </>
+                            ) : (
+                              <>Stock: {it.stock}</>
+                            )}
+                          </div>
+                        </div>
+                        <Icon
+                          name={isOpen ? "chevronDown" : "chevronRight"}
+                          size={22}
+                          color="var(--ink-400)"
+                        />
+                      </button>
+
+                      {isOpen && (
+                        <div
+                          style={{
+                            padding: "0 14px 14px",
+                            borderTop: "1px dashed var(--line-200)",
+                          }}
+                        >
+                          {it.hasVariants && it.variants?.length ? (
+                            <>
+                              <div
+                                style={{
+                                  fontWeight: 700,
+                                  fontSize: ".875rem",
+                                  margin: "14px 0 10px",
+                                }}
+                              >
+                                Stock by variant
                                 {savingId === it.id && (
                                   <span
                                     style={{
@@ -6017,193 +5872,389 @@ export function SellerInventory() {
                                   </span>
                                 )}
                               </div>
+                              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                {it.variants.map((v) => {
+                                  const vLow = v.stock <= 3 && v.stock > 0;
+                                  const vOos = v.stock === 0;
+                                  return (
+                                    <div
+                                      key={v.id}
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 10,
+                                        padding: "8px 10px",
+                                        border: `1.5px solid ${vLow ? "var(--saffron)" : "var(--line-200)"}`,
+                                        borderRadius: "var(--r-md)",
+                                        background: vOos ? "var(--line-50)" : "#fff",
+                                      }}
+                                    >
+                                      <span
+                                        style={{ flex: 1, fontWeight: 600, fontSize: ".875rem" }}
+                                      >
+                                        {v.name}
+                                        {vOos && (
+                                          <span
+                                            style={{
+                                              color: "var(--danger)",
+                                              marginLeft: 6,
+                                              fontSize: ".75rem",
+                                            }}
+                                          >
+                                            Out
+                                          </span>
+                                        )}
+                                        {vLow && !vOos && (
+                                          <span
+                                            style={{
+                                              color: "var(--saffron)",
+                                              marginLeft: 6,
+                                              fontSize: ".75rem",
+                                            }}
+                                          >
+                                            Low
+                                          </span>
+                                        )}
+                                      </span>
+                                      <div
+                                        style={{
+                                          display: "inline-flex",
+                                          alignItems: "center",
+                                          border: "1.5px solid var(--line-200)",
+                                          borderRadius: "var(--r-md)",
+                                          overflow: "hidden",
+                                          background: "#fff",
+                                          opacity: savingId === it.id ? 0.6 : 1,
+                                        }}
+                                      >
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            void persistVariantStock(it.id, v.id, v.stock - 1);
+                                          }}
+                                          disabled={v.stock === 0 || savingId === it.id}
+                                          style={{
+                                            width: 36,
+                                            height: 40,
+                                            background: "#fff",
+                                            border: "none",
+                                            cursor:
+                                              v.stock === 0 || savingId === it.id
+                                                ? "not-allowed"
+                                                : "pointer",
+                                            color: "var(--ink-700)",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                          }}
+                                        >
+                                          <Icon name="minus" size={14} />
+                                        </button>
+                                        <span
+                                          className="tnum"
+                                          style={{
+                                            width: 36,
+                                            textAlign: "center",
+                                            fontWeight: 800,
+                                            fontSize: ".9375rem",
+                                          }}
+                                        >
+                                          {v.stock}
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            void persistVariantStock(it.id, v.id, v.stock + 1);
+                                          }}
+                                          disabled={savingId === it.id}
+                                          style={{
+                                            width: 36,
+                                            height: 40,
+                                            background: "#fff",
+                                            border: "none",
+                                            cursor: savingId === it.id ? "not-allowed" : "pointer",
+                                            color: "var(--ink-700)",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                          }}
+                                        >
+                                          <Icon name="plus" size={14} />
+                                        </button>
+                                      </div>
+                                      {!vOos && (
+                                        <button
+                                          type="button"
+                                          disabled={savingId === it.id}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            void persistVariantStock(it.id, v.id, v.stock - 1);
+                                            toast(`Sold one ${v.name} in shop`);
+                                          }}
+                                          style={{
+                                            height: 32,
+                                            padding: "0 10px",
+                                            borderRadius: "var(--r-md)",
+                                            border: "1.5px solid var(--line-200)",
+                                            background: "#fff",
+                                            color: "var(--ink-600)",
+                                            fontSize: ".75rem",
+                                            fontWeight: 700,
+                                            cursor: savingId === it.id ? "not-allowed" : "pointer",
+                                            whiteSpace: "nowrap",
+                                          }}
+                                        >
+                                          −1 shop
+                                        </button>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
                               <div
+                                className="tnum"
                                 style={{
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  border: "1.5px solid var(--line-200)",
-                                  borderRadius: "var(--r-md)",
-                                  overflow: "hidden",
-                                  background: "#fff",
-                                  opacity: savingId === it.id ? 0.6 : 1,
+                                  fontSize: ".8125rem",
+                                  color: "var(--ink-500)",
+                                  marginTop: 8,
+                                  fontWeight: 600,
                                 }}
                               >
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    dec(it.id);
-                                  }}
-                                  disabled={it.stock === 0 || savingId === it.id}
-                                  style={{
-                                    width: 44,
-                                    height: 48,
-                                    background: "#fff",
-                                    border: "none",
-                                    cursor:
-                                      it.stock === 0 || savingId === it.id
-                                        ? "not-allowed"
-                                        : "pointer",
-                                    color: "var(--ink-700)",
-                                  }}
-                                >
-                                  <Icon name="minus" size={18} />
-                                </button>
-                                <span
-                                  className="tnum"
-                                  style={{
-                                    width: 48,
-                                    textAlign: "center",
-                                    fontWeight: 800,
-                                    fontSize: "1.125rem",
-                                  }}
-                                >
-                                  {it.stock}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    inc(it.id);
-                                  }}
-                                  disabled={savingId === it.id}
-                                  style={{
-                                    width: 44,
-                                    height: 48,
-                                    background: "#fff",
-                                    border: "none",
-                                    cursor: savingId === it.id ? "not-allowed" : "pointer",
-                                    color: "var(--ink-700)",
-                                  }}
-                                >
-                                  <Icon name="plus" size={18} />
-                                </button>
+                                Total: {it.stock} units
                               </div>
-                            </div>
-                            {!oos && (
-                              <Button
-                                variant="secondary"
-                                disabled={savingId === it.id}
-                                onClick={() => sellInShop(it.id)}
-                                icon="store"
+                            </>
+                          ) : (
+                            <>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  padding: "14px 0",
+                                  gap: 12,
+                                  flexWrap: "wrap",
+                                }}
                               >
-                                Sold one in shop (−1)
+                                <div style={{ fontWeight: 700, fontSize: ".875rem" }}>
+                                  Change stock
+                                  {savingId === it.id && (
+                                    <span
+                                      style={{
+                                        marginLeft: 8,
+                                        fontSize: ".75rem",
+                                        color: "var(--ink-400)",
+                                        fontWeight: 600,
+                                      }}
+                                    >
+                                      Saving…
+                                    </span>
+                                  )}
+                                </div>
+                                <div
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    border: "1.5px solid var(--line-200)",
+                                    borderRadius: "var(--r-md)",
+                                    overflow: "hidden",
+                                    background: "#fff",
+                                    opacity: savingId === it.id ? 0.6 : 1,
+                                  }}
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      dec(it.id);
+                                    }}
+                                    disabled={it.stock === 0 || savingId === it.id}
+                                    style={{
+                                      width: 44,
+                                      height: 48,
+                                      background: "#fff",
+                                      border: "none",
+                                      cursor:
+                                        it.stock === 0 || savingId === it.id
+                                          ? "not-allowed"
+                                          : "pointer",
+                                      color: "var(--ink-700)",
+                                    }}
+                                  >
+                                    <Icon name="minus" size={18} />
+                                  </button>
+                                  <span
+                                    className="tnum"
+                                    style={{
+                                      width: 48,
+                                      textAlign: "center",
+                                      fontWeight: 800,
+                                      fontSize: "1.125rem",
+                                    }}
+                                  >
+                                    {it.stock}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      inc(it.id);
+                                    }}
+                                    disabled={savingId === it.id}
+                                    style={{
+                                      width: 44,
+                                      height: 48,
+                                      background: "#fff",
+                                      border: "none",
+                                      cursor: savingId === it.id ? "not-allowed" : "pointer",
+                                      color: "var(--ink-700)",
+                                    }}
+                                  >
+                                    <Icon name="plus" size={18} />
+                                  </button>
+                                </div>
+                              </div>
+                              {!oos && (
+                                <Button
+                                  variant="secondary"
+                                  disabled={savingId === it.id}
+                                  onClick={() => sellInShop(it.id)}
+                                  icon="store"
+                                >
+                                  Sold one in shop (−1)
+                                </Button>
+                              )}
+                            </>
+                          )}
+                          <div style={{ marginTop: 14 }}>
+                            <div
+                              style={{
+                                fontWeight: 700,
+                                fontSize: ".875rem",
+                                marginBottom: 8,
+                              }}
+                            >
+                              Price (Rs.)
+                            </div>
+                            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                value={priceDraft[it.id] ?? String(it.price)}
+                                onChange={(e) =>
+                                  setPriceDraft((d) => ({
+                                    ...d,
+                                    [it.id]: e.target.value.replace(/\D/g, ""),
+                                  }))
+                                }
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") void savePrice(it.id);
+                                }}
+                                disabled={savingId === it.id}
+                                className="tnum"
+                                style={{
+                                  flex: "1 1 140px",
+                                  minWidth: 120,
+                                  height: 48,
+                                  padding: "0 12px",
+                                  border: "1.5px solid var(--line-200)",
+                                  borderRadius: "var(--r-md)",
+                                  fontSize: "1rem",
+                                  fontWeight: 700,
+                                  outline: "none",
+                                }}
+                              />
+                              <Button
+                                variant="primary"
+                                disabled={savingId === it.id}
+                                onClick={() => void savePrice(it.id)}
+                              >
+                                Save price
                               </Button>
-                            )}
-                          </>
-                        )}
-                        <div style={{ marginTop: 14 }}>
+                            </div>
+                          </div>
                           <div
                             style={{
-                              fontWeight: 700,
-                              fontSize: ".875rem",
-                              marginBottom: 8,
+                              marginTop: 14,
+                              borderTop: "1px dashed var(--line-200)",
+                              paddingTop: 14,
+                              display: "flex",
+                              gap: 10,
+                              flexWrap: "wrap",
                             }}
                           >
-                            Price (Rs.)
-                          </div>
-                          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              value={priceDraft[it.id] ?? String(it.price)}
-                              onChange={(e) =>
-                                setPriceDraft((d) => ({
-                                  ...d,
-                                  [it.id]: e.target.value.replace(/\D/g, ""),
-                                }))
-                              }
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") void savePrice(it.id);
-                              }}
-                              disabled={savingId === it.id}
-                              className="tnum"
-                              style={{
-                                flex: "1 1 140px",
-                                minWidth: 120,
-                                height: 48,
-                                padding: "0 12px",
-                                border: "1.5px solid var(--line-200)",
-                                borderRadius: "var(--r-md)",
-                                fontSize: "1rem",
-                                fontWeight: 700,
-                                outline: "none",
-                              }}
-                            />
                             <Button
-                              variant="primary"
+                              variant="secondary"
+                              icon="eye"
                               disabled={savingId === it.id}
-                              onClick={() => void savePrice(it.id)}
+                              onClick={() => {
+                                viewProductRef.current = it;
+                                nav("s-product-view");
+                              }}
                             >
-                              Save price
+                              View
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              icon="edit"
+                              disabled={savingId === it.id}
+                              onClick={() => {
+                                editProductRef.current = it;
+                                nav("s-edit");
+                              }}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="danger"
+                              icon="trash"
+                              disabled={savingId === it.id}
+                              onClick={() => setDeleteTarget(it)}
+                            >
+                              Delete
                             </Button>
                           </div>
                         </div>
-                        <div
-                          style={{
-                            marginTop: 14,
-                            borderTop: "1px dashed var(--line-200)",
-                            paddingTop: 14,
-                            display: "flex",
-                            gap: 10,
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <Button
-                            variant="secondary"
-                            icon="eye"
-                            disabled={savingId === it.id}
-                            onClick={() => {
-                              viewProductRef.current = it;
-                              nav("s-product-view");
-                            }}
-                          >
-                            View
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            icon="edit"
-                            disabled={savingId === it.id}
-                            onClick={() => {
-                              editProductRef.current = it;
-                              nav("s-edit");
-                            }}
-                          >
-                            Edit
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 8,
-                marginTop: 16,
-              }}
-            >
-              <PageBar
-                page={invPaged.page}
-                pageCount={invPaged.pageCount}
-                onPage={invPaged.goPage}
-                alwaysShow
-              />
-              <div
-                className="tnum"
-                style={{ fontSize: ".8125rem", color: "var(--ink-400)", fontWeight: 600 }}
-              >
-                Showing {invPaged.from}–{invPaged.to} of {invPaged.total} products
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            </div>
-          </>
-        )}
-      </div>
-    </ApiState>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 8,
+                  marginTop: 16,
+                }}
+              >
+                <PageBar
+                  page={invPaged.page}
+                  pageCount={invPaged.pageCount}
+                  onPage={invPaged.goPage}
+                  alwaysShow
+                />
+                <div
+                  className="tnum"
+                  style={{ fontSize: ".8125rem", color: "var(--ink-400)", fontWeight: 600 }}
+                >
+                  Showing {invPaged.from}–{invPaged.to} of {invPaged.total} products
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </ApiState>
+      <ProductDeleteConfirmModal
+        open={deleteTarget !== null}
+        pending={deleteProduct.isPending}
+        productName={deleteTarget?.name ?? ""}
+        onConfirm={() => void confirmDelete()}
+        onCancel={() => setDeleteTarget(null)}
+      />
+    </>
   );
 }
 
@@ -7085,8 +7136,6 @@ function bargainStatus(o: {
 export function SellerBargain() {
   const { toast } = useBz();
   const { data: BARGAIN_OFFERS = [], isLoading, isError, error } = useSellerBargains();
-  const [maxPct, setMaxPct] = useState(12);
-  const [enabled, setEnabled] = useState(true);
   const acceptMutation = useAcceptBargainOffer();
   const rejectMutation = useRejectBargainOffer();
   const counterMutation = useCounterBargainOffer();
@@ -7102,103 +7151,9 @@ export function SellerBargain() {
           Bargaining
         </h1>
         <p style={{ margin: "4px 0 18px", fontSize: ".875rem", color: "var(--ink-500)" }}>
-          Buyers can send you offers below your listed price. You decide the maximum discount.
-          Buyers can&apos;t see this limit.
+          Buyers can send you offers below your listed price. You set the lowest amount you&apos;ll
+          accept on each product. Buyers can&apos;t see this limit.
         </p>
-
-        {/* Max bargain setter */}
-        <div
-          style={{
-            background: "#fff",
-            border: "1.5px solid var(--line-200)",
-            borderRadius: "var(--r-lg)",
-            padding: 22,
-            boxShadow: "var(--sh-1)",
-            marginBottom: 18,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: 12,
-              flexWrap: "wrap",
-              gap: 10,
-            }}
-          >
-            <div>
-              <div style={{ fontSize: ".8125rem", fontWeight: 600, color: "var(--ink-700)" }}>
-                Maximum bargain you allow
-              </div>
-            </div>
-            <label
-              style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer" }}
-            >
-              <input
-                type="checkbox"
-                checked={enabled}
-                onChange={(e) => setEnabled(e.target.checked)}
-                style={{ width: 18, height: 18, accentColor: "var(--blue)" }}
-              />
-              <span style={{ fontSize: ".8125rem", fontWeight: 700, color: "var(--ink-700)" }}>
-                Accept offers
-              </span>
-            </label>
-          </div>
-          <div
-            className="tnum bz-stat-xl"
-            style={{
-              fontWeight: 800,
-              lineHeight: 1,
-              margin: "8px 0 12px",
-              color: "var(--blue-deep)",
-            }}
-          >
-            {maxPct}%
-          </div>
-          <input
-            type="range"
-            min={0}
-            max={30}
-            value={maxPct}
-            onChange={(e) => setMaxPct(parseInt(e.target.value))}
-            disabled={!enabled}
-            style={{ width: "100%", accentColor: "var(--blue)", opacity: enabled ? 1 : 0.5 }}
-          />
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              fontSize: ".7rem",
-              color: "var(--ink-400)",
-              marginTop: 4,
-            }}
-          >
-            <span>0% (fixed price)</span>
-            <span>15%</span>
-            <span>30%</span>
-          </div>
-          <div
-            style={{
-              marginTop: 14,
-              padding: 10,
-              background: "var(--tint-blue-50)",
-              borderRadius: "var(--r-md)",
-              fontSize: ".8125rem",
-              color: "var(--ink-700)",
-            }}
-          >
-            <Icon
-              name="shieldCheck"
-              size={14}
-              color="var(--blue)"
-              style={{ verticalAlign: "middle", marginRight: 6 }}
-            />
-            Buyers see only &quot;Make an offer&quot; — never your limit. Offers above {maxPct}% are
-            auto-rejected.
-          </div>
-        </div>
 
         {/* Stats */}
         <div
@@ -7214,7 +7169,6 @@ export function SellerBargain() {
               status?: string;
               accepted?: boolean;
               rejected?: boolean;
-              discount?: number;
               listed?: number;
               offered?: number;
               yourOffer?: number;
@@ -7222,9 +7176,13 @@ export function SellerBargain() {
             const total = offers.length;
             const accepted = offers.filter((o) => bargainStatus(o) === "accepted").length;
             const acceptPct = total > 0 ? Math.round((accepted / total) * 100) : 0;
-            const discounts = offers.map((o) => Number(o.discount) || 0).filter((d) => d > 0);
-            const avgDisc = discounts.length
-              ? Math.round(discounts.reduce((a, b) => a + b, 0) / discounts.length)
+            // Bargaining is amount-based — the saving is what the buyer knocked off
+            // the listed price (Rs.), not a percentage.
+            const savings = offers
+              .map((o) => Math.max(0, Number(o.listed) - Number(o.offered ?? o.yourOffer ?? 0)))
+              .filter((s) => s > 0);
+            const avgSaving = savings.length
+              ? Math.round(savings.reduce((a, b) => a + b, 0) / savings.length)
               : 0;
             const margin = offers
               .filter((o) => bargainStatus(o) === "accepted")
@@ -7236,7 +7194,7 @@ export function SellerBargain() {
             return [
               { v: String(total), k: "Offers this week", c: "var(--blue)" },
               { v: total > 0 ? `${acceptPct}%` : "0%", k: "You accepted", c: "var(--success)" },
-              { v: `${avgDisc}%`, k: "Average discount", c: "var(--saffron)" },
+              { v: `Rs. ${avgSaving.toLocaleString()}`, k: "Average saving", c: "var(--saffron)" },
               { v: `Rs. ${margin.toLocaleString()}`, k: "Margin given", c: "var(--danger)" },
             ];
           })().map((s) => (
@@ -7273,7 +7231,7 @@ export function SellerBargain() {
             const status = bargainStatus(o);
             const listed = Number(o.listed) || 0;
             const offered = Number(o.offered ?? o.yourOffer) || 0;
-            const discount = Number(o.discount) || 0;
+            const saving = Math.max(0, listed - offered);
             return (
               <div
                 key={o.id}
@@ -7346,13 +7304,8 @@ export function SellerBargain() {
                         Rs. {fmtRs(offered)}
                       </span>
                     </span>
-                    <span
-                      style={{
-                        color: discount > maxPct ? "var(--danger)" : "var(--success)",
-                        fontWeight: 700,
-                      }}
-                    >
-                      −{discount}%
+                    <span className="tnum" style={{ color: "var(--saffron)", fontWeight: 700 }}>
+                      −Rs. {fmtRs(saving)}
                     </span>
                   </div>
                   {status === "pending" && (

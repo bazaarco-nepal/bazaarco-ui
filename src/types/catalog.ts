@@ -63,7 +63,6 @@ export interface Product {
   lowStock?: number;
   outOfStock?: boolean;
   allowBargaining?: boolean;
-  maxDiscountPct?: number;
   minimumPrice?: number | null;
   // Priced variants (Small/Medium/Large, etc.). `price` is the effective
   // (possibly discounted) variant price; `original` the struck-through price.

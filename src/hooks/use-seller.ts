@@ -71,6 +71,20 @@ export function useUpdateProduct() {
   });
 }
 
+export function useDeleteProduct() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => sellerApi.deleteProduct(id),
+    onSuccess: ({ id }) => {
+      // Drop the seller's inventory plus every public catalog list that may
+      // still surface the now-deleted product.
+      void qc.invalidateQueries({ queryKey: queryKeys.seller.inventory });
+      void qc.invalidateQueries({ queryKey: queryKeys.catalog.products() });
+      void qc.removeQueries({ queryKey: queryKeys.catalog.product(id) });
+    },
+  });
+}
+
 export function useSubmitSellerVerification() {
   const qc = useQueryClient();
   return useMutation({

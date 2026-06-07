@@ -3657,8 +3657,10 @@ export function SellerAddProduct({
     const meta = { ...((editingProduct.metadata as Record<string, unknown>) ?? {}) };
     delete meta.stock;
     setAttrs(meta);
-    setBargainOk(editingProduct.allowBargaining ?? false);
-    setBargainMinPrice(editingProduct.minimumPrice ? String(editingProduct.minimumPrice) : "");
+    // Product-level bargaining settings come from the seller-only inventory row
+    // (`editing`), not the public product — the floor is never sent to buyers.
+    setBargainOk(editing?.allowBargaining ?? false);
+    setBargainMinPrice(editing?.minimumPrice ? String(editing.minimumPrice) : "");
     if (editing?.hasVariants && editing.variants?.length) {
       setHasVariants(true);
       setVariants(
@@ -3746,6 +3748,20 @@ export function SellerAddProduct({
   const saleEffectivePrice = saleEffective(saleInput);
   const saleValid = !applyDiscount || isSaleValid(saleInput);
 
+  // Bargaining needs a floor below the listed (effective) price, or it's enabled
+  // but no offer could be accepted. Mirrors the server rule so the seller gets
+  // the feedback before submitting. Checked per variant for variant products.
+  const productListedPrice = applyDiscount ? saleEffectivePrice : baseNum;
+  const bargainFloorOk = hasVariants
+    ? variants
+        .filter((v) => v.allowBargaining && v.name && v.price && v.stock)
+        .every((v) => {
+          const listed = v.onSale ? saleEffective(variantSaleInput(v)) : Number(v.price);
+          const floor = Number(v.minimumPrice);
+          return floor > 0 && floor < listed;
+        })
+    : !bargainOk || (Number(bargainMinPrice) > 0 && Number(bargainMinPrice) < productListedPrice);
+
   const canPublish =
     photosOk &&
     titleOk &&
@@ -3753,6 +3769,7 @@ export function SellerAddProduct({
     specsOk &&
     categoryOk &&
     saleValid &&
+    bargainFloorOk &&
     (hasVariants ? variantsOk : price && stock);
 
   const publishMissing: string[] = [];
@@ -3772,6 +3789,9 @@ export function SellerAddProduct({
         ? "a discount percentage between 1 and 99"
         : "a discounted price below the regular price",
     );
+  }
+  if (!bargainFloorOk) {
+    publishMissing.push("a lowest bargain price below the listed price (bargaining is on)");
   }
   const categoryMeta = categories.find((c) => c.id === category);
   const displayPrice = hasVariants ? variants.find((v) => v.price)?.price : price;
@@ -5138,13 +5158,12 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
               sub={`${product.reviews} review${product.reviews === 1 ? "" : "s"}`}
             />
           )}
-          {/* Bargaining */}
+          {/* Bargaining — the floor is private to the seller, so it's read from
+              the seller-only inventory row, not the public product. */}
           <DetailTile
             label="Bargaining"
-            value={product?.allowBargaining ? "Enabled" : "Disabled"}
-            sub={
-              product?.minimumPrice ? `Min Rs. ${product.minimumPrice.toLocaleString()}` : undefined
-            }
+            value={item?.allowBargaining ? "Enabled" : "Disabled"}
+            sub={item?.minimumPrice ? `Min Rs. ${item.minimumPrice.toLocaleString()}` : undefined}
           />
           {/* Category */}
           {product?.cat && <DetailTile label="Category" value={product.cat} />}

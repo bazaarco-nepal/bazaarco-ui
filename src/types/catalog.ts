@@ -63,7 +63,8 @@ export interface Product {
   lowStock?: number;
   outOfStock?: boolean;
   allowBargaining?: boolean;
-  minimumPrice?: number | null;
+  // The seller's bargaining floor is private and never sent to buyers, so it is
+  // deliberately absent here. Seller-only views read it from SellerInventoryItem.
   // Priced variants (Small/Medium/Large, etc.). `price` is the effective
   // (possibly discounted) variant price; `original` the struck-through price.
   variants?: PricedVariant[];
@@ -77,7 +78,6 @@ export interface PricedVariant {
   stock: number;
   original?: number | null;
   allowBargaining?: boolean;
-  minimumPrice?: number | null;
 }
 
 export interface CartLine extends Product {

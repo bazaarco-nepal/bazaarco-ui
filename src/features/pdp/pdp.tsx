@@ -131,20 +131,23 @@ function TabbedPair({ items }: { items: TabItem[] }) {
    BazaarCo — Product Detail Page (video-led)
    ============================================================ */
 function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
-  const { addToCart, toast } = useBz();
+  const { addToCart } = useBz();
   const { sellerOf } = useCatalog();
   const createOffer = useCreateBargainOffer();
   // Bargaining is conducted on the chosen variant's listed (discounted) price.
-  // Use per-variant minimumPrice when available; fall back to product-level.
+  // The seller's accept-floor is private — never sent to the buyer — so the
+  // starting offer is anchored off the listed price alone.
   const listed = listedPrice ?? p.price;
   const variant = variantId && p.variants ? p.variants.find((v) => v.id === variantId) : null;
-  const variantFloor = variant?.minimumPrice;
-  const floor = variantFloor ?? p.minimumPrice ?? Math.round(listed * 0.7);
-  const midpoint = Math.round((floor + listed) / 2 / 10) * 10;
-  const [offer, setOffer] = useState(midpoint);
+  const [offer, setOffer] = useState(Math.round((listed * 0.9) / 10) * 10);
   const [stage, setStage] = useState("offer"); // offer | thinking | counter | accepted
-  const [counter, setCounter] = useState(midpoint);
+  const [counter, setCounter] = useState(listed);
+  // The server's nudge when an offer falls below the hidden floor — e.g. "buyers
+  // are getting offers around Rs. X accepted". Shown inline under the input so
+  // the buyer can raise their offer without ever learning the true floor.
+  const [tooLowHint, setTooLowHint] = useState<string | null>(null);
   const submit = async () => {
+    setTooLowHint(null);
     setStage("thinking");
     try {
       const result = await createOffer.mutateAsync({
@@ -156,7 +159,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
       setStage(result.status === "accepted" ? "accepted" : "counter");
     } catch (error) {
       const msg = error instanceof ApiRequestError ? error.message : "Could not send offer";
-      toast(msg);
+      setTooLowHint(msg);
       setStage("offer");
     }
   };
@@ -255,12 +258,15 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
               <input
                 type="number"
                 value={offer}
-                onChange={(e) => setOffer(+e.target.value)}
+                onChange={(e) => {
+                  setOffer(+e.target.value);
+                  if (tooLowHint) setTooLowHint(null);
+                }}
                 className="tnum"
                 style={{
                   flex: 1,
                   height: 48,
-                  border: "1px solid var(--line-200)",
+                  border: `1px solid ${tooLowHint ? "var(--red)" : "var(--line-200)"}`,
                   borderRadius: "var(--r-md)",
                   padding: "0 14px",
                   fontSize: "1.25rem",
@@ -270,27 +276,19 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
                 }}
               />
             </div>
-            <input
-              type="range"
-              min={floor}
-              max={listed}
-              step={10}
-              value={offer}
-              onChange={(e) => setOffer(+e.target.value)}
-              style={{ width: "100%", accentColor: "var(--red)" }}
-            />
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                fontSize: ".75rem",
-                color: "var(--ink-400)",
-                marginTop: 2,
-              }}
-            >
-              <span className="tnum">Rs. {floor.toLocaleString()}</span>
-              <span className="tnum">Rs. {listed.toLocaleString()}</span>
-            </div>
+            {tooLowHint && (
+              <p
+                role="alert"
+                style={{
+                  fontSize: ".8125rem",
+                  color: "var(--red)",
+                  margin: "8px 0 0",
+                  lineHeight: 1.4,
+                }}
+              >
+                {tooLowHint}
+              </p>
+            )}
             <div style={{ marginTop: 20 }}>
               <Button variant="primary" full size="lg" onClick={submit}>
                 Send offer to seller

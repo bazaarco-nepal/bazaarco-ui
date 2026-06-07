@@ -53,6 +53,10 @@ export interface SellerInventoryItem {
   variants?: CreateProductVariantPayload[];
   icon: string;
   tint: string;
+  // Seller-only bargaining settings (the floor is never sent to buyers), used
+  // to prefill the edit form.
+  allowBargaining?: boolean;
+  minimumPrice?: number | null;
 }
 
 export interface SellerOrder {

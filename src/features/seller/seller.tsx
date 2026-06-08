@@ -2380,7 +2380,7 @@ export function SellerDashboard() {
               label: "Orders",
               tint: "red",
               to: "s-inbox",
-              badge: "2",
+              badge: pendingOrders > 0 ? String(pendingOrders) : undefined,
             },
             {
               icon: "store",
@@ -5852,19 +5852,23 @@ export function SellerInventory() {
           {visible.length === 0 ? (
             <div
               style={{
-                textAlign: "center",
-                padding: "32px 16px",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "60px 20px",
                 border: "1.5px dashed var(--line-200)",
                 borderRadius: "var(--r-lg)",
+                color: "var(--ink-500)",
               }}
             >
-              <Icon name="package" size={40} color="var(--ink-300)" />
-              <div style={{ marginTop: 10, fontWeight: 800, color: "var(--ink-900)" }}>
+              <Icon name="package" size={48} color="var(--ink-300)" />
+              <p style={{ margin: "12px 0 0", fontWeight: 800, color: "var(--ink-900)" }}>
                 No products match
-              </div>
-              <div style={{ color: "var(--ink-500)", fontSize: ".8125rem", margin: "4px 0 14px" }}>
+              </p>
+              <p style={{ margin: "4px 0 14px", fontSize: ".8125rem" }}>
                 Try clearing search or status filter.
-              </div>
+              </p>
               <Button variant="secondary" onClick={clearFilters}>
                 Clear filters
               </Button>
@@ -6517,7 +6521,7 @@ export function SellerLedger() {
     const message = `Hi BazaarCo team,\n\nI need help with my seller payouts.`;
     const whatsappUrl = `https://wa.me/9779700053075?text=${encodeURIComponent(message)}`;
     const choice = window.confirm(
-      `Contact support via:\n\n[OK] WhatsApp: ${supportPhone}\n\n[Cancel] Email: ${supportEmail}`
+      `Contact support via:\n\n[OK] WhatsApp: ${supportPhone}\n\n[Cancel] Email: ${supportEmail}`,
     );
     if (choice) {
       window.open(whatsappUrl, "_blank");

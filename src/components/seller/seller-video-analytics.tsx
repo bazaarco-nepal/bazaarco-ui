@@ -244,7 +244,7 @@ function Sparkline({ data, color = "var(--blue)" }: { data: number[]; color?: st
 }
 
 export function SellerVideoAnalyticsPanel({ analytics }: { analytics: SellerVideoAnalytics }) {
-  const { totals, viewsByDay, topVideos, statusBreakdown } = analytics;
+  const { totals, viewsByDay, statusBreakdown } = analytics;
   const sparkData = viewsByDay.map((d) => d.value);
 
   const kpis = [
@@ -395,81 +395,6 @@ export function SellerVideoAnalyticsPanel({ analytics }: { analytics: SellerVide
           </div>
           <StatusDonut slices={statusBreakdown} />
         </div>
-      </div>
-
-      <div style={cardStyle}>
-        <div
-          style={{
-            fontWeight: 800,
-            fontSize: ".9375rem",
-            marginBottom: 12,
-            color: "var(--blue-deep)",
-          }}
-        >
-          Top performing videos
-        </div>
-        {topVideos.length === 0 ? (
-          <p style={{ margin: 0, fontSize: ".8125rem", color: "var(--ink-500)" }}>
-            Publish a video to see performance rankings here.
-          </p>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {topVideos.map((v, i) => {
-              const maxViews = topVideos[0]?.views || 1;
-              const pct = Math.max((v.views / maxViews) * 100, 4);
-              return (
-                <div key={v.id} style={{ width: "100%" }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "baseline",
-                      gap: 12,
-                      fontSize: ".8125rem",
-                      marginBottom: 6,
-                      width: "100%",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontWeight: 700,
-                        color: "var(--ink-800)",
-                        flex: 1,
-                        minWidth: 0,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {i + 1}. {v.title}
-                    </span>
-                    <span className="tnum" style={{ color: "var(--ink-500)", flexShrink: 0 }}>
-                      {v.views.toLocaleString()} views · {v.likes} likes
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      width: "100%",
-                      height: 8,
-                      borderRadius: 999,
-                      background: "var(--line-100)",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: `${pct}%`,
-                        height: "100%",
-                        borderRadius: 999,
-                        background: "linear-gradient(90deg, #60a5fa, #1d4ed8)",
-                      }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
     </section>
   );

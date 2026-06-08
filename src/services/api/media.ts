@@ -1,6 +1,14 @@
 import { apiClient } from "./http";
 import type { ApiSuccessResponse } from "./types";
 
+// Media uploads stream large files (a video can be up to 100 MB) and then wait
+// on Cloudinary transcoding, which routinely exceeds the client's default 30s
+// request timeout on mobile networks. Give the upload calls their own generous
+// timeout so a real upload isn't aborted mid-flight; the global 30s still
+// guards every other request.
+const VIDEO_UPLOAD_TIMEOUT_MS = 5 * 60_000;
+const IMAGE_UPLOAD_TIMEOUT_MS = 2 * 60_000;
+
 export interface MediaUploadResult {
   url: string;
   publicId: string;
@@ -24,7 +32,6 @@ export interface CreateSellerVideoPayload {
   productId?: string;
   tint?: string;
   icon?: string;
-  hashtags?: string[];
   status?: SellerVideoStatus;
 }
 
@@ -58,7 +65,6 @@ export interface SellerVideoItem {
   tint: string;
   icon: string;
   productId?: string | null;
-  hashtags?: string[];
   status?: SellerVideoStatus;
   createdAt?: string;
 }
@@ -72,6 +78,7 @@ export const mediaApi = {
       form,
       {
         headers: { "Content-Type": "multipart/form-data" },
+        timeout: IMAGE_UPLOAD_TIMEOUT_MS,
         onUploadProgress: (event) => {
           if (!onProgress || !event.total) return;
           onProgress(Math.round((event.loaded / event.total) * 100));
@@ -89,6 +96,7 @@ export const mediaApi = {
       form,
       {
         headers: { "Content-Type": "multipart/form-data" },
+        timeout: VIDEO_UPLOAD_TIMEOUT_MS,
         onUploadProgress: (event) => {
           if (!onProgress || !event.total) return;
           onProgress(Math.round((event.loaded / event.total) * 100));
@@ -108,7 +116,7 @@ export const mediaApi = {
 
   async updateSellerVideo(
     videoId: string,
-    payload: Partial<Pick<CreateSellerVideoPayload, "title" | "product" | "hashtags" | "status">>,
+    payload: Partial<Pick<CreateSellerVideoPayload, "title" | "product" | "status">>,
   ): Promise<SellerVideoItem> {
     const { data } = await apiClient.patch<ApiSuccessResponse<SellerVideoItem>>(
       `/seller/videos/${videoId}`,

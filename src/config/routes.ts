@@ -4,6 +4,7 @@ export const BUYER_SCREENS = new Set([
   "search",
   "pdp",
   "store",
+  "stores",
   "video",
   "cart",
   "checkout",
@@ -79,6 +80,7 @@ const SCREEN_PATH: Record<string, string> = {
   search: "/search",
   pdp: "/product",
   store: "/store",
+  stores: "/stores",
   video: "/video",
   cart: "/cart",
   checkout: "/checkout",
@@ -212,6 +214,13 @@ export function productShareUrl(productId: string, origin?: string): string {
   return `${base}${pathFromScreen("pdp", productId)}`;
 }
 
+/** Canonical absolute URL for a seller's public storefront — shareable anywhere. */
+export function storeShareUrl(sellerId: string, origin?: string): string {
+  const raw = origin ?? (typeof window !== "undefined" ? window.location.origin : "");
+  const base = raw.replace(/\/$/, "");
+  return `${base}${pathFromScreen("store", sellerId)}`;
+}
+
 // Browser-tab label per screen. Rendered as `BazaarCo - <label>`.
 const SCREEN_TITLES: Record<string, string> = {
   auth: "Sign In",
@@ -221,6 +230,7 @@ const SCREEN_TITLES: Record<string, string> = {
   search: "Search",
   pdp: "Product",
   store: "Store",
+  stores: "All Stores",
   video: "Watch",
   cart: "Your Cart",
   checkout: "Checkout",

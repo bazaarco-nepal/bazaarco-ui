@@ -35,6 +35,7 @@ import {
   BackToTop,
   ApiState,
   AppLink,
+  StoreAvatar,
 } from "@/components/ui";
 import { ProductPhotoPicker, type ProductPhoto } from "@/components/seller/product-photo-picker";
 import { ProductDeleteConfirmModal } from "@/components/seller/product-delete-confirm-modal";
@@ -124,7 +125,7 @@ import {
   LanguageToggle,
 } from "@/components/common";
 import { ASSETS } from "@/config/assets";
-import { pathFromScreen } from "@/config/routes";
+import { pathFromScreen, storeShareUrl } from "@/config/routes";
 
 export type SellerInboxOrderItem = {
   id: string;
@@ -216,32 +217,7 @@ export function SellerSidebar({
       >
         <div className="bz-side-head">
           <div className="bz-side-brand" title={displayName}>
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: "var(--r-md)",
-                background: logoUrl ? "#fff" : "var(--red)",
-                color: "#fff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-                fontWeight: 800,
-                overflow: "hidden",
-                border: logoUrl ? "1px solid var(--line-200)" : "none",
-              }}
-            >
-              {logoUrl ? (
-                <img
-                  src={logoUrl}
-                  alt={displayName}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
-              ) : (
-                <Icon name="store" size={20} color="#fff" />
-              )}
-            </div>
+            <StoreAvatar src={logoUrl} name={displayName} size={36} />
             <div className="bz-side-brand-text" style={{ minWidth: 0, flex: 1 }}>
               <div
                 style={{
@@ -317,30 +293,6 @@ export function SellerSidebar({
         </div>
 
         <div className="bz-side-foot">
-          <div
-            className="bz-side-lang"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 8,
-              padding: "10px 14px 6px",
-              flexWrap: "wrap",
-            }}
-          >
-            <span
-              style={{
-                fontSize: ".6875rem",
-                fontWeight: 700,
-                color: "var(--ink-400)",
-                letterSpacing: ".04em",
-                textTransform: "uppercase",
-              }}
-            >
-              {t("seller.language")}
-            </span>
-            <LanguageToggle compact />
-          </div>
           <button
             className="bz-side-item bz-side-logout"
             onClick={() => setConfirmLogout(true)}
@@ -1514,6 +1466,120 @@ export function SellerDonut({ slices, size = 160 }) {
   );
 }
 
+/**
+ * Seller's public storefront link — the one thing a seller most wants to hand
+ * out. Shows the shop identity, the readable URL, and one primary action
+ * (native share, copy fallback). Renders nothing until we know the seller's id.
+ */
+function StoreLinkCard() {
+  const { t } = useTranslation();
+  const { toast } = useBz();
+  const { data: organization } = useSellerOrganization();
+  const [origin, setOrigin] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  // window.location.origin is client-only; pass "" on the server render so the
+  // first client render matches it (no hydration mismatch), then fill it in.
+  useEffect(() => {
+    setOrigin(window.location.origin.replace(/\/$/, ""));
+  }, []);
+
+  const sellerId = organization?.sellerId;
+  if (!sellerId) return null;
+
+  const shopName = organization?.shopName?.trim() || "BazaarCo";
+  const fullUrl = storeShareUrl(sellerId, origin);
+  const displayUrl = fullUrl.replace(/^https?:\/\//, "");
+  const logoUrl = organization?.logoUrl;
+  const isLive = organization?.verification?.canSell ?? false;
+
+  const copyLink = async () => {
+    if (typeof navigator === "undefined" || !navigator.clipboard) {
+      toast(t("seller.dashboard.storeLinkShareUnsupported"));
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(fullUrl);
+      setCopied(true);
+      toast(t("seller.dashboard.storeLinkCopyToast"));
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast(t("seller.dashboard.storeLinkShareError"));
+    }
+  };
+
+  // Native share sheet when available, copy-to-clipboard otherwise.
+  const shareStore = async () => {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({
+          title: shopName,
+          text: t("seller.dashboard.storeLinkShareText", { shop: shopName }),
+          url: fullUrl,
+        });
+      } catch (err) {
+        // User dismissing the native sheet throws AbortError — ignore it.
+        if (err instanceof Error && err.name === "AbortError") return;
+        toast(t("seller.dashboard.storeLinkShareError"));
+      }
+      return;
+    }
+    void copyLink();
+  };
+
+  return (
+    <section className="bz-store-link" aria-label={t("seller.dashboard.storeLinkLabel")}>
+      <div className="bz-store-link__head">
+        <StoreAvatar src={logoUrl} name={shopName} size={48} />
+
+        <div className="bz-store-link__id">
+          <strong className="bz-store-link__name">{shopName}</strong>
+          <div className="bz-store-link__meta">
+            <span className={"bz-store-link__badge" + (isLive ? " is-live" : " is-pending")}>
+              {isLive
+                ? t("seller.dashboard.storeLinkLive")
+                : t("seller.dashboard.storeLinkPending")}
+            </span>
+            <span className="bz-store-link__on">{t("seller.dashboard.storeLinkOnBazaar")}</span>
+          </div>
+        </div>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="bz-store-link__share"
+          onClick={shareStore}
+          icon="share"
+        >
+          {t("seller.dashboard.storeLinkShare")}
+        </Button>
+      </div>
+
+      <hr className="bz-store-link__divider" />
+
+      <div className="bz-store-link__pill">
+        <a
+          className="bz-store-link__url"
+          href={fullUrl}
+          target="_blank"
+          rel="noreferrer noopener"
+          title={displayUrl}
+        >
+          {displayUrl}
+        </a>
+        <button
+          type="button"
+          className={"bz-store-link__copy" + (copied ? " is-copied" : "")}
+          onClick={copyLink}
+        >
+          <Icon name={copied ? "check" : "copy"} size={14} />
+          {copied ? t("seller.dashboard.storeLinkCopied") : t("seller.dashboard.storeLinkCopy")}
+        </button>
+      </div>
+    </section>
+  );
+}
+
 export function SellerDashboard() {
   const { t } = useTranslation();
   const { nav, toast } = useBz();
@@ -1746,6 +1812,9 @@ export function SellerDashboard() {
             />
           </div>
         </div>
+
+        {/* Shareable public storefront link */}
+        <StoreLinkCard />
 
         {/* KPI strip — plain language, no jargon */}
         <div
@@ -4304,7 +4373,7 @@ export function SellerAddProduct({
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Description of this product, which they can see to understand about it."
+              placeholder="e.g. Handwoven pashmina shawl in charcoal grey, made from 100% Himalayan cashmere by artisans in Kathmandu. Soft, lightweight and warm — perfect for everyday wear or gifting. Measures 200×70 cm and comes in five colours to match any outfit."
               rows={4}
               required
               minLength={10}
@@ -5763,47 +5832,24 @@ export function SellerInventory() {
               marginBottom: 14,
             }}
           >
-            <h1
-              style={{
-                margin: 0,
-                fontSize: "clamp(1.25rem, 4vw, 1.5rem)",
-                fontWeight: 800,
-                color: "var(--blue-deep)",
-              }}
-            >
-              {t("seller.products.title")}
-            </h1>
+            <div>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: "1.5rem",
+                  fontWeight: 800,
+                  color: "var(--blue-deep)",
+                }}
+              >
+                {t("seller.products.title")}
+              </h1>
+              <p style={{ margin: "2px 0 0", fontSize: ".8125rem", color: "var(--ink-500)" }}>
+                {t("seller.products.subtitle")}
+              </p>
+            </div>
             <Button variant="primary" icon="plus" href={pathFromScreen("s-add")}>
               {t("seller.products.addProduct")}
             </Button>
-          </div>
-
-          <div
-            style={{
-              background: "var(--tint-blue-50)",
-              padding: 12,
-              borderRadius: "var(--r-md)",
-              fontSize: ".8125rem",
-              color: "var(--blue-deep)",
-              marginBottom: 14,
-              display: "flex",
-              gap: 10,
-            }}
-          >
-            <Icon name="badgeCheck" size={18} color="var(--blue)" />
-            <span>Tap any item to change stock or edit. Items running low are marked orange.</span>
-          </div>
-
-          {/* Status pills */}
-          <div style={{ marginBottom: 14 }}>
-            <ChipGroup
-              options={statusTabs.map((t) => ({
-                value: t.id,
-                label: `${t.label} (${counts[t.id]})`,
-              }))}
-              value={status}
-              onChange={setStatus}
-            />
           </div>
 
           {/* Search + sort row */}
@@ -5903,16 +5949,16 @@ export function SellerInventory() {
             )}
           </div>
 
-          <div
-            className="tnum"
-            style={{
-              fontSize: ".8125rem",
-              color: "var(--ink-500)",
-              marginBottom: 12,
-              fontWeight: 700,
-            }}
-          >
-            {visible.length} of {items.length} product{items.length === 1 ? "" : "s"}
+          {/* Status pills */}
+          <div style={{ marginBottom: 16 }}>
+            <ChipGroup
+              options={statusTabs.map((t) => ({
+                value: t.id,
+                label: `${t.label} (${counts[t.id]})`,
+              }))}
+              value={status}
+              onChange={setStatus}
+            />
           </div>
 
           {visible.length === 0 ? (
@@ -8900,6 +8946,7 @@ export function SellerSettings() {
                   ? t("seller.settings.setPasswordSub")
                   : t("seller.settings.resetPasswordSub"),
                 onAct: () => setPwdResetOpen(true),
+                control: undefined,
               },
               {
                 id: "email",
@@ -8907,6 +8954,15 @@ export function SellerSettings() {
                 title: t("seller.settings.email"),
                 sub: user?.email ?? "—",
                 onAct: undefined,
+                control: undefined,
+              },
+              {
+                id: "language",
+                icon: "globe",
+                title: t("seller.language"),
+                sub: t("seller.languageSub"),
+                onAct: undefined,
+                control: <LanguageToggle compact />,
               },
             ].map((r, i, a) => {
               const content = (
@@ -8916,7 +8972,9 @@ export function SellerSettings() {
                     <div style={{ fontWeight: 700 }}>{r.title}</div>
                     <div style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}>{r.sub}</div>
                   </div>
-                  {r.onAct && <Icon name="chevronRight" size={18} color="var(--ink-400)" />}
+                  {r.control
+                    ? r.control
+                    : r.onAct && <Icon name="chevronRight" size={18} color="var(--ink-400)" />}
                 </>
               );
               const rowStyle: React.CSSProperties = {

@@ -198,8 +198,8 @@ export function PrivacyPolicyPage() {
         You may update your profile, export or delete your account from Profile settings, or email{" "}
         <a href="mailto:support@bazaarconepal.com" style={{ color: "var(--blue)" }}>
           support@bazaarconepal.com
-        </a>
-        {" "}or WhatsApp{" "}
+        </a>{" "}
+        or WhatsApp{" "}
         <a href="https://wa.me/9779700053075" style={{ color: "var(--blue)" }}>
           +977 9700053075
         </a>
@@ -246,8 +246,8 @@ export function TermsPage() {
         Questions about these terms? Email{" "}
         <a href="mailto:support@bazaarconepal.com" style={{ color: "var(--blue)" }}>
           support@bazaarconepal.com
-        </a>
-        {" "}or WhatsApp{" "}
+        </a>{" "}
+        or WhatsApp{" "}
         <a href="https://wa.me/9779700053075" style={{ color: "var(--blue)" }}>
           +977 9700053075
         </a>

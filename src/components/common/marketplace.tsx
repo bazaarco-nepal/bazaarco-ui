@@ -24,7 +24,6 @@ import { useAddresses, useCreateAddress } from "@/hooks/use-addresses";
 import { deliveryToSavePayload } from "@/lib/saved-address";
 import { displayName } from "@/lib/display";
 import { displayCategoryLabel, displayProductName } from "@/lib/locale-display";
-import { LanguageToggle } from "@/components/common/language-toggle";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { formatDeliverToLabel } from "@/lib/delivery-location";
 import { ASSETS } from "@/config/assets";
@@ -667,6 +666,12 @@ function AccountMenuPanel({ navLabel, user, authed, goAndClose, onLogout }) {
         </span>
       </AppLink>
       <NavMenuItem
+        icon="store"
+        label={t("nav.stores")}
+        href={pathFromScreen("stores")}
+        onNavigate={() => goAndClose("stores")}
+      />
+      <NavMenuItem
         icon="package"
         label={t("nav.myOrders")}
         href={pathFromScreen("orders")}
@@ -690,21 +695,6 @@ function AccountMenuPanel({ navLabel, user, authed, goAndClose, onLogout }) {
         href={pathFromScreen("bargains")}
         onNavigate={() => goAndClose("bargains")}
       />
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 10,
-          padding: "10px 12px",
-          margin: "4px 0",
-        }}
-      >
-        <span style={{ fontSize: ".875rem", fontWeight: 700, color: "var(--ink-700)" }}>
-          {t("language.label")}
-        </span>
-        <LanguageToggle compact />
-      </div>
       <div style={{ height: 1, background: "var(--line-200)", margin: "6px 4px" }} />
       {authed ? (
         <NavMenuItem icon="x" label={t("nav.logOut")} danger onClick={onLogout} />
@@ -921,7 +911,6 @@ export function Navbar() {
         </div>
 
         <div className="bz-navbar__mobile-actions">
-          <LanguageToggle compact />
           <IconButton
             name="cart"
             label={t("nav.cart")}
@@ -932,7 +921,12 @@ export function Navbar() {
         </div>
 
         <nav className="bz-navbar__nav bz-navbar__nav--desktop">
-          <LanguageToggle compact />
+          <AppLink
+            href={pathFromScreen("stores")}
+            className={`bz-navbar__link${screen === "stores" ? " is-active" : ""}`}
+          >
+            <Icon name="store" size={19} /> {t("nav.stores")}
+          </AppLink>
           <AppLink
             href={pathFromScreen("video")}
             className={`bz-navbar__link bz-navbar__link--video${screen === "video" ? " is-active" : ""}`}
@@ -1066,6 +1060,7 @@ export function Footer() {
     {
       h: t("footer.buy"),
       links: [
+        { label: t("footer.allStores"), href: pathFromScreen("stores") },
         { label: t("footer.howToOrder"), href: pathFromScreen("help") },
         { label: t("footer.paymentOptions"), href: pathFromScreen("help") },
         { label: t("footer.delivery"), href: pathFromScreen("help") },

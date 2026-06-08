@@ -1,28 +1,45 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Button, Chip, Icon, Spinner } from "@/components/ui";
+import { Button, Icon, Spinner } from "@/components/ui";
 import { useCreateSellerVideo, useUploadVideo } from "@/hooks/use-media-upload";
-import { parseHashtags } from "@/lib/parse-hashtags";
+import { useSellerProducts } from "@/hooks/use-catalog";
+import { useSellerOrganization } from "@/hooks/use-seller";
 
-const MIN_DURATION_SEC = 20;
+const MIN_DURATION_SEC = 5;
 const MAX_DURATION_SEC = 30;
+
+// Desktop file dialogs filter by EXTENSION, not MIME — a bare `video/*` can hide
+// everything there. List explicit extensions (plus video/* for mobile galleries)
+// so the picker actually shows the seller's videos.
+const VIDEO_ACCEPT = "video/*,.mp4,.mov,.m4v,.webm,.avi,.mkv,.3gp,.ogv,.wmv,.flv,.mpeg,.mpg,.qt";
+const VIDEO_EXT_RE = /\.(mp4|mov|m4v|webm|avi|mkv|3gp|ogv|wmv|flv|mpeg|mpg|qt)$/i;
 
 interface VideoUploadFormProps {
   onSuccess: (status: "draft" | "published") => void;
   onCancel: () => void;
 }
 
+function formatBytes(bytes: number): string {
+  if (bytes >= 1_000_000) return `${(bytes / 1_000_000).toFixed(1)} MB`;
+  if (bytes >= 1000) return `${Math.round(bytes / 1000)} KB`;
+  return `${bytes} B`;
+}
+
 export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
   const fileRef = useRef<HTMLInputElement>(null);
-  const [title, setTitle] = useState("");
-  const [product, setProduct] = useState("");
-  const [hashtagInput, setHashtagInput] = useState("");
-  const [hashtags, setHashtags] = useState<string[]>([]);
+  const [productId, setProductId] = useState("");
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [fileSize, setFileSize] = useState<number | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [durationSec, setDurationSec] = useState<number | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const { data: organization } = useSellerOrganization();
+  const { data: products, isLoading: productsLoading } = useSellerProducts(
+    organization?.sellerId ?? null,
+  );
 
   const uploadVideo = useUploadVideo();
   const createVideo = useCreateSellerVideo();
@@ -35,30 +52,39 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
     };
   }, [previewUrl]);
 
+  const resetFile = () => {
+    if (fileRef.current) fileRef.current.value = "";
+    setPreviewUrl(null);
+    setDurationSec(null);
+    setFileName(null);
+    setFileSize(null);
+  };
+
   const onFileChange = () => {
     setError(null);
     const file = fileRef.current?.files?.[0];
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     if (!file) {
-      setPreviewUrl(null);
-      setDurationSec(null);
+      resetFile();
+      return;
+    }
+    // Some pickers (and a no-filter "All files" view) let through non-videos —
+    // accept by MIME, or by extension when the OS reports no/blank type.
+    const isVideo = file.type.startsWith("video/") || VIDEO_EXT_RE.test(file.name);
+    if (!isVideo) {
+      resetFile();
+      setError("That isn't a video file. Choose an MP4, MOV, or other video.");
       return;
     }
     setPreviewUrl(URL.createObjectURL(file));
     setDurationSec(null);
+    setFileName(file.name);
+    setFileSize(file.size);
   };
 
-  const addHashtagsFromInput = () => {
-    const next = parseHashtags(hashtagInput);
-    if (next.length === 0) return;
-    setHashtags((prev) => {
-      const merged = [...prev];
-      for (const t of next) {
-        if (!merged.includes(t) && merged.length < 15) merged.push(t);
-      }
-      return merged;
-    });
-    setHashtagInput("");
+  const openFilePicker = () => {
+    if (busy) return;
+    fileRef.current?.click();
   };
 
   const submit = async (status: "draft" | "published") => {
@@ -68,8 +94,9 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
       setError("Choose a video file first.");
       return;
     }
-    if (!title.trim() || !product.trim()) {
-      setError("Title and product name are required.");
+    const selectedProduct = products?.find((p) => p.id === productId);
+    if (!selectedProduct) {
+      setError("Select which product this video is for.");
       return;
     }
     if (durationSec !== null && durationSec < MIN_DURATION_SEC) {
@@ -92,12 +119,13 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
         onProgress: setProgress,
       });
       await createVideo.mutateAsync({
-        title: title.trim(),
-        product: product.trim(),
+        // Reels no longer carry a separate title — the product name is the label.
+        title: selectedProduct.name,
+        product: selectedProduct.name,
+        productId: selectedProduct.id,
         videoUrl: uploaded.url,
         thumbUrl: uploaded.thumbnailUrl ?? uploaded.url,
         publicId: uploaded.publicId,
-        hashtags: hashtags.length > 0 ? hashtags : parseHashtags(hashtagInput),
         status,
         duration: durationSec ?? 0,
       });
@@ -109,274 +137,141 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
     }
   };
 
+  const durationBad =
+    durationSec !== null && (durationSec < MIN_DURATION_SEC || durationSec > MAX_DURATION_SEC);
+
   return (
-    <div
-      style={{
-        background: "#fff",
-        border: "1.5px solid var(--line-200)",
-        borderRadius: "var(--r-lg)",
-        padding: 20,
-        marginBottom: 18,
-      }}
-    >
-      <h2
-        style={{
-          margin: "0 0 8px",
-          fontSize: "1.125rem",
-          fontWeight: 800,
-          color: "var(--blue-deep)",
-        }}
-      >
-        Add product video
-      </h2>
-      <p
-        style={{
-          margin: "0 0 14px",
-          fontSize: ".8125rem",
-          color: "var(--ink-500)",
-          lineHeight: 1.45,
-        }}
-      >
-        Edit and crop on your phone first, then upload here. Buyers discover videos with hashtags on
-        the feed.
-      </p>
-
-      <div
-        style={{
-          marginBottom: 16,
-          padding: "12px 14px",
-          borderRadius: "var(--r-md)",
-          background: "var(--tint-blue-50)",
-          border: "1px solid rgba(37,99,235,.15)",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            alignItems: "center",
-            fontWeight: 700,
-            fontSize: ".8125rem",
-            color: "var(--blue-deep)",
-            marginBottom: 6,
-          }}
-        >
-          <Icon name="edit" size={16} color="var(--blue)" />
-          Edit & crop before you upload
-        </div>
-        <ul
-          style={{
-            margin: 0,
-            paddingLeft: 18,
-            fontSize: ".75rem",
-            color: "var(--ink-600)",
-            lineHeight: 1.5,
-          }}
-        >
-          <li>
-            Video must be <strong>20–30 seconds</strong> (Photos / Gallery → Edit).
-          </li>
-          <li>
-            Crop to vertical <strong>9:16</strong> so it looks good in the video feed.
-          </li>
-          <li>Good lighting, stable shot, product clearly visible.</li>
-          <li>Use CapCut, InShot, or iMovie if you need filters or text overlays.</li>
-        </ul>
-      </div>
-
-      <label style={{ display: "block", fontSize: ".8125rem", fontWeight: 600, marginBottom: 6 }}>
-        Video file (max 100 MB, 20–30 sec)
-      </label>
-      <input
-        ref={fileRef}
-        type="file"
-        accept="video/mp4,video/quicktime,video/webm"
-        disabled={busy}
-        onChange={onFileChange}
-        style={{ marginBottom: 12, width: "100%" }}
-      />
-
-      {previewUrl && (
-        <div
-          style={{
-            marginBottom: 14,
-            borderRadius: "var(--r-md)",
-            overflow: "hidden",
-            background: "#000",
-            maxWidth: 280,
-          }}
-        >
-          <video
-            src={previewUrl}
-            controls
-            playsInline
-            style={{ width: "100%", display: "block", maxHeight: 360 }}
-            onLoadedMetadata={(e) => {
-              const d = e.currentTarget.duration;
-              if (Number.isFinite(d)) setDurationSec(d);
-            }}
-          />
-          {durationSec !== null && (
-            <div
-              style={{
-                padding: "8px 10px",
-                fontSize: ".75rem",
-                fontWeight: 600,
-                color:
-                  durationSec < MIN_DURATION_SEC || durationSec > MAX_DURATION_SEC
-                    ? "#fff"
-                    : "var(--ink-300)",
-                background:
-                  durationSec < MIN_DURATION_SEC || durationSec > MAX_DURATION_SEC
-                    ? "var(--danger)"
-                    : "rgba(0,0,0,.6)",
-              }}
-            >
-              {durationSec < MIN_DURATION_SEC
-                ? `Too short (${Math.ceil(durationSec)}s) — must be at least ${MIN_DURATION_SEC}s`
-                : durationSec > MAX_DURATION_SEC
-                  ? `Too long (${Math.ceil(durationSec)}s) — trim before publishing`
-                  : `Duration: ${Math.ceil(durationSec)}s · looks good`}
-            </div>
-          )}
-        </div>
-      )}
-
-      <label style={{ display: "block", fontSize: ".8125rem", fontWeight: 600, marginBottom: 6 }}>
-        Title
-      </label>
-      <input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        disabled={busy}
-        placeholder="e.g. Pashmina shawl — try-on"
-        style={{
-          width: "100%",
-          marginBottom: 12,
-          padding: "10px 12px",
-          borderRadius: "var(--r-md)",
-          border: "1px solid var(--line-200)",
-        }}
-      />
-
-      <label style={{ display: "block", fontSize: ".8125rem", fontWeight: 600, marginBottom: 6 }}>
-        Product name
-      </label>
-      <input
-        value={product}
-        onChange={(e) => setProduct(e.target.value)}
-        disabled={busy}
-        placeholder="Which product is this for?"
-        style={{
-          width: "100%",
-          marginBottom: 14,
-          padding: "10px 12px",
-          borderRadius: "var(--r-md)",
-          border: "1px solid var(--line-200)",
-        }}
-      />
-
-      <label style={{ display: "block", fontSize: ".8125rem", fontWeight: 600, marginBottom: 6 }}>
-        Hashtags
-      </label>
-      <div style={{ display: "flex", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
-        <input
-          value={hashtagInput}
-          onChange={(e) => setHashtagInput(e.target.value)}
-          disabled={busy}
-          placeholder="#handmade #kathmandu #sale"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              addHashtagsFromInput();
-            }
-          }}
-          style={{
-            flex: "1 1 180px",
-            padding: "10px 12px",
-            borderRadius: "var(--r-md)",
-            border: "1px solid var(--line-200)",
-          }}
-        />
-        <Button
+    <div className="bz-upload-form">
+      <header className="bz-upload-form__header">
+        <h2 className="bz-upload-form__title">Add product video</h2>
+        <button
           type="button"
-          variant="secondary"
-          size="sm"
+          className="bz-upload-form__close"
+          aria-label="Close"
           disabled={busy}
-          onClick={addHashtagsFromInput}
+          onClick={onCancel}
         >
-          Add tags
-        </Button>
-      </div>
-      {hashtags.length > 0 && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
-          {hashtags.map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              disabled={busy}
-              onClick={() => setHashtags((prev) => prev.filter((t) => t !== tag))}
-              style={{
-                background: "none",
-                border: "none",
-                padding: 0,
-                cursor: "pointer",
-              }}
-              title="Remove"
-            >
-              <Chip tone="blue" size="sm">
-                {tag} ×
-              </Chip>
-            </button>
-          ))}
-        </div>
-      )}
-      <p style={{ margin: "0 0 14px", fontSize: ".75rem", color: "var(--ink-400)" }}>
-        Tip: #bazaarco #madeinnepal plus your city and category help buyers find you.
-      </p>
+          <Icon name="x" size={20} />
+        </button>
+      </header>
 
-      {progress !== null && (
-        <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: ".75rem", color: "var(--ink-500)", marginBottom: 4 }}>
-            Uploading… {progress}%
+      <div className="bz-upload-form__body">
+        <div className="bz-upload-tips">
+          <div className="bz-upload-tips__head">
+            <Icon name="edit" size={16} color="var(--blue)" />
+            Edit &amp; crop before you upload
           </div>
-          <div
-            style={{
-              height: 6,
-              borderRadius: 999,
-              background: "var(--line-100)",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                width: `${progress}%`,
-                height: "100%",
-                background: "var(--blue)",
-                transition: "width 0.2s ease",
+          <ul className="bz-upload-tips__list">
+            <li>
+              Video must be <strong>5–30 seconds</strong> (Photos / Gallery → Edit).
+            </li>
+            <li>
+              Crop to vertical <strong>9:16</strong> so it looks good in the video feed.
+            </li>
+            <li>Good lighting, stable shot, product clearly visible.</li>
+          </ul>
+        </div>
+
+        <label className="bz-upload-form__label">Video file</label>
+        <input
+          ref={fileRef}
+          type="file"
+          accept={VIDEO_ACCEPT}
+          disabled={busy}
+          onChange={onFileChange}
+          style={{ display: "none" }}
+        />
+        <button
+          type="button"
+          className={`bz-video-dropzone${fileName ? " bz-video-dropzone--filled" : ""}`}
+          onClick={openFilePicker}
+          disabled={busy}
+        >
+          <span className="bz-video-dropzone__icon">
+            <Icon name={fileName ? "check" : "video"} size={26} />
+          </span>
+          {fileName ? (
+            <>
+              <span className="bz-video-dropzone__name">{fileName}</span>
+              <span className="bz-video-dropzone__hint">
+                {fileSize !== null ? `${formatBytes(fileSize)} · ` : ""}Tap to choose a different
+                file
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="bz-video-dropzone__name">Choose a video to upload</span>
+              <span className="bz-video-dropzone__hint">MP4 or MOV · max 100 MB · 5–30 sec</span>
+            </>
+          )}
+        </button>
+
+        {previewUrl && (
+          <div className="bz-upload-preview">
+            <video
+              src={previewUrl}
+              controls
+              playsInline
+              className="bz-upload-preview__video"
+              onLoadedMetadata={(e) => {
+                const d = e.currentTarget.duration;
+                if (Number.isFinite(d)) setDurationSec(d);
               }}
             />
+            {durationSec !== null && (
+              <div className={`bz-upload-preview__meta${durationBad ? " is-bad" : ""}`}>
+                {durationSec < MIN_DURATION_SEC
+                  ? `Too short (${Math.ceil(durationSec)}s) — must be at least ${MIN_DURATION_SEC}s`
+                  : durationSec > MAX_DURATION_SEC
+                    ? `Too long (${Math.ceil(durationSec)}s) — trim before publishing`
+                    : `Duration: ${Math.ceil(durationSec)}s · looks good`}
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
 
-      {error && (
-        <p
-          style={{
-            margin: "0 0 12px",
-            color: "var(--danger)",
-            fontSize: ".8125rem",
-            fontWeight: 600,
-          }}
+        <label className="bz-upload-form__label" htmlFor="bz-video-product">
+          Product
+        </label>
+        <select
+          id="bz-video-product"
+          value={productId}
+          onChange={(e) => setProductId(e.target.value)}
+          disabled={busy || productsLoading}
+          className="bz-upload-form__input"
         >
-          {error}
-        </p>
-      )}
+          <option value="">
+            {productsLoading ? "Loading your products…" : "Select a product…"}
+          </option>
+          {products?.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        {!productsLoading && products?.length === 0 && (
+          <p className="bz-upload-form__hint">
+            You have no products yet — add a product first, then film a video for it.
+          </p>
+        )}
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        {progress !== null && (
+          <div className="bz-upload-progress">
+            <div className="bz-upload-progress__label">Uploading… {progress}%</div>
+            <div className="bz-upload-progress__track">
+              <div className="bz-upload-progress__bar" style={{ width: `${progress}%` }} />
+            </div>
+          </div>
+        )}
+
+        {error && <p className="bz-upload-form__error">{error}</p>}
+      </div>
+
+      <footer className="bz-upload-form__footer">
         <Button
           type="button"
           variant="primary"
+          full
           disabled={busy}
           icon={busy ? undefined : "video"}
           onClick={() => void submit("published")}
@@ -386,18 +281,14 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
         <Button
           type="button"
           variant="secondary"
+          full
           disabled={busy}
           onClick={() => void submit("draft")}
         >
           Save draft
         </Button>
-        <Button type="button" variant="secondary" disabled={busy} onClick={onCancel}>
-          Cancel
-        </Button>
-      </div>
-      <p style={{ margin: "10px 0 0", fontSize: ".7rem", color: "var(--ink-400)" }}>
-        Draft = only you see it · Publish = live for buyers (with hashtags)
-      </p>
+        <p className="bz-upload-form__note">Draft = only you see it · Publish = live for buyers</p>
+      </footer>
     </div>
   );
 }

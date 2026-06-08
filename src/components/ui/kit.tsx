@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { ASSETS } from "@/config/assets";
 import { postalForCity, isDeliverableCity, DELIVERY_AREA_MESSAGE } from "@/lib/delivery-location";
 import { reverseGeocode } from "@/lib/reverse-geocode";
+import { tintForName } from "@/lib/store-tint";
 import { MapPinPicker } from "@/components/ui/map-pin-picker";
 import { TOAST_VARIANT_META } from "@/lib/toast-variant";
 
@@ -51,6 +52,13 @@ export const ICON_PATHS = {
   chevronLeft: <polyline points="15 18 9 12 15 6" />,
   chevronRight: <polyline points="9 18 15 12 9 6" />,
   chevronDown: <polyline points="6 9 12 15 18 9" />,
+  globe: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <path d="M12 3a14.5 14.5 0 0 1 0 18 14.5 14.5 0 0 1 0-18Z" />
+    </>
+  ),
   star: (
     <polygon points="12 2 15.1 8.6 22 9.3 17 14.1 18.2 21 12 17.6 5.8 21 7 14.1 2 9.3 8.9 8.6" />
   ),
@@ -1079,6 +1087,58 @@ export const TINTS = {
   purple: ["#F5F3FF", "#DDD6FE", "#6D28D9"],
   teal: ["#F0FDFA", "#99F6E4", "#0D9488"],
 };
+
+/**
+ * A store's brand mark as rendered across BazaarCo: a rounded SQUARE tile (a
+ * brand identity, not a personal/profile circle) holding the shop logo, falling
+ * back to the first letter of the name on a deterministic tint. The tint is
+ * hashed from the store name (see `tintForName`) so the same shop is always the
+ * same colour and a grid of them never looks like a random crayon box. Single
+ * source of truth for the /stores cards, the seller sidebar, and the store-link
+ * preview. Corner radius stays in the 10–12px brand-tile range across sizes; the
+ * fallback letter scales with `size` (1.25rem at 56px).
+ */
+export function StoreAvatar({
+  src,
+  name,
+  size = 56,
+}: {
+  src?: string | null;
+  name?: string | null;
+  size?: number;
+}) {
+  const t = TINTS[tintForName(name)] ?? TINTS.slate;
+  const radius = Math.min(12, Math.max(10, Math.round(size * 0.2)));
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: radius,
+        overflow: "hidden",
+        border: `1px solid ${t[1]}`,
+        flexShrink: 0,
+        background: t[0],
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      {src ? (
+        <img
+          src={src}
+          alt={name ?? ""}
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+        />
+      ) : (
+        <span style={{ fontWeight: 800, fontSize: `${(size / 56) * 1.25}rem`, color: t[2] }}>
+          {name?.[0]?.toUpperCase() ?? "?"}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function Placeholder({
   icon = "package",
   tint = "slate",
@@ -1180,6 +1240,7 @@ export function VideoPlayer({
   onLongPressStart,
   onLongPressEnd,
   playbackRate,
+  isActive,
 }) {
   const videoRef = useRef(null);
   const [playing, setPlaying] = useState(!!autoplay);
@@ -1195,6 +1256,9 @@ export function VideoPlayer({
     else setInternalMuted(next);
   };
   const hasSrc = Boolean(src);
+  // In a feed, only the active reel may play and be audible. When `isActive`
+  // isn't passed (e.g. product-card players) the player behaves as a standalone.
+  const active = isActive === undefined ? true : isActive;
 
   useEffect(() => {
     if (hasSrc || !playing) return;
@@ -1205,13 +1269,15 @@ export function VideoPlayer({
   useEffect(() => {
     const el = videoRef.current;
     if (!el || !hasSrc) return;
-    el.muted = muted;
-    if (playing) {
+    // Force-mute and pause any non-active reel so audio never mixes across the
+    // stacked <video> elements and only one plays at a time.
+    el.muted = muted || !active;
+    if (playing && active) {
       void el.play().catch(() => setPlaying(false));
     } else {
       el.pause();
     }
-  }, [playing, muted, hasSrc, src]);
+  }, [playing, muted, active, hasSrc, src]);
 
   useEffect(() => {
     const el = videoRef.current;

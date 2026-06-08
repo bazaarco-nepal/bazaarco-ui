@@ -4,6 +4,7 @@ import {
   SELLER_SCREENS,
   pathFromScreen,
   productShareUrl,
+  storeShareUrl,
   screenFromPath,
   browsePath,
   searchPath,
@@ -71,6 +72,19 @@ describe("productShareUrl", () => {
     expect(productShareUrl("p 1", "https://bazaarco.com")).toBe(
       "https://bazaarco.com/product/p%201",
     );
+  });
+});
+
+describe("storeShareUrl", () => {
+  it("builds an encoded absolute store link a seller can share", () => {
+    expect(storeShareUrl("s9", "https://bazaarco.com")).toBe("https://bazaarco.com/store/s9");
+    expect(storeShareUrl("seller 1", "https://bazaarco.com")).toBe(
+      "https://bazaarco.com/store/seller%201",
+    );
+  });
+
+  it("strips a trailing slash from the origin so the URL never doubles up", () => {
+    expect(storeShareUrl("s9", "https://bazaarco.com/")).toBe("https://bazaarco.com/store/s9");
   });
 });
 

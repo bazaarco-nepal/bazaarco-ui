@@ -1,0 +1,180 @@
+{
+  "language": {
+    "en": "English",
+    "ne": "Nepali",
+    "label": "Language",
+    "switchAria": "Switch language"
+  },
+  "nav": {
+    "search": "Search",
+    "searchProducts": "Search products",
+    "watch": "Watch",
+    "wishlist": "Wishlist",
+    "bargain": "Bargain",
+    "cart": "Cart",
+    "account": "Account",
+    "signIn": "Sign in",
+    "logOut": "Log out",
+    "myOrders": "My orders",
+    "menu": "Menu",
+    "deliverTo": "Deliver to",
+    "homeAria": "BazaarCo home",
+    "profileAria": "Your profile",
+    "viewProfile": "View profile",
+    "bargains": "Bargains"
+  },
+  "trust": {
+    "bargain": "Bargain freely with every seller",
+    "verified": "Verified sellers",
+    "returns": "7-day returns",
+    "payments": "eSewa · Khalti · IME"
+  },
+  "bottomNav": {
+    "home": "Home",
+    "bargain": "Bargain",
+    "watch": "Watch",
+    "orders": "Orders",
+    "profile": "Profile",
+    "add": "Add",
+    "more": "More",
+    "aria": "Bottom navigation"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "notNow": "Not now",
+    "reload": "Reload",
+    "seeAll": "See All",
+    "loadMore": "Load more",
+    "addToCart": "Add to Cart",
+    "buyNow": "Buy Now",
+    "previous": "Previous",
+    "next": "Next",
+    "showMore": "Show {{count}} more",
+    "close": "Close",
+    "back": "Back",
+    "clear": "Clear",
+    "home": "Home",
+    "ok": "OK"
+  },
+  "auth": {
+    "pleaseSignIn": "Please sign in",
+    "signIn": "Sign in",
+    "signInTitle": "Sign in to BazaarCo",
+    "createAccount": "Create your account",
+    "needAccount": "Need an account? Sign up",
+    "haveAccount": "Already have an account? Sign in",
+    "signingIn": "Signing you in…"
+  },
+  "home": {
+    "hello": "Hello",
+    "searchPlaceholder": "Search for products, brands…",
+    "searchAria": "Search for products, brands",
+    "shopByCategory": "Shop by category",
+    "lovedInNepal": "Loved in Nepal",
+    "newArrivals": "New Arrivals",
+    "topPicks": "Top Picks",
+    "loadError": "Couldn't load products",
+    "loadErrorMessage": "Something went wrong fetching the catalog. Please try again.",
+    "allCategories": "All categories",
+    "moreToExplore": "More to explore",
+    "bestPrices": "Best Prices"
+  },
+  "browse": {
+    "allProducts": "All products",
+    "filteredProducts": "Filtered products",
+    "resultsFor": "Results for \"{{query}}\"",
+    "searchLabel": "Search: \"{{query}}\"",
+    "sortPopular": "Popular",
+    "sortNewest": "Newest",
+    "sortPriceLow": "Price: low to high",
+    "sortPriceHigh": "Price: high to low",
+    "sortRating": "Rating",
+    "filters": "Filters",
+    "noMatches": "No matches for \"{{query}}\"",
+    "didYouMean": "Did you mean"
+  },
+  "cart": {
+    "empty": "Your cart is empty",
+    "emptyHint": "Browse products and add items to get started.",
+    "browseProducts": "Browse products"
+  },
+  "orders": {
+    "status": {
+      "new": "New",
+      "placed": "Order placed",
+      "applied": "Awaiting confirmation",
+      "accepted": "Accepted",
+      "packing": "Packing",
+      "packaging_started": "Packaging",
+      "packed": "Packed",
+      "ready_for_pickup": "Ready for pickup",
+      "picked_up": "Picked up",
+      "arrived_at_hub": "At hub",
+      "out_for_delivery": "Out for delivery",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled"
+    },
+    "noOrders": "No orders yet",
+    "track": "Track",
+    "rateReview": "Rate & review"
+  },
+  "delivery": {
+    "areaMessage": "We're very sorry — for now we only deliver inside Kathmandu, Bhaktapur, and Lalitpur. We're expanding across all of Nepal soon!",
+    "deliverTo": "Deliver to",
+    "saveLocation": "Save location",
+    "deliveringTo": "Delivering to {{label}}"
+  },
+  "reviews": {
+    "writeReview": "Write a review",
+    "purchaseToReview": "Purchase this product to write a review.",
+    "signInPurchase": "Sign in and purchase this product to write a review.",
+    "alreadyReviewed": "You have already reviewed this product.",
+    "noReviewsYet": "No reviews yet — be the first to review this product.",
+    "purchaseFirst": "Purchase this product to write the first review."
+  },
+  "screens": {
+    "home": "Home",
+    "browse": "Browse Products",
+    "cart": "Your Cart",
+    "checkout": "Checkout",
+    "orders": "My Orders",
+    "profile": "Account",
+    "wishlist": "Wishlist",
+    "auth": "Sign In",
+    "help": "Help & Support"
+  },
+  "footer": {
+    "tagline": "Nepal's fair marketplace — bargain freely, shop confidently.",
+    "description": "Built for the way Nepal shops. Low commission, no hidden charges, video-first shopping.",
+    "buy": "Buy",
+    "sell": "Sell",
+    "helpCol": "Help",
+    "aboutUs": "About us",
+    "careers": "Careers",
+    "press": "Press",
+    "sellerStories": "Seller stories",
+    "howToOrder": "How to order",
+    "paymentOptions": "Payment options",
+    "delivery": "Delivery",
+    "returnsRefunds": "Returns & refunds",
+    "becomeSeller": "Become a seller",
+    "sellerDashboard": "Seller dashboard",
+    "commissionFees": "Commission & fees",
+    "sellerPolicies": "Seller policies",
+    "contactSupport": "Contact support",
+    "trackOrder": "Track order",
+    "faqs": "FAQs",
+    "reportIssue": "Report an issue",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "copyright": "© {{year}} BazaarCo. All rights reserved."
+  },
+  "signedOut": {
+    "title": "Log in to continue",
+    "message": "Sign in to access your account, orders, bargains, messages, and more.",
+    "cta": "Log in"
+  }
+}

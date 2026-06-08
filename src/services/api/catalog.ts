@@ -4,6 +4,7 @@ import type {
   ProductProfile,
   ProductQuestion,
   ProductReview,
+  ProductReviewEligibility,
   RatingDistribution,
   Seller,
   SellerReview,
@@ -124,6 +125,10 @@ export const catalogApi = {
 
   getRatingDistribution(id: string): Promise<RatingDistribution[]> {
     return getData<RatingDistribution[]>(`/catalog/products/${id}/rating-distribution`);
+  },
+
+  getProductReviewEligibility(id: string): Promise<ProductReviewEligibility> {
+    return getData<ProductReviewEligibility>(`/catalog/products/${id}/review-eligibility`);
   },
 
   createProductReview(id: string, payload: CreateProductReviewPayload): Promise<ProductReview> {

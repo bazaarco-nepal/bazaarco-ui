@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Icon,
   Logo,
@@ -32,7 +33,7 @@ import {
   ApiState,
   AppLink,
 } from "@/components/ui";
-import { browsePath, pathFromScreen } from "@/config/routes";
+import { browsePath, pathFromScreen, searchPath } from "@/config/routes";
 import { ASSETS } from "@/config/assets";
 import { useCatalog } from "@/hooks/use-catalog";
 import { useHome } from "@/hooks/use-home";
@@ -165,6 +166,7 @@ function SkeletonRail({ cols = 5 }) {
 }
 
 export function Home() {
+  const { t } = useTranslation();
   const { nav, openProduct, cartCount } = useBz();
   const user = useBazaarStore((s) => s.user);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -221,7 +223,7 @@ export function Home() {
               </AppLink>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", fontWeight: 600 }}>
-                  Hello 👋
+                  {t("home.hello")} 👋
                 </div>
                 <div
                   style={{
@@ -238,7 +240,7 @@ export function Home() {
               </div>
               <IconButton
                 name="cart"
-                label="Cart"
+                label={t("nav.cart")}
                 badge={cartCount}
                 href={pathFromScreen("cart")}
                 size={44}
@@ -248,7 +250,7 @@ export function Home() {
             {/* Search — tapping opens the full search overlay (no inline typing on home) */}
             <button
               type="button"
-              aria-label="Search for products, brands"
+              aria-label={t("home.searchAria")}
               onClick={() => setSearchOpen(true)}
               style={{
                 width: "100%",
@@ -266,7 +268,7 @@ export function Home() {
             >
               <Icon name="search" size={19} color="var(--ink-400)" />
               <span style={{ color: "var(--ink-400)", fontSize: ".9375rem" }}>
-                Search for products, brands…
+                {t("home.searchPlaceholder")}
               </span>
             </button>
           </W>
@@ -309,7 +311,7 @@ export function Home() {
               <Countdown />
             </div>
             <AppLink
-              href={pathFromScreen("browse")}
+              href={searchPath()}
               style={{
                 background: "rgba(255,255,255,.2)",
                 border: "1px solid rgba(255,255,255,.4)",
@@ -351,8 +353,8 @@ export function Home() {
         <W className="bz-home-section" style={{ paddingTop: 44 }}>
           <div className="bz-cat-card">
             <SectionHead
-              title="Shop by category"
-              action="All categories"
+              title={t("home.shopByCategory")}
+              action={t("home.allCategories")}
               actionHref={browsePath({ view: "categories" })}
             />
             <div className="bz-cat-row">
@@ -407,7 +409,7 @@ export function Home() {
             }
             title="What your city is buying right now"
             action="See more"
-            actionHref={pathFromScreen("browse")}
+            actionHref={searchPath()}
           />
           {loading ? (
             <SkeletonRail cols={5} />
@@ -490,7 +492,7 @@ export function Home() {
             eyebrow="Made in Nepal"
             title="Loved in Nepal"
             action="See more"
-            actionHref={pathFromScreen("browse")}
+            actionHref={searchPath()}
           />
           {loading ? (
             <SkeletonRail cols={5} />
@@ -501,12 +503,12 @@ export function Home() {
 
         {/* Endless product feed — shown on both web and mobile */}
         <W className="bz-home-section" style={{ paddingTop: 36 }}>
-          <SectionHead title="More to explore" />
+          <SectionHead title={t("home.moreToExplore")} />
           {isError && !catalogLoading ? (
             <EmptyState
-              title="Couldn't load products"
-              message="Something went wrong fetching the catalog. Please try again."
-              cta="Reload"
+              title={t("home.loadError")}
+              message={t("home.loadErrorMessage")}
+              cta={t("common.reload")}
               onCta={() => window.location.reload()}
             />
           ) : (

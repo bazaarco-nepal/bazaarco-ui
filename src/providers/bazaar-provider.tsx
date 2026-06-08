@@ -8,13 +8,7 @@ import { useCurrentUser } from "@/hooks/use-auth";
 import { useCartMutations, useCartQuery } from "@/hooks/use-cart";
 import { useWishlistMutations, useWishlistQuery } from "@/hooks/use-wishlist";
 import { useProduct } from "@/hooks/use-catalog";
-import {
-  browsePath,
-  searchPath,
-  pathFromScreen,
-  productIdFromPath,
-  screenFromPath,
-} from "@/config/routes";
+import { searchPath, pathFromScreen, productIdFromPath, screenFromPath } from "@/config/routes";
 import { ordersApi } from "@/services/api/orders";
 import { ApiRequestError } from "@/services/api/http";
 import { useBazaarStore } from "@/store/bazaar-store";
@@ -25,13 +19,11 @@ import {
   pruneSelection,
   selectLine,
 } from "@/lib/cart-selection";
+import { inferToastVariant, type ToastVariant } from "@/lib/toast-variant";
 import type { CheckoutPayload } from "@/services/api/orders";
-import type { Product } from "@/types";
+import type { BazaarToast, Product } from "@/types";
 
-interface ToastState {
-  msg: string;
-  id: number;
-}
+const TOAST_VISIBLE_MS = 3200;
 
 export function BazaarProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -39,7 +31,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const screen = screenFromPath(pathname);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [toastMsg, setToastMsg] = useState<ToastState | null>(null);
+  const [toastMsg, setToastMsg] = useState<BazaarToast | null>(null);
   const [authPrompt, setAuthPrompt] = useState<string | null>(null);
 
   const meQuery = useCurrentUser(true);
@@ -70,9 +62,11 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   const setQuery = useBazaarStore((s) => s.setQuery);
   useEffect(() => {
     const s = screenFromPath(pathname);
-    if ((s === "browse" || s === "search") && urlQuery) {
+    if (s === "browse" || s === "search") {
       const current = useBazaarStore.getState().query;
-      if (urlQuery !== current) {
+      if (!urlQuery) {
+        if (current) setQuery("");
+      } else if (urlQuery !== current) {
         setQuery(urlQuery);
       }
     }
@@ -123,12 +117,16 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
     window.scrollTo(0, 0);
   }, []);
 
-  const toast = useCallback((msg: string) => {
-    setToastMsg({ msg, id: Date.now() });
+  const toast = useCallback((msg: string, variant?: ToastVariant) => {
+    setToastMsg({
+      msg,
+      id: Date.now(),
+      variant: variant ?? inferToastVariant(msg),
+    });
     if (toastTimer.current) {
       clearTimeout(toastTimer.current);
     }
-    toastTimer.current = setTimeout(() => setToastMsg(null), 2600);
+    toastTimer.current = setTimeout(() => setToastMsg(null), TOAST_VISIBLE_MS);
   }, []);
 
   const promptLogin = useCallback((message = "Please sign in to continue.") => {
@@ -212,7 +210,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       if (nextScreen === "browse") {
         const q = state.query.trim();
         router.push(
-          browsePath({
+          searchPath({
             q: q || undefined,
             cat: options?.cat,
           }),
@@ -232,9 +230,22 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
     setTimeout(scrollTop, 0);
   }, [router, scrollTop]);
 
+  const clearSearch = useCallback(() => {
+    useBazaarStore.getState().setQuery("");
+    const s = screenFromPath(pathname);
+    if (s === "search" || s === "browse") {
+      useBazaarStore.getState().setScreenOverride("search");
+      router.push(searchPath());
+      setTimeout(scrollTop, 0);
+    }
+  }, [router, scrollTop, pathname]);
+
   const openProduct = useCallback(
     (product: Product) => {
       setActiveProduct(product);
+      // Optimistic screen — avoids flashing the previous page (e.g. browse)
+      // while Next.js updates the URL to /product/:id.
+      useBazaarStore.getState().setScreenOverride("pdp");
       router.push(pathFromScreen("pdp", product.id));
       setTimeout(scrollTop, 0);
     },
@@ -243,7 +254,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
 
   const openStore = useCallback(
     (sellerId: string) => {
-      router.push(`/store/${sellerId}`);
+      router.push(pathFromScreen("store", sellerId));
       setTimeout(scrollTop, 0);
     },
     [router, scrollTop],
@@ -270,7 +281,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
         toast(successMessage ?? defaultMsg);
       } catch (error) {
         const msg = error instanceof ApiRequestError ? error.message : "Could not add to cart";
-        toast(msg);
+        toast(msg, "error");
         throw error;
       }
     },
@@ -288,7 +299,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
         await updateQty.mutateAsync({ productId, qty, variantId });
       } catch (error) {
         const msg = error instanceof ApiRequestError ? error.message : "Could not update cart";
-        toast(msg);
+        toast(msg, "error");
       }
     },
     [removeItem, updateQty, toast],
@@ -301,7 +312,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
         await removeItem.mutateAsync({ productId, variantId });
       } catch (error) {
         const msg = error instanceof ApiRequestError ? error.message : "Could not remove item";
-        toast(msg);
+        toast(msg, "error");
       }
     },
     [removeItem, toast],
@@ -315,7 +326,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
         nav("checkout");
       } catch (error) {
         const msg = error instanceof ApiRequestError ? error.message : "Could not add to cart";
-        toast(msg);
+        toast(msg, "error");
       }
     },
     [addItem, ensureAuthed, nav, toast],
@@ -343,7 +354,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
         nav("success");
       } catch (error) {
         const msg = error instanceof ApiRequestError ? error.message : "Could not place order";
-        toast(msg);
+        toast(msg, "error");
         throw error;
       }
     },
@@ -408,6 +419,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       query,
       setQuery,
       submitSearch,
+      clearSearch,
       placeOrder,
       authed,
       setAuthed,
@@ -437,6 +449,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       query,
       setQuery,
       submitSearch,
+      clearSearch,
       placeOrder,
       authed,
       setAuthed,

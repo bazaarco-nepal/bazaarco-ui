@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui";
-import { pathFromScreen } from "@/config/routes";
+import { searchPath } from "@/config/routes";
 
 /* Best Picks promo — BazaarCo brand-red theme.
    Replaces the old single sponsored placement. One shared design,
@@ -106,7 +106,7 @@ export function BestPicksHero() {
             size="lg"
             style={{ borderRadius: "var(--r-full)" }}
             iconRight="arrowRight"
-            href={pathFromScreen("browse")}
+            href={searchPath()}
           >
             Shop now
           </Button>
@@ -173,7 +173,7 @@ export function BestPicksBanner() {
           size="sm"
           style={{ borderRadius: "var(--r-full)" }}
           iconRight="arrowRight"
-          href={pathFromScreen("browse")}
+          href={searchPath()}
         >
           Shop now
         </Button>

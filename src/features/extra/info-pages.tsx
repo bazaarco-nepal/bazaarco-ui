@@ -2,7 +2,7 @@
 
 import React from "react";
 import { AppLink, Button } from "@/components/ui";
-import { pathFromScreen } from "@/config/routes";
+import { pathFromScreen, searchPath } from "@/config/routes";
 
 type InfoPageProps = {
   title: string;
@@ -45,7 +45,7 @@ function InfoPageShell({ title, children, showBrowse = true }: InfoPageProps) {
       </div>
       {showBrowse && (
         <div style={{ marginTop: 32 }}>
-          <Button variant="secondary" href={pathFromScreen("browse")}>
+          <Button variant="secondary" href={searchPath()}>
             Browse products
           </Button>
         </div>

@@ -6,7 +6,11 @@ import { Icon, PageBar, AppLink, SkeletonCard, Button } from "@/components/ui";
 import { ProductCard, useBz } from "@/components/common";
 import { useCatalog } from "@/hooks/use-catalog";
 import { useSearch } from "@/hooks/use-search";
-import { pathFromScreen } from "@/config/routes";
+import {
+  categoryIdsFromSearchParams,
+  pathFromScreen,
+  searchSortFromBrowseParam,
+} from "@/config/routes";
 import type { SearchParams } from "@/services/api/search";
 
 const PER_PAGE = 24;
@@ -25,8 +29,10 @@ export function Search() {
   const { categories: CATEGORIES } = useCatalog();
   const urlParams = useSearchParams();
   const urlQuery = urlParams.get("q")?.trim() ?? "";
+  const catFromUrl = useMemo(() => categoryIdsFromSearchParams(urlParams), [urlParams]);
+  const sortFromUrl = searchSortFromBrowseParam(urlParams.get("sort")) ?? "relevance";
 
-  const [cats, setCats] = useState<string[]>([]);
+  const [cats, setCats] = useState<string[]>(catFromUrl);
   const [sellers, setSellers] = useState<string[]>([]);
   const [sellerSearch, setSellerSearch] = useState("");
   const [pmin, setPmin] = useState("");
@@ -34,9 +40,17 @@ export function Search() {
   const [appliedMin, setAppliedMin] = useState("");
   const [appliedMax, setAppliedMax] = useState("");
   const [rating, setRating] = useState(0);
-  const [sort, setSort] = useState<NonNullable<SearchParams["sort"]>>("relevance");
+  const [sort, setSort] = useState<NonNullable<SearchParams["sort"]>>(sortFromUrl);
   const [page, setPage] = useState(1);
   const [sheet, setSheet] = useState(false); // mobile filter drawer
+
+  useEffect(() => {
+    setCats(catFromUrl);
+  }, [catFromUrl]);
+
+  useEffect(() => {
+    setSort(sortFromUrl);
+  }, [sortFromUrl]);
 
   // Debounce the price inputs so typing a number doesn't fire a query per keystroke.
   useEffect(() => {
@@ -78,7 +92,6 @@ export function Search() {
   const { data, isFetching } = useSearch(params);
 
   const total = data?.total ?? 0;
-  const timeMs = data?.search_time_ms ?? 0;
   const items = data?.items ?? [];
   const catFacets = data?.facets?.categories ?? [];
   const sellerFacets = useMemo(() => {
@@ -106,7 +119,11 @@ export function Search() {
     cats.length + sellers.length + (rating ? 1 : 0) + (pmin !== "" || pmax !== "" ? 1 : 0);
   const hasFilters = activeCount > 0;
 
-  const heading = urlQuery ? `Results for "${urlQuery}"` : "All products";
+  const heading = (() => {
+    if (urlQuery) return `Results for "${urlQuery}"`;
+    if (cats.length === 1) return catName(cats[0]);
+    return "All products";
+  })();
 
   // One filter block, rendered in both the desktop rail and the mobile sheet.
   const filters = (
@@ -257,9 +274,10 @@ export function Search() {
         </span>
       </div>
 
+      {/* Mobile: heading spans full width above filters + results. */}
       <div
+        className="bz-show-mobile bz-show-mobile--flex"
         style={{
-          display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           gap: 12,
@@ -276,7 +294,6 @@ export function Search() {
         >
           {heading}
         </h1>
-        {/* Mobile-only: small filter icon, pinned to the right of the heading. */}
         <button
           type="button"
           aria-label="Filters"
@@ -329,6 +346,18 @@ export function Search() {
 
         {/* ---- Main results ---- */}
         <main style={{ flex: "1 1 420px", minWidth: 0 }}>
+          <h1
+            className="bz-hide-mobile"
+            style={{
+              margin: "0 0 4px",
+              fontSize: "1.5rem",
+              fontWeight: 800,
+              color: "var(--blue-deep)",
+              letterSpacing: "-.01em",
+            }}
+          >
+            {heading}
+          </h1>
           <div
             style={{
               display: "flex",
@@ -347,7 +376,6 @@ export function Search() {
               ) : (
                 <>
                   <b style={{ color: "var(--ink-900)" }}>{total.toLocaleString()}</b> products found
-                  in {timeMs}ms
                 </>
               )}
             </span>

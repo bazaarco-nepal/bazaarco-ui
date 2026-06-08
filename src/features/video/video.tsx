@@ -36,7 +36,7 @@ import {
   ApiState,
   AppLink,
 } from "@/components/ui";
-import { pathFromScreen } from "@/config/routes";
+import { pathFromScreen, productShareUrl, searchPath } from "@/config/routes";
 import { useVideoFeed } from "@/hooks/use-video-feed";
 import { useVideoLike } from "@/hooks/use-video-like";
 import { videosApi } from "@/services/api/videos";
@@ -694,7 +694,7 @@ function ReelItem({
           count={metrics.shares}
           inside={isMobile}
           onClick={() => {
-            const url = `${window.location.origin}/product/${p.id}`;
+            const url = productShareUrl(p.id);
             if (navigator.share) {
               navigator.share({ title: p.name, url }).catch(() => {});
             } else {
@@ -1261,7 +1261,7 @@ export function VideoTheater() {
             title="No videos yet"
             message="When sellers add product videos, they appear here."
             cta="Browse products"
-            ctaHref={pathFromScreen("browse")}
+            ctaHref={searchPath()}
           />
         </div>
       </div>

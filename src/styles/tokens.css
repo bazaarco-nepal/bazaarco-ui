@@ -170,6 +170,118 @@ body {
   animation: bz-fade-up var(--dur-standard) var(--ease) both;
 }
 
+/* Toast notifications — BazaarCo card style with variant accents */
+@keyframes bz-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(20px) translateY(-4px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0) scale(1);
+  }
+}
+@keyframes bz-toast-out {
+  from {
+    opacity: 1;
+    transform: translateX(0) translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(16px) translateY(-6px) scale(0.96);
+  }
+}
+@keyframes bz-toast-progress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.bz-toast {
+  position: fixed;
+  top: max(76px, calc(env(safe-area-inset-top, 0px) + 60px));
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: min(320px, calc(100vw - 32px));
+  max-width: min(400px, calc(100vw - 32px));
+  padding: 14px 16px 16px 0;
+  background: #fff;
+  border-radius: var(--r-lg);
+  border: 1.5px solid var(--line-200);
+  box-shadow:
+    var(--sh-3),
+    0 0 0 1px rgba(15, 44, 102, 0.04);
+  overflow: hidden;
+  transform-origin: top right;
+  pointer-events: none;
+}
+
+.bz-toast--enter {
+  animation: bz-toast-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.bz-toast--exit {
+  animation: bz-toast-out 300ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.bz-toast__accent {
+  width: 4px;
+  align-self: stretch;
+  flex-shrink: 0;
+  margin-right: 2px;
+  border-radius: 0 4px 4px 0;
+  background: var(--bz-toast-accent, var(--success));
+}
+
+.bz-toast__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--bz-toast-icon-bg, rgba(22, 163, 74, 0.12));
+}
+
+.bz-toast__msg {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--blue-deep);
+}
+
+.bz-toast__progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 3px;
+  transform-origin: left center;
+  background: var(--bz-toast-progress, var(--success));
+  opacity: 0.85;
+  animation: bz-toast-progress var(--bz-toast-duration, 3200ms) linear forwards;
+}
+
+@media (max-width: 640px) {
+  .bz-toast {
+    left: 16px;
+    right: 16px;
+    min-width: 0;
+    max-width: none;
+    transform-origin: top center;
+  }
+}
+
 @keyframes bz-pulse-ring {
   0% {
     box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.55);

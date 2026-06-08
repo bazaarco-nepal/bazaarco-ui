@@ -134,6 +134,7 @@ function clearSessionState(queryClient: ReturnType<typeof useQueryClient>) {
     queryClient.removeQueries({ queryKey: queryKeys.auth.me }),
     queryClient.removeQueries({ queryKey: queryKeys.cart.all }),
     queryClient.removeQueries({ queryKey: queryKeys.wishlist.all }),
+    queryClient.removeQueries({ queryKey: ["seller"] }),
   ]);
 }
 

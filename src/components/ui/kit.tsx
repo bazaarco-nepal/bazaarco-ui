@@ -3,10 +3,12 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { ASSETS } from "@/config/assets";
 import { postalForCity, isDeliverableCity, DELIVERY_AREA_MESSAGE } from "@/lib/delivery-location";
 import { reverseGeocode } from "@/lib/reverse-geocode";
 import { MapPinPicker } from "@/components/ui/map-pin-picker";
+import { TOAST_VARIANT_META } from "@/lib/toast-variant";
 
 /* ============================================================
    BazaarCo — Component Kit
@@ -1004,25 +1006,26 @@ export function Chip({
   );
 }
 export function StatusPill({ status }) {
+  const { t } = useTranslation();
   const map = {
-    new: { tone: "blue", label: "New" },
-    placed: { tone: "blue", label: "Order placed" },
-    applied: { tone: "blue", label: "Awaiting confirmation" },
-    accepted: { tone: "blue", label: "Accepted" },
-    packing: { tone: "saffron", label: "Packing" },
-    packaging_started: { tone: "saffron", label: "Packaging" },
-    packed: { tone: "saffron", label: "Packed" },
-    ready_for_pickup: { tone: "saffron", label: "Ready for pickup" },
-    picked_up: { tone: "blue", label: "Picked up" },
-    arrived_at_hub: { tone: "blue", label: "At hub" },
-    out_for_delivery: { tone: "blue", label: "Out for delivery" },
-    shipped: { tone: "blue", label: "Shipped" },
-    delivered: { tone: "success", label: "Delivered" },
-    confirmed: { tone: "blue", label: "Confirmed" },
-    cancelled: { tone: "neutral", label: "Cancelled" },
+    new: { tone: "blue", key: "new" },
+    placed: { tone: "blue", key: "placed" },
+    applied: { tone: "blue", key: "applied" },
+    accepted: { tone: "blue", key: "accepted" },
+    packing: { tone: "saffron", key: "packing" },
+    packaging_started: { tone: "saffron", key: "packaging_started" },
+    packed: { tone: "saffron", key: "packed" },
+    ready_for_pickup: { tone: "saffron", key: "ready_for_pickup" },
+    picked_up: { tone: "blue", key: "picked_up" },
+    arrived_at_hub: { tone: "blue", key: "arrived_at_hub" },
+    out_for_delivery: { tone: "blue", key: "out_for_delivery" },
+    shipped: { tone: "blue", key: "shipped" },
+    delivered: { tone: "success", key: "delivered" },
+    confirmed: { tone: "blue", key: "confirmed" },
+    cancelled: { tone: "neutral", key: "cancelled" },
   };
   const m = map[status] || map.new;
-  return <Chip tone={m.tone}>{m.label}</Chip>;
+  return <Chip tone={m.tone}>{t(`orders.status.${m.key}`)}</Chip>;
 }
 
 /* ---------- Price ---------- */
@@ -1635,42 +1638,61 @@ export function QtyStepper({ value, onChange, min = 1, max = 99 }) {
 }
 
 /* ---------- Toast ---------- */
-export function Toast({ toast }) {
-  if (!toast) return null;
+const TOAST_EXIT_MS = 320;
+const TOAST_VISIBLE_MS = 3200;
+
+export function Toast({ toast }: { toast: { msg: string; id: number; variant: string } | null }) {
+  const [shown, setShown] = useState<typeof toast>(null);
+  const [leaving, setLeaving] = useState(false);
+  const shownRef = useRef(shown);
+  shownRef.current = shown;
+
+  useEffect(() => {
+    if (toast) {
+      setShown(toast);
+      setLeaving(false);
+      return;
+    }
+    if (!shownRef.current) return;
+    setLeaving(true);
+    const timer = setTimeout(() => {
+      setShown(null);
+      setLeaving(false);
+    }, TOAST_EXIT_MS);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  if (!shown) return null;
+
+  const variant = shown.variant ?? "success";
+  const meta = TOAST_VARIANT_META[variant] ?? TOAST_VARIANT_META.success;
+
   return (
     <div
-      className="fade-up"
-      style={{
-        position: "fixed",
-        top: 84,
-        right: 24,
-        zIndex: 9999,
-        background: "var(--ink-900)",
-        color: "#fff",
-        padding: "12px 16px",
-        borderRadius: "var(--r-md)",
-        boxShadow: "var(--sh-3)",
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        maxWidth: 340,
-      }}
+      key={shown.id}
+      role="status"
+      aria-live="polite"
+      className={`bz-toast bz-toast--${variant} ${leaving ? "bz-toast--exit" : "bz-toast--enter"}`}
+      style={
+        {
+          "--bz-toast-accent": meta.accent,
+          "--bz-toast-icon-bg": meta.iconBg,
+          "--bz-toast-progress": meta.progress,
+          "--bz-toast-duration": `${TOAST_VISIBLE_MS}ms`,
+        } as React.CSSProperties
+      }
     >
-      <span
-        style={{
-          width: 22,
-          height: 22,
-          borderRadius: "50%",
-          background: "var(--success)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}
-      >
-        <Icon name="check" size={14} color="#fff" />
+      <span className="bz-toast__accent" aria-hidden />
+      <span className="bz-toast__icon" aria-hidden>
+        <Icon
+          name={meta.icon}
+          size={18}
+          color={meta.accent}
+          stroke={variant === "error" ? 2.4 : 1.8}
+        />
       </span>
-      <span style={{ fontSize: ".875rem", fontWeight: 500 }}>{toast.msg}</span>
+      <p className="bz-toast__msg">{shown.msg}</p>
+      <span className="bz-toast__progress" aria-hidden />
     </div>
   );
 }
@@ -2154,10 +2176,7 @@ export function ChipGroup({ options, value, onChange }) {
 
 /* ---------- Mobile sticky buy bar (guide §3.6) ---------- */
 export function MobileBuyBar({ onAdd, onBuy }) {
-  // Older shoppers parse a calm bar fastest: clean outlined "Add to Cart" with a
-  // single cart icon, solid high-contrast "Buy Now" with its Nepali label. No
-  // running total here — the summed price (item + delivery) is only revealed on
-  // the final checkout/confirmation screen so the bar stays uncluttered.
+  const { t } = useTranslation();
   return (
     <div
       className="bz-mobile-only"
@@ -2175,10 +2194,10 @@ export function MobileBuyBar({ onAdd, onBuy }) {
     >
       <div style={{ display: "flex", gap: 10, flex: 1, minWidth: 0 }}>
         <Button variant="secondary" size="lg" full icon="cart" onClick={onAdd}>
-          Add to Cart
+          {t("common.addToCart")}
         </Button>
         <Button variant="primary" size="lg" full onClick={onBuy}>
-          Buy Now
+          {t("common.buyNow")}
         </Button>
       </div>
     </div>
@@ -2199,19 +2218,20 @@ export function BottomNav({
   cartCount?: number;
   avatarUrl?: string | null;
 }) {
+  const { t } = useTranslation();
   const buyerItems = [
-    { id: "home", icon: "home", label: "Home" },
-    { id: "bargains", icon: "bargain", label: "Bargain" },
-    { id: "video", icon: "video", label: "Watch" },
-    { id: "orders", icon: "package", label: "Orders" },
-    { id: "profile", icon: "user", label: "Profile" },
+    { id: "home", icon: "home", label: t("bottomNav.home") },
+    { id: "bargains", icon: "bargain", label: t("bottomNav.bargain") },
+    { id: "video", icon: "video", label: t("bottomNav.watch") },
+    { id: "orders", icon: "package", label: t("bottomNav.orders") },
+    { id: "profile", icon: "user", label: t("bottomNav.profile") },
   ];
   const sellerItems = [
-    { id: "s-dashboard", icon: "home", label: "Home" },
-    { id: "s-inbox", icon: "package", label: "Orders" },
-    { id: "s-add", icon: "plus", label: "Add" },
-    { id: "s-bargain", icon: "bargain", label: "Bargain" },
-    { id: "__menu", icon: "menu", label: "More" },
+    { id: "s-dashboard", icon: "home", label: t("bottomNav.home") },
+    { id: "s-inbox", icon: "package", label: t("bottomNav.orders") },
+    { id: "s-add", icon: "plus", label: t("bottomNav.add") },
+    { id: "s-bargain", icon: "bargain", label: t("bottomNav.bargain") },
+    { id: "__menu", icon: "menu", label: t("bottomNav.more") },
   ];
   const items = seller ? sellerItems : buyerItems;
   // Fall back to the user icon if the avatar image fails to load (e.g. an
@@ -2221,7 +2241,7 @@ export function BottomNav({
     setAvatarFailed(false);
   }, [avatarUrl]);
   return (
-    <nav className="bz-bnav" aria-label="Bottom navigation">
+    <nav className="bz-bnav" aria-label={t("bottomNav.aria")}>
       {items.map((it) => (
         <button
           key={it.id}

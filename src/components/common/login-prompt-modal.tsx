@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Icon, Button } from "@/components/ui";
 
 export function LoginPromptModal({
@@ -14,6 +15,7 @@ export function LoginPromptModal({
   onClose: () => void;
   onSignIn: () => void;
 }) {
+  const { t } = useTranslation();
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -76,7 +78,7 @@ export function LoginPromptModal({
             color: "var(--ink-900)",
           }}
         >
-          Please sign in
+          {t("auth.pleaseSignIn")}
         </h2>
         <p
           style={{
@@ -89,10 +91,10 @@ export function LoginPromptModal({
           {message}
         </p>
         <Button variant="primary" full size="lg" onClick={onSignIn}>
-          Sign in
+          {t("auth.signIn")}
         </Button>
         <Button variant="ghost" full style={{ marginTop: 10 }} onClick={onClose}>
-          Not now
+          {t("common.notNow")}
         </Button>
       </div>
     </div>

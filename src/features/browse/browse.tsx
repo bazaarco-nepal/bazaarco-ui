@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Icon,
@@ -159,6 +160,7 @@ function DidYouMean({ q, suggestions, onPick, onReset }) {
 }
 
 export function Browse() {
+  const { t } = useTranslation();
   const { openProduct, nav, query, setQuery } = useBz();
   const router = useRouter();
   const pathname = usePathname();
@@ -343,29 +345,49 @@ export function Browse() {
   const hasActive = activeChips.length > 0;
   const showCategoryBrowser = categoryView && !hasActive && !effectiveQuery;
 
+  const sortOptions = useMemo(
+    () => [
+      { value: "popular", label: t("browse.sortPopular") },
+      { value: "newest", label: t("browse.sortNewest") },
+      { value: "low", label: t("browse.sortPriceLow") },
+      { value: "high", label: t("browse.sortPriceHigh") },
+      { value: "rating", label: t("browse.sortRating") },
+    ],
+    [t],
+  );
+
   const browseHeading = (() => {
-    if (effectiveQuery) return `Results for "${effectiveQuery}"`;
+    if (effectiveQuery) return t("browse.resultsFor", { query: effectiveQuery });
     if (cats.length === 1) {
       const c = (CATEGORIES ?? []).find((x) => x.id === cats[0]);
-      return c?.en ?? "Products";
+      return c?.en ?? t("browse.allProducts");
     }
-    if (cats.length > 1) return "Filtered products";
-    return "All products";
+    if (cats.length > 1) return t("browse.filteredProducts");
+    return t("browse.allProducts");
   })();
 
   const browseCrumb = (() => {
-    if (effectiveQuery) return `Search: "${effectiveQuery}"`;
+    if (effectiveQuery) return t("browse.searchLabel", { query: effectiveQuery });
     if (cats.length === 1) {
       const c = (CATEGORIES ?? []).find((x) => x.id === cats[0]);
-      return c?.en ?? "Category";
+      return c?.en ?? t("browse.allProducts");
     }
-    return "All products";
+    return t("browse.allProducts");
   })();
 
   // Paginate in-stock matches. Reset to page 1 whenever the filter signature changes.
   const filterKey = `${effectiveQuery}|${cats.join(",")}|${quick.join(",")}|${sort}|${priceLabel}`;
   const strictPaged = usePaged(strict, 24, filterKey);
   const mobilePaged = usePaged(strict.concat(related), 20, filterKey);
+
+  // Legacy /browse URLs redirect to /search; only ?view=categories renders here.
+  if (!categoryView) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", padding: "96px 24px" }}>
+        <Spinner />
+      </div>
+    );
+  }
 
   return (
     <ApiState isLoading={catalogLoading} isError={catalogError} error={catalogErr}>
@@ -842,7 +864,7 @@ export function Browse() {
                     background: "#fff",
                   }}
                 >
-                  {PLP_SORT_OPTIONS.map((o, i) => (
+                  {sortOptions.map((o, i) => (
                     <button
                       key={o.value}
                       onClick={() => setSort(o.value)}

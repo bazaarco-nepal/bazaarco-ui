@@ -1,6 +1,7 @@
 export * from "@/components/common/marketplace";
 export { BuyerAvatar } from "@/components/common/buyer-avatar";
 export { ChangePasswordModal } from "@/components/common/change-password-modal";
+export { LanguageToggle } from "@/components/common/language-toggle";
 export { LoginPromptModal } from "@/components/common/login-prompt-modal";
 export { LogoutConfirmModal } from "@/components/common/logout-confirm-modal";
 export { PasswordResetModal } from "@/components/common/password-reset-modal";

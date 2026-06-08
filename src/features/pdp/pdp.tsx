@@ -36,8 +36,9 @@ import {
   ApiState,
   AppLink,
 } from "@/components/ui";
-import { pathFromScreen } from "@/config/routes";
+import { pathFromScreen, productShareUrl, searchPath } from "@/config/routes";
 import { useBazaarStore } from "@/store/bazaar-store";
+import { displayCategoryLabel } from "@/lib/locale-display";
 import { formatDeliverToLabel } from "@/lib/delivery-location";
 import {
   useCatalog,
@@ -580,6 +581,7 @@ export function PDP({ p: pProp }: PdpProps) {
   const { data: productFromApi, isLoading: productDetailLoading } = useProduct(productId);
   const catalog = useCatalog();
   const deliveryLocation = useBazaarStore((s) => s.deliveryLocation);
+  const locale = useBazaarStore((s) => s.locale);
   const setDeliveryLocation = useBazaarStore((s) => s.setDeliveryLocation);
   const hasDeliveryLoc = Boolean(deliveryLocation?.city);
   const p = productFromApi ?? pProp;
@@ -638,8 +640,8 @@ export function PDP({ p: pProp }: PdpProps) {
 
   // Share via the native share sheet when available, falling back to copying the link.
   const shareProduct = async () => {
-    if (typeof window === "undefined") return;
-    const url = window.location.href;
+    if (typeof window === "undefined" || !p?.id) return;
+    const url = productShareUrl(p.id);
     try {
       if (navigator.share) {
         await navigator.share({ title: p.name, text: `${p.name} · Rs. ${p.price}`, url });
@@ -775,8 +777,11 @@ export function PDP({ p: pProp }: PdpProps) {
             Home
           </AppLink>
           <Icon name="chevronRight" size={13} color="var(--ink-300)" />
-          <AppLink href={pathFromScreen("browse")} className="bz-crumb">
-            {(categories ?? []).find((c) => c.id === p.cat)?.en}
+          <AppLink href={searchPath({ cat: p.cat })} className="bz-crumb">
+            {(() => {
+              const cat = (categories ?? []).find((c) => c.id === p.cat);
+              return cat ? displayCategoryLabel(cat, locale) : p.cat;
+            })()}
           </AppLink>
           <Icon name="chevronRight" size={13} color="var(--ink-300)" />
           <span style={{ color: "var(--ink-700)" }}>{p.name}</span>

@@ -71,6 +71,16 @@ export function useUpdateProduct() {
   });
 }
 
+export function useAcknowledgeProductModeration() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => sellerApi.acknowledgeProductModeration(id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.seller.inventory });
+    },
+  });
+}
+
 export function useDeleteProduct() {
   const qc = useQueryClient();
   return useMutation({
@@ -110,9 +120,12 @@ export function useSellerDashboard(range = "week") {
 }
 
 export function useSellerInbox() {
+  const { data: organization } = useSellerOrganization();
+  const sellerId = organization?.sellerId ?? null;
   return useQuery({
-    queryKey: queryKeys.seller.inbox,
+    queryKey: queryKeys.seller.inbox(sellerId),
     queryFn: () => sellerApi.getInbox(),
+    enabled: Boolean(sellerId),
     staleTime: STALE_TIME,
   });
 }
@@ -123,7 +136,7 @@ export function useUpdateSellerOrderStatus() {
     mutationFn: ({ id, status }: { id: string; status: OrderStatus }) =>
       sellerApi.updateOrderStatus(id, status),
     onSuccess: (order) => {
-      void qc.invalidateQueries({ queryKey: queryKeys.seller.inbox });
+      void qc.invalidateQueries({ queryKey: ["seller", "inbox"] });
       void qc.invalidateQueries({ queryKey: queryKeys.orders.list });
       void qc.invalidateQueries({ queryKey: queryKeys.orders.detail(order.id) });
       void qc.invalidateQueries({ queryKey: queryKeys.tracking(order.id) });

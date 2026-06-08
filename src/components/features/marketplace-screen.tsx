@@ -1,8 +1,11 @@
 "use client";
 
 import { Suspense, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { usePathname } from "next/navigation";
-import { screenFromPath, titleForScreen } from "@/config/routes";
+import { screenFromPath } from "@/config/routes";
+import { displayProductName } from "@/lib/locale-display";
+import { useBazaarStore } from "@/store/bazaar-store";
 import {
   Auth,
   AuthCallback,
@@ -56,7 +59,6 @@ import { useBz } from "@/components/common";
 import { EmptyState, Spinner } from "@/components/ui";
 import { SELLER_SCREENS } from "@/config/routes";
 import { isBuyerScreen, isGuestViewableScreen, isSellerUser } from "@/lib/auth-rbac";
-import { useBazaarStore } from "@/store/bazaar-store";
 
 /** Centered loader shown while the session probe settles on a gated screen. */
 function ScreenLoader() {
@@ -69,12 +71,13 @@ function ScreenLoader() {
 
 /** Signed-out state for a gated buyer screen — guests land here, then opt in. */
 function SignedOutScreen({ onLogin }: { onLogin: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="bz-container-pad" style={{ padding: "28px 28px 96px" }}>
       <EmptyState
-        title="Log in to continue"
-        message="Sign in to access your account, orders, bargains, messages, and more."
-        cta="Log in"
+        title={t("signedOut.title")}
+        message={t("signedOut.message")}
+        cta={t("signedOut.cta")}
         onCta={onLogin}
       />
     </div>
@@ -100,12 +103,16 @@ export function MarketplaceScreen() {
     }
   }, [routeScreen, screenOverride, setScreenOverride]);
 
+  const locale = useBazaarStore((s) => s.locale);
+  const { t } = useTranslation();
+
   // Keep the browser tab title meaningful per screen. On the product page use
   // the loaded product name; everything else maps to a friendly screen label.
   useEffect(() => {
-    const detail = screen === "pdp" ? product?.name : undefined;
-    document.title = titleForScreen(screen, detail);
-  }, [screen, product?.name]);
+    const detail = screen === "pdp" && product ? displayProductName(product, locale) : undefined;
+    const label = detail?.trim() || t(`screens.${screen}`, { defaultValue: t("screens.shop") });
+    document.title = t("meta.title", { label });
+  }, [screen, product, locale, t]);
 
   // Gate buyer screens that aren't publicly viewable. Guests stay on the page
   // (no redirect) and see a sign-in CTA. Public/browse screens fall through and

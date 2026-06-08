@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Icon,
@@ -63,7 +64,7 @@ import {
   Footer,
   DevViewSwitcher,
 } from "@/components/common";
-import { pathFromScreen } from "@/config/routes";
+import { pathFromScreen, searchPath } from "@/config/routes";
 import {
   resolveDelivery,
   deliveryChoices,
@@ -300,6 +301,7 @@ function SelectCheck({ checked, indeterminate, onChange, label, size = 22 }) {
 
 /* ---------- CART ---------- */
 export function Cart() {
+  const { t } = useTranslation();
   const {
     cart,
     updateCartQty,
@@ -330,7 +332,7 @@ export function Cart() {
   const goToCheckout = () => {
     if (selectedCount === 0) return;
     if (authed) nav("checkout");
-    else promptLogin("Please sign in to complete checkout.");
+    else promptLogin(t("checkout.signInCheckout"));
   };
 
   const setQty = (line, q) => {
@@ -339,7 +341,7 @@ export function Cart() {
   const remove = (line) => {
     void removeFromCart(line.id, line.variantId).then(() => {
       setConfirm(null);
-      toast("Removed from cart");
+      toast(t("checkout.removedFromCart"));
     });
   };
 
@@ -354,7 +356,7 @@ export function Cart() {
           color: "var(--ink-500)",
         }}
       >
-        Loading your cart…
+        {t("checkout.loadingCart")}
       </div>
     );
   }
@@ -366,11 +368,11 @@ export function Cart() {
         style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px" }}
       >
         <EmptyState
-          title="Your cart is empty"
-          message="Looks like you haven't added anything yet. Let's find something you'll love."
-          cta="Browse products"
-          ctaHref={pathFromScreen("browse")}
-          secondary="Watch"
+          title={t("checkout.emptyTitle")}
+          message={t("checkout.emptyMessage")}
+          cta={t("checkout.browseProducts")}
+          ctaHref={searchPath()}
+          secondary={t("checkout.watch")}
           secondaryHref={pathFromScreen("video")}
         />
       </div>
@@ -395,7 +397,7 @@ export function Cart() {
           textDecoration: "none",
         }}
       >
-        <Icon name="chevronLeft" size={16} /> Continue shopping
+        <Icon name="chevronLeft" size={16} /> {t("checkout.continueShopping")}
       </AppLink>
       {/* Mobile: plain text-only page title, matching the "My orders" header. */}
       <h1
@@ -408,7 +410,7 @@ export function Cart() {
           color: "var(--blue-deep)",
         }}
       >
-        My cart
+        {t("checkout.myCart")}
       </h1>
       <h1
         className="bz-hide-mobile"
@@ -419,12 +421,15 @@ export function Cart() {
           color: "var(--blue-deep)",
         }}
       >
-        Your cart{" "}
+        {t("checkout.yourCart")}{" "}
         <span
           className="tnum"
           style={{ color: "var(--ink-400)", fontWeight: 600, fontSize: "1rem" }}
         >
-          · {cart.length} item{cart.length > 1 ? "s" : ""}
+          ·{" "}
+          {cart.length === 1
+            ? t("checkout.itemCount", { count: cart.length })
+            : t("checkout.itemsCount", { count: cart.length })}
         </span>
       </h1>
       <div style={{ height: 8 }} />
@@ -455,7 +460,7 @@ export function Cart() {
               checked={everySelected}
               indeterminate={someSelected}
               onChange={toggleEvery}
-              label={everySelected ? "Deselect all items" : "Select all items"}
+              label={everySelected ? t("checkout.deselectAll") : t("checkout.selectAllItems")}
             />
             <button
               type="button"
@@ -471,7 +476,7 @@ export function Cart() {
                 fontFamily: "inherit",
               }}
             >
-              Select all
+              {t("checkout.selectAll")}
             </button>
             <span
               className="tnum"

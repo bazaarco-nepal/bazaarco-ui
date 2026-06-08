@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import React, { useState, useEffect, useRef, useContext, createContext } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Icon,
   Logo,
@@ -12,6 +13,7 @@ import {
   Chip,
   Price,
   Placeholder,
+  RatingStars,
   TINTS,
   DeliverToModal,
   AppLink,
@@ -21,6 +23,8 @@ import { useLogout } from "@/hooks/use-auth";
 import { useAddresses, useCreateAddress } from "@/hooks/use-addresses";
 import { deliveryToSavePayload } from "@/lib/saved-address";
 import { displayName } from "@/lib/display";
+import { displayCategoryLabel, displayProductName } from "@/lib/locale-display";
+import { LanguageToggle } from "@/components/common/language-toggle";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { formatDeliverToLabel } from "@/lib/delivery-location";
 import { ASSETS } from "@/config/assets";
@@ -237,6 +241,8 @@ export function SellerRow({
 /* ---------- Product card ---------- */
 export function ProductCard({ p, onClick, sale = false }) {
   const { toggleWish, wish } = useBz();
+  const locale = useBazaarStore((s) => s.locale);
+  const productName = displayProductName(p, locale);
   const [hov, setHov] = useState(false);
   const disc = p.original ? Math.round((1 - p.price / p.original) * 100) : 0;
   const wished = wish.includes(p.id);
@@ -271,7 +277,7 @@ export function ProductCard({ p, onClick, sale = false }) {
       <AppLink
         href={pathFromScreen("pdp", p.id)}
         onNavigate={() => onClick(p)}
-        ariaLabel={p.name}
+        ariaLabel={productName}
         style={{ position: "absolute", inset: 0, zIndex: 1 }}
       />
       <div style={{ position: "relative" }}>
@@ -287,7 +293,7 @@ export function ProductCard({ p, onClick, sale = false }) {
           >
             <img
               src={p.img}
-              alt={p.name}
+              alt={productName}
               style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
             />
           </div>
@@ -394,9 +400,8 @@ export function ProductCard({ p, onClick, sale = false }) {
             minHeight: "2.7em",
           }}
         >
-          {p.name}
+          {productName}
         </div>
-        {/* Compact rating: one star + value + review count (no 5-star row) */}
         <div
           className="bz-pcard__rating"
           style={{
@@ -409,11 +414,7 @@ export function ProductCard({ p, onClick, sale = false }) {
             color: "var(--ink-500)",
           }}
         >
-          <Icon name="star" size={13} color="var(--gold)" fill="var(--gold)" />
-          <span className="tnum" style={{ fontWeight: 700, color: "var(--ink-700)" }}>
-            {(p.rating ?? 0).toFixed(1)}
-          </span>
-          <span style={{ color: "var(--ink-400)" }}>· {p.reviews} reviews</span>
+          <RatingStars value={p.rating ?? 0} size={13} count={p.reviews} />
           {sale && <span style={{ color: "var(--ink-400)" }}>· {soldLabel}</span>}
         </div>
         {/* Single price line: all-in price + strikethrough original — via Price primitive */}
@@ -488,8 +489,9 @@ const CATEGORY_ICON: Record<string, string> = {
 // the exact taxonomy name so buyer views do not drift from the catalog.
 export function CategoryTile({ c, onClick, compact = false, href }) {
   const [hov, setHov] = useState(false);
-  const t = CAT_TINTS[c.tint] ?? CAT_TINTS.red;
-  const label = c.en;
+  const locale = useBazaarStore((s) => s.locale);
+  const tint = CAT_TINTS[c.tint] ?? CAT_TINTS.red;
+  const label = displayCategoryLabel(c, locale);
   const iconName = CATEGORY_ICON[c.id] ?? "tag";
   // Nav use (e.g. home → /browse) passes `href` and renders a real anchor so the
   // browser can open it in a new tab. Filter use (browse page) omits href and
@@ -522,13 +524,13 @@ export function CategoryTile({ c, onClick, compact = false, href }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: hov ? t.fg : t.bg,
+          background: hov ? tint.fg : tint.bg,
           boxShadow: hov ? "var(--sh-2)" : "var(--sh-1)",
           transform: hov ? "translateY(-2px)" : "translateY(0)",
           transition: "all var(--dur-standard) var(--ease)",
         }}
       >
-        <Icon name={iconName} size={27} color={hov ? "#fff" : t.fg} stroke={1.8} />
+        <Icon name={iconName} size={27} color={hov ? "#fff" : tint.fg} stroke={1.8} />
       </div>
       <div style={{ textAlign: "center", lineHeight: 1.2 }}>
         <div className="bz-cat__en" style={{ fontSize: ".8125rem", fontWeight: 600 }}>
@@ -618,6 +620,7 @@ export function NavMenuItem({ icon, label, danger, onClick, href, onNavigate }) 
 }
 
 function AccountMenuPanel({ navLabel, user, authed, goAndClose, onLogout }) {
+  const { t } = useTranslation();
   return (
     <>
       <AppLink
@@ -659,41 +662,56 @@ function AccountMenuPanel({ navLabel, user, authed, goAndClose, onLogout }) {
               fontWeight: 600,
             }}
           >
-            View profile
+            {t("nav.viewProfile")}
           </span>
         </span>
       </AppLink>
       <NavMenuItem
         icon="package"
-        label="My orders"
+        label={t("nav.myOrders")}
         href={pathFromScreen("orders")}
         onNavigate={() => goAndClose("orders")}
       />
       <NavMenuItem
         icon="heart"
-        label="Wishlist"
+        label={t("nav.wishlist")}
         href={pathFromScreen("wishlist")}
         onNavigate={() => goAndClose("wishlist")}
       />
       <NavMenuItem
         icon="video"
-        label="Watch"
+        label={t("nav.watch")}
         href={pathFromScreen("video")}
         onNavigate={() => goAndClose("video")}
       />
       <NavMenuItem
         icon="bargain"
-        label="Bargains"
+        label={t("nav.bargains")}
         href={pathFromScreen("bargains")}
         onNavigate={() => goAndClose("bargains")}
       />
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
+          padding: "10px 12px",
+          margin: "4px 0",
+        }}
+      >
+        <span style={{ fontSize: ".875rem", fontWeight: 700, color: "var(--ink-700)" }}>
+          {t("language.label")}
+        </span>
+        <LanguageToggle compact />
+      </div>
       <div style={{ height: 1, background: "var(--line-200)", margin: "6px 4px" }} />
       {authed ? (
-        <NavMenuItem icon="x" label="Log out" danger onClick={onLogout} />
+        <NavMenuItem icon="x" label={t("nav.logOut")} danger onClick={onLogout} />
       ) : (
         <NavMenuItem
           icon="user"
-          label="Sign in"
+          label={t("nav.signIn")}
           href={pathFromScreen("auth")}
           onNavigate={() => goAndClose("auth")}
         />
@@ -703,8 +721,19 @@ function AccountMenuPanel({ navLabel, user, authed, goAndClose, onLogout }) {
 }
 
 export function Navbar() {
-  const { nav, cartCount, wish, wishSellers, screen, query, setQuery, submitSearch, toast } =
-    useBz();
+  const { t } = useTranslation();
+  const {
+    nav,
+    cartCount,
+    wish,
+    wishSellers,
+    screen,
+    query,
+    setQuery,
+    submitSearch,
+    clearSearch,
+    toast,
+  } = useBz();
   const user = useBazaarStore((s) => s.user);
   const authed = useBazaarStore((s) => s.authed);
   const logoutMutation = useLogout();
@@ -771,19 +800,19 @@ export function Navbar() {
       <div className="bz-navbar__trust bz-hide-mobile">
         <div className="bz-navbar__trust-inner">
           <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-            <Icon name="bargain" size={13} color="#fff" /> Bargain freely with every seller
+            <Icon name="bargain" size={13} color="#fff" /> {t("trust.bargain")}
           </span>
           <span style={{ opacity: 0.35 }}>·</span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-            <Icon name="check" size={13} color="#fff" /> Verified sellers
+            <Icon name="check" size={13} color="#fff" /> {t("trust.verified")}
           </span>
           <span style={{ opacity: 0.35 }}>·</span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-            <Icon name="returns" size={13} color="#fff" /> 7-day returns
+            <Icon name="returns" size={13} color="#fff" /> {t("trust.returns")}
           </span>
           <span style={{ opacity: 0.35 }}>·</span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-            <Icon name="lock" size={13} color="#fff" /> eSewa · Khalti · IME
+            <Icon name="lock" size={13} color="#fff" /> {t("trust.payments")}
           </span>
         </div>
       </div>
@@ -791,7 +820,7 @@ export function Navbar() {
       <div className="bz-navbar__inner">
         <AppLink
           href={pathFromScreen("home")}
-          ariaLabel="BazaarCo home"
+          ariaLabel={t("nav.homeAria")}
           className="bz-navbar__brand bz-hide-mobile"
         >
           <Logo height={38} />
@@ -800,7 +829,7 @@ export function Navbar() {
         {/* Mobile-only: buyer's profile picture replaces the logo and links to the profile page */}
         <AppLink
           href={pathFromScreen("profile")}
-          ariaLabel="Your profile"
+          ariaLabel={t("nav.profileAria")}
           className="bz-navbar__brand bz-show-mobile"
         >
           <BuyerAvatar user={user} size={40} fontSize={16} />
@@ -827,7 +856,7 @@ export function Navbar() {
                     textTransform: "uppercase",
                   }}
                 >
-                  Deliver to
+                  {t("nav.deliverTo")}
                 </div>
                 <div>{deliverLabel}</div>
               </div>
@@ -841,7 +870,7 @@ export function Navbar() {
               onSave={async (loc) => {
                 setDeliveryLocation(loc);
                 setDeliverOpen(false);
-                toast(`Delivering to ${formatDeliverToLabel(loc)}`);
+                toast(t("delivery.deliveringTo", { label: formatDeliverToLabel(loc) }));
                 // Mirror checkout: persist the entered address to the buyer's
                 // profile so it becomes their (first, default) saved address.
                 if (authed) {
@@ -859,7 +888,7 @@ export function Navbar() {
         <div className="bz-navbar__search">
           <button
             type="button"
-            aria-label="Search"
+            aria-label={t("nav.search")}
             onClick={submitSearch}
             className="bz-navbar__search-btn"
           >
@@ -873,8 +902,8 @@ export function Navbar() {
             onKeyDown={(e) => {
               if (e.key === "Enter") submitSearch();
             }}
-            placeholder="Search"
-            aria-label="Search products"
+            placeholder={t("nav.search")}
+            aria-label={t("nav.searchProducts")}
           />
           {query && (
             <button
@@ -882,7 +911,7 @@ export function Navbar() {
               aria-label="Clear search"
               className="bz-navbar__search-clear"
               onClick={() => {
-                setQuery("");
+                clearSearch();
                 searchInputRef.current?.focus();
               }}
             >
@@ -892,9 +921,10 @@ export function Navbar() {
         </div>
 
         <div className="bz-navbar__mobile-actions">
+          <LanguageToggle compact />
           <IconButton
             name="cart"
-            label="Cart"
+            label={t("nav.cart")}
             badge={cartCount}
             href={pathFromScreen("cart")}
             size={40}
@@ -902,27 +932,33 @@ export function Navbar() {
         </div>
 
         <nav className="bz-navbar__nav bz-navbar__nav--desktop">
+          <LanguageToggle compact />
           <AppLink
             href={pathFromScreen("video")}
             className={`bz-navbar__link bz-navbar__link--video${screen === "video" ? " is-active" : ""}`}
           >
-            <Icon name="video" size={19} /> Watch
+            <Icon name="video" size={19} /> {t("nav.watch")}
           </AppLink>
           <IconButton
             name="heart"
-            label="Wishlist"
+            label={t("nav.wishlist")}
             badge={wish.length + wishSellers.length}
             href={pathFromScreen("wishlist")}
           />
           <AppLink
             href={pathFromScreen("bargains")}
-            ariaLabel="Bargain"
-            title="Bargain"
+            ariaLabel={t("nav.bargain")}
+            title={t("nav.bargain")}
             className="bz-navbar__link bz-navbar__link--bargain"
           >
-            <Icon name="bargain" size={19} color="#fff" /> Bargain
+            <Icon name="bargain" size={19} color="#fff" /> {t("nav.bargain")}
           </AppLink>
-          <IconButton name="cart" label="Cart" badge={cartCount} href={pathFromScreen("cart")} />
+          <IconButton
+            name="cart"
+            label={t("nav.cart")}
+            badge={cartCount}
+            href={pathFromScreen("cart")}
+          />
           <div ref={desktopMenuRef} className="bz-navbar__account-wrap">
             <button
               type="button"
@@ -970,7 +1006,7 @@ export function Navbar() {
             aria-label="Account menu"
           >
             <div className="bz-navbar__sheet-head">
-              <h2 className="bz-navbar__sheet-title">Menu</h2>
+              <h2 className="bz-navbar__sheet-title">{t("nav.menu")}</h2>
               <button
                 type="button"
                 aria-label="Close menu"
@@ -1016,41 +1052,42 @@ export function Navbar() {
 
 /* ---------- Footer ---------- */
 export function Footer() {
+  const { t } = useTranslation();
   const cols: { h: string; links: { label: string; href: string }[] }[] = [
     {
       h: "BazaarCo",
       links: [
-        { label: "About us", href: pathFromScreen("about") },
-        { label: "Careers", href: pathFromScreen("help") },
-        { label: "Press", href: pathFromScreen("help") },
-        { label: "Seller stories", href: pathFromScreen("about") },
+        { label: t("footer.aboutUs"), href: pathFromScreen("about") },
+        { label: t("footer.careers"), href: pathFromScreen("help") },
+        { label: t("footer.press"), href: pathFromScreen("help") },
+        { label: t("footer.sellerStories"), href: pathFromScreen("about") },
       ],
     },
     {
-      h: "Buy",
+      h: t("footer.buy"),
       links: [
-        { label: "How to order", href: pathFromScreen("help") },
-        { label: "Payment options", href: pathFromScreen("help") },
-        { label: "Delivery", href: pathFromScreen("help") },
-        { label: "Returns & refunds", href: pathFromScreen("help") },
+        { label: t("footer.howToOrder"), href: pathFromScreen("help") },
+        { label: t("footer.paymentOptions"), href: pathFromScreen("help") },
+        { label: t("footer.delivery"), href: pathFromScreen("help") },
+        { label: t("footer.returnsRefunds"), href: pathFromScreen("help") },
       ],
     },
     {
-      h: "Sell",
+      h: t("footer.sell"),
       links: [
-        { label: "Become a seller", href: pathFromScreen("auth") },
-        { label: "Seller dashboard", href: pathFromScreen("s-dashboard") },
-        { label: "Commission & fees", href: pathFromScreen("help") },
-        { label: "Seller policies", href: pathFromScreen("terms") },
+        { label: t("footer.becomeSeller"), href: pathFromScreen("auth") },
+        { label: t("footer.sellerDashboard"), href: pathFromScreen("s-dashboard") },
+        { label: t("footer.commissionFees"), href: pathFromScreen("help") },
+        { label: t("footer.sellerPolicies"), href: pathFromScreen("terms") },
       ],
     },
     {
-      h: "Help",
+      h: t("footer.helpCol"),
       links: [
-        { label: "Contact support", href: pathFromScreen("help") },
-        { label: "Track order", href: pathFromScreen("orders") },
-        { label: "FAQs", href: pathFromScreen("help") },
-        { label: "Report an issue", href: pathFromScreen("help") },
+        { label: t("footer.contactSupport"), href: pathFromScreen("help") },
+        { label: t("footer.trackOrder"), href: pathFromScreen("orders") },
+        { label: t("footer.faqs"), href: pathFromScreen("help") },
+        { label: t("footer.reportIssue"), href: pathFromScreen("help") },
       ],
     },
   ];
@@ -1113,7 +1150,7 @@ export function Footer() {
               maxWidth: 240,
             }}
           >
-            Built for the way Nepal shops. Low commission, no hidden charges, video-first shopping.
+            {t("footer.description")}
           </p>
         </div>
         {cols.map((col, i) => (
@@ -1154,7 +1191,7 @@ export function Footer() {
           }}
         >
           <span style={{ color: "rgba(255,255,255,.5)", fontSize: ".8125rem" }}>
-            © 2026 BazaarCo Nepal Pvt. Ltd.
+            {t("footer.copyright", { year: new Date().getFullYear() })}
           </span>
           <span style={{ display: "inline-flex", gap: 12, fontSize: ".8125rem" }}>
             <AppLink
@@ -1162,14 +1199,14 @@ export function Footer() {
               className="bz-footer-link"
               style={{ color: "rgba(255,255,255,.5)" }}
             >
-              Privacy
+              {t("footer.privacy")}
             </AppLink>
             <AppLink
               href={pathFromScreen("terms")}
               className="bz-footer-link"
               style={{ color: "rgba(255,255,255,.5)" }}
             >
-              Terms
+              {t("footer.terms")}
             </AppLink>
           </span>
         </div>

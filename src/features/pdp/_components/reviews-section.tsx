@@ -1,9 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Icon, RatingStars } from "@/components/ui";
 import { BuyerAvatar, useBz } from "@/components/common";
-import { useCreateProductReview } from "@/hooks/use-catalog";
+import { useCreateProductReview, useProductReviewEligibility } from "@/hooks/use-catalog";
 import { useUploadImage } from "@/hooks/use-media-upload";
 import { ApiRequestError } from "@/services/api/http";
 import type { ProductReview, RatingDistribution } from "@/types";
@@ -355,33 +356,69 @@ export function ReviewsSection({
   ratingDist,
   loading,
 }: ReviewsSectionProps) {
+  const { t } = useTranslation();
+  const { authed } = useBz();
+  const { data: eligibility, isLoading: eligibilityLoading } = useProductReviewEligibility(
+    productId,
+    authed,
+  );
   const hasReviews = reviewCount > 0;
   const [composerOpen, setComposerOpen] = useState(false);
+  const canWriteReview = authed && (eligibility?.canReview ?? false);
+  const writeLocked = !canWriteReview;
+  const gateMessage = (() => {
+    if (authed && eligibilityLoading) return null;
+    if (!authed) return t("reviews.signInPurchase");
+    if (!eligibility?.hasPurchased) return t("reviews.purchaseToReview");
+    if (eligibility?.hasReviewed) return t("reviews.alreadyReviewed");
+    return null;
+  })();
+
+  const openComposer = () => {
+    if (!canWriteReview) return;
+    setComposerOpen(true);
+  };
 
   return (
     <div>
       {!composerOpen && (
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            gap: 6,
+            marginBottom: 8,
+            opacity: writeLocked ? 0.55 : 1,
+          }}
+        >
           <button
             type="button"
-            onClick={() => setComposerOpen(true)}
+            onClick={openComposer}
+            disabled={writeLocked}
+            aria-disabled={writeLocked}
             className="bz-link-hover"
             style={{
               background: "none",
               border: "none",
-              color: "var(--blue)",
+              color: writeLocked ? "var(--ink-400)" : "var(--blue)",
               fontSize: ".8125rem",
               fontWeight: 700,
-              cursor: "pointer",
+              cursor: writeLocked ? "not-allowed" : "pointer",
               padding: 0,
             }}
           >
-            Write a review
+            {t("reviews.writeReview")}
           </button>
+          {gateMessage && (
+            <div style={{ fontSize: ".75rem", color: "var(--ink-400)", textAlign: "right" }}>
+              {gateMessage}
+            </div>
+          )}
         </div>
       )}
 
-      {composerOpen && (
+      {composerOpen && canWriteReview && (
         <ReviewComposer productId={productId} onDone={() => setComposerOpen(false)} />
       )}
 
@@ -394,10 +431,13 @@ export function ReviewsSection({
               borderRadius: "var(--r-lg)",
               padding: "28px 20px",
               textAlign: "center",
+              opacity: writeLocked ? 0.55 : 1,
             }}
           >
             <div style={{ fontSize: ".9375rem", color: "var(--ink-500)" }}>
-              No reviews yet — be the first to review this product.
+              {writeLocked
+                ? (gateMessage ?? t("reviews.purchaseFirst"))
+                : t("reviews.noReviewsYet")}
             </div>
           </div>
         )

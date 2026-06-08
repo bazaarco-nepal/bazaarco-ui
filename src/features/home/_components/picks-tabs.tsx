@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
 import { Button, SectionHead, SkeletonCard } from "@/components/ui";
 import { ProductCard, useBz } from "@/components/common";
@@ -19,6 +20,7 @@ function ProductSection({
   seeAllHref: string;
   hideWhenEmpty?: boolean;
 }) {
+  const { t } = useTranslation();
   const { openProduct } = useBz();
   const router = useRouter();
 
@@ -35,7 +37,11 @@ function ProductSection({
       className="bz-container-pad bz-home-section"
       style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px", paddingTop: 36 }}
     >
-      <SectionHead title={title} action="See All" onAction={() => router.push(seeAllHref)} />
+      <SectionHead
+        title={title}
+        action={t("common.seeAll")}
+        onAction={() => router.push(seeAllHref)}
+      />
 
       <div className="bz-picks-grid">
         {isLoading
@@ -58,7 +64,7 @@ function ProductSection({
             disabled={query.isFetchingNextPage}
             onClick={() => query.fetchNextPage()}
           >
-            {query.isFetchingNextPage ? "Loading…" : "Load more"}
+            {query.isFetchingNextPage ? "…" : t("common.loadMore")}
           </Button>
         </div>
       )}
@@ -67,14 +73,19 @@ function ProductSection({
 }
 
 export function PicksSections() {
+  const { t } = useTranslation();
   const topPicks = useTopPicks(7);
   const newArrivals = useNewArrivals();
 
   return (
     <>
-      <ProductSection title="New Arrivals" query={newArrivals} seeAllHref="/browse?sort=newest" />
       <ProductSection
-        title="Top Picks"
+        title={t("home.newArrivals")}
+        query={newArrivals}
+        seeAllHref="/browse?sort=newest"
+      />
+      <ProductSection
+        title={t("home.topPicks")}
         query={topPicks}
         seeAllHref="/browse?sort=popular"
         hideWhenEmpty

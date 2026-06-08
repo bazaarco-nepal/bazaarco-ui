@@ -1,32 +1,36 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchParams } from "next/navigation";
 import { Icon, PageBar, AppLink, SkeletonCard, Button } from "@/components/ui";
 import { ProductCard, useBz } from "@/components/common";
 import { useCatalog } from "@/hooks/use-catalog";
 import { useSearch } from "@/hooks/use-search";
-import { pathFromScreen } from "@/config/routes";
+import {
+  categoryIdsFromSearchParams,
+  pathFromScreen,
+  searchSortFromBrowseParam,
+} from "@/config/routes";
+import { displayCategoryLabel } from "@/lib/locale-display";
+import { useBazaarStore } from "@/store/bazaar-store";
 import type { SearchParams } from "@/services/api/search";
 
 const PER_PAGE = 24;
 
-const SORT_OPTIONS: { value: NonNullable<SearchParams["sort"]>; label: string }[] = [
-  { value: "relevance", label: "Relevancy" },
-  { value: "rating", label: "Top rated" },
-  { value: "price_low", label: "Price: low to high" },
-  { value: "price_high", label: "Price: high to low" },
-];
-
 /** Faceted search results — left filter rail + results grid, Typesense-backed.
  *  Mobile lays the same filters out in a bottom sheet so products come first. */
 export function Search() {
+  const { t } = useTranslation();
+  const locale = useBazaarStore((s) => s.locale);
   const { openProduct } = useBz();
   const { categories: CATEGORIES } = useCatalog();
   const urlParams = useSearchParams();
   const urlQuery = urlParams.get("q")?.trim() ?? "";
+  const catFromUrl = useMemo(() => categoryIdsFromSearchParams(urlParams), [urlParams]);
+  const sortFromUrl = searchSortFromBrowseParam(urlParams.get("sort")) ?? "relevance";
 
-  const [cats, setCats] = useState<string[]>([]);
+  const [cats, setCats] = useState<string[]>(catFromUrl);
   const [sellers, setSellers] = useState<string[]>([]);
   const [sellerSearch, setSellerSearch] = useState("");
   const [pmin, setPmin] = useState("");
@@ -34,9 +38,17 @@ export function Search() {
   const [appliedMin, setAppliedMin] = useState("");
   const [appliedMax, setAppliedMax] = useState("");
   const [rating, setRating] = useState(0);
-  const [sort, setSort] = useState<NonNullable<SearchParams["sort"]>>("relevance");
+  const [sort, setSort] = useState<NonNullable<SearchParams["sort"]>>(sortFromUrl);
   const [page, setPage] = useState(1);
   const [sheet, setSheet] = useState(false); // mobile filter drawer
+
+  useEffect(() => {
+    setCats(catFromUrl);
+  }, [catFromUrl]);
+
+  useEffect(() => {
+    setSort(sortFromUrl);
+  }, [sortFromUrl]);
 
   // Debounce the price inputs so typing a number doesn't fire a query per keystroke.
   useEffect(() => {
@@ -78,7 +90,6 @@ export function Search() {
   const { data, isFetching } = useSearch(params);
 
   const total = data?.total ?? 0;
-  const timeMs = data?.search_time_ms ?? 0;
   const items = data?.items ?? [];
   const catFacets = data?.facets?.categories ?? [];
   const sellerFacets = useMemo(() => {
@@ -89,7 +100,21 @@ export function Search() {
     return filtered.slice(0, 12);
   }, [data, sellerSearch]);
 
-  const catName = (id: string) => (CATEGORIES ?? []).find((c) => c.id === id)?.en ?? id;
+  const sortOptions = useMemo(
+    () =>
+      [
+        { value: "relevance" as const, label: t("search.sortRelevance") },
+        { value: "rating" as const, label: t("search.sortTopRated") },
+        { value: "price_low" as const, label: t("search.sortPriceLow") },
+        { value: "price_high" as const, label: t("search.sortPriceHigh") },
+      ] satisfies { value: NonNullable<SearchParams["sort"]>; label: string }[],
+    [t],
+  );
+
+  const catName = (id: string) => {
+    const c = (CATEGORIES ?? []).find((cat) => cat.id === id);
+    return c ? displayCategoryLabel(c, locale) : id;
+  };
 
   const toggle = (list: string[], set: (v: string[]) => void, value: string) =>
     set(list.includes(value) ? list.filter((x) => x !== value) : [...list, value]);
@@ -106,14 +131,18 @@ export function Search() {
     cats.length + sellers.length + (rating ? 1 : 0) + (pmin !== "" || pmax !== "" ? 1 : 0);
   const hasFilters = activeCount > 0;
 
-  const heading = urlQuery ? `Results for "${urlQuery}"` : "All products";
+  const heading = (() => {
+    if (urlQuery) return t("search.resultsFor", { query: urlQuery });
+    if (cats.length === 1) return catName(cats[0]);
+    return t("search.allProducts");
+  })();
 
   // One filter block, rendered in both the desktop rail and the mobile sheet.
   const filters = (
     <>
-      <FacetGroup title="Categories">
+      <FacetGroup title={t("search.categories")}>
         {catFacets.length === 0 ? (
-          <EmptyHint>No categories</EmptyHint>
+          <EmptyHint>{t("search.noCategories")}</EmptyHint>
         ) : (
           catFacets.map((c) => (
             <FacetRow
@@ -127,11 +156,11 @@ export function Search() {
         )}
       </FacetGroup>
 
-      <FacetGroup title="Sellers">
+      <FacetGroup title={t("search.sellers")}>
         <input
           value={sellerSearch}
           onChange={(e) => setSellerSearch(e.target.value)}
-          placeholder="Search sellers"
+          placeholder={t("search.searchSellers")}
           style={{
             width: "100%",
             padding: "7px 10px",
@@ -142,7 +171,7 @@ export function Search() {
           }}
         />
         {sellerFacets.length === 0 ? (
-          <EmptyHint>No sellers</EmptyHint>
+          <EmptyHint>{t("search.noSellers")}</EmptyHint>
         ) : (
           sellerFacets.map((s) => (
             <FacetRow
@@ -156,13 +185,13 @@ export function Search() {
         )}
       </FacetGroup>
 
-      <FacetGroup title="Price (Rs.)">
+      <FacetGroup title={t("search.price")}>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <input
             type="number"
             value={pmin}
             onChange={(e) => setPmin(e.target.value)}
-            placeholder="min"
+            placeholder={t("search.priceMin")}
             style={priceInput}
           />
           <span style={{ color: "var(--ink-400)" }}>–</span>
@@ -170,13 +199,13 @@ export function Search() {
             type="number"
             value={pmax}
             onChange={(e) => setPmax(e.target.value)}
-            placeholder="max"
+            placeholder={t("search.priceMax")}
             style={priceInput}
           />
         </div>
       </FacetGroup>
 
-      <FacetGroup title="Rating">
+      <FacetGroup title={t("search.rating")}>
         {[4, 3, 2, 1].map((n) => (
           <button
             key={n}
@@ -200,7 +229,7 @@ export function Search() {
               {"★".repeat(n)}
               {"☆".repeat(5 - n)}
             </span>
-            & up
+            {t("search.ratingUp")}
           </button>
         ))}
       </FacetGroup>
@@ -221,7 +250,7 @@ export function Search() {
             cursor: "pointer",
           }}
         >
-          Clear all filters
+          {t("search.clearAllFilters")}
         </button>
       ) : null}
     </>
@@ -249,17 +278,18 @@ export function Search() {
         }}
       >
         <AppLink href={pathFromScreen("home")} className="bz-crumb">
-          Home
+          {t("common.home")}
         </AppLink>
         <Icon name="chevronRight" size={13} color="var(--ink-300)" />
         <span style={{ color: "var(--ink-700)" }}>
-          {urlQuery ? `Search: "${urlQuery}"` : "Search"}
+          {urlQuery ? t("search.searchLabel", { query: urlQuery }) : t("search.title")}
         </span>
       </div>
 
+      {/* Mobile: heading spans full width above filters + results. */}
       <div
+        className="bz-show-mobile bz-show-mobile--flex"
         style={{
-          display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           gap: 12,
@@ -276,10 +306,9 @@ export function Search() {
         >
           {heading}
         </h1>
-        {/* Mobile-only: small filter icon, pinned to the right of the heading. */}
         <button
           type="button"
-          aria-label="Filters"
+          aria-label={t("search.filtersAria")}
           className="bz-show-mobile bz-show-mobile--flex"
           onClick={() => setSheet(true)}
           style={{
@@ -329,6 +358,18 @@ export function Search() {
 
         {/* ---- Main results ---- */}
         <main style={{ flex: "1 1 420px", minWidth: 0 }}>
+          <h1
+            className="bz-hide-mobile"
+            style={{
+              margin: "0 0 4px",
+              fontSize: "1.5rem",
+              fontWeight: 800,
+              color: "var(--blue-deep)",
+              letterSpacing: "-.01em",
+            }}
+          >
+            {heading}
+          </h1>
           <div
             style={{
               display: "flex",
@@ -342,14 +383,9 @@ export function Search() {
               className="tnum"
               style={{ color: "var(--ink-500)", fontSize: ".875rem", marginRight: "auto" }}
             >
-              {isFetching && !data ? (
-                "Searching…"
-              ) : (
-                <>
-                  <b style={{ color: "var(--ink-900)" }}>{total.toLocaleString()}</b> products found
-                  in {timeMs}ms
-                </>
-              )}
+              {isFetching && !data
+                ? t("search.searching")
+                : t("search.productsFound", { count: total.toLocaleString() })}
             </span>
             <label style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
               <span
@@ -361,7 +397,7 @@ export function Search() {
                   letterSpacing: ".06em",
                 }}
               >
-                Sort
+                {t("search.sort")}
               </span>
               <select
                 value={sort}
@@ -377,7 +413,7 @@ export function Search() {
                   cursor: "pointer",
                 }}
               >
-                {SORT_OPTIONS.map((o) => (
+                {sortOptions.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
                   </option>
@@ -402,11 +438,9 @@ export function Search() {
                   marginBottom: 6,
                 }}
               >
-                No products match
+                {t("search.noProductsMatch")}
               </div>
-              <div style={{ fontSize: ".875rem" }}>
-                Try a different search or clear your filters.
-              </div>
+              <div style={{ fontSize: ".875rem" }}>{t("search.tryDifferent")}</div>
             </div>
           ) : (
             <>
@@ -476,10 +510,10 @@ export function Search() {
                 flexShrink: 0,
               }}
             >
-              <h3 style={{ margin: 0, fontSize: "1.125rem" }}>Filters</h3>
+              <h3 style={{ margin: 0, fontSize: "1.125rem" }}>{t("search.filters")}</h3>
               <button
                 onClick={() => setSheet(false)}
-                aria-label="Close filters"
+                aria-label={t("search.closeFilters")}
                 style={{
                   width: 36,
                   height: 36,
@@ -508,7 +542,9 @@ export function Search() {
               }}
             >
               <Button variant="primary" full onClick={() => setSheet(false)}>
-                Show {total.toLocaleString()} {total === 1 ? "result" : "results"}
+                {total === 1
+                  ? t("search.showResult", { count: total.toLocaleString() })
+                  : t("search.showResults", { count: total.toLocaleString() })}
               </Button>
             </div>
           </div>

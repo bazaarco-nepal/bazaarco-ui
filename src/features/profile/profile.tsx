@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Icon,
   Logo,
@@ -64,6 +65,7 @@ import {
   BuyerAvatar,
   ChangePasswordModal,
   LogoutConfirmModal,
+  LanguageToggle,
 } from "@/components/common";
 import { pathFromScreen } from "@/config/routes";
 import type { WriteReviewProps } from "@/types";
@@ -146,6 +148,7 @@ function orderStatusMeta(status: string) {
 export const reviewProductRef = { current: null as string | null };
 
 export function Orders() {
+  const { t } = useTranslation();
   const { nav, openTracking } = useBz();
   const { data: ordersData = [], isLoading, isError, error } = useOrders();
   const cancelOrder = useCancelOrder();
@@ -182,16 +185,16 @@ export function Orders() {
             color: "var(--blue-deep)",
           }}
         >
-          My orders
+          {t("profile.myOrders")}
         </h1>
 
         <div style={{ marginBottom: 24 }}>
           <ChipGroup
             options={[
-              { value: "all", label: "All" },
-              { value: "active", label: "Active" },
-              { value: "delivered", label: "Delivered" },
-              { value: "cancelled", label: "Cancelled" },
+              { value: "all", label: t("profile.filterAll") },
+              { value: "active", label: t("profile.filterActive") },
+              { value: "delivered", label: t("profile.filterDelivered") },
+              { value: "cancelled", label: t("profile.filterCancelled") },
             ]}
             value={filter}
             onChange={setFilter}
@@ -200,9 +203,9 @@ export function Orders() {
 
         {orders.length === 0 ? (
           <EmptyState
-            title="No orders yet"
-            message="When you order, it shows up here."
-            cta="Start shopping"
+            title={t("orders.noOrders")}
+            message={t("profile.noOrdersMessage")}
+            cta={t("profile.startShopping")}
             ctaHref={pathFromScreen("home")}
           />
         ) : (
@@ -413,6 +416,7 @@ function AcctRow({ icon, title, sub, badge, accent, href, onNavigate, onClick })
 }
 
 export function Profile() {
+  const { t } = useTranslation();
   const { nav, toast } = useBz();
   const logoutMutation = useLogout();
   const deleteMutation = useDeleteAccount();
@@ -720,11 +724,16 @@ export function Profile() {
               <div className="bz-acct-header__name bz-greet--desktop">
                 {displayName(user, "Guest")}
               </div>
-              <div className="bz-acct-header__name bz-greet--mobile">Hi, {firstName}</div>
+              <div className="bz-acct-header__name bz-greet--mobile">
+                {t("profile.hi", { name: firstName })}
+              </div>
               <div className="bz-acct-header__meta tnum">
                 {user?.email ?? ""}
                 {memberSince && (
-                  <span className="bz-acct-header__member"> · Member since {memberSince}</span>
+                  <span className="bz-acct-header__member">
+                    {" "}
+                    · {t("profile.memberSince", { year: memberSince })}
+                  </span>
                 )}
               </div>
             </div>
@@ -734,33 +743,33 @@ export function Profile() {
             href={pathFromScreen("profile-edit")}
             onNavigate={() => nav("profile-edit")}
           >
-            <span className="bz-edit--full">Edit profile</span>
-            <span className="bz-edit--short">Edit</span>
+            <span className="bz-edit--full">{t("profile.editProfile")}</span>
+            <span className="bz-edit--short">{t("profile.edit")}</span>
           </Button>
         </div>
 
         <div className="bz-acct-stats">
           <StatTile
             value={ordersQuery.isLoading ? dash : totalOrders}
-            label="Orders"
+            label={t("profile.ordersLabel")}
             href={pathFromScreen("orders")}
             onNavigate={() => nav("orders")}
           />
           <StatTile
             value={cartQuery.isLoading ? dash : cartCount}
-            label="In cart"
+            label={t("profile.inCart")}
             href={pathFromScreen("cart")}
             onNavigate={() => nav("cart")}
           />
           <StatTile
             value={wishlistQuery.isLoading ? dash : wishlistCount}
-            label="Wishlist"
+            label={t("profile.wishlist")}
             href={pathFromScreen("wishlist")}
             onNavigate={() => nav("wishlist")}
           />
           <StatTile
             value={bargainsQuery.isLoading ? dash : activeBargains}
-            label="Bargains"
+            label={t("profile.bargainsLabel")}
             href={pathFromScreen("bargains")}
             onNavigate={() => nav("bargains")}
           />
@@ -769,30 +778,42 @@ export function Profile() {
 
       {/* SHOPPING — My orders carries the accent + live active count */}
       <section className="bz-acct-group">
-        <h2 className="bz-acct-group__title">Shopping</h2>
+        <h2 className="bz-acct-group__title">{t("profile.shopping")}</h2>
         <div className="bz-acct-group__cards">
           <AcctRow
             accent
             icon="package"
-            title="My orders"
-            badge={activeOrders > 0 ? `${activeOrders} active` : undefined}
-            sub="Track, return, re-order"
+            title={t("profile.myOrders")}
+            badge={
+              activeOrders > 0 ? t("profile.activeOrdersBadge", { count: activeOrders }) : undefined
+            }
+            sub={t("profile.trackReturn")}
             href={pathFromScreen("orders")}
             onNavigate={() => nav("orders")}
           />
           <AcctRow
             icon="cart"
-            title="My cart"
+            title={t("profile.myCart")}
             sub={
-              cartCount ? `${plural(cartCount, "item")} ready for checkout` : "Your cart is empty"
+              cartCount
+                ? cartCount === 1
+                  ? t("profile.itemReadyCheckout", { count: cartCount })
+                  : t("profile.itemsReadyCheckout", { count: cartCount })
+                : t("cart.empty")
             }
             href={pathFromScreen("cart")}
             onNavigate={() => nav("cart")}
           />
           <AcctRow
             icon="heart"
-            title="Wishlist"
-            sub={wishlistCount ? plural(wishlistCount, "saved product") : "No saved products yet"}
+            title={t("profile.wishlist")}
+            sub={
+              wishlistCount
+                ? wishlistCount === 1
+                  ? t("profile.savedProduct", { count: wishlistCount })
+                  : t("profile.savedProducts", { count: wishlistCount })
+                : t("profile.noSavedProducts")
+            }
             href={pathFromScreen("wishlist")}
             onNavigate={() => nav("wishlist")}
           />
@@ -801,31 +822,49 @@ export function Profile() {
 
       {/* ACTIVITY */}
       <section className="bz-acct-group">
-        <h2 className="bz-acct-group__title">Activity</h2>
+        <h2 className="bz-acct-group__title">{t("profile.activity")}</h2>
         <div className="bz-acct-group__cards">
           <AcctRow
             icon="messageDots"
-            title="My messages"
+            title={t("profile.myMessages")}
             badge={unreadMessages > 0 ? String(unreadMessages) : undefined}
-            sub={unreadMessages ? plural(unreadMessages, "unread message") : "Chats with sellers"}
+            sub={
+              unreadMessages
+                ? unreadMessages === 1
+                  ? t("profile.unreadMessage", { count: unreadMessages })
+                  : t("profile.unreadMessages", { count: unreadMessages })
+                : t("profile.chatsWithSellers")
+            }
             href={pathFromScreen("messages")}
             onNavigate={() => nav("messages")}
           />
           <AcctRow
             icon="bargain"
-            title="My bargains"
+            title={t("profile.myBargains")}
             badge={activeBargains > 0 ? String(activeBargains) : undefined}
-            sub={activeBargains ? plural(activeBargains, "active offer") : "No active offers"}
+            sub={
+              activeBargains
+                ? activeBargains === 1
+                  ? t("profile.activeOffer", { count: activeBargains })
+                  : t("profile.activeOffers", { count: activeBargains })
+                : t("profile.noActiveOffers")
+            }
             href={pathFromScreen("bargains")}
             onNavigate={() => nav("bargains")}
           />
           <AcctRow
             icon="mapPin"
-            title="Saved addresses"
+            title={t("profile.savedAddresses")}
             sub={
               savedAddresses.length
-                ? `${savedAddresses.length} saved · ${savedAddresses.find((a) => a.isDefault)?.label ?? savedAddresses[0]?.label ?? "Home"} default`
-                : "Home, Office, and more"
+                ? t("profile.addressesSaved", {
+                    count: savedAddresses.length,
+                    default:
+                      savedAddresses.find((a) => a.isDefault)?.label ??
+                      savedAddresses[0]?.label ??
+                      "Home",
+                  })
+                : t("profile.addressesHint")
             }
             href={pathFromScreen("addresses")}
             onNavigate={() => nav("addresses")}
@@ -835,20 +874,40 @@ export function Profile() {
 
       {/* SETTINGS & HELP */}
       <section className="bz-acct-group">
-        <h2 className="bz-acct-group__title">Settings &amp; help</h2>
+        <h2 className="bz-acct-group__title">{t("profile.settingsHelp")}</h2>
         <div className="bz-acct-group__cards">
+          <div
+            className="bz-acct-row"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 16,
+              padding: "16px 18px",
+            }}
+          >
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 800, color: "var(--ink-900)", fontSize: ".9375rem" }}>
+                {t("profile.language")}
+              </div>
+              <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 2 }}>
+                {t("profile.languageSub")}
+              </div>
+            </div>
+            <LanguageToggle compact />
+          </div>
           {requiresPassword && (
             <AcctRow
               icon="lock"
-              title="Change password"
-              sub="Update your account password"
+              title={t("profile.changePassword")}
+              sub={t("profile.changePasswordSub")}
               onClick={() => setChangePwdOpen(true)}
             />
           )}
           <AcctRow
             icon="headphones"
-            title="Help & support"
-            sub="Chat, call, FAQs"
+            title={t("profile.helpSupport")}
+            sub={t("profile.helpSupportSub")}
             href={pathFromScreen("help")}
             onNavigate={() => nav("help")}
           />
@@ -857,19 +916,19 @@ export function Profile() {
 
       {/* LEGAL — always visible; no longer nested under an Account toggle */}
       <section className="bz-acct-group">
-        <h2 className="bz-acct-group__title">Legal</h2>
+        <h2 className="bz-acct-group__title">{t("profile.legal")}</h2>
         <div className="bz-acct-group__cards">
           <AcctRow
             icon="shieldCheck"
-            title="Privacy policy"
-            sub="How we handle your data"
+            title={t("profile.privacyPolicy")}
+            sub={t("profile.privacySub")}
             href={pathFromScreen("privacy")}
             onNavigate={() => nav("privacy")}
           />
           <AcctRow
             icon="file"
-            title="Terms & conditions"
-            sub="Marketplace rules"
+            title={t("profile.termsConditions")}
+            sub={t("profile.termsSub")}
             href={pathFromScreen("terms")}
             onNavigate={() => nav("terms")}
           />
@@ -879,7 +938,7 @@ export function Profile() {
       {/* Delete account — destructive, sits just above logout */}
       <section className="bz-acct-group">
         <button className="bz-delete-link" onClick={() => setConfirmDelete(true)}>
-          Delete my account
+          {t("profile.deleteAccount")}
         </button>
       </section>
 
@@ -888,7 +947,7 @@ export function Profile() {
           open the same confirmation modal before signing out. */}
       <div className="bz-profile__logout-mobile">
         <Button variant="danger" full icon="logout" onClick={() => setConfirmLogout(true)}>
-          Log out
+          {t("profile.logOut")}
         </Button>
       </div>
 

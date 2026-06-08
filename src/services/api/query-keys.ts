@@ -16,6 +16,7 @@ export const queryKeys = {
     productReviews: (id: string) => ["catalog", "product", id, "reviews"] as const,
     productProfile: (id: string) => ["catalog", "product", id, "profile"] as const,
     ratingDistribution: (id: string) => ["catalog", "product", id, "rating-distribution"] as const,
+    reviewEligibility: (id: string) => ["catalog", "product", id, "review-eligibility"] as const,
     productQuestions: (id: string) => ["catalog", "product", id, "questions"] as const,
   },
   home: ["home"] as const,
@@ -44,7 +45,7 @@ export const queryKeys = {
   seller: {
     organization: ["seller", "organization"] as const,
     dashboard: (range: string) => ["seller", "dashboard", range] as const,
-    inbox: ["seller", "inbox"] as const,
+    inbox: (sellerId?: string | null) => ["seller", "inbox", sellerId ?? "none"] as const,
     inventory: ["seller", "inventory"] as const,
     bargains: ["seller", "bargains"] as const,
     reviews: ["seller", "reviews"] as const,

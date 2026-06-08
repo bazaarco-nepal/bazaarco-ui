@@ -132,10 +132,10 @@ export function pathFromScreen(
   orderId?: string,
 ): string {
   if (screen === "pdp" && productId) {
-    return `/product/${productId}`;
+    return `/product/${encodeURIComponent(productId)}`;
   }
   if (screen === "store" && productId) {
-    return `/store/${productId}`;
+    return `/store/${encodeURIComponent(productId)}`;
   }
   if (screen === "tracking" && orderId) {
     return `/orders/tracking/${encodeURIComponent(orderId)}`;
@@ -150,8 +150,35 @@ export type BrowsePathOptions = {
   view?: "categories";
 };
 
-/** Build `/browse` with optional search, category, and sort query params. */
-export function browsePath(options?: BrowsePathOptions): string {
+const SEARCH_SORTS = new Set(["relevance", "rating", "price_low", "price_high"]);
+
+/** Map legacy browse sort keys to faceted search sort keys. */
+export function searchSortFromBrowseParam(
+  sort: string | null | undefined,
+): "relevance" | "rating" | "price_low" | "price_high" | undefined {
+  const raw = sort?.trim();
+  if (!raw) return undefined;
+  if (SEARCH_SORTS.has(raw)) {
+    return raw as "relevance" | "rating" | "price_low" | "price_high";
+  }
+  const mapped: Record<string, "relevance" | "rating" | "price_low" | "price_high"> = {
+    popular: "relevance",
+    newest: "relevance",
+    low: "price_low",
+    high: "price_high",
+    rating: "rating",
+  };
+  return mapped[raw];
+}
+
+export type SearchPathOptions = {
+  q?: string;
+  cat?: string | string[];
+  sort?: string;
+};
+
+/** Build `/search` with optional query, category, and sort params. */
+export function searchPath(options?: SearchPathOptions): string {
   const params = new URLSearchParams();
   const q = options?.q?.trim();
   if (q) params.set("q", q);
@@ -160,17 +187,29 @@ export function browsePath(options?: BrowsePathOptions): string {
     const joined = (Array.isArray(cats) ? cats : [cats]).filter(Boolean).join(",");
     if (joined) params.set("cat", joined);
   }
-  const sort = options?.sort?.trim();
-  if (sort) params.set("sort", sort);
-  if (options?.view === "categories") params.set("view", "categories");
+  const sort = searchSortFromBrowseParam(options?.sort);
+  if (sort && sort !== "relevance") params.set("sort", sort);
   const qs = params.toString();
-  return qs ? `/browse?${qs}` : "/browse";
+  return qs ? `/search?${qs}` : "/search";
 }
 
-/** Build `/search` with an optional query param — the faceted search results page. */
-export function searchPath(options?: { q?: string }): string {
-  const q = options?.q?.trim();
-  return q ? `/search?q=${encodeURIComponent(q)}` : "/search";
+/** Build `/browse` — product listings delegate to `/search`; only the category browser stays on browse. */
+export function browsePath(options?: BrowsePathOptions): string {
+  if (options?.view === "categories") {
+    return "/browse?view=categories";
+  }
+  return searchPath({
+    q: options?.q,
+    cat: options?.cat,
+    sort: options?.sort,
+  });
+}
+
+/** Canonical absolute URL for sharing a product link. */
+export function productShareUrl(productId: string, origin?: string): string {
+  const base =
+    origin ?? (typeof window !== "undefined" ? window.location.origin.replace(/\/$/, "") : "");
+  return `${base}${pathFromScreen("pdp", productId)}`;
 }
 
 // Browser-tab label per screen. Rendered as `BazaarCo - <label>`.
@@ -276,13 +315,13 @@ export function screenFromPath(pathname: string): string {
 }
 
 export function productIdFromPath(pathname: string): string | null {
-  const match = pathname.match(/^\/product\/([^/]+)/);
-  return match?.[1] ?? null;
+  const match = pathname.match(/^\/product\/([^/?#]+)/);
+  return match?.[1] ? decodeURIComponent(match[1]) : null;
 }
 
 export function storeIdFromPath(pathname: string): string | null {
-  const match = pathname.match(/^\/store\/([^/]+)/);
-  return match?.[1] ?? null;
+  const match = pathname.match(/^\/store\/([^/?#]+)/);
+  return match?.[1] ? decodeURIComponent(match[1]) : null;
 }
 
 export function orderIdFromPath(pathname: string): string | null {

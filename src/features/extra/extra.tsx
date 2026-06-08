@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Icon,
   Logo,
@@ -37,7 +38,7 @@ import {
   AppLink,
 } from "@/components/ui";
 import { usePathname } from "next/navigation";
-import { orderIdFromPath, pathFromScreen } from "@/config/routes";
+import { orderIdFromPath, pathFromScreen, searchPath } from "@/config/routes";
 import { deliveryTypeLabel } from "@/lib/delivery-options";
 import { useCatalog } from "@/hooks/use-catalog";
 import { useTracking } from "@/hooks/use-tracking";
@@ -62,6 +63,7 @@ import {
 } from "@/components/common";
 
 export function Tracking() {
+  const { t } = useTranslation();
   const { nav } = useBz();
   const pathname = usePathname();
   const routeOrderId = orderIdFromPath(pathname);
@@ -81,9 +83,9 @@ export function Tracking() {
       >
         <EmptyState
           icon="package"
-          title="No order selected"
-          message="Open tracking from My orders or right after checkout."
-          cta="My orders"
+          title={t("tracking.noOrderTitle")}
+          message={t("tracking.noOrderMessage")}
+          cta={t("tracking.myOrders")}
           ctaHref={pathFromScreen("orders")}
         />
       </div>
@@ -259,9 +261,11 @@ export function Tracking() {
       </div>
       {confirmCancel && order && (
         <ConfirmModal
-          title="Cancel order?"
-          message={`Cancel order #${order.id}? You can only cancel before BazaarCo pickup collects it from the seller.`}
-          confirmLabel={cancelOrder.isPending ? "Cancelling…" : "Cancel order"}
+          title={t("tracking.cancelOrderTitle")}
+          message={t("tracking.cancelOrderMessage", { id: order.id })}
+          confirmLabel={
+            cancelOrder.isPending ? t("tracking.cancelling") : t("tracking.cancelOrder")
+          }
           onConfirm={async () => {
             try {
               await cancelOrder.mutateAsync(order.id);
@@ -490,6 +494,7 @@ function TrackingSidebar({ nav, order }) {
 }
 
 export function Wishlist() {
+  const { t } = useTranslation();
   const { nav, openProduct, toggleSellerWish, wishSellers, authed } = useBz();
   const { data, isLoading, isError, error } = useWishlistQuery(authed);
   const products = data?.products ?? [];
@@ -504,9 +509,9 @@ export function Wishlist() {
         style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px" }}
       >
         <EmptyState
-          title="Sign in to see your wishlist"
-          message="Save products and sellers you love — they stay on your account."
-          cta="Sign in"
+          title={t("wishlist.signInTitle")}
+          message={t("wishlist.signInMessage")}
+          cta={t("wishlist.signIn")}
           ctaHref={pathFromScreen("auth")}
         />
       </div>
@@ -528,11 +533,11 @@ export function Wishlist() {
         style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px" }}
       >
         <EmptyState
-          title="Your wishlist is empty"
-          message="Tap the heart on any product or seller to save them here."
-          cta="Start exploring"
+          title={t("wishlist.emptyTitle")}
+          message={t("wishlist.emptyMessage")}
+          cta={t("wishlist.startExploring")}
           ctaHref={pathFromScreen("home")}
-          secondary="Watch"
+          secondary={t("checkout.watch")}
           secondaryHref={pathFromScreen("video")}
         />
       </div>
@@ -556,7 +561,7 @@ export function Wishlist() {
             color: "var(--blue-deep)",
           }}
         >
-          My wishlist
+          {t("wishlist.myWishlist")}
         </h1>
         <h1
           className="bz-hide-mobile"
@@ -567,19 +572,19 @@ export function Wishlist() {
             color: "var(--blue-deep)",
           }}
         >
-          Wishlist{" "}
+          {t("profile.wishlist")}{" "}
           <span
             className="tnum"
             style={{ color: "var(--ink-400)", fontWeight: 600, fontSize: "1rem" }}
           >
-            · {totalSaved} saved
+            · {t("wishlist.savedCount", { count: totalSaved })}
           </span>
         </h1>
 
         {sellers.length > 0 && (
           <section style={{ marginBottom: 36 }}>
             <h2 style={{ margin: "0 0 14px", fontSize: "1.125rem", fontWeight: 700 }}>
-              Saved sellers
+              {t("wishlist.savedSellers")}
             </h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {sellers.map((s) => (
@@ -609,7 +614,7 @@ export function Wishlist() {
         {products.length > 0 && (
           <section>
             <h2 style={{ margin: "0 0 14px", fontSize: "1.125rem", fontWeight: 700 }}>
-              Saved products
+              {t("wishlist.savedProducts")}
             </h2>
             <div
               className="bz-grid-cards"
@@ -628,15 +633,16 @@ export function Wishlist() {
 }
 
 export function Bargains() {
-  const { nav, openProduct, addToCart } = useBz();
+  const { t } = useTranslation();
+  const { nav, openProduct, addToCart, toast } = useBz();
   const { data: offers = [], isLoading, isError, error } = useBargains();
 
   const tones = { pending: "saffron", countered: "blue", accepted: "success", declined: "neutral" };
   const labels = {
-    pending: "Waiting for seller",
-    countered: "Seller countered",
-    accepted: "Accepted · add to cart",
-    declined: "Declined",
+    pending: t("bargains.statusPending"),
+    countered: t("bargains.statusCountered"),
+    accepted: t("bargains.statusAccepted"),
+    declined: t("bargains.statusDeclined"),
   };
 
   return (
@@ -654,19 +660,19 @@ export function Bargains() {
               color: "var(--blue-deep)",
             }}
           >
-            Bargain
+            {t("bargains.title")}
           </h1>
           <p style={{ margin: "4px 0 0", color: "var(--ink-500)", fontSize: ".875rem" }}>
-            Your offers and seller responses.
+            {t("bargains.subtitle")}
           </p>
         </div>
 
         {offers.length === 0 ? (
           <EmptyState
-            title="No offers yet"
-            message="Bargain on any product to see your offers here."
-            cta="Browse products"
-            ctaHref={pathFromScreen("browse")}
+            title={t("bargains.emptyTitle")}
+            message={t("bargains.emptyMessage")}
+            cta={t("bargains.browseProducts")}
+            ctaHref={searchPath()}
           />
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -796,7 +802,7 @@ export function Bargains() {
                         <Button
                           variant="primary"
                           size="sm"
-                          onClick={() => toast("Counter accepted")}
+                          onClick={() => toast(t("bargains.counterAccepted"))}
                         >
                           Accept Rs. {o.sellerCounter.toLocaleString()}
                         </Button>
@@ -811,7 +817,11 @@ export function Bargains() {
                       </>
                     )}
                     {o.status === "pending" && (
-                      <Button variant="ghost" size="sm" onClick={() => toast("Offer withdrawn")}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toast(t("bargains.offerWithdrawn"))}
+                      >
                         Withdraw offer
                       </Button>
                     )}
@@ -834,7 +844,7 @@ export function Bargains() {
 
         {offers.length > 0 && (
           <div style={{ marginTop: 24 }}>
-            <Button variant="secondary" full icon="bargain" href={pathFromScreen("browse")}>
+            <Button variant="secondary" full icon="bargain" href={searchPath()}>
               Find products to bargain on
             </Button>
           </div>

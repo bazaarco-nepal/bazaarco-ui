@@ -7,6 +7,7 @@ export type {
   Product,
   CartLine,
   ProductReview,
+  ProductReviewEligibility,
   ProductQuestion,
   ProductQuestionAnswer,
   SellerReview,

@@ -91,6 +91,10 @@ export function Auth() {
   const [otp, setOtp] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  // Legal acceptance state
+  const [acceptedLegal, setAcceptedLegal] = useState(false);
+  const [acceptedMarketing, setAcceptedMarketing] = useState(false);
+
   // Forgot password state
   const [forgotMode, setForgotMode] = useState(false);
   const [forgotStep, setForgotStep] = useState<1 | 2>(1);
@@ -173,6 +177,12 @@ export function Auth() {
           name: fullName.trim(),
           password,
           intent,
+          acceptances: [
+            { slug: 'age-verification', version: '1.0' },
+            { slug: 'terms-and-conditions', version: '1.0' },
+            { slug: 'privacy-policy', version: '1.0' },
+            ...(acceptedMarketing ? [{ slug: 'cookie-tracking-notice', version: '1.0' }] : []),
+          ],
         });
         setPendingVerification(pending);
         setOtp("");
@@ -242,7 +252,10 @@ export function Auth() {
     isValidEmail(activeEmailTrimmed) &&
     (mode === "login"
       ? loginEmail.trim().length > 0 && password.length > 0
-      : email.trim().length > 0 && fullName.trim().length >= 2 && isStrongPassword(password));
+      : email.trim().length > 0 &&
+        fullName.trim().length >= 2 &&
+        isStrongPassword(password) &&
+        acceptedLegal);
   const canVerify = /^\d{6}$/.test(otp.trim());
 
   const openForgotPassword = () => {
@@ -825,7 +838,7 @@ export function Auth() {
                         autoComplete="name"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        placeholder="e.g. Sita Sharma"
+                        placeholder="e.g. Sampada Poudel"
                         style={inputStyle}
                         minLength={2}
                         maxLength={255}
@@ -888,6 +901,95 @@ export function Auth() {
                     required
                   />
                 </Field>
+
+                {mode === "register" && (
+                  <div style={{ marginBottom: 16, marginTop: 12 }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 16 }}>
+                      <input
+                        type="checkbox"
+                        id="acceptedLegal"
+                        checked={acceptedLegal}
+                        onChange={(e) => setAcceptedLegal(e.target.checked)}
+                        style={{
+                          marginTop: 4,
+                          width: 18,
+                          height: 18,
+                          cursor: "pointer",
+                          flexShrink: 0,
+                        }}
+                        required
+                      />
+                      <label
+                        htmlFor="acceptedLegal"
+                        style={{
+                          fontSize: ".875rem",
+                          color: "var(--ink-700)",
+                          cursor: "pointer",
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        I'm 18 or older and agree to the{" "}
+                        <a
+                          href="/legal/terms-and-conditions"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            color: "var(--blue)",
+                            textDecoration: "none",
+                            fontWeight: 600,
+                          }}
+                        >
+                          Terms & Conditions
+                        </a>
+                        {" "}and{" "}
+                        <a
+                          href="/legal/privacy-policy"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            color: "var(--blue)",
+                            textDecoration: "none",
+                            fontWeight: 600,
+                          }}
+                        >
+                          Privacy Policy
+                        </a>
+                      </label>
+                    </div>
+
+                    <div style={{ borderTop: "1px solid var(--line-200)", paddingTop: 12 }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                        <input
+                          type="checkbox"
+                          id="acceptedMarketing"
+                          checked={acceptedMarketing}
+                          onChange={(e) => setAcceptedMarketing(e.target.checked)}
+                          style={{
+                            marginTop: 4,
+                            width: 18,
+                            height: 18,
+                            cursor: "pointer",
+                            flexShrink: 0,
+                          }}
+                        />
+                        <label
+                          htmlFor="acceptedMarketing"
+                          style={{
+                            fontSize: ".875rem",
+                            color: "var(--ink-500)",
+                            cursor: "pointer",
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          Send me offers and updates
+                          <span style={{ color: "var(--ink-400)", fontSize: ".8125rem", marginLeft: 4 }}>
+                            (optional)
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {mode === "login" && (
                   <div style={{ textAlign: "right", marginBottom: 12, marginTop: -4 }}>

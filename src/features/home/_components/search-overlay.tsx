@@ -17,7 +17,7 @@ const POPULAR_SEARCHES = [
 ];
 
 export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { query, setQuery, submitSearch } = useBz();
+  const { query, setQuery, submitSearch, clearSearch } = useBz();
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -122,7 +122,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
               type="button"
               aria-label="Clear search"
               onClick={() => {
-                setQuery("");
+                clearSearch();
                 inputRef.current?.focus();
               }}
               style={{

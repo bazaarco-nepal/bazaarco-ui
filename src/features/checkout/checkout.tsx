@@ -63,7 +63,7 @@ import {
   Footer,
   DevViewSwitcher,
 } from "@/components/common";
-import { pathFromScreen } from "@/config/routes";
+import { pathFromScreen, searchPath } from "@/config/routes";
 import {
   resolveDelivery,
   deliveryChoices,
@@ -369,7 +369,7 @@ export function Cart() {
           title="Your cart is empty"
           message="Looks like you haven't added anything yet. Let's find something you'll love."
           cta="Browse products"
-          ctaHref={pathFromScreen("browse")}
+          ctaHref={searchPath()}
           secondary="Watch"
           secondaryHref={pathFromScreen("video")}
         />

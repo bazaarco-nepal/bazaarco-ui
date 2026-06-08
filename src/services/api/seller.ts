@@ -57,6 +57,10 @@ export interface SellerInventoryItem {
   // to prefill the edit form.
   allowBargaining?: boolean;
   minimumPrice?: number | null;
+  listingStatus?: "active" | "frozen" | "pending_reinstatement";
+  moderationFeedback?: string | null;
+  moderationFrozenAt?: string | null;
+  sellerAcknowledgedAt?: string | null;
 }
 
 export interface SellerOrder {
@@ -103,6 +107,14 @@ export const sellerApi = {
 
   updateProduct(id: string, payload: UpdateProductPayload): Promise<Product> {
     return patchData<Product>(`/seller/products/${encodeURIComponent(id)}`, payload);
+  },
+
+  acknowledgeProductModeration(id: string): Promise<{
+    id: string;
+    listingStatus: "pending_reinstatement";
+    sellerAcknowledgedAt: string;
+  }> {
+    return postData(`/seller/products/${encodeURIComponent(id)}/acknowledge-moderation`, {});
   },
 
   // Hard-deletes the listing and cascades its reviews, Q&A, bargains, wishlist

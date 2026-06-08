@@ -99,6 +99,12 @@ export interface ProductReview {
   tint: Tint;
 }
 
+export interface ProductReviewEligibility {
+  canReview: boolean;
+  hasPurchased: boolean;
+  hasReviewed: boolean;
+}
+
 export interface SellerReview {
   id: string;
   sellerId: string;

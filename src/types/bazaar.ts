@@ -1,9 +1,13 @@
 import type { CartLine, Product } from "@/types/catalog";
 import type { CheckoutPayload } from "@/services/api/orders";
+import type { ToastVariant } from "@/lib/toast-variant";
+
+export type { ToastVariant };
 
 export interface BazaarToast {
   msg: string;
   id: number;
+  variant: ToastVariant;
 }
 
 export interface BazaarContextValue {
@@ -28,11 +32,12 @@ export interface BazaarContextValue {
   wishSellers: string[];
   toggleWish: (productId: string) => Promise<void>;
   toggleSellerWish: (sellerId: string) => Promise<void>;
-  toast: (msg: string) => void;
+  toast: (msg: string, variant?: ToastVariant) => void;
   promptLogin: (message?: string) => void;
   query: string;
   setQuery: (query: string) => void;
   submitSearch: () => void;
+  clearSearch: () => void;
   placeOrder: (payload: CheckoutPayload) => Promise<void>;
   authed: boolean;
   setAuthed: (authed: boolean) => void;

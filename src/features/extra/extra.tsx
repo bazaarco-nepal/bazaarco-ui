@@ -37,7 +37,7 @@ import {
   AppLink,
 } from "@/components/ui";
 import { usePathname } from "next/navigation";
-import { orderIdFromPath, pathFromScreen } from "@/config/routes";
+import { orderIdFromPath, pathFromScreen, searchPath } from "@/config/routes";
 import { deliveryTypeLabel } from "@/lib/delivery-options";
 import { useCatalog } from "@/hooks/use-catalog";
 import { useTracking } from "@/hooks/use-tracking";
@@ -666,7 +666,7 @@ export function Bargains() {
             title="No offers yet"
             message="Bargain on any product to see your offers here."
             cta="Browse products"
-            ctaHref={pathFromScreen("browse")}
+            ctaHref={searchPath()}
           />
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -834,7 +834,7 @@ export function Bargains() {
 
         {offers.length > 0 && (
           <div style={{ marginTop: 24 }}>
-            <Button variant="secondary" full icon="bargain" href={pathFromScreen("browse")}>
+            <Button variant="secondary" full icon="bargain" href={searchPath()}>
               Find products to bargain on
             </Button>
           </div>

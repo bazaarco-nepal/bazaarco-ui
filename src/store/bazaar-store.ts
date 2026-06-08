@@ -1,5 +1,11 @@
 import { create } from "zustand";
 import {
+  DEFAULT_LOCALE,
+  readLocaleFromStorage,
+  writeLocaleToStorage,
+  type Locale,
+} from "@/i18n/config";
+import {
   DEFAULT_DELIVERY,
   readDeliveryFromStorage,
   writeDeliveryToStorage,
@@ -27,6 +33,8 @@ export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
   buyerPhone: "",
   buyerPhoneHydrated: false,
   deliveryTier: "standard",
+  locale: DEFAULT_LOCALE,
+  localeHydrated: false,
   setAuthed: (authed) => set({ authed }),
   setAuthReady: (authReady) => set({ authReady }),
   hydrateDelivery: () => {
@@ -72,4 +80,12 @@ export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
   setLastOrderId: (lastOrderId) => set({ lastOrderId }),
   setActiveProduct: (activeProduct) => set({ activeProduct }),
   setDeliveryTier: (deliveryTier) => set({ deliveryTier }),
+  hydrateLocale: () => {
+    if (get().localeHydrated) return;
+    set({ locale: readLocaleFromStorage(), localeHydrated: true });
+  },
+  setLocale: (locale: Locale) => {
+    writeLocaleToStorage(locale);
+    set({ locale, localeHydrated: true });
+  },
 }));

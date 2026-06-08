@@ -444,12 +444,7 @@ export function Store() {
                   }}
                 >
                   {products.map((p) => (
-                    <ProductCard
-                      key={p.id}
-                      p={p}
-                      onClick={openProduct}
-                      sale={Boolean(p.original)}
-                    />
+                    <ProductCard key={p.id} p={p} onClick={openProduct} />
                   ))}
                 </div>
               )}

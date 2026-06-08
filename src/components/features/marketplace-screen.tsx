@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { usePathname } from "next/navigation";
 import { screenFromPath, titleForScreen } from "@/config/routes";
 import {
@@ -68,12 +69,13 @@ function ScreenLoader() {
 
 /** Signed-out state for a gated buyer screen — guests land here, then opt in. */
 function SignedOutScreen({ onLogin }: { onLogin: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="bz-container-pad" style={{ padding: "28px 28px 96px" }}>
       <EmptyState
-        title="Log in to continue"
-        message="Sign in to access your account, orders, bargains, messages, and more."
-        cta="Log in"
+        title={t("signedOut.title")}
+        message={t("signedOut.message")}
+        cta={t("signedOut.cta")}
         onCta={onLogin}
       />
     </div>

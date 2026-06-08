@@ -3,8 +3,10 @@ import {
   BUYER_SCREENS,
   SELLER_SCREENS,
   pathFromScreen,
+  productShareUrl,
   screenFromPath,
   browsePath,
+  searchPath,
   titleForScreen,
   searchQueryFromPath,
   categoryIdsFromSearchParams,
@@ -48,6 +50,7 @@ describe("screen <-> path mapping", () => {
 
   it("parametrised screens embed their id", () => {
     expect(pathFromScreen("pdp", "p123")).toBe("/product/p123");
+    expect(pathFromScreen("pdp", "p 123")).toBe("/product/p%20123");
     expect(pathFromScreen("store", "s9")).toBe("/store/s9");
     expect(pathFromScreen("tracking", undefined, undefined, "ORD 1")).toBe(
       "/orders/tracking/ORD%201",
@@ -56,26 +59,44 @@ describe("screen <-> path mapping", () => {
 
   it("extracts ids back out of dynamic paths", () => {
     expect(productIdFromPath("/product/p123")).toBe("p123");
+    expect(productIdFromPath("/product/p%20123")).toBe("p 123");
     expect(orderIdFromPath("/orders/tracking/ORD%201")).toBe("ORD 1");
     expect(screenFromPath("/product/p123")).toBe("pdp");
     expect(screenFromPath("/store/s9")).toBe("store");
   });
 });
 
+describe("productShareUrl", () => {
+  it("builds an encoded absolute product link", () => {
+    expect(productShareUrl("p 1", "https://bazaarco.com")).toBe(
+      "https://bazaarco.com/product/p%201",
+    );
+  });
+});
+
 describe("browsePath", () => {
-  it("plain /browse with no options", () => {
-    expect(browsePath()).toBe("/browse");
-    expect(browsePath({})).toBe("/browse");
+  it("delegates product listings to /search", () => {
+    expect(browsePath()).toBe("/search");
+    expect(browsePath({})).toBe("/search");
+    expect(browsePath({ q: "  shoes  " })).toBe("/search?q=shoes");
+    expect(browsePath({ cat: ["c1", "c2"] })).toBe("/search?cat=c1%2Cc2");
   });
 
-  it("encodes query, joined categories, and sort", () => {
-    expect(browsePath({ q: "  shoes  " })).toBe("/browse?q=shoes");
-    expect(browsePath({ cat: ["c1", "c2"] })).toBe("/browse?cat=c1%2Cc2");
-    expect(browsePath({ q: "x", sort: "price" })).toBe("/browse?q=x&sort=price");
+  it("keeps the category browser on /browse", () => {
+    expect(browsePath({ view: "categories" })).toBe("/browse?view=categories");
   });
 
   it("drops empty/whitespace-only values", () => {
-    expect(browsePath({ q: "   ", cat: [""], sort: "  " })).toBe("/browse");
+    expect(browsePath({ q: "   ", cat: [""], sort: "  " })).toBe("/search");
+  });
+});
+
+describe("searchPath", () => {
+  it("builds faceted search URLs", () => {
+    expect(searchPath()).toBe("/search");
+    expect(searchPath({ q: "premium" })).toBe("/search?q=premium");
+    expect(searchPath({ cat: "fashion" })).toBe("/search?cat=fashion");
+    expect(searchPath({ sort: "low" })).toBe("/search?sort=price_low");
   });
 });
 

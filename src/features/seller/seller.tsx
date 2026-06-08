@@ -74,6 +74,7 @@ import {
   useSellerDashboard,
   useSellerInbox,
   useSellerInventory,
+  useAcknowledgeProductModeration,
   useSellerBargains,
   useSellerReviews,
   useSellerVideos,
@@ -341,8 +342,11 @@ export function SellerShell({ screen, children }) {
   const { data: bargains = [] } = useSellerBargains();
   const { data: chatInbox } = useChatInbox();
   const chatThreads = chatInbox?.threads ?? [];
+  const newOrders = inbox.filter(
+    (o: SellerInboxOrderItem) => o.status === "placed" && !o.awaitingOtherSellers,
+  ).length;
   const badges = {
-    orders: inbox.filter((o: { status?: string }) => o.status === "placed").length,
+    orders: newOrders,
     chat: chatThreads.reduce((sum, t) => sum + (t.unread ?? 0), 0),
     bargain: bargains.filter(
       (b: { status?: string; accepted?: boolean; rejected?: boolean }) =>
@@ -1556,10 +1560,32 @@ export function SellerDashboard() {
   const todaySales = kpis[0]?.value ?? "Rs. 0";
   const ordersPlaced = funnel.length > 0 ? (funnel[funnel.length - 1]?.value ?? 0) : 0;
   const pendingOrders = inbox.filter(
-    (o: { status?: string }) => o.status === "new" || o.status === "pending",
+    (o: SellerInboxOrderItem) => o.status === "placed" && !o.awaitingOtherSellers,
   ).length;
   const lowStock = inventory.filter((i: { stock?: number }) => (i.stock ?? 0) <= 3).length;
+  const frozenListings = inventory.filter(
+    (i: { listingStatus?: string }) => i.listingStatus === "frozen",
+  );
+  const pendingReview = inventory.filter(
+    (i: { listingStatus?: string }) => i.listingStatus === "pending_reinstatement",
+  );
   const tasks = [
+    frozenListings.length > 0 && {
+      icon: "lock",
+      tint: "red",
+      label: `${frozenListings.length} listing${frozenListings.length > 1 ? "s" : ""} taken down — fix required`,
+      to: "s-products",
+      urgent: true,
+      action: { label: "View products", onAct: () => nav("s-products") },
+    },
+    pendingReview.length > 0 && {
+      icon: "clock",
+      tint: "saffron",
+      label: `${pendingReview.length} listing${pendingReview.length > 1 ? "s" : ""} awaiting admin review`,
+      to: "s-products",
+      urgent: false,
+      action: { label: "View status", onAct: () => nav("s-products") },
+    },
     pendingOrders > 0 && {
       icon: "package",
       tint: "red",
@@ -1585,6 +1611,49 @@ export function SellerDashboard() {
         style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
       >
         <SellerHelpBar />
+
+        {frozenListings.length > 0 && (
+          <div
+            role="alert"
+            style={{
+              marginBottom: 16,
+              padding: "14px 16px",
+              borderRadius: "var(--r-md)",
+              border: "1.5px solid var(--red)",
+              background: "rgba(230,57,70,.06)",
+              display: "flex",
+              gap: 12,
+              alignItems: "flex-start",
+            }}
+          >
+            <Icon
+              name="lock"
+              size={20}
+              color="var(--red)"
+              style={{ flexShrink: 0, marginTop: 2 }}
+            />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 800, color: "var(--blue-deep)", marginBottom: 4 }}>
+                {frozenListings.length} listing{frozenListings.length > 1 ? "s" : ""} taken down by
+                BazaarCo
+              </div>
+              <p
+                style={{ margin: 0, fontSize: ".875rem", color: "var(--ink-600)", lineHeight: 1.5 }}
+              >
+                Fix the issues described in each product, then acknowledge so our team can review
+                and restore your listing.
+              </p>
+              <Button
+                variant="secondary"
+                size="sm"
+                style={{ marginTop: 10 }}
+                onClick={() => nav("s-products")}
+              >
+                Review products
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Greeting + range */}
         <div
@@ -3996,6 +4065,43 @@ export function SellerAddProduct({
             {isEdit ? "Back to my products" : "Back to dashboard"}
           </AppLink>
 
+          {isEdit &&
+            editing &&
+            (editing.listingStatus === "frozen" ||
+              editing.listingStatus === "pending_reinstatement") &&
+            editing.moderationFeedback && (
+              <div
+                role="alert"
+                style={{
+                  marginBottom: 16,
+                  padding: "14px 16px",
+                  borderRadius: "var(--r-md)",
+                  border: "1.5px solid var(--red)",
+                  background: "rgba(230,57,70,.06)",
+                }}
+              >
+                <div style={{ fontWeight: 800, color: "var(--danger)", marginBottom: 6 }}>
+                  This listing was taken down
+                </div>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: ".875rem",
+                    color: "var(--ink-700)",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {editing.moderationFeedback}
+                </p>
+                {editing.listingStatus === "frozen" && (
+                  <p style={{ margin: "8px 0 0", fontSize: ".8125rem", color: "var(--ink-500)" }}>
+                    Update the product below, then acknowledge from My products so our team can
+                    restore it.
+                  </p>
+                )}
+              </div>
+            )}
+
           <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
             {isEdit ? "Edit product" : "Add a product"}
           </h1>
@@ -5406,6 +5512,7 @@ export function SellerInventory() {
   const { data: inventoryData = EMPTY_INVENTORY, isLoading, isError, error } = useSellerInventory();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
+  const acknowledgeModeration = useAcknowledgeProductModeration();
   const [deleteTarget, setDeleteTarget] = useState<SellerInventoryItem | null>(null);
   const [items, setItems] = useState([]);
   useEffect(() => {
@@ -5765,12 +5872,30 @@ export function SellerInventory() {
                   const low = it.stock <= 3 && it.stock > 0;
                   const oos = it.stock === 0;
                   const isOpen = expanded === it.id;
+                  const modStatus = it.listingStatus ?? "active";
+                  const isFrozen = modStatus === "frozen";
+                  const pendingReview = modStatus === "pending_reinstatement";
+                  const modBorder = isFrozen
+                    ? "var(--red)"
+                    : pendingReview
+                      ? "var(--saffron)"
+                      : low
+                        ? "var(--saffron)"
+                        : "var(--line-200)";
                   return (
                     <div
                       key={it.id}
                       style={{
-                        background: oos ? "var(--line-100)" : low ? "rgba(247,127,0,.08)" : "#fff",
-                        border: `1.5px solid ${low ? "var(--saffron)" : "var(--line-200)"}`,
+                        background: isFrozen
+                          ? "rgba(230,57,70,.04)"
+                          : pendingReview
+                            ? "rgba(247,127,0,.06)"
+                            : oos
+                              ? "var(--line-100)"
+                              : low
+                                ? "rgba(247,127,0,.08)"
+                                : "#fff",
+                        border: `1.5px solid ${modBorder}`,
                         borderRadius: "var(--r-lg)",
                         overflow: "hidden",
                       }}
@@ -5814,6 +5939,13 @@ export function SellerInventory() {
                         )}
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: 700, fontSize: "1rem" }}>{it.name}</div>
+                          {(isFrozen || pendingReview) && (
+                            <div style={{ marginTop: 4 }}>
+                              <Chip tone={isFrozen ? "red" : "saffron"} size="sm">
+                                {isFrozen ? "Taken down" : "Awaiting review"}
+                              </Chip>
+                            </div>
+                          )}
                           <div
                             className="tnum"
                             style={{
@@ -5868,6 +6000,91 @@ export function SellerInventory() {
                             borderTop: "1px dashed var(--line-200)",
                           }}
                         >
+                          {(isFrozen || pendingReview) && it.moderationFeedback && (
+                            <div
+                              style={{
+                                marginTop: 14,
+                                padding: 12,
+                                borderRadius: "var(--r-md)",
+                                background: isFrozen
+                                  ? "rgba(230,57,70,.08)"
+                                  : "rgba(247,127,0,.08)",
+                                border: `1px solid ${isFrozen ? "rgba(230,57,70,.25)" : "rgba(247,127,0,.3)"}`,
+                              }}
+                            >
+                              <div
+                                style={{
+                                  fontWeight: 800,
+                                  fontSize: ".8125rem",
+                                  color: "var(--blue-deep)",
+                                  marginBottom: 6,
+                                }}
+                              >
+                                Admin feedback
+                              </div>
+                              <p
+                                style={{
+                                  margin: 0,
+                                  fontSize: ".875rem",
+                                  color: "var(--ink-700)",
+                                  lineHeight: 1.5,
+                                }}
+                              >
+                                {it.moderationFeedback}
+                              </p>
+                              {isFrozen && (
+                                <Button
+                                  variant="primary"
+                                  size="sm"
+                                  style={{ marginTop: 10 }}
+                                  loading={acknowledgeModeration.isPending}
+                                  onClick={() => {
+                                    acknowledgeModeration.mutate(it.id, {
+                                      onSuccess: () => {
+                                        setItems((list) =>
+                                          list.map((row) =>
+                                            row.id === it.id
+                                              ? {
+                                                  ...row,
+                                                  listingStatus: "pending_reinstatement",
+                                                  sellerAcknowledgedAt: new Date().toISOString(),
+                                                }
+                                              : row,
+                                          ),
+                                        );
+                                        toast(
+                                          "Thanks — we'll review your fixes and restore the listing soon.",
+                                          "success",
+                                        );
+                                      },
+                                      onError: (err) => {
+                                        toast(
+                                          err instanceof Error
+                                            ? err.message
+                                            : "Could not submit. Try again.",
+                                          "error",
+                                        );
+                                      },
+                                    });
+                                  }}
+                                >
+                                  I&apos;ve fixed this — submit for review
+                                </Button>
+                              )}
+                              {pendingReview && (
+                                <p
+                                  style={{
+                                    margin: "10px 0 0",
+                                    fontSize: ".8125rem",
+                                    color: "var(--ink-500)",
+                                  }}
+                                >
+                                  Submitted for review. You&apos;ll be notified when the listing is
+                                  live again.
+                                </p>
+                              )}
+                            </div>
+                          )}
                           {it.hasVariants && it.variants?.length ? (
                             <>
                               <div
@@ -7781,92 +7998,117 @@ export function SellerStorefront() {
             </button>
           </div>
 
-          {/* Logo + name row */}
-          <div style={{ padding: "0 20px 20px", marginTop: -32 }}>
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 14, marginBottom: 16 }}>
-              <div style={{ position: "relative", flexShrink: 0 }}>
-                {logoUrl ? (
-                  <img
-                    src={logoUrl}
-                    alt=""
+          {/* Logo + name row — logo overlaps banner; name reserves space via paddingLeft */}
+          <div style={{ padding: "0 20px 20px" }}>
+            <div style={{ position: "relative", minHeight: 40 }}>
+              <div style={{ position: "absolute", left: 0, top: -36, zIndex: 1 }}>
+                <div style={{ position: "relative", width: 72, height: 72, flexShrink: 0 }}>
+                  {logoUrl ? (
+                    <img
+                      src={logoUrl}
+                      alt=""
+                      style={{
+                        width: 72,
+                        height: 72,
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                        border: "3px solid #fff",
+                        boxShadow: "0 2px 8px rgba(0,0,0,.1)",
+                        display: "block",
+                      }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: 72,
+                        height: 72,
+                        borderRadius: "50%",
+                        background: "var(--line-100)",
+                        border: "3px solid #fff",
+                        boxShadow: "0 2px 8px rgba(0,0,0,.1)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Icon name="store" size={28} color="var(--ink-300)" />
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => logoInputRef.current?.click()}
+                    aria-label="Change logo"
                     style={{
-                      width: 72,
-                      height: 72,
+                      position: "absolute",
+                      bottom: -2,
+                      right: -2,
+                      width: 28,
+                      height: 28,
                       borderRadius: "50%",
-                      objectFit: "cover",
-                      border: "3px solid #fff",
-                      boxShadow: "0 2px 8px rgba(0,0,0,.1)",
-                    }}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      width: 72,
-                      height: 72,
-                      borderRadius: "50%",
-                      background: "var(--line-100)",
-                      border: "3px solid #fff",
-                      boxShadow: "0 2px 8px rgba(0,0,0,.1)",
+                      background: "#fff",
+                      border: "1.5px solid var(--line-200)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
+                      cursor: "pointer",
                     }}
                   >
-                    <Icon name="store" size={28} color="var(--ink-300)" />
-                  </div>
-                )}
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => logoInputRef.current?.click()}
-                  aria-label="Change logo"
-                  style={{
-                    position: "absolute",
-                    bottom: -2,
-                    right: -2,
-                    width: 28,
-                    height: 28,
-                    borderRadius: "50%",
-                    background: "#fff",
-                    border: "1.5px solid var(--line-200)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                  }}
-                >
-                  <Icon name="edit" size={13} color="var(--ink-600)" />
-                </button>
-              </div>
-              <div style={{ flex: 1, minWidth: 0, paddingBottom: 4 }}>
-                <div style={{ fontWeight: 800, fontSize: "1.125rem", color: "var(--ink-900)" }}>
-                  {shopName || "Your store name"}
+                    <Icon name="edit" size={13} color="var(--ink-600)" />
+                  </button>
                 </div>
-                {storefront?.city && (
-                  <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 2 }}>
-                    {storefront.city}
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-end",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  paddingLeft: 86,
+                  paddingTop: 8,
+                  paddingBottom: 4,
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontWeight: 800,
+                      fontSize: "1.125rem",
+                      color: "var(--ink-900)",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {shopName || "Your store name"}
                   </div>
+                  {storefront?.city && (
+                    <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 2 }}>
+                      {storefront.city}
+                    </div>
+                  )}
+                </div>
+                {logoUrl && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void handleRemoveLogo()}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      color: "var(--ink-400)",
+                      fontSize: ".75rem",
+                      fontWeight: 600,
+                      textDecoration: "underline",
+                      padding: 0,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {removeLogo.isPending ? "Removing…" : "Remove logo"}
+                  </button>
                 )}
               </div>
-              {logoUrl && (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void handleRemoveLogo()}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    color: "var(--ink-400)",
-                    fontSize: ".75rem",
-                    fontWeight: 600,
-                    textDecoration: "underline",
-                    padding: 0,
-                  }}
-                >
-                  {removeLogo.isPending ? "Removing…" : "Remove logo"}
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -7981,13 +8223,29 @@ export function SellerVideos() {
         <SellerHelpBar />
         <div
           style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
             textAlign: "center",
             padding: "48px 24px",
             color: "var(--ink-600)",
           }}
         >
-          <Icon name="video" size={32} color="var(--ink-400)" />
-          <p style={{ margin: "12px 0 0", fontSize: ".9375rem", fontWeight: 600 }}>
+          <div
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: "50%",
+              background: "var(--tint-blue-50)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 12,
+            }}
+          >
+            <Icon name="video" size={32} color="var(--ink-400)" />
+          </div>
+          <p style={{ margin: 0, fontSize: ".9375rem", fontWeight: 600, maxWidth: 320 }}>
             Complete verification to add and manage videos
           </p>
         </div>

@@ -174,6 +174,15 @@ export function useRatingDistribution(id: string | null) {
   });
 }
 
+export function useProductReviewEligibility(productId: string | null, authed: boolean) {
+  return useQuery({
+    queryKey: queryKeys.catalog.reviewEligibility(productId ?? ""),
+    queryFn: () => catalogApi.getProductReviewEligibility(productId!),
+    enabled: Boolean(productId) && authed,
+    staleTime: STALE_TIME,
+  });
+}
+
 const QUESTIONS_PAGE_SIZE = 8;
 
 export function useProductQuestions(id: string | null) {
@@ -216,6 +225,9 @@ export function useCreateProductReview(productId: string | null) {
         queryClient.invalidateQueries({ queryKey: queryKeys.catalog.productReviews(productId) }),
         queryClient.invalidateQueries({
           queryKey: queryKeys.catalog.ratingDistribution(productId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.catalog.reviewEligibility(productId),
         }),
         queryClient.invalidateQueries({ queryKey: queryKeys.catalog.product(productId) }),
       ]);

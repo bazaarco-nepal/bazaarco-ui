@@ -55,29 +55,7 @@ import {
 } from "@/components/common";
 import { ASSETS } from "@/config/assets";
 
-const PLP_SORT_OPTIONS = [
-  { value: "popular", label: "Popular" },
-  { value: "newest", label: "Newest" },
-  { value: "low", label: "Price: low to high" },
-  { value: "high", label: "Price: high to low" },
-  { value: "rating", label: "Rating" },
-];
-
-const PLP_QUICK_FILTERS = [
-  { id: "cod", label: "Cash on delivery", icon: "wallet" },
-  { id: "free", label: "Free delivery", icon: "truck" },
-  { id: "returnable", label: "7-day return", icon: "refresh" },
-  { id: "rating4", label: "4★ & up", icon: "star" },
-];
-
-/* Price preset bands — replace numeric slider for low-literacy users. */
-const PLP_PRICE_BANDS = [
-  { id: "u500", label: "Under Rs. 500", min: 0, max: 500 },
-  { id: "500-1k", label: "Rs. 500 – 1,000", min: 500, max: 1000 },
-  { id: "1k-2.5k", label: "Rs. 1,000 – 2,500", min: 1000, max: 2500 },
-  { id: "2.5k-5k", label: "Rs. 2,500 – 5,000", min: 2500, max: 5000 },
-  { id: "5k+", label: "Rs. 5,000 +", min: 5000, max: 1e9 },
-];
+const PLP_SORT_VALUES = ["popular", "newest", "low", "high", "rating"] as const;
 
 /* Loosely-defined "accessory" detection — keeps search clean.
    For demo only; in real life this comes from a category-priority index. */
@@ -161,6 +139,25 @@ function DidYouMean({ q, suggestions, onPick, onReset }) {
 
 export function Browse() {
   const { t } = useTranslation();
+  const quickFilters = useMemo(
+    () => [
+      { id: "cod", label: t("browse.filterCod"), icon: "wallet" },
+      { id: "free", label: t("browse.filterFreeDelivery"), icon: "truck" },
+      { id: "returnable", label: t("browse.filterReturnable"), icon: "refresh" },
+      { id: "rating4", label: t("browse.filterRating4"), icon: "star" },
+    ],
+    [t],
+  );
+  const priceBands = useMemo(
+    () => [
+      { id: "u500", label: t("browse.priceUnder500"), min: 0, max: 500 },
+      { id: "500-1k", label: t("browse.price500to1k"), min: 500, max: 1000 },
+      { id: "1k-2.5k", label: t("browse.price1kto2_5k"), min: 1000, max: 2500 },
+      { id: "2.5k-5k", label: t("browse.price2_5kto5k"), min: 2500, max: 5000 },
+      { id: "5k+", label: t("browse.price5kPlus"), min: 5000, max: 1e9 },
+    ],
+    [t],
+  );
   const { openProduct, nav, query, setQuery } = useBz();
   const router = useRouter();
   const pathname = usePathname();
@@ -185,7 +182,9 @@ export function Browse() {
   const [priceMax, setPriceMax] = useState(""); // custom max — overrides band when set
   const initialSort = (() => {
     const fromUrl = urlParams.get("sort");
-    return fromUrl && PLP_SORT_OPTIONS.some((o) => o.value === fromUrl) ? fromUrl : "popular";
+    return fromUrl && PLP_SORT_VALUES.includes(fromUrl as (typeof PLP_SORT_VALUES)[number])
+      ? fromUrl
+      : "popular";
   })();
   const [sort, setSort] = useState(initialSort);
   const [sheet, setSheet] = useState(false);
@@ -219,7 +218,7 @@ export function Browse() {
     }
   }, [categoryView, cats, effectiveQuery, sort, router]);
 
-  const band = PLP_PRICE_BANDS.find((b) => b.id === priceBand);
+  const band = priceBands.find((b) => b.id === priceBand);
   // Custom min/max take precedence over preset band.
   const customMin = priceMin === "" ? null : Math.max(0, parseInt(priceMin, 10) || 0);
   const customMax = priceMax === "" ? null : Math.max(0, parseInt(priceMax, 10) || 0);
@@ -333,7 +332,7 @@ export function Browse() {
   // Active filters — labeled chips with one-tap removal.
   const activeChips = [
     ...quick.map((id) => {
-      const f = PLP_QUICK_FILTERS.find((x) => x.id === id);
+      const f = quickFilters.find((x) => x.id === id);
       return f && { key: `q-${id}`, label: f.label, onRemove: () => toggleQuick(id) };
     }),
     ...cats.map((id) => {
@@ -452,7 +451,7 @@ export function Browse() {
                   </span>
                 )}
               </button>
-              {PLP_QUICK_FILTERS.map((f) => {
+              {quickFilters.map((f) => {
                 const on = quick.includes(f.id);
                 return (
                   <button
@@ -909,7 +908,7 @@ export function Browse() {
                 >
                   Filter
                 </span>
-                {PLP_QUICK_FILTERS.map((f) => {
+                {quickFilters.map((f) => {
                   const on = quick.includes(f.id);
                   return (
                     <button
@@ -1282,7 +1281,7 @@ export function Browse() {
                     What matters most
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                    {PLP_QUICK_FILTERS.map((f) => {
+                    {quickFilters.map((f) => {
                       const on = quick.includes(f.id);
                       return (
                         <button
@@ -1322,7 +1321,7 @@ export function Browse() {
                     Choose your budget
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    {PLP_PRICE_BANDS.map((b) => {
+                    {priceBands.map((b) => {
                       const on = priceBand === b.id && !usingCustomPrice;
                       return (
                         <button

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Icon,
   Logo,
@@ -157,26 +158,26 @@ export const viewProductRef = { current: null as SellerInventoryItem | null };
 
 export const SELLER_NAV = [
   {
-    group: "My shop",
+    groupKey: "seller.groupMyShop",
     items: [
-      { id: "s-dashboard", icon: "home", en: "Home" },
-      { id: "s-add", icon: "plus", en: "Add product" },
-      { id: "s-inbox", icon: "package", en: "Orders", badgeKey: "orders" },
-      { id: "s-products", icon: "store", en: "My products" },
-      { id: "s-chat", icon: "message", en: "Messages", badgeKey: "chat" },
-      { id: "s-videos", icon: "video", en: "Videos" },
+      { id: "s-dashboard", icon: "home", labelKey: "seller.navHome" },
+      { id: "s-add", icon: "plus", labelKey: "seller.navAddProduct" },
+      { id: "s-inbox", icon: "package", labelKey: "seller.navOrders", badgeKey: "orders" },
+      { id: "s-products", icon: "store", labelKey: "seller.navProducts" },
+      { id: "s-chat", icon: "message", labelKey: "seller.navMessages", badgeKey: "chat" },
+      { id: "s-videos", icon: "video", labelKey: "seller.navVideos" },
     ],
   },
   {
-    group: "More",
+    groupKey: "seller.groupMore",
     items: [
-      { id: "s-storefront", icon: "palette", en: "My Store" },
-      { id: "s-bargain", icon: "bargain", en: "Bargaining", badgeKey: "bargain" },
-      { id: "s-ledger", icon: "wallet", en: "My money" },
-      { id: "s-analytics", icon: "trendingUp", en: "Analytics" },
-      { id: "s-reviews", icon: "star", en: "Reviews" },
-      { id: "s-verification", icon: "shieldCheck", en: "KYC" },
-      { id: "s-settings", icon: "settings", en: "Settings" },
+      { id: "s-storefront", icon: "palette", labelKey: "seller.navStorefront" },
+      { id: "s-bargain", icon: "bargain", labelKey: "seller.navBargaining", badgeKey: "bargain" },
+      { id: "s-ledger", icon: "wallet", labelKey: "seller.navMoney" },
+      { id: "s-analytics", icon: "trendingUp", labelKey: "seller.navAnalytics" },
+      { id: "s-reviews", icon: "star", labelKey: "seller.navReviews" },
+      { id: "s-verification", icon: "shieldCheck", labelKey: "seller.navKyc" },
+      { id: "s-settings", icon: "settings", labelKey: "seller.navSettings" },
     ],
   },
 ];
@@ -192,6 +193,7 @@ export function SellerSidebar({
   shopName,
   logoUrl,
 }) {
+  const { t } = useTranslation();
   const close = () => setOpenMobile(false);
   const logoutMutation = useLogout();
   const [confirmLogout, setConfirmLogout] = useState(false);
@@ -261,15 +263,15 @@ export function SellerSidebar({
                   textTransform: "uppercase",
                 }}
               >
-                Seller
+                {t("seller.role")}
               </div>
             </div>
           </div>
           <button
             className="bz-side-toggle"
             onClick={() => setCollapsed((c) => !c)}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={collapsed ? t("seller.expandSidebar") : t("seller.collapseSidebar")}
+            title={collapsed ? t("seller.expandSidebar") : t("seller.collapseSidebar")}
           >
             <Icon name={collapsed ? "chevronRight" : "chevronLeft"} size={16} />
           </button>
@@ -280,12 +282,13 @@ export function SellerSidebar({
           style={{ flex: 1, paddingTop: "6px", paddingInline: 0, overflowY: "auto" }}
         >
           {SELLER_NAV.map((grp) => (
-            <div key={grp.group}>
-              <div className="bz-side-group">{grp.group}</div>
+            <div key={grp.groupKey}>
+              <div className="bz-side-group">{t(grp.groupKey)}</div>
               {grp.items.map((it) => {
                 const active = screen === it.id;
                 const badge = it.badgeKey && badges[it.badgeKey] ? badges[it.badgeKey] : 0;
                 const showBadge = badge > 0;
+                const label = t(it.labelKey);
                 return (
                   <button
                     key={it.id}
@@ -294,7 +297,7 @@ export function SellerSidebar({
                       onNav(it.id);
                       close();
                     }}
-                    title={it.en}
+                    title={label}
                   >
                     <Icon
                       name={it.icon}
@@ -302,7 +305,7 @@ export function SellerSidebar({
                       color={active ? "var(--red)" : "var(--ink-700)"}
                     />
                     <span className="bz-side-label">
-                      <span className="bz-side-en">{it.en}</span>
+                      <span className="bz-side-en">{label}</span>
                     </span>
                     {showBadge ? <span className="bz-side-badge">{badge}</span> : null}
                   </button>
@@ -316,11 +319,11 @@ export function SellerSidebar({
           <button
             className="bz-side-item bz-side-logout"
             onClick={() => setConfirmLogout(true)}
-            title="Log out"
+            title={t("seller.logOut")}
           >
             <Icon name="logout" size={20} color="var(--red)" />
             <span className="bz-side-label">
-              <span className="bz-side-en">Log out</span>
+              <span className="bz-side-en">{t("seller.logOut")}</span>
             </span>
           </button>
         </div>
@@ -336,6 +339,7 @@ export function SellerSidebar({
 }
 
 export function SellerShell({ screen, children }) {
+  const { t } = useTranslation();
   const { nav } = useBz();
   const { data: organization, isLoading: orgLoading } = useSellerOrganization();
   const { data: inbox = [] } = useSellerInbox();
@@ -430,7 +434,7 @@ export function SellerShell({ screen, children }) {
         <div className="bz-side-mobile-bar">
           <button
             onClick={() => setOpenMobile(true)}
-            aria-label="Menu"
+            aria-label={t("seller.menu")}
             style={{
               width: 40,
               height: 40,
@@ -445,7 +449,7 @@ export function SellerShell({ screen, children }) {
           >
             <Icon name="menu" size={22} />
           </button>
-          <h2>{current ? current.en : "BazaarCo Seller"}</h2>
+          <h2>{current ? t(current.labelKey) : t("seller.defaultTitle")}</h2>
         </div>
         {organization?.linked &&
           organization.verification &&

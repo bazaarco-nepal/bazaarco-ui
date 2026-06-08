@@ -829,25 +829,29 @@ export function SellerOnboarding() {
 
             <div style={{ marginTop: 22, textAlign: "left", padding: "0 4px" }}>
               {[
-                ["Low commission marketplace", "percent"],
+                ["Low commission marketplace", "percent", "/legal/commission-information"],
                 ["Add a product in 3 taps", "plus"],
                 ["Daily payouts to eSewa / Khalti", "wallet"],
-              ].map(([t, i], idx, arr) => (
-                <div
+              ].map(([t, i, href], idx, arr) => (
+                <AppLink
                   key={t}
+                  href={href || "#"}
                   style={{
                     display: "flex",
                     gap: 14,
                     alignItems: "center",
                     padding: "12px 0",
                     borderBottom: idx < arr.length - 1 ? "1px dashed var(--line-200)" : "none",
+                    textDecoration: "none",
+                    color: "inherit",
+                    cursor: href ? "pointer" : "default",
                   }}
                 >
                   <Icon name={i} size={22} color="var(--blue)" />
                   <div>
                     <div style={{ fontWeight: 700, color: "var(--ink-900)" }}>{t}</div>
                   </div>
-                </div>
+                </AppLink>
               ))}
             </div>
 
@@ -6498,17 +6502,28 @@ export function SellerInventory() {
 export function SellerLedger() {
   const { data: ledger, isLoading, isError, error } = useSellerLedger();
   const rows = ledger?.rows ?? [];
-  const supportEmail = "bazaarco.business@gmail.com";
+  const supportEmail = "support@bazaarconepal.com";
+  const supportPhone = "+977 9700053075";
   const supportMailto = `mailto:${supportEmail}?subject=${encodeURIComponent(
     "Seller payout support",
   )}&body=${encodeURIComponent("Hi BazaarCo team,\n\nI need help with my seller payouts.\n\n")}`;
+  const supportWhatsapp = "https://wa.me/9779700053075";
   const saveAsPdf = () => {
     if (typeof window === "undefined") return;
     window.print();
   };
   const talkToSupport = () => {
     if (typeof window === "undefined") return;
-    window.location.href = supportMailto;
+    const message = `Hi BazaarCo team,\n\nI need help with my seller payouts.`;
+    const whatsappUrl = `https://wa.me/9779700053075?text=${encodeURIComponent(message)}`;
+    const choice = window.confirm(
+      `Contact support via:\n\n[OK] WhatsApp: ${supportPhone}\n\n[Cancel] Email: ${supportEmail}`
+    );
+    if (choice) {
+      window.open(whatsappUrl, "_blank");
+    } else {
+      window.location.href = supportMailto;
+    }
   };
   const statusLabel = {
     received: {

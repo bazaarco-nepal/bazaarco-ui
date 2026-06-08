@@ -48,6 +48,7 @@ import {
   SellerProfile,
   AdminSellerVerifications,
   HelpSupportPage,
+  FAQPage,
   PrivacyPolicyPage,
   TermsPage,
   AboutPage,
@@ -155,6 +156,7 @@ export function MarketplaceScreen() {
   if (screen === "orders") return <Orders />;
   if (screen === "review") return <WriteReview productId={reviewProductRef.current ?? undefined} />;
   if (screen === "help") return <HelpSupportPage />;
+  if (screen === "faq") return <FAQPage />;
   if (screen === "privacy") return <PrivacyPolicyPage />;
   if (screen === "terms") return <TermsPage />;
   if (screen === "about") return <AboutPage />;

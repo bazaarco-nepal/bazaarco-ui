@@ -637,6 +637,18 @@ export function AppLink({
   rel,
   tabIndex,
   ...rest
+}: {
+  href: string;
+  onNavigate?: () => void;
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+  ariaLabel?: string;
+  title?: string;
+  target?: string;
+  rel?: string;
+  tabIndex?: number;
+  [key: string]: any;
 }) {
   const onClick = useSpaLinkClick(href, onNavigate, target);
   return (

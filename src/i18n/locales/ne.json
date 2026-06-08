@@ -80,6 +80,24 @@
     "moreToExplore": "थप हेर्नुहोस्",
     "bestPrices": "उत्तम मूल्य"
   },
+  "categories": {
+    "electronics": "इलेक्ट्रनिक्स",
+    "home-appliances": "गृह उपकरण",
+    "fashion": "फेसन",
+    "health-beauty": "स्वास्थ्य र सौन्दर्य",
+    "groceries-essentials": "किराना र आवश्यक सामान",
+    "home-living": "गृह र बसोबास",
+    "mother-baby-kids": "आमा, बच्चा र केटाकेटी",
+    "sports-outdoors": "खेलकुद र बाहिरी",
+    "automotive": "सवारी साधन",
+    "books-stationery": "पुस्तक र स्टेसनरी",
+    "musical-instruments": "संगीत वाद्ययन्त्र",
+    "pet-supplies": "पालतू जनावर सामान",
+    "crafts-heritage": "हस्तकला र सम्पदा",
+    "digital-goods-services": "डिजिटल सामान र सेवा",
+    "tools-home-improvement": "उपकरण र गृह सुधार",
+    "medical-office-supplies": "चिकित्सा र कार्यालय सामान"
+  },
   "browse": {
     "allProducts": "सबै उत्पादनहरू",
     "filteredProducts": "फिल्टर गरिएका उत्पादनहरू",
@@ -263,6 +281,8 @@
     "expandSidebar": "साइडबार विस्तार गर्नुहोस्",
     "collapseSidebar": "साइडबार संकुचित गर्नुहोस्",
     "logOut": "लग आउट",
+    "language": "भाषा",
+    "languageSub": "अङ्ग्रेजी वा नेपाली",
     "groupMyShop": "मेरो पसल",
     "groupMore": "थप",
     "navHome": "घर",
@@ -279,7 +299,137 @@
     "navKyc": "KYC",
     "navSettings": "सेटिङ",
     "defaultTitle": "बजारको विक्रेता",
-    "menu": "मेनु"
+    "menu": "मेनु",
+    "common": {
+      "save": "सेभ गर्नुहोस्",
+      "saving": "सेभ हुँदैछ…",
+      "back": "पछाडि",
+      "addProduct": "उत्पादन थप्नुहोस्",
+      "deleteAccount": "खाता मेटाउनुहोस्",
+      "goToOnboarding": "अनबोर्डिङमा जानुहोस्",
+      "settingsSaved": "सेटिङ सेभ भयो",
+      "settingsSaveFailed": "सेटिङ सेभ गर्न सकिएन",
+      "all": "सबै",
+      "new": "नयाँ",
+      "today": "आज",
+      "week7": "७ दिन",
+      "month30": "३० दिन",
+      "viewProducts": "उत्पादन हेर्नुहोस्",
+      "viewOrders": "अर्डर हेर्नुहोस्",
+      "viewStatus": "स्थिति हेर्नुहोस्",
+      "restock": "पुनः स्टक",
+      "reviewProducts": "उत्पादन समीक्षा"
+    },
+    "dashboard": {
+      "greeting": "नमस्ते, {{name}}",
+      "noSalesYet": "अहिलेसम्म बिक्री डाटा छैन। बिक्री सुरु भएपछि यहाँ देखिनेछ।",
+      "ordersToday": "आजका अर्डर",
+      "ordersRange": "अर्डर · {{range}}",
+      "storeRating": "स्टोर रेटिङ",
+      "ratingNew": "नयाँ",
+      "onTimeShip": "समयमै पठाउने",
+      "repeatBuyers": "दोहोर्याउने क्रेता",
+      "frozenTitle": "बजारकोले {{count}} उत्पादन हटायो",
+      "frozenTitle_plural": "बजारकोले {{count}} उत्पादन हटायो",
+      "frozenHint": "प्रत्येक उत्पादनमा उल्लेखित समस्या ठीक गर्नुहोस्, त्यसपछि हाम्रो टोलीले समीक्षा गरी पुनर्स्थापना गर्छ।",
+      "taskFrozen": "{{count}} उत्पादन हटाइयो — सुधार चाहिन्छ",
+      "taskFrozen_plural": "{{count}} उत्पादन हटाइयो — सुधार चाहिन्छ",
+      "taskPendingReview": "{{count}} उत्पादन प्रशासक समीक्षामा",
+      "taskPendingReview_plural": "{{count}} उत्पादन प्रशासक समीक्षामा",
+      "taskNewOrders": "{{count}} नयाँ अर्डर स्वीकार गर्नुहोस्",
+      "taskNewOrders_plural": "{{count}} नयाँ अर्डर स्वीकार गर्नुहोस्",
+      "taskLowStock": "{{count}} वस्तु स्टक कम",
+      "taskLowStock_plural": "{{count}} वस्तु स्टक कम"
+    },
+    "inbox": {
+      "title": "अर्डर",
+      "subtitle": "लेबल प्रिन्ट, क्रेतालाई सन्देश वा स्थिति अपडेट गर्न अर्डरमा ट्याप गर्नुहोस्।",
+      "tabAll": "सबै",
+      "tabNew": "नयाँ",
+      "tabProcessing": "प्रक्रियामा",
+      "tabShipped": "पठाइयो",
+      "tabCompleted": "पूरा भयो",
+      "tabCancelled": "रद्द"
+    },
+    "products": {
+      "title": "मेरा उत्पादन",
+      "addProduct": "उत्पादन थप्नुहोस्",
+      "editProduct": "उत्पादन सम्पादन",
+      "addAProduct": "उत्पादन थप्नुहोस्",
+      "filterAll": "सबै",
+      "filterActive": "सक्रिय",
+      "filterOos": "स्टक सकियो",
+      "sortAdded": "भर्खर थपिएको",
+      "sortStockLow": "स्टक कम → बढी",
+      "sortPriceLow": "मूल्य कम → बढी",
+      "sortName": "नाम अ → ज्ञ"
+    },
+    "ledger": {
+      "title": "भुक्तानी"
+    },
+    "chat": {
+      "title": "च्याट",
+      "titleBuyer": "सन्देश",
+      "subtitleSeller": "छिटो जवाफ दिनुहोस्। १ घण्टाभन्दा बढी पर्खेका क्रेता प्रायः जान्छन्।",
+      "subtitleBuyer": "उत्पादन र अर्डरबारे विक्रेतासँग सिधै च्याट गर्नुहोस्।"
+    },
+    "bargain": {
+      "title": "मोलमोल",
+      "subtitle": "क्रेताले सूची मूल्यभन्दा कम प्रस्ताव पठाउन सक्छन्। तपाईं प्रत्येक उत्पादनमा स्वीकार गर्ने न्यूनतम रकम तोक्नुहोस्। क्रेताले यो सीमा देख्दैनन्।"
+    },
+    "reviews": {
+      "title": "समीक्षा",
+      "subtitle": "प्रत्येक समीक्षामा जवाफ दिनुहोस्। सुन्ने पसलमा क्रेताको विश्वास बढ्छ।"
+    },
+    "storefront": {
+      "title": "मेरो स्टोर"
+    },
+    "videos": {
+      "verifyRequired": "भिडियो थप्न र व्यवस्थापन गर्न प्रमाणीकरण पूरा गर्नुहोस्"
+    },
+    "kyc": {
+      "title": "KYC प्रमाणीकरण",
+      "statusNotStarted": "सुरु भएको छैन",
+      "statusPending": "समीक्षाधीन",
+      "statusApproved": "स्वीकृत",
+      "statusRejected": "स्वीकृत भएन"
+    },
+    "profile": {
+      "title": "मेरो प्रोफाइल"
+    },
+    "analytics": {
+      "title": "मेरो पसल"
+    },
+    "settings": {
+      "title": "सेटिङ",
+      "tabAccount": "खाता",
+      "tabAlerts": "सूचना",
+      "alertsHint": "प्रत्येक कुराको बारेमा कसरी सूचना पाउने छान्नुहोस्। नयाँ अर्डर सूचना सधैं खुला रहन्छ।",
+      "recentAlerts": "हालका सूचना",
+      "tellMeAbout": "मलाई यसबारे बताउनुहोस्",
+      "onboardingRequired": "सूचना र खाता सेटिङका लागि विक्रेता अनबोर्डिङ पूरा गर्नुहोस्।",
+      "setPassword": "पासवर्ड सेट गर्नुहोस्",
+      "resetPassword": "पासवर्ड रिसेट",
+      "setPasswordSub": "इमेलबाट साइन इन गर्न पासवर्ड थप्नुहोस्",
+      "resetPasswordSub": "इमेलमा कोड पठाउनुहोस्",
+      "email": "इमेल",
+      "deleteAccountTitle": "खाता मेटाउनुहोस्",
+      "deleteAccountSub": "पसल, उत्पादन र सबै डाटा स्थायी रूपमा हटाउनुहोस्। यो पूर्ववत हुँदैन।",
+      "events": {
+        "newOrder": "नयाँ अर्डर",
+        "bargainOffer": "मोलमोल प्रस्ताव",
+        "lowStock": "स्टक कम",
+        "newReview": "नयाँ समीक्षा",
+        "payoutSent": "भुक्तानी पठाइयो",
+        "policyUpdate": "नीति अपडेट"
+      },
+      "channels": {
+        "inApp": "एप भित्र",
+        "sms": "SMS",
+        "whatsapp": "WhatsApp",
+        "email": "इमेल"
+      }
+    }
   },
   "meta": {
     "title": "बजारको - {{label}}",

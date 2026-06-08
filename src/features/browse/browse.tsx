@@ -54,6 +54,8 @@ import {
   DevViewSwitcher,
 } from "@/components/common";
 import { ASSETS } from "@/config/assets";
+import { displayCategoryLabel } from "@/lib/locale-display";
+import { useBazaarStore } from "@/store/bazaar-store";
 
 const PLP_SORT_VALUES = ["popular", "newest", "low", "high", "rating"] as const;
 
@@ -139,6 +141,8 @@ function DidYouMean({ q, suggestions, onPick, onReset }) {
 
 export function Browse() {
   const { t } = useTranslation();
+  const locale = useBazaarStore((s) => s.locale);
+  const categoryLabel = (c: { id: string; en: string }) => displayCategoryLabel(c, locale);
   const quickFilters = useMemo(
     () => [
       { id: "cod", label: t("browse.filterCod"), icon: "wallet" },
@@ -337,7 +341,7 @@ export function Browse() {
     }),
     ...cats.map((id) => {
       const c = (CATEGORIES ?? []).find((x) => x.id === id);
-      return c && { key: `c-${id}`, label: c.en, onRemove: () => toggleCat(id) };
+      return c && { key: `c-${id}`, label: categoryLabel(c), onRemove: () => toggleCat(id) };
     }),
     priceActive && { key: "p-range", label: priceLabel, onRemove: clearPrice },
   ].filter(Boolean);
@@ -359,7 +363,7 @@ export function Browse() {
     if (effectiveQuery) return t("browse.resultsFor", { query: effectiveQuery });
     if (cats.length === 1) {
       const c = (CATEGORIES ?? []).find((x) => x.id === cats[0]);
-      return c?.en ?? t("browse.allProducts");
+      return c ? categoryLabel(c) : t("browse.allProducts");
     }
     if (cats.length > 1) return t("browse.filteredProducts");
     return t("browse.allProducts");
@@ -369,7 +373,7 @@ export function Browse() {
     if (effectiveQuery) return t("browse.searchLabel", { query: effectiveQuery });
     if (cats.length === 1) {
       const c = (CATEGORIES ?? []).find((x) => x.id === cats[0]);
-      return c?.en ?? t("browse.allProducts");
+      return c ? categoryLabel(c) : t("browse.allProducts");
     }
     return t("browse.allProducts");
   })();
@@ -827,7 +831,7 @@ export function Browse() {
                         color: on ? "var(--blue)" : "var(--ink-500)",
                       }}
                     >
-                      {c.en}
+                      {categoryLabel(c)}
                     </button>
                   );
                 })}
@@ -1491,7 +1495,7 @@ export function Browse() {
                             color: on ? "var(--blue)" : "var(--ink-700)",
                           }}
                         >
-                          {c.en}
+                          {categoryLabel(c)}
                         </button>
                       );
                     })}

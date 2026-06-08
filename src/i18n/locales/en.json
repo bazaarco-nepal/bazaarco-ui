@@ -263,6 +263,8 @@
     "expandSidebar": "Expand sidebar",
     "collapseSidebar": "Collapse sidebar",
     "logOut": "Log out",
+    "language": "Language",
+    "languageSub": "English or Nepali",
     "groupMyShop": "My shop",
     "groupMore": "More",
     "navHome": "Home",
@@ -279,7 +281,137 @@
     "navKyc": "KYC",
     "navSettings": "Settings",
     "defaultTitle": "BazaarCo Seller",
-    "menu": "Menu"
+    "menu": "Menu",
+    "common": {
+      "save": "Save",
+      "saving": "Saving…",
+      "back": "Back",
+      "addProduct": "Add product",
+      "deleteAccount": "Delete account",
+      "goToOnboarding": "Go to onboarding",
+      "settingsSaved": "Settings saved",
+      "settingsSaveFailed": "Could not save settings",
+      "all": "All",
+      "new": "New",
+      "today": "Today",
+      "week7": "7 days",
+      "month30": "30 days",
+      "viewProducts": "View products",
+      "viewOrders": "View orders",
+      "viewStatus": "View status",
+      "restock": "Restock",
+      "reviewProducts": "Review products"
+    },
+    "dashboard": {
+      "greeting": "Namaste, {{name}}",
+      "noSalesYet": "No sales data yet. Numbers will appear here when you start selling.",
+      "ordersToday": "Orders today",
+      "ordersRange": "Orders · {{range}}",
+      "storeRating": "Store rating",
+      "ratingNew": "New",
+      "onTimeShip": "On-time ship",
+      "repeatBuyers": "Repeat buyers",
+      "frozenTitle": "{{count}} listing taken down by BazaarCo",
+      "frozenTitle_plural": "{{count}} listings taken down by BazaarCo",
+      "frozenHint": "Fix the issues described in each product, then acknowledge so our team can review and restore your listing.",
+      "taskFrozen": "{{count}} listing taken down — fix required",
+      "taskFrozen_plural": "{{count}} listings taken down — fix required",
+      "taskPendingReview": "{{count}} listing awaiting admin review",
+      "taskPendingReview_plural": "{{count}} listings awaiting admin review",
+      "taskNewOrders": "Accept {{count}} new order",
+      "taskNewOrders_plural": "Accept {{count}} new orders",
+      "taskLowStock": "{{count}} item running low",
+      "taskLowStock_plural": "{{count}} items running low"
+    },
+    "inbox": {
+      "title": "Orders",
+      "subtitle": "Tap an order to print labels, message buyer, or update status.",
+      "tabAll": "All",
+      "tabNew": "New",
+      "tabProcessing": "Processing",
+      "tabShipped": "Shipped",
+      "tabCompleted": "Completed",
+      "tabCancelled": "Cancelled"
+    },
+    "products": {
+      "title": "My products",
+      "addProduct": "Add product",
+      "editProduct": "Edit product",
+      "addAProduct": "Add a product",
+      "filterAll": "All",
+      "filterActive": "Active",
+      "filterOos": "Out of stock",
+      "sortAdded": "Recently added",
+      "sortStockLow": "Stock low → high",
+      "sortPriceLow": "Price low → high",
+      "sortName": "Name A → Z"
+    },
+    "ledger": {
+      "title": "Payouts"
+    },
+    "chat": {
+      "title": "Chat",
+      "titleBuyer": "Messages",
+      "subtitleSeller": "Reply fast. Buyers who wait > 1hr usually leave.",
+      "subtitleBuyer": "Chat directly with sellers about products and orders."
+    },
+    "bargain": {
+      "title": "Bargaining",
+      "subtitle": "Buyers can send you offers below your listed price. You set the lowest amount you'll accept on each product. Buyers can't see this limit."
+    },
+    "reviews": {
+      "title": "Reviews",
+      "subtitle": "Reply to every review. Buyers trust shops that listen."
+    },
+    "storefront": {
+      "title": "My Store"
+    },
+    "videos": {
+      "verifyRequired": "Complete verification to add and manage videos"
+    },
+    "kyc": {
+      "title": "KYC verification",
+      "statusNotStarted": "Not started",
+      "statusPending": "Under review",
+      "statusApproved": "Approved",
+      "statusRejected": "Not approved"
+    },
+    "profile": {
+      "title": "My profile"
+    },
+    "analytics": {
+      "title": "My shop"
+    },
+    "settings": {
+      "title": "Settings",
+      "tabAccount": "Account",
+      "tabAlerts": "Alerts",
+      "alertsHint": "Pick how we tell you about each thing. New-order alerts are always on.",
+      "recentAlerts": "Recent alerts",
+      "tellMeAbout": "Tell me about",
+      "onboardingRequired": "Complete seller onboarding to configure notifications and account settings.",
+      "setPassword": "Set a password",
+      "resetPassword": "Reset password",
+      "setPasswordSub": "Add a password to also sign in with email",
+      "resetPasswordSub": "Send a code to your email",
+      "email": "Email",
+      "deleteAccountTitle": "Delete account",
+      "deleteAccountSub": "Permanently remove your shop, products, and all data. This can't be undone.",
+      "events": {
+        "newOrder": "New order",
+        "bargainOffer": "Bargain offer",
+        "lowStock": "Low stock",
+        "newReview": "New review",
+        "payoutSent": "Payout sent",
+        "policyUpdate": "Policy update"
+      },
+      "channels": {
+        "inApp": "In-app",
+        "sms": "SMS",
+        "whatsapp": "WhatsApp",
+        "email": "Email"
+      }
+    }
   },
   "meta": {
     "title": "BazaarCo - {{label}}",

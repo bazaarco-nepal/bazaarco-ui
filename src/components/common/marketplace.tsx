@@ -23,7 +23,7 @@ import { useLogout } from "@/hooks/use-auth";
 import { useAddresses, useCreateAddress } from "@/hooks/use-addresses";
 import { deliveryToSavePayload } from "@/lib/saved-address";
 import { displayName } from "@/lib/display";
-import { displayProductName } from "@/lib/locale-display";
+import { displayCategoryLabel, displayProductName } from "@/lib/locale-display";
 import { LanguageToggle } from "@/components/common/language-toggle";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { formatDeliverToLabel } from "@/lib/delivery-location";
@@ -489,8 +489,9 @@ const CATEGORY_ICON: Record<string, string> = {
 // the exact taxonomy name so buyer views do not drift from the catalog.
 export function CategoryTile({ c, onClick, compact = false, href }) {
   const [hov, setHov] = useState(false);
-  const t = CAT_TINTS[c.tint] ?? CAT_TINTS.red;
-  const label = c.en;
+  const locale = useBazaarStore((s) => s.locale);
+  const tint = CAT_TINTS[c.tint] ?? CAT_TINTS.red;
+  const label = displayCategoryLabel(c, locale);
   const iconName = CATEGORY_ICON[c.id] ?? "tag";
   // Nav use (e.g. home → /browse) passes `href` and renders a real anchor so the
   // browser can open it in a new tab. Filter use (browse page) omits href and
@@ -523,13 +524,13 @@ export function CategoryTile({ c, onClick, compact = false, href }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: hov ? t.fg : t.bg,
+          background: hov ? tint.fg : tint.bg,
           boxShadow: hov ? "var(--sh-2)" : "var(--sh-1)",
           transform: hov ? "translateY(-2px)" : "translateY(0)",
           transition: "all var(--dur-standard) var(--ease)",
         }}
       >
-        <Icon name={iconName} size={27} color={hov ? "#fff" : t.fg} stroke={1.8} />
+        <Icon name={iconName} size={27} color={hov ? "#fff" : tint.fg} stroke={1.8} />
       </div>
       <div style={{ textAlign: "center", lineHeight: 1.2 }}>
         <div className="bz-cat__en" style={{ fontSize: ".8125rem", fontWeight: 600 }}>

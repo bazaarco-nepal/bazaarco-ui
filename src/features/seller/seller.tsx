@@ -121,6 +121,7 @@ import {
   PasswordResetModal,
   LogoutConfirmModal,
   SellerDeleteAccountModal,
+  LanguageToggle,
 } from "@/components/common";
 import { ASSETS } from "@/config/assets";
 import { pathFromScreen } from "@/config/routes";
@@ -316,6 +317,30 @@ export function SellerSidebar({
         </div>
 
         <div className="bz-side-foot">
+          <div
+            className="bz-side-lang"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 8,
+              padding: "10px 14px 6px",
+              flexWrap: "wrap",
+            }}
+          >
+            <span
+              style={{
+                fontSize: ".6875rem",
+                fontWeight: 700,
+                color: "var(--ink-400)",
+                letterSpacing: ".04em",
+                textTransform: "uppercase",
+              }}
+            >
+              {t("seller.language")}
+            </span>
+            <LanguageToggle compact />
+          </div>
           <button
             className="bz-side-item bz-side-logout"
             onClick={() => setConfirmLogout(true)}
@@ -1490,6 +1515,7 @@ export function SellerDonut({ slices, size = 160 }) {
 }
 
 export function SellerDashboard() {
+  const { t } = useTranslation();
   const { nav, toast } = useBz();
   const user = useBazaarStore((s) => s.user);
   const setUser = useBazaarStore((s) => s.setUser);
@@ -1498,7 +1524,12 @@ export function SellerDashboard() {
   const { data: dashboard, isLoading, isError, error } = useSellerDashboard(range);
   const { data: inbox = [] } = useSellerInbox();
   const { data: inventory = [] } = useSellerInventory();
-  const rangeLabel = range === "today" ? "Today" : range === "month" ? "30 days" : "7 days";
+  const rangeLabel =
+    range === "today"
+      ? t("seller.common.today")
+      : range === "month"
+        ? t("seller.common.month30")
+        : t("seller.common.week7");
 
   // Onboarding coachmark removed — silently mark onboarding complete the first
   // time a seller lands here so backend state stays consistent. No popup shown.
@@ -1543,22 +1574,28 @@ export function SellerDashboard() {
   const trustStrip = trust
     ? [
         {
-          k: range === "today" ? "Orders today" : `Orders · ${rangeLabel}`,
+          k:
+            range === "today"
+              ? t("seller.dashboard.ordersToday")
+              : t("seller.dashboard.ordersRange", { range: rangeLabel }),
           v: String(trust.ordersThisWeek ?? 0),
           c: "var(--blue-deep)",
         },
         {
-          k: "Store rating",
-          v: (trust.ratingCount ?? 0) > 0 ? `${Number(trust.storeRating).toFixed(1)} ★` : "New",
+          k: t("seller.dashboard.storeRating"),
+          v:
+            (trust.ratingCount ?? 0) > 0
+              ? `${Number(trust.storeRating).toFixed(1)} ★`
+              : t("seller.dashboard.ratingNew"),
           c: "var(--gold)",
         },
         {
-          k: "On-time ship",
+          k: t("seller.dashboard.onTimeShip"),
           v: trust.onTimeShipPct == null ? "—" : `${trust.onTimeShipPct}%`,
           c: "var(--success)",
         },
         {
-          k: "Repeat buyers",
+          k: t("seller.dashboard.repeatBuyers"),
           v: (trust.ordersThisWeek ?? 0) > 0 ? `${trust.repeatBuyerPct ?? 0}%` : "—",
           c: "var(--saffron)",
         },
@@ -1581,34 +1618,46 @@ export function SellerDashboard() {
     frozenListings.length > 0 && {
       icon: "lock",
       tint: "red",
-      label: `${frozenListings.length} listing${frozenListings.length > 1 ? "s" : ""} taken down — fix required`,
+      label:
+        frozenListings.length === 1
+          ? t("seller.dashboard.taskFrozen", { count: frozenListings.length })
+          : t("seller.dashboard.taskFrozen_plural", { count: frozenListings.length }),
       to: "s-products",
       urgent: true,
-      action: { label: "View products", onAct: () => nav("s-products") },
+      action: { label: t("seller.common.viewProducts"), onAct: () => nav("s-products") },
     },
     pendingReview.length > 0 && {
       icon: "clock",
       tint: "saffron",
-      label: `${pendingReview.length} listing${pendingReview.length > 1 ? "s" : ""} awaiting admin review`,
+      label:
+        pendingReview.length === 1
+          ? t("seller.dashboard.taskPendingReview", { count: pendingReview.length })
+          : t("seller.dashboard.taskPendingReview_plural", { count: pendingReview.length }),
       to: "s-products",
       urgent: false,
-      action: { label: "View status", onAct: () => nav("s-products") },
+      action: { label: t("seller.common.viewStatus"), onAct: () => nav("s-products") },
     },
     pendingOrders > 0 && {
       icon: "package",
       tint: "red",
-      label: `Accept ${pendingOrders} new order${pendingOrders > 1 ? "s" : ""}`,
+      label:
+        pendingOrders === 1
+          ? t("seller.dashboard.taskNewOrders", { count: pendingOrders })
+          : t("seller.dashboard.taskNewOrders_plural", { count: pendingOrders }),
       to: "s-inbox",
       urgent: true,
-      action: { label: "View orders", onAct: () => nav("s-inbox") },
+      action: { label: t("seller.common.viewOrders"), onAct: () => nav("s-inbox") },
     },
     lowStock > 0 && {
       icon: "zap",
       tint: "saffron",
-      label: `${lowStock} item${lowStock > 1 ? "s" : ""} running low`,
+      label:
+        lowStock === 1
+          ? t("seller.dashboard.taskLowStock", { count: lowStock })
+          : t("seller.dashboard.taskLowStock_plural", { count: lowStock }),
       to: "s-products",
       urgent: false,
-      action: { label: "Restock", onAct: () => nav("s-products") },
+      action: { label: t("seller.common.restock"), onAct: () => nav("s-products") },
     },
   ].filter(Boolean);
 
@@ -1642,14 +1691,14 @@ export function SellerDashboard() {
             />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 800, color: "var(--blue-deep)", marginBottom: 4 }}>
-                {frozenListings.length} listing{frozenListings.length > 1 ? "s" : ""} taken down by
-                BazaarCo
+                {frozenListings.length === 1
+                  ? t("seller.dashboard.frozenTitle", { count: frozenListings.length })
+                  : t("seller.dashboard.frozenTitle_plural", { count: frozenListings.length })}
               </div>
               <p
                 style={{ margin: 0, fontSize: ".875rem", color: "var(--ink-600)", lineHeight: 1.5 }}
               >
-                Fix the issues described in each product, then acknowledge so our team can review
-                and restore your listing.
+                {t("seller.dashboard.frozenHint")}
               </p>
               <Button
                 variant="secondary"
@@ -1657,7 +1706,7 @@ export function SellerDashboard() {
                 style={{ marginTop: 10 }}
                 onClick={() => nav("s-products")}
               >
-                Review products
+                {t("seller.common.reviewProducts")}
               </Button>
             </div>
           </div>
@@ -1678,7 +1727,8 @@ export function SellerDashboard() {
             <h1
               style={{ margin: 0, fontSize: "1.75rem", fontWeight: 800, color: "var(--blue-deep)" }}
             >
-              Namaste, {sellerName} <span style={{ fontSize: "1.5rem" }}>🙏</span>
+              {t("seller.dashboard.greeting", { name: sellerName })}{" "}
+              <span style={{ fontSize: "1.5rem" }}>🙏</span>
             </h1>
             <p style={{ margin: "4px 0 0", color: "var(--ink-500)", fontSize: ".875rem" }}>
               {today}
@@ -1687,9 +1737,9 @@ export function SellerDashboard() {
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <ChipGroup
               options={[
-                { value: "today", label: "Today" },
-                { value: "week", label: "7 days" },
-                { value: "month", label: "30 days" },
+                { value: "today", label: t("seller.common.today") },
+                { value: "week", label: t("seller.common.week7") },
+                { value: "month", label: t("seller.common.month30") },
               ]}
               value={range}
               onChange={setRange}
@@ -1718,7 +1768,7 @@ export function SellerDashboard() {
                 color: "var(--ink-500)",
               }}
             >
-              No sales data yet. Numbers will appear here when you start selling.
+              {t("seller.dashboard.noSalesYet")}
             </div>
           )}
           {kpis.map((k) => (
@@ -2378,24 +2428,24 @@ export function SellerDashboard() {
           }}
         >
           {[
-            { icon: "plus", label: "Add product", tint: "green", to: "s-add" },
+            { icon: "plus", label: t("seller.common.addProduct"), tint: "green", to: "s-add" },
             {
               icon: "package",
-              label: "Orders",
+              label: t("seller.navOrders"),
               tint: "red",
               to: "s-inbox",
               badge: pendingOrders > 0 ? String(pendingOrders) : undefined,
             },
             {
               icon: "store",
-              label: "My products",
+              label: t("seller.navProducts"),
               tint: "blue",
               to: "s-products",
             },
-            { icon: "wallet", label: "Payouts", tint: "saffron", to: "s-ledger" },
+            { icon: "wallet", label: t("seller.navMoney"), tint: "saffron", to: "s-ledger" },
           ].map((a) => (
             <AppLink
-              key={a.label}
+              key={a.to}
               href={pathFromScreen(a.to)}
               style={{
                 background: "#fff",
@@ -2585,6 +2635,7 @@ export function inDateRange(o, range) {
 }
 
 export function SellerInbox() {
+  const { t } = useTranslation();
   const { nav } = useBz();
   const { data: INBOX_ORDERS = [], isLoading, isError, error } = useSellerInbox();
   const [tab, setTab] = useState("all");
@@ -2632,12 +2683,12 @@ export function SellerInbox() {
   const ordersPaged = usePages(list, 8, `${tab}|${q}|${range}`);
 
   const tabs = [
-    { id: "all", label: "All" },
-    { id: "placed", label: "New" },
-    { id: "processing", label: "Processing" },
-    { id: "shipped", label: "Shipped" },
-    { id: "completed", label: "Completed" },
-    { id: "cancelled", label: "Cancelled" },
+    { id: "all", label: t("seller.inbox.tabAll") },
+    { id: "placed", label: t("seller.inbox.tabNew") },
+    { id: "processing", label: t("seller.inbox.tabProcessing") },
+    { id: "shipped", label: t("seller.inbox.tabShipped") },
+    { id: "completed", label: t("seller.inbox.tabCompleted") },
+    { id: "cancelled", label: t("seller.inbox.tabCancelled") },
   ];
 
   return (
@@ -2662,10 +2713,10 @@ export function SellerInbox() {
             <h1
               style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}
             >
-              Orders
+              {t("seller.inbox.title")}
             </h1>
             <p style={{ margin: "2px 0 0", fontSize: ".8125rem", color: "var(--ink-500)" }}>
-              Tap an order to print labels, message buyer, or update status.
+              {t("seller.inbox.subtitle")}
             </p>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -3663,6 +3714,7 @@ function remotePhotoFromUrl(url: string, index: number): ProductPhoto {
 export function SellerAddProduct({
   editing = null,
 }: { editing?: SellerInventoryItem | null } = {}) {
+  const { t } = useTranslation();
   const isEdit = Boolean(editing);
   const { nav, toast } = useBz();
   const { data: organization } = useSellerOrganization();
@@ -4111,7 +4163,7 @@ export function SellerAddProduct({
             )}
 
           <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-            {isEdit ? "Edit product" : "Add a product"}
+            {isEdit ? t("seller.products.editProduct") : t("seller.products.addAProduct")}
           </h1>
 
           {/* Progress */}
@@ -5516,6 +5568,7 @@ export const INV_SORTS = [
 ];
 
 export function SellerInventory() {
+  const { t } = useTranslation();
   const { nav, toast } = useBz();
   const { data: inventoryData = EMPTY_INVENTORY, isLoading, isError, error } = useSellerInventory();
   const updateProduct = useUpdateProduct();
@@ -5656,10 +5709,19 @@ export function SellerInventory() {
     oos: items.filter((it) => bucket(it) === "oos").length,
   };
   const statusTabs = [
-    { id: "all", label: "All", tone: "ink" },
-    { id: "active", label: "Active", tone: "success" },
-    { id: "oos", label: "Out of stock", tone: "danger" },
+    { id: "all", label: t("seller.products.filterAll"), tone: "ink" },
+    { id: "active", label: t("seller.products.filterActive"), tone: "success" },
+    { id: "oos", label: t("seller.products.filterOos"), tone: "danger" },
   ];
+  const sortOptions = useMemo(
+    () => [
+      { value: "added", label: t("seller.products.sortAdded") },
+      { value: "stockLow", label: t("seller.products.sortStockLow") },
+      { value: "priceLow", label: t("seller.products.sortPriceLow") },
+      { value: "name", label: t("seller.products.sortName") },
+    ],
+    [t],
+  );
 
   let visible = items.filter((it) => status === "all" || bucket(it) === status);
   if (search.trim()) {
@@ -5709,10 +5771,10 @@ export function SellerInventory() {
                 color: "var(--blue-deep)",
               }}
             >
-              My products
+              {t("seller.products.title")}
             </h1>
             <Button variant="primary" icon="plus" href={pathFromScreen("s-add")}>
-              Add
+              {t("seller.products.addProduct")}
             </Button>
           </div>
 
@@ -5815,7 +5877,7 @@ export function SellerInventory() {
                 cursor: "pointer",
               }}
             >
-              {INV_SORTS.map((o) => (
+              {sortOptions.map((o) => (
                 <option key={o.value} value={o.value}>
                   Sort: {o.label}
                 </option>
@@ -6508,6 +6570,7 @@ export function SellerInventory() {
 
 /* ---------- 4.6 Payouts Ledger ---------- */
 export function SellerLedger() {
+  const { t } = useTranslation();
   const { data: ledger, isLoading, isError, error } = useSellerLedger();
   const rows = ledger?.rows ?? [];
   const supportEmail = "support@bazaarconepal.com";
@@ -6562,11 +6625,11 @@ export function SellerLedger() {
           }}
         >
           <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-            Payouts
+            {t("seller.ledger.title")}
           </h1>
           <div className="bz-no-print">
             <Button variant="ghost" href={pathFromScreen("s-dashboard")} icon="chevronLeft">
-              Back
+              {t("seller.common.back")}
             </Button>
           </div>
         </div>
@@ -6711,6 +6774,7 @@ function useChatMobile(bp = 720) {
 }
 
 export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
+  const { t } = useTranslation();
   const { toast } = useBz();
   const isMobile = useChatMobile();
   const { data: inbox, isLoading, isError, error } = useChatInbox();
@@ -6997,12 +7061,10 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
       >
         <div>
           <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-            {buyerMode ? "Messages" : "Chat"}
+            {buyerMode ? t("seller.chat.titleBuyer") : t("seller.chat.title")}
           </h1>
           <p style={{ margin: "2px 0 0", fontSize: ".8125rem", color: "var(--ink-500)" }}>
-            {buyerMode
-              ? "Chat directly with sellers about products and orders."
-              : "Reply fast. Buyers who wait > 1hr usually leave."}
+            {buyerMode ? t("seller.chat.subtitleBuyer") : t("seller.chat.subtitleSeller")}
           </p>
         </div>
         {!buyerMode ? (
@@ -7393,6 +7455,7 @@ function bargainStatus(o: {
 
 /* ---------- 4.8 Bargaining ---------- */
 export function SellerBargain() {
+  const { t } = useTranslation();
   const { toast } = useBz();
   const { data: BARGAIN_OFFERS = [], isLoading, isError, error } = useSellerBargains();
   const acceptMutation = useAcceptBargainOffer();
@@ -7407,11 +7470,10 @@ export function SellerBargain() {
       >
         <SellerHelpBar />
         <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-          Bargaining
+          {t("seller.bargain.title")}
         </h1>
         <p style={{ margin: "4px 0 18px", fontSize: ".875rem", color: "var(--ink-500)" }}>
-          Buyers can send you offers below your listed price. You set the lowest amount you&apos;ll
-          accept on each product. Buyers can&apos;t see this limit.
+          {t("seller.bargain.subtitle")}
         </p>
 
         {/* Stats */}
@@ -7635,6 +7697,7 @@ export function SellerPromotions() {
 
 /* ---------- 4.10 Reviews ---------- */
 export function SellerReviews() {
+  const { t } = useTranslation();
   const { toast } = useBz();
   const { data: REVIEWS_DATA = [], isLoading, isError, error } = useSellerReviews();
   const [filter, setFilter] = useState("all");
@@ -7656,10 +7719,10 @@ export function SellerReviews() {
       >
         <SellerHelpBar />
         <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-          Reviews
+          {t("seller.reviews.title")}
         </h1>
         <p style={{ margin: "4px 0 18px", fontSize: ".875rem", color: "var(--ink-500)" }}>
-          Reply to every review. Buyers trust shops that listen.
+          {t("seller.reviews.subtitle")}
         </p>
 
         <div
@@ -7786,6 +7849,7 @@ export function SellerReviews() {
 
 /* ---------- 4.11 Storefront builder ---------- */
 export function SellerStorefront() {
+  const { t } = useTranslation();
   const { toast } = useBz();
   const { data: storefront, isLoading, isError, error } = useSellerStorefront();
   const updateStorefront = useUpdateStorefront();
@@ -7924,7 +7988,7 @@ export function SellerStorefront() {
                 color: "var(--blue-deep)",
               }}
             >
-              My Store
+              {t("seller.storefront.title")}
             </h1>
             <p style={{ margin: "4px 0 0", fontSize: ".875rem", color: "var(--ink-500)" }}>
               Customize how buyers see your shop.
@@ -8228,6 +8292,7 @@ export function SellerStorefront() {
 
 /* ---------- 4.12 Videos ---------- */
 export function SellerVideos() {
+  const { t } = useTranslation();
   const { toast, nav } = useBz();
   const { data: organization } = useSellerOrganization();
   const verification = organization?.verification;
@@ -8269,7 +8334,7 @@ export function SellerVideos() {
             <Icon name="video" size={32} color="var(--ink-400)" />
           </div>
           <p style={{ margin: 0, fontSize: ".9375rem", fontWeight: 600, maxWidth: 320 }}>
-            Complete verification to add and manage videos
+            {t("seller.videos.verifyRequired")}
           </p>
         </div>
       </div>
@@ -8300,18 +8365,42 @@ export function SellerVideos() {
 
 /* ---------- 4.17 Settings (includes Notifications) ---------- */
 export const NOTIF_EVENTS = [
-  { en: "New order", defaults: [true, true, true, false] },
-  { en: "Bargain offer", defaults: [true, false, true, false] },
-  { en: "Low stock", defaults: [true, false, true, false] },
-  { en: "New review", defaults: [true, false, false, false] },
-  { en: "Payout sent", defaults: [true, true, true, true] },
-  { en: "Policy update", defaults: [true, false, false, true] },
+  {
+    id: "new_order",
+    labelKey: "seller.settings.events.newOrder",
+    defaults: [true, true, true, false],
+  },
+  {
+    id: "bargain",
+    labelKey: "seller.settings.events.bargainOffer",
+    defaults: [true, false, true, false],
+  },
+  {
+    id: "low_stock",
+    labelKey: "seller.settings.events.lowStock",
+    defaults: [true, false, true, false],
+  },
+  {
+    id: "new_review",
+    labelKey: "seller.settings.events.newReview",
+    defaults: [true, false, false, false],
+  },
+  {
+    id: "payout",
+    labelKey: "seller.settings.events.payoutSent",
+    defaults: [true, true, true, true],
+  },
+  {
+    id: "policy",
+    labelKey: "seller.settings.events.policyUpdate",
+    defaults: [true, false, false, true],
+  },
 ];
 export const NOTIF_CHANNELS = [
-  { en: "In-app", icon: "bell" },
-  { en: "SMS", icon: "message" },
-  { en: "WhatsApp", icon: "headphones" },
-  { en: "Email", icon: "file" },
+  { id: "in_app", labelKey: "seller.settings.channels.inApp", icon: "bell" },
+  { id: "sms", labelKey: "seller.settings.channels.sms", icon: "message" },
+  { id: "whatsapp", labelKey: "seller.settings.channels.whatsapp", icon: "headphones" },
+  { id: "email", labelKey: "seller.settings.channels.email", icon: "file" },
 ];
 
 /* ---------- KYC verification timeline ----------
@@ -8319,6 +8408,7 @@ export const NOTIF_CHANNELS = [
    later") can come back and finish / track it. Renders the verification
    journey as a vertical timeline with event names + timestamps. */
 export function SellerVerificationTimeline() {
+  const { t } = useTranslation();
   const { nav } = useBz();
   const { data: organization, isLoading, isError, error } = useSellerOrganization();
   const verification = organization?.verification;
@@ -8341,10 +8431,18 @@ export function SellerVerificationTimeline() {
   const reviewed = status === "approved" || status === "rejected";
 
   const STATUS_META = {
-    none: { label: "Not started", bg: "var(--line-200)", fg: "var(--ink-600)" },
-    pending: { label: "Under review", bg: "rgba(247,127,0,.14)", fg: "var(--saffron)" },
-    approved: { label: "Approved", bg: "rgba(22,163,74,.14)", fg: "var(--success)" },
-    rejected: { label: "Not approved", bg: "var(--tint-red-50)", fg: "var(--red)" },
+    none: { label: t("seller.kyc.statusNotStarted"), bg: "var(--line-200)", fg: "var(--ink-600)" },
+    pending: {
+      label: t("seller.kyc.statusPending"),
+      bg: "rgba(247,127,0,.14)",
+      fg: "var(--saffron)",
+    },
+    approved: {
+      label: t("seller.kyc.statusApproved"),
+      bg: "rgba(22,163,74,.14)",
+      fg: "var(--success)",
+    },
+    rejected: { label: t("seller.kyc.statusRejected"), bg: "var(--tint-red-50)", fg: "var(--red)" },
   };
   const meta = STATUS_META[status] ?? STATUS_META.none;
 
@@ -8409,7 +8507,7 @@ export function SellerVerificationTimeline() {
                   color: "var(--blue-deep)",
                 }}
               >
-                KYC verification
+                {t("seller.kyc.title")}
               </h1>
               <p style={{ margin: "4px 0 0", fontSize: ".875rem", color: "var(--ink-500)" }}>
                 Track your document verification status.
@@ -8570,6 +8668,7 @@ export function SellerVerificationTimeline() {
 }
 
 export function SellerSettings() {
+  const { t } = useTranslation();
   const { toast, nav } = useBz();
   const user = useBazaarStore((s) => s.user);
   const { data: organization } = useSellerOrganization();
@@ -8599,9 +8698,9 @@ export function SellerSettings() {
       await updateSettings.mutateAsync({
         alertMatrix: notif,
       });
-      toast("Settings saved");
+      toast(t("seller.common.settingsSaved"));
     } catch (e) {
-      toast(e instanceof Error ? e.message : "Could not save settings");
+      toast(e instanceof Error ? e.message : t("seller.common.settingsSaveFailed"));
     }
   };
 
@@ -8609,11 +8708,9 @@ export function SellerSettings() {
     return (
       <div className="bz-seller-page">
         <SellerHelpBar />
-        <p style={{ color: "var(--ink-600)" }}>
-          Complete seller onboarding to configure notifications and account settings.
-        </p>
+        <p style={{ color: "var(--ink-600)" }}>{t("seller.settings.onboardingRequired")}</p>
         <Button variant="primary" href={pathFromScreen("s-onboarding")}>
-          Go to onboarding
+          {t("seller.common.goToOnboarding")}
         </Button>
       </div>
     );
@@ -8624,7 +8721,7 @@ export function SellerSettings() {
       <div className="bz-seller-page" style={{ maxWidth: "var(--container)", margin: "0 auto" }}>
         <SellerHelpBar />
         <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-          Settings
+          {t("seller.settings.title")}
         </h1>
         {/* Tab bar — same underline pattern as PDP description/specs */}
         <div
@@ -8638,16 +8735,16 @@ export function SellerSettings() {
           }}
         >
           {[
-            { id: "account", en: "Account" },
-            { id: "alerts", en: "Alerts" },
-          ].map((t) => {
-            const active = tab === t.id;
+            { id: "account", labelKey: "seller.settings.tabAccount" },
+            { id: "alerts", labelKey: "seller.settings.tabAlerts" },
+          ].map((tabDef) => {
+            const active = tab === tabDef.id;
             return (
               <button
-                key={t.id}
+                key={tabDef.id}
                 role="tab"
                 aria-selected={active}
-                onClick={() => setTab(t.id)}
+                onClick={() => setTab(tabDef.id)}
                 style={{
                   background: "none",
                   border: "none",
@@ -8663,7 +8760,7 @@ export function SellerSettings() {
                     "color var(--dur-standard) var(--ease), border-color var(--dur-standard) var(--ease)",
                 }}
               >
-                {t.en}
+                {t(tabDef.labelKey)}
               </button>
             );
           })}
@@ -8672,7 +8769,7 @@ export function SellerSettings() {
         {tab === "alerts" && notif && (
           <div>
             <p style={{ margin: "0 0 12px", fontSize: ".875rem", color: "var(--ink-500)" }}>
-              Pick how we tell you about each thing. New-order alerts are always on.
+              {t("seller.settings.alertsHint")}
             </p>
             {(notifications?.items ?? []).length > 0 && (
               <div
@@ -8685,7 +8782,7 @@ export function SellerSettings() {
                 }}
               >
                 <div style={{ fontWeight: 800, fontSize: ".875rem", marginBottom: 10 }}>
-                  Recent alerts
+                  {t("seller.settings.recentAlerts")}
                 </div>
                 {notifications.items.map((n) => (
                   <div
@@ -8726,11 +8823,11 @@ export function SellerSettings() {
                         textTransform: "uppercase",
                       }}
                     >
-                      Tell me about
+                      {t("seller.settings.tellMeAbout")}
                     </th>
                     {NOTIF_CHANNELS.map((c) => (
                       <th
-                        key={c.en}
+                        key={c.id}
                         style={{
                           padding: "12px 12px",
                           fontSize: ".7rem",
@@ -8741,7 +8838,7 @@ export function SellerSettings() {
                         }}
                       >
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                          <Icon name={c.icon} size={14} /> {c.en}
+                          <Icon name={c.icon} size={14} /> {t(c.labelKey)}
                         </span>
                       </th>
                     ))}
@@ -8749,9 +8846,9 @@ export function SellerSettings() {
                 </thead>
                 <tbody>
                   {NOTIF_EVENTS.map((e, ri) => (
-                    <tr key={e.en} style={{ borderTop: "1px solid var(--line-200)" }}>
+                    <tr key={e.id} style={{ borderTop: "1px solid var(--line-200)" }}>
                       <td style={{ padding: "14px 16px" }}>
-                        <div style={{ fontWeight: 700 }}>{e.en}</div>
+                        <div style={{ fontWeight: 700 }}>{t(e.labelKey)}</div>
                       </td>
                       {NOTIF_CHANNELS.map((_, ci) => (
                         <td key={ci} style={{ padding: "14px 12px", textAlign: "center" }}>
@@ -8794,20 +8891,29 @@ export function SellerSettings() {
           >
             {[
               {
+                id: "password",
                 icon: "lock",
-                en: noPassword ? "Set a password" : "Reset password",
+                title: noPassword
+                  ? t("seller.settings.setPassword")
+                  : t("seller.settings.resetPassword"),
                 sub: noPassword
-                  ? "Add a password to also sign in with email"
-                  : "Send a code to your email",
+                  ? t("seller.settings.setPasswordSub")
+                  : t("seller.settings.resetPasswordSub"),
                 onAct: () => setPwdResetOpen(true),
               },
-              { icon: "mail", en: "Email", sub: user?.email ?? "—", onAct: undefined },
+              {
+                id: "email",
+                icon: "mail",
+                title: t("seller.settings.email"),
+                sub: user?.email ?? "—",
+                onAct: undefined,
+              },
             ].map((r, i, a) => {
               const content = (
                 <>
                   <Icon name={r.icon} size={22} color="var(--ink-700)" />
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700 }}>{r.en}</div>
+                    <div style={{ fontWeight: 700 }}>{r.title}</div>
                     <div style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}>{r.sub}</div>
                   </div>
                   {r.onAct && <Icon name="chevronRight" size={18} color="var(--ink-400)" />}
@@ -8824,14 +8930,14 @@ export function SellerSettings() {
               };
               return r.onAct ? (
                 <button
-                  key={r.en}
+                  key={r.id}
                   onClick={() => r.onAct?.()}
                   style={{ ...rowStyle, border: "none", cursor: "pointer", textAlign: "left" }}
                 >
                   {content}
                 </button>
               ) : (
-                <div key={r.en} style={rowStyle}>
+                <div key={r.id} style={rowStyle}>
                   {content}
                 </div>
               );
@@ -8855,13 +8961,15 @@ export function SellerSettings() {
           >
             <Icon name="trash" size={22} color="var(--danger)" />
             <div style={{ flex: 1, minWidth: 180 }}>
-              <div style={{ fontWeight: 800, color: "var(--danger)" }}>Delete account</div>
+              <div style={{ fontWeight: 800, color: "var(--danger)" }}>
+                {t("seller.settings.deleteAccountTitle")}
+              </div>
               <div style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}>
-                Permanently remove your shop, products, and all data. This can&rsquo;t be undone.
+                {t("seller.settings.deleteAccountSub")}
               </div>
             </div>
             <Button variant="danger" onClick={() => setConfirmDelete(true)}>
-              Delete account
+              {t("seller.common.deleteAccount")}
             </Button>
           </div>
         )}
@@ -8875,7 +8983,7 @@ export function SellerSettings() {
             onClick={() => void handleSave()}
             style={{ marginTop: 18 }}
           >
-            {updateSettings.isPending ? "Saving…" : "Save"}
+            {updateSettings.isPending ? t("seller.common.saving") : t("seller.common.save")}
           </Button>
         )}
 
@@ -8893,6 +9001,7 @@ export function SellerSettings() {
 
 /* ---------- 4.18 Profile (includes KYC) ---------- */
 export function SellerProfile() {
+  const { t } = useTranslation();
   const { nav, toast } = useBz();
   const logoutMutation = useLogout();
   const updateProfile = useUpdateProfile();
@@ -8942,7 +9051,7 @@ export function SellerProfile() {
     >
       <SellerHelpBar />
       <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-        My profile
+        {t("seller.profile.title")}
       </h1>
 
       {/* Owner card */}
@@ -9100,6 +9209,7 @@ export function SellerProfile() {
 /* ---------- NEW: Simple Analytics ("My shop") for non-tech 40+ users ---------- */
 
 export function SellerAnalytics() {
+  const { t } = useTranslation();
   const { data: analytics, isLoading, isError, error } = useSellerAnalytics();
   const salesByDay = analytics?.salesByDay ?? [];
   const topProducts = analytics?.topProducts ?? [];
@@ -9130,7 +9240,7 @@ export function SellerAnalytics() {
           <h1
             style={{ margin: 0, fontSize: "1.75rem", fontWeight: 800, color: "var(--blue-deep)" }}
           >
-            My shop
+            {t("seller.analytics.title")}
           </h1>
         </div>
 

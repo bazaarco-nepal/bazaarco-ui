@@ -25,6 +25,7 @@ const BUYER_BOTTOM_NAV_SCREENS = new Set([
   "terms",
   "about",
   "store",
+  "stores",
 ]);
 
 function BottomNavBridge() {

@@ -14,6 +14,7 @@ const GUEST_VIEW_SCREENS = new Set([
   "search",
   "pdp",
   "store",
+  "stores",
   "video",
   "help",
   "faq",

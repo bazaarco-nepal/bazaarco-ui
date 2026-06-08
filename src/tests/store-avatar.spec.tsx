@@ -1,0 +1,54 @@
+import React from "react";
+import { describe, it, expect } from "vitest";
+import { render } from "@testing-library/react";
+import { tintForName } from "@/lib/store-tint";
+import { StoreAvatar } from "@/components/ui";
+
+// The store brand tint is hashed from the NAME so the same shop is always the
+// same colour everywhere it appears, and a grid of them looks intentional rather
+// than like a random crayon box.
+describe("tintForName", () => {
+  it("maps names to stable tint keys (pinned)", () => {
+    expect(tintForName("Bhimsen Naturals")).toBe("blue");
+    expect(tintForName("Everest Gadgets")).toBe("purple");
+    expect(tintForName("Himalayan Threads")).toBe("slate");
+  });
+
+  it("is case/whitespace-insensitive — the same shop is always the same colour", () => {
+    expect(tintForName("Bhimsen Naturals")).toBe(tintForName("  bhimsen naturals "));
+  });
+
+  it("always returns one of the known tint keys, even for empty/odd input", () => {
+    const keys = new Set(["blue", "red", "green", "saffron", "gold", "slate", "teal", "purple"]);
+    for (const n of ["", "x", "Store 123", "ÜñïçodeShop", null, undefined]) {
+      expect(keys.has(tintForName(n))).toBe(true);
+    }
+  });
+});
+
+describe("StoreAvatar rendering technique", () => {
+  it("renders the logo image when a src is given", () => {
+    const { container } = render(
+      <StoreAvatar src="https://cdn/logo.png" name="Everest Gadgets" size={48} />,
+    );
+    const img = container.querySelector("img");
+    expect(img).not.toBeNull();
+    expect(img).toHaveAttribute("src", "https://cdn/logo.png");
+  });
+
+  it("falls back to the first letter (uppercased) of the name when there is no logo", () => {
+    const { container, getByText } = render(
+      <StoreAvatar src={null} name="everest gadgets" size={36} />,
+    );
+    expect(container.querySelector("img")).toBeNull();
+    expect(getByText("E")).toBeInTheDocument();
+  });
+
+  it("is a rounded SQUARE (brand tile), not a circle", () => {
+    const { container } = render(<StoreAvatar name="Shop" size={56} />);
+    const tile = container.firstChild as HTMLElement;
+    // 10–12px brand-tile radius across sizes — never 50% (a circle).
+    expect(tile.style.borderRadius).toBe("11px");
+    expect(tile.style.borderRadius).not.toBe("50%");
+  });
+});

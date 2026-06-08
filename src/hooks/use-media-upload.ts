@@ -38,7 +38,6 @@ export function useUpdateSellerVideo() {
       videoId: string;
       title?: string;
       product?: string;
-      hashtags?: string[];
       status?: "draft" | "published";
     }) => mediaApi.updateSellerVideo(videoId, payload),
     onSuccess: () => {

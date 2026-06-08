@@ -2,11 +2,12 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { VideoUploadForm } from "@/components/common/video-upload-form";
 import { Button, Chip, EmptyState, Icon, Spinner } from "@/components/ui";
 import { useDeleteSellerVideo, useUpdateSellerVideo } from "@/hooks/use-media-upload";
-import { parseHashtags } from "@/lib/parse-hashtags";
+import { useSellerProducts } from "@/hooks/use-catalog";
+import { useSellerOrganization } from "@/hooks/use-seller";
 import {
   SellerVideoAnalyticsPanel,
   type SellerVideoAnalytics,
@@ -133,40 +134,36 @@ function VideoEditModal({
   onSaved: (message: string) => void;
 }) {
   const update = useUpdateSellerVideo();
-  const [title, setTitle] = useState(video.title);
-  const [product, setProduct] = useState(video.product);
-  const [hashtagInput, setHashtagInput] = useState("");
-  const [hashtags, setHashtags] = useState<string[]>(video.hashtags ?? []);
+  const { data: organization } = useSellerOrganization();
+  const { data: products, isLoading: productsLoading } = useSellerProducts(
+    organization?.sellerId ?? null,
+  );
+  const [productId, setProductId] = useState("");
   const [status, setStatus] = useState<"draft" | "published">(
     video.status === "draft" ? "draft" : "published",
   );
   const [error, setError] = useState<string | null>(null);
 
-  const addTags = () => {
-    const next = parseHashtags(hashtagInput);
-    if (next.length === 0) return;
-    setHashtags((prev) => {
-      const merged = [...prev];
-      for (const t of next) {
-        if (!merged.includes(t) && merged.length < 15) merged.push(t);
-      }
-      return merged;
-    });
-    setHashtagInput("");
-  };
+  // Preselect the dropdown to the video's current product once the list loads.
+  useEffect(() => {
+    if (!productId && products) {
+      const match = products.find((p) => p.name === video.product);
+      if (match) setProductId(match.id);
+    }
+  }, [products, productId, video.product]);
 
   const save = async () => {
     setError(null);
-    if (!title.trim() || !product.trim()) {
-      setError("Title and product name are required.");
+    const selectedProduct = products?.find((p) => p.id === productId);
+    if (!selectedProduct) {
+      setError("Select which product this video is for.");
       return;
     }
     try {
       await update.mutateAsync({
         videoId: video.id,
-        title: title.trim(),
-        product: product.trim(),
-        hashtags,
+        title: selectedProduct.name,
+        product: selectedProduct.name,
         status,
       });
       onSaved(status === "published" ? "Video updated & published" : "Draft updated");
@@ -207,81 +204,35 @@ function VideoEditModal({
       >
         <h2 style={{ margin: "0 0 14px", fontSize: "1.125rem", fontWeight: 800 }}>Edit video</h2>
 
-        <label style={{ display: "block", fontSize: ".8125rem", fontWeight: 600, marginBottom: 6 }}>
-          Title
+        <label
+          htmlFor="bz-edit-video-product"
+          style={{ display: "block", fontSize: ".8125rem", fontWeight: 600, marginBottom: 6 }}
+        >
+          Product
         </label>
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          disabled={update.isPending}
+        <select
+          id="bz-edit-video-product"
+          value={productId}
+          onChange={(e) => setProductId(e.target.value)}
+          disabled={update.isPending || productsLoading}
           style={{
             width: "100%",
             marginBottom: 12,
             padding: "10px 12px",
             borderRadius: "var(--r-md)",
             border: "1px solid var(--line-200)",
+            background: "#fff",
           }}
-        />
-
-        <label style={{ display: "block", fontSize: ".8125rem", fontWeight: 600, marginBottom: 6 }}>
-          Product name
-        </label>
-        <input
-          value={product}
-          onChange={(e) => setProduct(e.target.value)}
-          disabled={update.isPending}
-          style={{
-            width: "100%",
-            marginBottom: 12,
-            padding: "10px 12px",
-            borderRadius: "var(--r-md)",
-            border: "1px solid var(--line-200)",
-          }}
-        />
-
-        <label style={{ display: "block", fontSize: ".8125rem", fontWeight: 600, marginBottom: 6 }}>
-          Hashtags
-        </label>
-        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-          <input
-            value={hashtagInput}
-            onChange={(e) => setHashtagInput(e.target.value)}
-            placeholder="#handmade"
-            disabled={update.isPending}
-            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTags())}
-            style={{
-              flex: 1,
-              padding: "10px 12px",
-              borderRadius: "var(--r-md)",
-              border: "1px solid var(--line-200)",
-            }}
-          />
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            disabled={update.isPending}
-            onClick={addTags}
-          >
-            Add
-          </Button>
-        </div>
-        {hashtags.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 12 }}>
-            {hashtags.map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => setHashtags((prev) => prev.filter((t) => t !== tag))}
-                style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
-              >
-                <Chip tone="blue" size="sm">
-                  {tag} ×
-                </Chip>
-              </button>
-            ))}
-          </div>
-        )}
+        >
+          <option value="">
+            {productsLoading ? "Loading your products…" : "Select a product…"}
+          </option>
+          {products?.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
 
         <label style={{ display: "block", fontSize: ".8125rem", fontWeight: 600, marginBottom: 8 }}>
           Visibility
@@ -373,20 +324,6 @@ function VideoCard({
         >
           {video.product}
         </div>
-        {video.hashtags && video.hashtags.length > 0 && (
-          <div className="bz-seller-video-card__tags">
-            {video.hashtags.slice(0, 3).map((tag) => (
-              <Chip key={tag} tone="blue" size="sm">
-                {tag}
-              </Chip>
-            ))}
-            {video.hashtags.length > 3 && (
-              <span style={{ fontSize: ".65rem", color: "var(--ink-400)", alignSelf: "center" }}>
-                +{video.hashtags.length - 3}
-              </span>
-            )}
-          </div>
-        )}
         <div className="bz-seller-video-card__meta">
           <span>
             <Icon name="eye" size={12} style={{ verticalAlign: "middle", marginRight: 4 }} />
@@ -461,7 +398,7 @@ export function SellerVideoLibrary({
           Videos
         </h1>
         <Button variant="primary" icon="plus" onClick={onToggleUpload}>
-          {showUpload ? "Close" : "Add video"}
+          Add video
         </Button>
       </div>
       <p style={{ margin: "0 0 18px", fontSize: ".875rem", color: "var(--ink-500)" }}>
@@ -471,14 +408,24 @@ export function SellerVideoLibrary({
       <SellerVideoAnalyticsPanel analytics={stats} />
 
       {showUpload && (
-        <VideoUploadForm
-          onCancel={onToggleUpload}
-          onSuccess={(status) => {
-            onToggleUpload();
-            onRefetch();
-            onToast(status === "published" ? "Video published" : "Draft saved");
-          }}
-        />
+        <div
+          className="bz-upload-sheet-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Add product video"
+          onClick={onToggleUpload}
+        >
+          <div className="bz-upload-sheet" onClick={(e) => e.stopPropagation()}>
+            <VideoUploadForm
+              onCancel={onToggleUpload}
+              onSuccess={(status) => {
+                onToggleUpload();
+                onRefetch();
+                onToast(status === "published" ? "Video published" : "Draft saved");
+              }}
+            />
+          </div>
+        </div>
       )}
 
       <h2
@@ -494,11 +441,8 @@ export function SellerVideoLibrary({
 
       {videos.length === 0 && !showUpload ? (
         <EmptyState
-          icon="video"
           title="No videos yet"
-          message="Add a short vertical clip to help buyers discover your products."
-          cta="Add your first video"
-          onCta={onToggleUpload}
+          message="Add a short vertical clip to help buyers discover your products. Tap “Add video” at the top to upload your first one."
         />
       ) : videos.length === 1 ? (
         <div className="bz-seller-video-library-list">

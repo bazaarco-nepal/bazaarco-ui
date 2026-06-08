@@ -614,6 +614,8 @@ export function Profile() {
           transition: border-color var(--dur-standard) var(--ease), box-shadow var(--dur-standard) var(--ease);
         }
         .bz-acct-row:hover { border-color: var(--blue); box-shadow: var(--sh-1); }
+        .bz-acct-row--static { cursor: default; }
+        .bz-acct-row--static:hover { border-color: var(--line-200); box-shadow: none; }
         .bz-acct-row--accent { border-color: var(--blue); box-shadow: inset 0 0 0 1px var(--blue); }
         .bz-acct-row__icon {
           width: 44px;
@@ -817,6 +819,13 @@ export function Profile() {
             href={pathFromScreen("wishlist")}
             onNavigate={() => nav("wishlist")}
           />
+          <AcctRow
+            icon="store"
+            title={t("profile.allStores")}
+            sub={t("profile.allStoresSub")}
+            href={pathFromScreen("stores")}
+            onNavigate={() => nav("stores")}
+          />
         </div>
       </section>
 
@@ -876,24 +885,14 @@ export function Profile() {
       <section className="bz-acct-group">
         <h2 className="bz-acct-group__title">{t("profile.settingsHelp")}</h2>
         <div className="bz-acct-group__cards">
-          <div
-            className="bz-acct-row"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 16,
-              padding: "16px 18px",
-            }}
-          >
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontWeight: 800, color: "var(--ink-900)", fontSize: ".9375rem" }}>
-                {t("profile.language")}
-              </div>
-              <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 2 }}>
-                {t("profile.languageSub")}
-              </div>
-            </div>
+          <div className="bz-acct-row bz-acct-row--static">
+            <span className="bz-acct-row__icon">
+              <Icon name="globe" size={20} color="var(--ink-700)" />
+            </span>
+            <span className="bz-acct-row__body">
+              <span className="bz-acct-row__title">{t("profile.language")}</span>
+              <span className="bz-acct-row__sub">{t("profile.languageSub")}</span>
+            </span>
             <LanguageToggle compact />
           </div>
           {requiresPassword && (

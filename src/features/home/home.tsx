@@ -51,7 +51,6 @@ import {
   Footer,
   DevViewSwitcher,
   BuyerAvatar,
-  LanguageToggle,
 } from "@/components/common";
 import { PicksSections } from "./_components/picks-tabs";
 import { SearchOverlay } from "./_components/search-overlay";
@@ -239,7 +238,6 @@ export function Home() {
                   {buyerGreeting ?? "there"}
                 </div>
               </div>
-              <LanguageToggle compact />
               <IconButton
                 name="cart"
                 label={t("nav.cart")}

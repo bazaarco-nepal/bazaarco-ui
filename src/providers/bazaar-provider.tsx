@@ -206,16 +206,21 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
     (nextScreen: string, options?: { cat?: string }) => {
       const state = useBazaarStore.getState();
       const productId = state.activeProduct?.id;
-      state.setScreenOverride(nextScreen === "browse" ? "browse" : null);
       if (nextScreen === "browse") {
-        const q = state.query.trim();
-        router.push(
-          searchPath({
-            q: q || undefined,
-            cat: options?.cat,
-          }),
-        );
+        const cat = options?.cat;
+        // Picking a category is a fresh category browse — drop any active text
+        // query so results show only that category, ranked by relevance (the
+        // default sort, which searchPath omits from the URL).
+        if (cat) state.setQuery("");
+        const q = cat ? undefined : state.query.trim() || undefined;
+        // Browse/category results render on the faceted /search screen, so the
+        // optimistic override must be "search". Using "browse" here never
+        // matches the /search route, so it would stick and leave the Browse
+        // spinner on screen forever.
+        state.setScreenOverride("search");
+        router.push(searchPath({ q, cat }));
       } else {
+        state.setScreenOverride(null);
         router.push(pathFromScreen(nextScreen, productId));
       }
       setTimeout(scrollTop, 0);

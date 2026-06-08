@@ -230,8 +230,6 @@ function ReelItem({
   item,
   isMobile,
   isActive,
-  follows,
-  onToggleFollow,
   liked,
   onToggleLike,
   muted,
@@ -243,10 +241,8 @@ function ReelItem({
   const p = item;
   const s = item.seller;
   const wished = wish.includes(p.id);
-  const followed = follows.has(s.id);
   const metrics = item.engagement;
   const caption = item.caption;
-  const tags = item.hashtags;
   const tint = TINTS[p.tint] || TINTS.blue;
 
   const [bursts, setBursts] = useState([]);
@@ -354,6 +350,7 @@ function ReelItem({
         externalMuted={muted}
         onMutedChange={onMutedChange}
         playbackRate={fastFwd ? 2.0 : 1.0}
+        isActive={isActive}
       />
 
       {/* index pill */}
@@ -533,26 +530,6 @@ function ReelItem({
             ) : (
               s.name[0]
             )}
-            {!followed && (
-              <span
-                style={{
-                  position: "absolute",
-                  left: "50%",
-                  bottom: -6,
-                  transform: "translateX(-50%)",
-                  width: 18,
-                  height: 18,
-                  borderRadius: "50%",
-                  background: "var(--red)",
-                  border: "2px solid #fff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Icon name="plus" size={11} color="#fff" stroke={2.5} />
-              </span>
-            )}
           </AppLink>
           <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -572,32 +549,6 @@ function ReelItem({
               {s.name} · {s.city}
             </span>
           </div>
-          <button
-            onClick={() => onToggleFollow(s.id)}
-            style={{
-              marginLeft: "auto",
-              height: 30,
-              padding: "0 12px",
-              border: followed ? "1px solid rgba(255,255,255,.5)" : "none",
-              borderRadius: "var(--r-md)",
-              cursor: "pointer",
-              fontSize: ".8125rem",
-              fontWeight: 700,
-              background: followed ? "transparent" : "#fff",
-              color: followed ? "#fff" : "var(--ink-900)",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-            }}
-          >
-            {followed ? (
-              <>
-                <Icon name="check" size={13} /> Following
-              </>
-            ) : (
-              "Follow"
-            )}
-          </button>
         </div>
 
         <div style={{ pointerEvents: "auto", maxWidth: "100%" }}>
@@ -632,22 +583,6 @@ function ReelItem({
               {capExpand ? "less" : "more"}
             </button>
           )}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
-            {tags.map((t) => (
-              <span
-                key={t}
-                style={{
-                  fontSize: ".75rem",
-                  color: "#fff",
-                  opacity: 0.9,
-                  fontWeight: 600,
-                  textShadow: "0 1px 2px rgba(0,0,0,.5)",
-                }}
-              >
-                {t}
-              </span>
-            ))}
-          </div>
         </div>
       </div>
 
@@ -755,7 +690,6 @@ export function VideoTheater() {
   const vids: VideoFeedItem[] = (feed?.items ?? []).filter(
     (v) => typeof v.videoUrl === "string" && v.videoUrl.trim().length > 0,
   );
-  const [follows, setFollows] = useState(() => new Set());
   const [liked, setLiked] = useState<Set<string>>(() => new Set());
 
   // Seed liked state from the server feed (reflects the signed-in user's likes).
@@ -815,20 +749,6 @@ export function VideoTheater() {
     }, 10_000);
     return () => clearTimeout(timer);
   }, [activeIndex, vids]);
-
-  const toggleFollow = (sellerId) => {
-    if (!authed) {
-      promptLogin("Please sign in to follow sellers.");
-      return;
-    }
-    const wasFollowing = follows.has(sellerId);
-    setFollows((set) => {
-      const n = new Set(set);
-      wasFollowing ? n.delete(sellerId) : n.add(sellerId);
-      return n;
-    });
-    toast(wasFollowing ? "Unfollowed" : `Following ${p?.seller?.name ?? "seller"}`);
-  };
 
   // Scroll programmatically to a target reel index (smooth)
   const scrollToIndex = useCallback(
@@ -936,8 +856,6 @@ export function VideoTheater() {
             item={v}
             isMobile={isMobile}
             isActive={idx === activeIndex}
-            follows={follows}
-            onToggleFollow={toggleFollow}
             liked={liked.has(v.id)}
             onToggleLike={toggleLike}
             muted={muted}

@@ -14,6 +14,7 @@ import {
   Search,
   PDP,
   Store,
+  Stores,
   VideoTheater,
   Cart,
   Checkout,
@@ -147,6 +148,7 @@ export function MarketplaceScreen() {
     return <PDP key={product.id} p={product} />;
   }
   if (screen === "store") return <Store />;
+  if (screen === "stores") return <Stores />;
   if (screen === "video") return <VideoTheater />;
   if (screen === "cart") return <Cart />;
   if (screen === "checkout") return <Checkout />;

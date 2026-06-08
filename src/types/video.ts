@@ -38,7 +38,6 @@ export interface VideoFeedItem {
   seller: VideoFeedSeller;
   engagement: VideoFeedEngagement;
   caption: string;
-  hashtags: string[];
   liked: boolean;
 }
 

@@ -690,6 +690,21 @@ function AccountMenuPanel({ navLabel, user, authed, goAndClose, onLogout }) {
         href={pathFromScreen("bargains")}
         onNavigate={() => goAndClose("bargains")}
       />
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
+          padding: "10px 12px",
+          margin: "4px 0",
+        }}
+      >
+        <span style={{ fontSize: ".875rem", fontWeight: 700, color: "var(--ink-700)" }}>
+          {t("language.label")}
+        </span>
+        <LanguageToggle compact />
+      </div>
       <div style={{ height: 1, background: "var(--line-200)", margin: "6px 4px" }} />
       {authed ? (
         <NavMenuItem icon="x" label={t("nav.logOut")} danger onClick={onLogout} />
@@ -991,7 +1006,7 @@ export function Navbar() {
             aria-label="Account menu"
           >
             <div className="bz-navbar__sheet-head">
-              <h2 className="bz-navbar__sheet-title">Menu</h2>
+              <h2 className="bz-navbar__sheet-title">{t("nav.menu")}</h2>
               <button
                 type="button"
                 aria-label="Close menu"

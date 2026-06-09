@@ -101,7 +101,18 @@
     "books-stationery": "पुस्तक र स्टेसनरी",
     "musical-instruments": "संगीत वाद्ययन्त्र",
     "pet-supplies": "पालतू जनावर सामान",
-    "local-nepali-handmade": "स्थानीय नेपाली र हस्तकला उत्पादन"
+    "local-nepali-handmade": "स्थानीय नेपाली र हस्तकला उत्पादन",
+    "electronics": "इलेक्ट्रनिक्स",
+    "fashion": "फेसन",
+    "health-beauty": "स्वास्थ्य र सौन्दर्य",
+    "home-living": "घर र लिभिङ",
+    "mother-baby-kids": "आमा, शिशु र बच्चाहरू",
+    "sports-outdoors": "खेलकुद र बाहिरी",
+    "automotive": "सवारी साधन",
+    "crafts-heritage": "हस्तकला र सांस्कृतिक सम्पदा",
+    "digital-goods-services": "डिजिटल सामान र सेवाहरू",
+    "tools-home-improvement": "औजार र घर सुधार",
+    "medical-office-supplies": "चिकित्सा र कार्यालय सामग्री"
   },
   "browse": {
     "allProducts": "सबै उत्पादनहरू",

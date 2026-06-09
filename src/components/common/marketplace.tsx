@@ -486,6 +486,18 @@ const CATEGORY_ICON: Record<string, string> = {
   "musical-instruments": "headphones",
   "pet-supplies": "leaf",
   "local-nepali-handmade": "temple",
+  // Legacy seed category IDs (production DB)
+  electronics: "headphones",
+  fashion: "shirt",
+  "health-beauty": "leaf",
+  "home-living": "home",
+  "mother-baby-kids": "pacifier",
+  "sports-outdoors": "football",
+  automotive: "truck",
+  "crafts-heritage": "temple",
+  "digital-goods-services": "file",
+  "tools-home-improvement": "home",
+  "medical-office-supplies": "leaf",
 };
 
 // Colorful real-object category artwork served from public/category-icons. Keyed
@@ -512,6 +524,16 @@ const CATEGORY_ICON_SRC: Record<string, string> = {
   "musical-instruments": "/category-icons/18-musical-instruments.svg",
   "pet-supplies": "/category-icons/19-pet-supplies.svg",
   "local-nepali-handmade": "/category-icons/20-local-nepali-handmade.svg",
+  // Legacy seed category IDs — reuse the closest matching artwork
+  electronics: "/category-icons/02-electronics-gadgets.svg",
+  fashion: "/category-icons/04-fashion-clothing.svg",
+  "health-beauty": "/category-icons/08-health-wellness.svg",
+  "home-living": "/category-icons/12-home-decor.svg",
+  "mother-baby-kids": "/category-icons/14-baby-kids-toys.svg",
+  "sports-outdoors": "/category-icons/15-sports-fitness-outdoors.svg",
+  automotive: "/category-icons/16-automotive-motorbike.svg",
+  "crafts-heritage": "/category-icons/20-local-nepali-handmade.svg",
+  "digital-goods-services": "/category-icons/03-computers-accessories.svg",
 };
 
 // `compact` is kept for call-site compatibility, but category labels always use

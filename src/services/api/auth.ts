@@ -163,9 +163,20 @@ export async function logout(): Promise<void> {
   }
 }
 
-export async function deleteAccount(payload?: { password?: string }): Promise<void> {
+export async function requestAccountDeletionOtp(): Promise<{ email: string; expiresAt: string }> {
   try {
-    await authClient.delete("/auth/me", { data: payload ?? {} });
+    const { data } = await authClient.post<
+      ApiSuccessResponse<{ email: string; expiresAt: string }>
+    >("/auth/delete-account/request-otp");
+    return data.data;
+  } catch (error) {
+    throw mapAuthError(error);
+  }
+}
+
+export async function deleteAccount(payload: { password?: string; otp: string }): Promise<void> {
+  try {
+    await authClient.delete("/auth/me", { data: payload });
   } catch (error) {
     throw mapAuthError(error);
   } finally {

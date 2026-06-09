@@ -2075,6 +2075,30 @@ body {
   outline-offset: 4px;
 }
 
+.bz-footer-social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+  transition:
+    background var(--dur-standard) var(--ease),
+    color var(--dur-standard) var(--ease),
+    transform var(--dur-standard) var(--ease);
+}
+.bz-footer-social:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  transform: translateY(-2px);
+}
+.bz-footer-social:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
 /* ============================================================
    Responsive layer — utility classes used to override inline
    grid-template-columns / fixed widths on small screens.

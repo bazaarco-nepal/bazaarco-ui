@@ -13,6 +13,7 @@ import {
   login,
   logout,
   register,
+  requestAccountDeletionOtp,
   requestPasswordReset,
   resendEmailVerification,
   updateProfile,
@@ -178,11 +179,17 @@ export function useChangePassword() {
   });
 }
 
+export function useRequestAccountDeletionOtp() {
+  return useMutation({
+    mutationFn: () => requestAccountDeletionOtp(),
+  });
+}
+
 export function useDeleteAccount() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload?: { password?: string }) => deleteAccount(payload),
+    mutationFn: (payload: { password?: string; otp: string }) => deleteAccount(payload),
     onSuccess: async () => {
       await clearSessionState(queryClient);
     },

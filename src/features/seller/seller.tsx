@@ -1576,14 +1576,18 @@ export function SellerBarChart({ data, height = 280, summaryTotalLabel = "7-day 
         {[
           {
             label: summaryTotalLabel,
-            value: `Rs. ${total.toLocaleString()}`,
+            value: `Rs. ${total.toLocaleString("en-IN")}`,
             tint: "var(--blue-deep)",
           },
-          { label: "Daily average", value: `Rs. ${avg.toLocaleString()}`, tint: "var(--ink-700)" },
+          {
+            label: "Daily average",
+            value: `Rs. ${avg.toLocaleString("en-IN")}`,
+            tint: "var(--ink-700)",
+          },
           {
             label: "Best day",
             value: data[peakIdx]?.value
-              ? `${data[peakIdx].label} · Rs. ${data[peakIdx].value.toLocaleString()}`
+              ? `${data[peakIdx].label} · Rs. ${data[peakIdx].value.toLocaleString("en-IN")}`
               : "—",
             tint: "var(--saffron)",
           },
@@ -1658,11 +1662,11 @@ export function SellerBarChart({ data, height = 280, summaryTotalLabel = "7-day 
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {d.value > 0 ? `Rs.${d.value.toLocaleString()}` : "—"}
+                  {d.value > 0 ? `Rs.${d.value.toLocaleString("en-IN")}` : "—"}
                 </div>
               )}
               <div
-                title={`${d.label}: Rs. ${d.value.toLocaleString()}`}
+                title={`${d.label}: Rs. ${d.value.toLocaleString("en-IN")}`}
                 style={{
                   width: "100%",
                   maxWidth: 64,
@@ -1931,11 +1935,12 @@ export function SellerDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, user?.intent, user?.onBoarding]);
 
-  const today = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "short",
-    day: "numeric",
-  });
+  const [today, setToday] = useState("");
+  useEffect(() => {
+    setToday(
+      new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" }),
+    );
+  }, []);
 
   const salesByDay = dashboard?.salesByDay ?? [];
   const paymentSplit = dashboard?.paymentSplit ?? [];
@@ -2687,7 +2692,7 @@ export function SellerDashboard() {
                     className="tnum"
                     style={{ fontWeight: 800, fontSize: "1rem", color: "var(--ink-900)" }}
                   >
-                    Rs. {bargainGlance.marginGiven.toLocaleString()}
+                    Rs. {bargainGlance.marginGiven.toLocaleString("en-IN")}
                   </div>
                   <div style={{ fontSize: ".7rem", color: "var(--ink-500)" }}>
                     Margin given via bargain (this week)
@@ -2837,7 +2842,7 @@ export function SellerDashboard() {
                     className="tnum"
                     style={{ padding: "12px 8px", fontWeight: 800, color: "var(--success)" }}
                   >
-                    Rs. {p.rev.toLocaleString()}
+                    Rs. {p.rev.toLocaleString("en-IN")}
                   </td>
                   <td style={{ padding: "12px 8px", width: 120 }}>
                     <SellerSparkline data={p.spark} color="var(--blue)" height={24} />
@@ -3039,7 +3044,7 @@ export function OrderCard({
           className="tnum"
           style={{ fontSize: ".875rem", color: "var(--blue-deep)", fontWeight: 800, marginTop: 4 }}
         >
-          Rs. {o.price.toLocaleString()}
+          Rs. {o.price.toLocaleString("en-IN")}
         </div>
       </div>
     </button>
@@ -3672,7 +3677,7 @@ export function SellerOrderDetail() {
               className="tnum"
               style={{ fontWeight: 800, fontSize: "1.25rem", color: "var(--blue-deep)" }}
             >
-              Rs. {o.price.toLocaleString()}
+              Rs. {o.price.toLocaleString("en-IN")}
             </span>
           </div>
           <div
@@ -3689,7 +3694,7 @@ export function SellerOrderDetail() {
               className="tnum"
               style={{ fontWeight: 800, fontSize: "1.375rem", color: "var(--success)" }}
             >
-              Rs. {o.price.toLocaleString()}
+              Rs. {o.price.toLocaleString("en-IN")}
             </span>
           </div>
           <div style={{ marginTop: 8, fontSize: ".75rem", color: "var(--ink-500)" }}>
@@ -5761,7 +5766,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
             className="tnum"
             style={{ fontSize: "1.25rem", fontWeight: 800, color: "var(--blue-deep)" }}
           >
-            Rs. {(product?.price ?? item.price).toLocaleString()}
+            Rs. {(product?.price ?? item.price).toLocaleString("en-IN")}
           </span>
           {product?.original && product.original > product.price && (
             <span
@@ -5772,7 +5777,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
                 textDecoration: "line-through",
               }}
             >
-              Rs. {product.original.toLocaleString()}
+              Rs. {product.original.toLocaleString("en-IN")}
             </span>
           )}
           {product?.discountPct && (
@@ -5820,7 +5825,11 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
           <DetailTile
             label="Bargaining"
             value={item?.allowBargaining ? "Enabled" : "Disabled"}
-            sub={item?.minimumPrice ? `Min Rs. ${item.minimumPrice.toLocaleString()}` : undefined}
+            sub={
+              item?.minimumPrice
+                ? `Min Rs. ${item.minimumPrice.toLocaleString("en-IN")}`
+                : undefined
+            }
           />
           {/* Category */}
           {product?.cat && <DetailTile label="Category" value={product.cat} />}
@@ -5865,7 +5874,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
                       color: i === 0 ? "#fff" : "var(--ink-600)",
                     }}
                   >
-                    Rs. {v.price.toLocaleString()}
+                    Rs. {v.price.toLocaleString("en-IN")}
                   </span>
                 </div>
               ))}
@@ -6497,7 +6506,7 @@ export function SellerInventory() {
                               marginTop: 2,
                             }}
                           >
-                            Rs. {it.price.toLocaleString()}
+                            Rs. {it.price.toLocaleString("en-IN")}
                           </div>
                           <div
                             style={{
@@ -7178,16 +7187,16 @@ export function SellerLedger() {
                   <tr key={i} style={{ borderTop: "1.5px solid var(--line-200)" }}>
                     <td style={{ padding: "14px 12px", fontWeight: 700 }}>{r.date}</td>
                     <td className="tnum" style={{ padding: "14px 12px" }}>
-                      Rs. {r.cash.toLocaleString()}
+                      Rs. {r.cash.toLocaleString("en-IN")}
                     </td>
                     <td className="tnum" style={{ padding: "14px 12px", color: "var(--danger)" }}>
-                      − Rs. {r.fee.toLocaleString()}
+                      − Rs. {r.fee.toLocaleString("en-IN")}
                     </td>
                     <td
                       className="tnum"
                       style={{ padding: "14px 12px", color: "var(--success)", fontWeight: 800 }}
                     >
-                      Rs. {r.net.toLocaleString()}
+                      Rs. {r.net.toLocaleString("en-IN")}
                     </td>
                     <td style={{ padding: "14px 12px" }}>
                       <span
@@ -7228,13 +7237,11 @@ export function SellerLedger() {
 
 /* ---------- 4.7 Customer Chat ---------- */
 function useChatMobile(bp = 720) {
-  const [isMobile, setIsMobile] = useState(
-    () => typeof window !== "undefined" && window.matchMedia(`(max-width:${bp}px)`).matches,
-  );
+  const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia(`(max-width:${bp}px)`);
-    const onChange = () => setIsMobile(mq.matches);
-    onChange();
+    setIsMobile(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
   }, [bp]);
@@ -7908,7 +7915,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
 
 function fmtRs(value: unknown): string {
   const n = Number(value);
-  return Number.isFinite(n) ? n.toLocaleString() : "0";
+  return Number.isFinite(n) ? n.toLocaleString("en-IN") : "0";
 }
 
 function bargainStatus(o: {
@@ -7983,8 +7990,12 @@ export function SellerBargain() {
             return [
               { v: String(total), k: "Offers this week", c: "var(--blue)" },
               { v: total > 0 ? `${acceptPct}%` : "0%", k: "You accepted", c: "var(--success)" },
-              { v: `Rs. ${avgSaving.toLocaleString()}`, k: "Average saving", c: "var(--saffron)" },
-              { v: `Rs. ${margin.toLocaleString()}`, k: "Margin given", c: "var(--danger)" },
+              {
+                v: `Rs. ${avgSaving.toLocaleString("en-IN")}`,
+                k: "Average saving",
+                c: "var(--saffron)",
+              },
+              { v: `Rs. ${margin.toLocaleString("en-IN")}`, k: "Margin given", c: "var(--danger)" },
             ];
           })().map((s) => (
             <div
@@ -9779,10 +9790,10 @@ export function SellerAnalytics() {
                 color: "var(--blue-deep)",
               }}
             >
-              Rs. {soldToday.toLocaleString()}
+              Rs. {soldToday.toLocaleString("en-IN")}
             </div>
             <div style={{ fontSize: ".8125rem", color: "var(--ink-400)" }}>
-              Courier holding Rs. {withCourier.toLocaleString()}
+              Courier holding Rs. {withCourier.toLocaleString("en-IN")}
             </div>
             <div
               style={{
@@ -9807,7 +9818,7 @@ export function SellerAnalytics() {
                     {b.en}
                   </span>
                   <span className="tnum" style={{ fontWeight: 700, color: "var(--ink-900)" }}>
-                    Rs. {b.v.toLocaleString()}
+                    Rs. {b.v.toLocaleString("en-IN")}
                   </span>
                 </div>
               ))}
@@ -9859,7 +9870,7 @@ export function SellerAnalytics() {
               }}
             >
               {bestDay.value > 0
-                ? `${bestDay.label} was your strongest day — Rs. ${bestDay.value.toLocaleString()} in sales.`
+                ? `${bestDay.label} was your strongest day — Rs. ${bestDay.value.toLocaleString("en-IN")} in sales.`
                 : "Sales will show here once you start receiving orders."}
             </p>
             <div
@@ -9868,11 +9879,11 @@ export function SellerAnalytics() {
               {[
                 {
                   label: "7-day total",
-                  value: `Rs. ${salesByDay.reduce((s, d) => s + d.value, 0).toLocaleString()}`,
+                  value: `Rs. ${salesByDay.reduce((s, d) => s + d.value, 0).toLocaleString("en-IN")}`,
                 },
                 {
                   label: "Daily average",
-                  value: `Rs. ${Math.round(salesByDay.reduce((s, d) => s + d.value, 0) / Math.max(salesByDay.length, 1)).toLocaleString()}`,
+                  value: `Rs. ${Math.round(salesByDay.reduce((s, d) => s + d.value, 0) / Math.max(salesByDay.length, 1)).toLocaleString("en-IN")}`,
                 },
                 { label: "Best day", value: bestDay.value > 0 ? bestDay.label : "—" },
               ].map((s) => (
@@ -9957,7 +9968,7 @@ export function SellerAnalytics() {
                         className="tnum"
                         style={{ fontWeight: 800, fontSize: "1.05rem", color: b.c }}
                       >
-                        Rs. {b.v.toLocaleString()}
+                        Rs. {b.v.toLocaleString("en-IN")}
                       </span>
                     </div>
                     <div
@@ -9998,7 +10009,7 @@ export function SellerAnalytics() {
                 style={{ verticalAlign: "middle", marginRight: 6 }}
               />
               {withCourier > 0
-                ? `Rs. ${withCourier.toLocaleString()} is with courier until delivery is confirmed.`
+                ? `Rs. ${withCourier.toLocaleString("en-IN")} is with courier until delivery is confirmed.`
                 : "No payouts in transit right now."}
             </p>
           </div>
@@ -10067,7 +10078,7 @@ export function SellerAnalytics() {
                     className="tnum"
                     style={{ fontWeight: 800, color: "var(--success)", fontSize: "1rem" }}
                   >
-                    Rs. {p.rev.toLocaleString()}
+                    Rs. {p.rev.toLocaleString("en-IN")}
                   </div>
                 </div>
               ))}

@@ -1461,7 +1461,7 @@ export function Checkout() {
                     </Chip>
                   </div>
                   <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 2 }}>
-                    Pay Rs. {total.toLocaleString()} when your order is delivered
+                    Pay Rs. {total.toLocaleString("en-IN")} when your order is delivered
                   </div>
                 </div>
               </div>

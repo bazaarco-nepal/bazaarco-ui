@@ -385,7 +385,7 @@ export function Search() {
             >
               {isFetching && !data
                 ? t("search.searching")
-                : t("search.productsFound", { count: total.toLocaleString() })}
+                : t("search.productsFound", { count: total.toLocaleString("en-IN") })}
             </span>
             <label style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
               <span
@@ -543,8 +543,8 @@ export function Search() {
             >
               <Button variant="primary" full onClick={() => setSheet(false)}>
                 {total === 1
-                  ? t("search.showResult", { count: total.toLocaleString() })
-                  : t("search.showResults", { count: total.toLocaleString() })}
+                  ? t("search.showResult", { count: total.toLocaleString("en-IN") })
+                  : t("search.showResults", { count: total.toLocaleString("en-IN") })}
               </Button>
             </div>
           </div>

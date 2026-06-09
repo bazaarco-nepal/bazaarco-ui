@@ -987,7 +987,7 @@ export function RatingStars({
       )}
       {reviewCount != null && (
         <span className="tnum" style={{ fontSize: ".8125rem", color: "var(--ink-400)" }}>
-          ({reviewCount.toLocaleString()})
+          ({reviewCount.toLocaleString("en-IN")})
         </span>
       )}
     </span>
@@ -2158,8 +2158,8 @@ export function AllInPriceCard({ price, delivery = 60, area = "Chabahil", onEdit
         </button>
       </div>
       <div className="tnum" style={{ fontSize: ".9375rem" }}>
-        Rs. {price.toLocaleString()} for item + Rs. {delivery} delivery ={" "}
-        <b style={{ color: "var(--blue-deep)" }}>Rs. {total.toLocaleString()} to pay</b>
+        Rs. {price.toLocaleString("en-IN")} for item + Rs. {delivery} delivery ={" "}
+        <b style={{ color: "var(--blue-deep)" }}>Rs. {total.toLocaleString("en-IN")} to pay</b>
       </div>
     </div>
   );

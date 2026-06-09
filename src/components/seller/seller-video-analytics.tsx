@@ -41,12 +41,12 @@ function MetricBarChart({
     <div style={{ width: "100%" }}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 14 }}>
         {[
-          { label: "7-day views", value: total.toLocaleString(), tint: "var(--blue-deep)" },
-          { label: "Daily avg", value: avg.toLocaleString(), tint: "var(--ink-700)" },
+          { label: "7-day views", value: total.toLocaleString("en-IN"), tint: "var(--blue-deep)" },
+          { label: "Daily avg", value: avg.toLocaleString("en-IN"), tint: "var(--ink-700)" },
           {
             label: "Best day",
             value: data[peakIdx]?.value
-              ? `${data[peakIdx]!.label} · ${data[peakIdx]!.value.toLocaleString()}`
+              ? `${data[peakIdx]!.label} · ${data[peakIdx]!.value.toLocaleString("en-IN")}`
               : "—",
             tint: "var(--saffron)",
           },
@@ -119,7 +119,7 @@ function MetricBarChart({
                   marginBottom: 4,
                 }}
               >
-                {d.value > 0 ? `${valuePrefix}${d.value.toLocaleString()}` : "—"}
+                {d.value > 0 ? `${valuePrefix}${d.value.toLocaleString("en-IN")}` : "—"}
               </div>
               <div
                 style={{
@@ -250,7 +250,7 @@ export function SellerVideoAnalyticsPanel({ analytics }: { analytics: SellerVide
   const kpis = [
     {
       label: "Total views",
-      value: totals.views.toLocaleString(),
+      value: totals.views.toLocaleString("en-IN"),
       sub: "All videos",
       icon: "eye" as const,
       color: "var(--blue)",
@@ -258,7 +258,7 @@ export function SellerVideoAnalyticsPanel({ analytics }: { analytics: SellerVide
     },
     {
       label: "Total likes",
-      value: totals.likes.toLocaleString(),
+      value: totals.likes.toLocaleString("en-IN"),
       sub: "Buyer engagement",
       icon: "heart" as const,
       color: "var(--red)",

@@ -336,8 +336,9 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
             </div>
             <h3 style={{ margin: 0, fontSize: "1.25rem" }}>Offer accepted! 🎉</h3>
             <p style={{ color: "var(--ink-500)", marginTop: 8 }}>
-              {sellerOf(p)?.name} accepted <b className="tnum">Rs. {offer.toLocaleString()}</b>. Add
-              it to your cart at this price.
+              {sellerOf(p)?.name} accepted{" "}
+              <b className="tnum">Rs. {offer.toLocaleString("en-IN")}</b>. Add it to your cart at
+              this price.
             </p>
             <div style={{ marginTop: 18 }}>
               <Button
@@ -355,7 +356,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
                   onClose();
                 }}
               >
-                Add to cart · Rs. {offer.toLocaleString()}
+                Add to cart · Rs. {offer.toLocaleString("en-IN")}
               </Button>
             </div>
           </div>
@@ -383,7 +384,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
             <h3 style={{ margin: 0, fontSize: "1.125rem" }}>Seller countered</h3>
             <p style={{ color: "var(--ink-500)", marginTop: 8 }}>
               That's a little low. They can do{" "}
-              <b className="tnum">Rs. {counter.toLocaleString()}</b>.
+              <b className="tnum">Rs. {counter.toLocaleString("en-IN")}</b>.
             </p>
             <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
               <Button
@@ -405,7 +406,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
                   onClose();
                 }}
               >
-                Accept Rs. {counter.toLocaleString()}
+                Accept Rs. {counter.toLocaleString("en-IN")}
               </Button>
             </div>
           </div>

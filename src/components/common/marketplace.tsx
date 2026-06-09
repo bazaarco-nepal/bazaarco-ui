@@ -484,6 +484,28 @@ const CATEGORY_ICON: Record<string, string> = {
   "medical-office-supplies": "filePlus",
 };
 
+// Colorful real-object category artwork served from public/category-icons. Keyed
+// by category id; when present we render the SVG, otherwise we fall back to the
+// line Icon above. Filenames mirror public/category-icons/manifest.json.
+const CATEGORY_ICON_SRC: Record<string, string> = {
+  electronics: "/category-icons/01-electronics.svg",
+  "home-appliances": "/category-icons/02-home-appliances.svg",
+  fashion: "/category-icons/03-fashion.svg",
+  "health-beauty": "/category-icons/04-health-beauty.svg",
+  "groceries-essentials": "/category-icons/05-groceries-essentials.svg",
+  "home-living": "/category-icons/06-home-living.svg",
+  "mother-baby-kids": "/category-icons/07-mother-baby-kids.svg",
+  "sports-outdoors": "/category-icons/08-sports-outdoors.svg",
+  automotive: "/category-icons/09-automotive.svg",
+  "books-stationery": "/category-icons/10-books-stationery.svg",
+  "musical-instruments": "/category-icons/11-musical-instruments.svg",
+  "pet-supplies": "/category-icons/12-pet-supplies.svg",
+  "crafts-heritage": "/category-icons/13-crafts-heritage.svg",
+  "digital-goods-services": "/category-icons/14-digital-goods-services.svg",
+  "tools-home-improvement": "/category-icons/15-tools-home-improvement.svg",
+  "medical-office-supplies": "/category-icons/16-medical-office-supplies.svg",
+};
+
 // `compact` is kept for call-site compatibility, but category labels always use
 // the exact taxonomy name so buyer views do not drift from the catalog.
 export function CategoryTile({ c, onClick, compact = false, href }) {
@@ -492,6 +514,7 @@ export function CategoryTile({ c, onClick, compact = false, href }) {
   const tint = CAT_TINTS[c.tint] ?? CAT_TINTS.red;
   const label = displayCategoryLabel(c, locale);
   const iconName = CATEGORY_ICON[c.id] ?? "tag";
+  const iconSrc = CATEGORY_ICON_SRC[c.id];
   // Nav use (e.g. home → /browse) passes `href` and renders a real anchor so the
   // browser can open it in a new tab. Filter use (browse page) omits href and
   // stays a button toggling an in-page facet.
@@ -523,13 +546,30 @@ export function CategoryTile({ c, onClick, compact = false, href }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: hov ? tint.fg : tint.bg,
+          background: tint.bg,
           boxShadow: hov ? "var(--sh-2)" : "var(--sh-1)",
           transform: hov ? "translateY(-2px)" : "translateY(0)",
           transition: "all var(--dur-standard) var(--ease)",
         }}
       >
-        <Icon name={iconName} size={27} color={hov ? "#fff" : tint.fg} stroke={1.8} />
+        {iconSrc ? (
+          <img
+            src={iconSrc}
+            alt=""
+            aria-hidden="true"
+            draggable={false}
+            style={{
+              width: "72%",
+              height: "72%",
+              objectFit: "contain",
+              display: "block",
+              transform: hov ? "scale(1.06)" : "scale(1)",
+              transition: "transform var(--dur-standard) var(--ease)",
+            }}
+          />
+        ) : (
+          <Icon name={iconName} size={27} color={tint.fg} stroke={1.8} />
+        )}
       </div>
       <div style={{ textAlign: "center", lineHeight: 1.2 }}>
         <div className="bz-cat__en" style={{ fontSize: ".8125rem", fontWeight: 600 }}>
@@ -1147,6 +1187,41 @@ export function Footer() {
           >
             {t("footer.description")}
           </p>
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              marginTop: 20,
+            }}
+          >
+            <a
+              href="https://www.instagram.com/bazaar.co.nepal/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+              className="bz-footer-social"
+            >
+              <Icon name="instagram" size={18} />
+            </a>
+            <a
+              href="https://www.linkedin.com/company/bazaarco"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn"
+              className="bz-footer-social"
+            >
+              <Icon name="linkedin" size={18} />
+            </a>
+            <a
+              href="https://www.facebook.com/profile.php?id=61589936558399"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Facebook"
+              className="bz-footer-social"
+            >
+              <Icon name="facebook" size={18} />
+            </a>
+          </div>
         </div>
         {cols.map((col, i) => (
           <div key={i}>

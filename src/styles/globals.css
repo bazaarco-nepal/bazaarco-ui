@@ -281,8 +281,8 @@ a {
 
   /* Calmer category row: smaller circle + lighter labels */
   .bz-cat__circle {
-    width: 46px !important;
-    height: 46px !important;
+    width: 52px !important;
+    height: 52px !important;
   }
   .bz-cat__en {
     font-size: 11px !important;

@@ -5258,6 +5258,67 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
           </Button>
         </div>
 
+        {(item.listingStatus === "frozen" || item.listingStatus === "pending_reinstatement") &&
+          item.moderationFeedback && (
+            <div
+              role="alert"
+              style={{
+                marginBottom: 20,
+                padding: "14px 16px",
+                borderRadius: "var(--r-md)",
+                border: `1.5px solid ${item.listingStatus === "frozen" ? "var(--red)" : "var(--saffron)"}`,
+                background:
+                  item.listingStatus === "frozen" ? "rgba(230,57,70,.06)" : "rgba(247,127,0,.06)",
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: 800,
+                  fontSize: ".8125rem",
+                  color: "var(--danger)",
+                  marginBottom: 6,
+                }}
+              >
+                {item.listingStatus === "frozen"
+                  ? "This listing was taken down"
+                  : "Awaiting admin review"}
+              </div>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: ".875rem",
+                  color: "var(--ink-700)",
+                  lineHeight: 1.5,
+                }}
+              >
+                {item.moderationFeedback}
+              </p>
+              {item.listingStatus === "frozen" && (
+                <p
+                  style={{
+                    margin: "8px 0 0",
+                    fontSize: ".8125rem",
+                    color: "var(--ink-500)",
+                  }}
+                >
+                  Edit this product to address the feedback, then acknowledge from My Products so
+                  our team can restore it.
+                </p>
+              )}
+              {item.listingStatus === "pending_reinstatement" && (
+                <p
+                  style={{
+                    margin: "8px 0 0",
+                    fontSize: ".8125rem",
+                    color: "var(--ink-500)",
+                  }}
+                >
+                  Submitted for review. You&apos;ll be notified when the listing is live again.
+                </p>
+              )}
+            </div>
+          )}
+
         {/* Product images */}
         {product && (product.images?.length || product.img) ? (
           <div style={{ marginBottom: 24 }}>

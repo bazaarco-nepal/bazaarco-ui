@@ -546,6 +546,17 @@ export const ICON_PATHS = {
     <path d="M12 2c1 3-2 4-2 7a4 4 0 0 0 8 0c0-1-.3-2-1-3 .3 3-1.5 4-2.5 4 1-2.5-1.5-4-2.5-8Z" />
   ),
   chevronUp: <polyline points="6 15 12 9 18 15" />,
+  instagram: (
+    <>
+      <rect x="2" y="2" width="20" height="20" rx="5" />
+      <circle cx="12" cy="12" r="5" />
+      <circle cx="17.5" cy="6.5" r="1.5" />
+    </>
+  ),
+  linkedin: (
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6ZM2 9h4v12H2ZM4 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z" />
+  ),
+  facebook: <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3Z" />,
 };
 export function Icon({
   name,

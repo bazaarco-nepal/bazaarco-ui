@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Icon, Logo, Button, AppLink, PasswordInput } from "@/components/ui";
 import { useBz } from "@/components/common";
@@ -178,10 +178,10 @@ export function Auth() {
           password,
           intent,
           acceptances: [
-            { slug: 'age-verification', version: '1.0' },
-            { slug: 'terms-and-conditions', version: '1.0' },
-            { slug: 'privacy-policy', version: '1.0' },
-            ...(acceptedMarketing ? [{ slug: 'cookie-tracking-notice', version: '1.0' }] : []),
+            { slug: "age-verification", version: "1.0" },
+            { slug: "terms-and-conditions", version: "1.0" },
+            { slug: "privacy-policy", version: "1.0" },
+            ...(acceptedMarketing ? [{ slug: "cookie-tracking-notice", version: "1.0" }] : []),
           ],
         });
         setPendingVerification(pending);
@@ -269,6 +269,15 @@ export function Auth() {
     setForgotMaskedEmail("");
     setError(null);
   };
+
+  // Deep link from the "Secure my account" email opens the password-reset flow.
+  const resetRequested = searchParams.get("reset") === "1";
+  useEffect(() => {
+    if (resetRequested) {
+      openForgotPassword();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetRequested]);
 
   const handleForgotSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -904,7 +913,14 @@ export function Auth() {
 
                 {mode === "register" && (
                   <div style={{ marginBottom: 16, marginTop: 12 }}>
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 16 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 8,
+                        marginBottom: 16,
+                      }}
+                    >
                       <input
                         type="checkbox"
                         id="acceptedLegal"
@@ -940,8 +956,8 @@ export function Auth() {
                           }}
                         >
                           Terms & Conditions
-                        </a>
-                        {" "}and{" "}
+                        </a>{" "}
+                        and{" "}
                         <a
                           href="/legal/privacy-policy"
                           target="_blank"
@@ -982,7 +998,9 @@ export function Auth() {
                           }}
                         >
                           Send me offers and updates
-                          <span style={{ color: "var(--ink-400)", fontSize: ".8125rem", marginLeft: 4 }}>
+                          <span
+                            style={{ color: "var(--ink-400)", fontSize: ".8125rem", marginLeft: 4 }}
+                          >
                             (optional)
                           </span>
                         </label>

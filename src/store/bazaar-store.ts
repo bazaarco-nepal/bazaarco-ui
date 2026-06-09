@@ -3,6 +3,7 @@ import {
   DEFAULT_LOCALE,
   readLocaleFromStorage,
   writeLocaleToStorage,
+  writeLocaleToCookie,
   type Locale,
 } from "@/i18n/config";
 import {
@@ -82,10 +83,15 @@ export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
   setDeliveryTier: (deliveryTier) => set({ deliveryTier }),
   hydrateLocale: () => {
     if (get().localeHydrated) return;
-    set({ locale: readLocaleFromStorage(), localeHydrated: true });
+    const locale = readLocaleFromStorage();
+    // Also write the cookie so the Next.js server can read it on the NEXT
+    // page load and render in the same locale, eliminating the hydration mismatch.
+    writeLocaleToCookie(locale);
+    set({ locale, localeHydrated: true });
   },
   setLocale: (locale: Locale) => {
     writeLocaleToStorage(locale);
+    writeLocaleToCookie(locale);
     set({ locale, localeHydrated: true });
   },
 }));

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { AppProviders } from "@/providers/app-providers";
+import { DEFAULT_LOCALE, isLocale, LOCALE_COOKIE_KEY, type Locale } from "@/i18n/locale-constants";
 import "@/styles/globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -20,14 +22,21 @@ export const metadata: Metadata = {
   description: "Nepal's fair marketplace",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Read the locale cookie so the server renders the same language as the client's
+  // first paint. Without this, SSR always uses "en" but the client may have "ne"
+  // stored — causing a React hydration mismatch on every translated string.
+  const cookieStore = await cookies();
+  const raw = cookieStore.get(LOCALE_COOKIE_KEY)?.value;
+  const locale: Locale = raw && isLocale(raw) ? raw : DEFAULT_LOCALE;
+
   return (
-    <html lang="en" className={`${plusJakarta.variable} ${inter.variable}`}>
+    <html lang={locale === "ne" ? "ne" : "en"} className={`${plusJakarta.variable} ${inter.variable}`}>
       {/* Browser extensions (ColorZilla, Grammarly, etc.) inject attributes like
           `cz-shortcut-listen` onto <body> before React hydrates. Suppress the
           resulting attribute-only mismatch — it's external and not a real bug. */}
       <body suppressHydrationWarning>
-        <AppProviders>{children}</AppProviders>
+        <AppProviders initialLocale={locale}>{children}</AppProviders>
       </body>
     </html>
   );

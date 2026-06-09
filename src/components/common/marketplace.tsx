@@ -859,7 +859,11 @@ export function Navbar() {
     <header className={`bz-navbar${screen === "home" ? " bz-hide-mobile" : ""}`}>
       <div className="bz-navbar__trust bz-hide-mobile">
         <div className="bz-navbar__trust-inner">
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+          {/* suppressHydrationWarning: text is locale-sensitive; server may render
+              "en" on first visit before the locale cookie is set, while the client
+              immediately uses the stored locale. The cookie approach eliminates this
+              after the first visit; the prop silences the warning on that first load. */}
+          <span suppressHydrationWarning style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
             <Icon name="bargain" size={13} color="#fff" /> {t("trust.bargain")}
           </span>
           <span style={{ opacity: 0.35 }}>·</span>

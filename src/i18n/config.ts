@@ -4,15 +4,16 @@ import { initReactI18next } from "react-i18next";
 import en from "./locales/en.json";
 import ne from "./locales/ne.json";
 
-export const LOCALES = ["en", "ne"] as const;
-export type Locale = (typeof LOCALES)[number];
-
-export const DEFAULT_LOCALE: Locale = "en";
-export const LOCALE_STORAGE_KEY = "bz_locale_v1";
-
-export function isLocale(value: string): value is Locale {
-  return (LOCALES as readonly string[]).includes(value);
-}
+// Re-export server-safe constants so existing "@/i18n/config" imports keep working.
+export {
+  LOCALES,
+  DEFAULT_LOCALE,
+  LOCALE_COOKIE_KEY,
+  LOCALE_STORAGE_KEY,
+  isLocale,
+  type Locale,
+} from "./locale-constants";
+import { DEFAULT_LOCALE, LOCALE_COOKIE_KEY, LOCALE_STORAGE_KEY, isLocale, type Locale } from "./locale-constants";
 
 export function readLocaleFromStorage(): Locale {
   if (typeof window === "undefined") return DEFAULT_LOCALE;
@@ -23,6 +24,12 @@ export function readLocaleFromStorage(): Locale {
 export function writeLocaleToStorage(locale: Locale): void {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+}
+
+/** Write locale to a cookie so the Next.js server can read it for SSR. */
+export function writeLocaleToCookie(locale: Locale): void {
+  if (typeof document === "undefined") return;
+  document.cookie = `${LOCALE_COOKIE_KEY}=${locale}; path=/; max-age=31536000; SameSite=Lax`;
 }
 
 void i18n.use(initReactI18next).init({

@@ -5388,6 +5388,15 @@ export function SellerAddProduct({
                     onChange={(e) => setBargainOk(e.target.checked)}
                     style={{ width: 18, height: 18, accentColor: "var(--red)" }}
                   />
+                  <span
+                    style={{
+                      fontSize: ".75rem",
+                      fontWeight: 700,
+                      color: bargainOk ? "var(--red)" : "var(--ink-400)",
+                    }}
+                  >
+                    {bargainOk ? "ON" : "OFF"}
+                  </span>
                 </label>
               )}
             </div>

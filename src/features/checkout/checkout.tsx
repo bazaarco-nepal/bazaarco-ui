@@ -1461,7 +1461,7 @@ export function Checkout() {
                     </Chip>
                   </div>
                   <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 2 }}>
-                    Pay Rs. {total.toLocaleString()} when your order is delivered
+                    Pay Rs. {total.toLocaleString("en-IN")} when your order is delivered
                   </div>
                 </div>
               </div>
@@ -1944,17 +1944,8 @@ export function OrderSuccess({ total }) {
       </details>
 
       {/* 6 — Continue shopping */}
-      <div
-        className="bz-order-success__actions"
-        style={{ display: "flex", justifyContent: "center", marginTop: 24 }}
-      >
-        <Button
-          className="bz-order-success__action"
-          variant="primary"
-          size="lg"
-          href={pathFromScreen("home")}
-          style={{ minWidth: 260 }}
-        >
+      <div className="bz-order-success__actions" style={{ marginTop: 24 }}>
+        <Button variant="primary" size="lg" full href={pathFromScreen("home")}>
           Continue shopping
         </Button>
       </div>

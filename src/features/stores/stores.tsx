@@ -171,7 +171,9 @@ export function Stores() {
           }}
         >
           <span className="tnum" style={{ color: "var(--ink-500)", fontSize: ".875rem" }}>
-            {filtered.length === 1 ? "1 store" : `${filtered.length.toLocaleString()} stores`}
+            {filtered.length === 1
+              ? "1 store"
+              : `${filtered.length.toLocaleString("en-IN")} stores`}
           </span>
           <label style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
             <span

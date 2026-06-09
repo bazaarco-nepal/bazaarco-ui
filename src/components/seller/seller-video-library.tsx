@@ -327,7 +327,7 @@ function VideoCard({
         <div className="bz-seller-video-card__meta">
           <span>
             <Icon name="eye" size={12} style={{ verticalAlign: "middle", marginRight: 4 }} />
-            {video.views.toLocaleString()} views
+            {video.views.toLocaleString("en-IN")} views
           </span>
           <span>
             <Icon name="heart" size={12} style={{ verticalAlign: "middle", marginRight: 4 }} />

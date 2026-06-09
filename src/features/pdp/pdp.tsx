@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Icon,
   Logo,
@@ -335,8 +336,9 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
             </div>
             <h3 style={{ margin: 0, fontSize: "1.25rem" }}>Offer accepted! 🎉</h3>
             <p style={{ color: "var(--ink-500)", marginTop: 8 }}>
-              {sellerOf(p)?.name} accepted <b className="tnum">Rs. {offer.toLocaleString()}</b>. Add
-              it to your cart at this price.
+              {sellerOf(p)?.name} accepted{" "}
+              <b className="tnum">Rs. {offer.toLocaleString("en-IN")}</b>. Add it to your cart at
+              this price.
             </p>
             <div style={{ marginTop: 18 }}>
               <Button
@@ -354,7 +356,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
                   onClose();
                 }}
               >
-                Add to cart · Rs. {offer.toLocaleString()}
+                Add to cart · Rs. {offer.toLocaleString("en-IN")}
               </Button>
             </div>
           </div>
@@ -382,7 +384,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
             <h3 style={{ margin: 0, fontSize: "1.125rem" }}>Seller countered</h3>
             <p style={{ color: "var(--ink-500)", marginTop: 8 }}>
               That's a little low. They can do{" "}
-              <b className="tnum">Rs. {counter.toLocaleString()}</b>.
+              <b className="tnum">Rs. {counter.toLocaleString("en-IN")}</b>.
             </p>
             <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
               <Button
@@ -404,7 +406,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
                   onClose();
                 }}
               >
-                Accept Rs. {counter.toLocaleString()}
+                Accept Rs. {counter.toLocaleString("en-IN")}
               </Button>
             </div>
           </div>
@@ -563,6 +565,7 @@ function BuyNowSheet({
 }
 
 export function PDP({ p: pProp }: PdpProps) {
+  const { t } = useTranslation();
   const {
     addToCart,
     buyNow,
@@ -694,6 +697,14 @@ export function PDP({ p: pProp }: PdpProps) {
     ? Boolean(selVariant.allowBargaining ?? p.allowBargaining)
     : Boolean(p.allowBargaining);
 
+  const openBargain = () => {
+    if (!authed) {
+      promptLogin("Please sign in to make an offer.");
+      return;
+    }
+    setBargain(true);
+  };
+
   const variantPicker = hasPricedVariants ? (
     <div style={{ marginTop: 18 }}>
       <div style={{ fontSize: ".875rem", color: "var(--ink-500)", marginBottom: 10 }}>
@@ -754,7 +765,7 @@ export function PDP({ p: pProp }: PdpProps) {
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
       <div
-        className="bz-pdp-root"
+        className={bargainingAvailable ? "bz-pdp-root bz-pdp-root--bargain" : "bz-pdp-root"}
         style={{
           maxWidth: "var(--container)",
           margin: "0 auto",
@@ -1729,19 +1740,8 @@ export function PDP({ p: pProp }: PdpProps) {
             {/* Bargaining — only when the seller enabled it for this product */}
             <div style={{ marginTop: 12 }}>
               {bargainingAvailable ? (
-                <Button
-                  variant="secondary"
-                  full
-                  icon="bargain"
-                  onClick={() => {
-                    if (!authed) {
-                      promptLogin("Please sign in to make an offer.");
-                      return;
-                    }
-                    setBargain(true);
-                  }}
-                >
-                  Make an offer
+                <Button variant="secondary" full icon="bargain" onClick={openBargain}>
+                  {t("pdp.makeOffer")}
                 </Button>
               ) : (
                 <div
@@ -2002,6 +2002,7 @@ export function PDP({ p: pProp }: PdpProps) {
           onBuy={() =>
             hasPricedVariants ? setBuyNowSheet(true) : void buyNow(p, qty, selVariantId)
           }
+          onBargain={bargainingAvailable ? openBargain : undefined}
         />
 
         {buyNowSheet && (

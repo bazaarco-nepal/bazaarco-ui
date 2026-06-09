@@ -1,13 +1,21 @@
 import { apiClient, getData } from "./http";
+import type { StoreAddress } from "@/lib/store-address";
 import type { SellerVerification } from "./seller-verification";
 import type { ApiSuccessResponse } from "./types";
+
+export interface SellerStoreSummary {
+  sellerId: string;
+  shopName: string;
+  city: string | null;
+  logoUrl: string | null;
+  verified: boolean;
+}
 
 export interface SellerOrganization {
   linked: boolean;
   sellerId: string | null;
+  stores: SellerStoreSummary[];
   shopName: string | null;
-  // Person behind the shop. Seller-facing only — never rendered to buyers,
-  // who only ever see `shopName`.
   ownerName: string | null;
   city: string | null;
   logoUrl: string | null;
@@ -20,6 +28,7 @@ export interface SellerOrganization {
 export interface SetupSellerOrganizationPayload {
   shopName: string;
   city?: string;
+  storeAddress?: StoreAddress;
 }
 
 export const sellerOrganizationApi = {
@@ -31,6 +40,22 @@ export const sellerOrganizationApi = {
     const { data } = await apiClient.post<ApiSuccessResponse<SellerOrganization>>(
       "/seller/organization",
       payload,
+    );
+    return data.data;
+  },
+
+  async createStore(payload: SetupSellerOrganizationPayload): Promise<SellerOrganization> {
+    const { data } = await apiClient.post<ApiSuccessResponse<SellerOrganization>>(
+      "/seller/stores",
+      payload,
+    );
+    return data.data;
+  },
+
+  async switchActiveStore(sellerId: string): Promise<SellerOrganization> {
+    const { data } = await apiClient.patch<ApiSuccessResponse<SellerOrganization>>(
+      "/seller/stores/active",
+      { sellerId },
     );
     return data.data;
   },

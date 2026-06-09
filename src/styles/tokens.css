@@ -2491,7 +2491,11 @@ body {
 /* Tighten PDP container padding on mobile */
 @media (max-width: 768px) {
   .bz-pdp-root {
-    padding: 12px 16px 0 !important;
+    padding: 12px 16px calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .bz-pdp-root.bz-pdp-root--bargain {
+    padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 

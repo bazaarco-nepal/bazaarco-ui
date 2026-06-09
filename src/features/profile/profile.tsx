@@ -254,7 +254,7 @@ export function Orders() {
                       className="tnum"
                       style={{ fontWeight: 800, color: "var(--blue-deep)", fontSize: "1.125rem" }}
                     >
-                      Rs. {o.total.toLocaleString()}
+                      Rs. {o.total.toLocaleString("en-IN")}
                     </span>
                   </div>
 

@@ -435,9 +435,7 @@ export function ReviewsSection({
             }}
           >
             <div style={{ fontSize: ".9375rem", color: "var(--ink-500)" }}>
-              {writeLocked
-                ? (gateMessage ?? t("reviews.purchaseFirst"))
-                : t("reviews.noReviewsYet")}
+              {canWriteReview ? t("reviews.noReviewsYet") : t("reviews.noReviewsEmpty")}
             </div>
           </div>
         )

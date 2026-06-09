@@ -55,18 +55,13 @@ import {
 } from "@/components/common";
 
 function useIsMobile(bp = 768) {
-  const [m, setM] = useState(
-    typeof window !== "undefined" && window.matchMedia(`(max-width:${bp}px)`).matches,
-  );
+  const [m, setM] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia(`(max-width:${bp}px)`);
+    setM(mq.matches);
     const h = (e) => setM(e.matches);
-    if (mq.addEventListener) mq.addEventListener("change", h);
-    else mq.addListener(h);
-    return () => {
-      if (mq.removeEventListener) mq.removeEventListener("change", h);
-      else mq.removeListener(h);
-    };
+    mq.addEventListener("change", h);
+    return () => mq.removeEventListener("change", h);
   }, [bp]);
   return m;
 }

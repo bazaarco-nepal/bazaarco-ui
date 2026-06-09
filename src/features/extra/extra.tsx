@@ -752,20 +752,20 @@ export function Bargains() {
                       <span>
                         <span style={{ color: "var(--ink-400)" }}>Listed:</span>{" "}
                         <span style={{ textDecoration: "line-through", color: "var(--ink-500)" }}>
-                          Rs. {o.listed.toLocaleString()}
+                          Rs. {o.listed.toLocaleString("en-IN")}
                         </span>
                       </span>
                       <span>
                         <span style={{ color: "var(--ink-400)" }}>Your offer:</span>{" "}
                         <b style={{ color: "var(--blue-deep)" }}>
-                          Rs. {o.yourOffer.toLocaleString()}
+                          Rs. {o.yourOffer.toLocaleString("en-IN")}
                         </b>
                       </span>
                       {o.sellerCounter && (
                         <span>
                           <span style={{ color: "var(--ink-400)" }}>Counter:</span>{" "}
                           <b style={{ color: "var(--red)" }}>
-                            Rs. {o.sellerCounter.toLocaleString()}
+                            Rs. {o.sellerCounter.toLocaleString("en-IN")}
                           </b>
                         </span>
                       )}
@@ -790,7 +790,7 @@ export function Bargains() {
                           void addToCart(
                             o.p,
                             1,
-                            `Added at bargained price · Rs. ${o.yourOffer.toLocaleString()}`,
+                            `Added at bargained price · Rs. ${o.yourOffer.toLocaleString("en-IN")}`,
                           )
                         }
                       >
@@ -804,7 +804,7 @@ export function Bargains() {
                           size="sm"
                           onClick={() => toast(t("bargains.counterAccepted"))}
                         >
-                          Accept Rs. {o.sellerCounter.toLocaleString()}
+                          Accept Rs. {o.sellerCounter.toLocaleString("en-IN")}
                         </Button>
                         <Button
                           variant="secondary"

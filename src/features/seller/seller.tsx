@@ -1740,41 +1740,82 @@ export function SellerDashboard() {
             role="alert"
             style={{
               marginBottom: 16,
-              padding: "14px 16px",
+              padding: "16px 18px",
               borderRadius: "var(--r-md)",
-              border: "1.5px solid var(--red)",
-              background: "rgba(230,57,70,.06)",
-              display: "flex",
-              gap: 12,
-              alignItems: "flex-start",
+              border: "2px solid var(--red)",
+              background: "rgba(230,57,70,.10)",
             }}
           >
-            <Icon
-              name="lock"
-              size={20}
-              color="var(--red)"
-              style={{ flexShrink: 0, marginTop: 2 }}
-            />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 800, color: "var(--blue-deep)", marginBottom: 4 }}>
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                alignItems: "center",
+                marginBottom: 10,
+              }}
+            >
+              <Icon name="lock" size={20} color="var(--red)" style={{ flexShrink: 0 }} />
+              <div style={{ fontWeight: 800, fontSize: "1rem", color: "var(--red)" }}>
                 {frozenListings.length === 1
                   ? t("seller.dashboard.frozenTitle", { count: frozenListings.length })
                   : t("seller.dashboard.frozenTitle_plural", { count: frozenListings.length })}
               </div>
-              <p
-                style={{ margin: 0, fontSize: ".875rem", color: "var(--ink-600)", lineHeight: 1.5 }}
-              >
-                {t("seller.dashboard.frozenHint")}
-              </p>
-              <Button
-                variant="secondary"
-                size="sm"
-                style={{ marginTop: 10 }}
-                onClick={() => nav("s-products")}
-              >
-                {t("seller.common.reviewProducts")}
-              </Button>
             </div>
+            <p
+              style={{
+                margin: "0 0 12px",
+                fontSize: ".875rem",
+                color: "var(--ink-700)",
+                lineHeight: 1.5,
+              }}
+            >
+              Fix the issues described in each product, then acknowledge so our team can review and
+              restore your listing.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {frozenListings.map((fl) => (
+                <div
+                  key={fl.id}
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: "var(--r-sm)",
+                    background: "rgba(230,57,70,.06)",
+                    border: "1px solid rgba(230,57,70,.25)",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontWeight: 700,
+                      fontSize: ".8125rem",
+                      color: "var(--ink-900)",
+                      marginBottom: 4,
+                    }}
+                  >
+                    {fl.name}
+                  </div>
+                  {fl.moderationFeedback && (
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: ".8125rem",
+                        color: "var(--ink-700)",
+                        lineHeight: 1.45,
+                      }}
+                    >
+                      {fl.moderationFeedback}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+            <Button
+              variant="primary"
+              size="sm"
+              style={{ marginTop: 12 }}
+              onClick={() => nav("s-products")}
+            >
+              {t("seller.common.reviewProducts")}
+            </Button>
           </div>
         )}
 

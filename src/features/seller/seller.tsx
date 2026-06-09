@@ -129,6 +129,7 @@ import {
 } from "@/components/common";
 import { ASSETS } from "@/config/assets";
 import { pathFromScreen, storeShareUrl } from "@/config/routes";
+import { ApiRequestError } from "@/services/api/http";
 import { emptyStoreAddress, formatStoreAddress, type StoreAddress } from "@/lib/store-address";
 
 export type SellerInboxOrderItem = {
@@ -8524,6 +8525,82 @@ export function SellerStorefront() {
       toast(e instanceof Error ? e.message : "Could not save storefront");
     }
   };
+
+  const isSetupRequired =
+    isError && error instanceof ApiRequestError && error.errors.includes("SELLER_SETUP_REQUIRED");
+
+  if (isSetupRequired) {
+    return (
+      <div className="bz-seller-page">
+        <SellerHelpBar />
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 16,
+            minHeight: 320,
+            textAlign: "center",
+            padding: "40px 24px",
+          }}
+        >
+          <div
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: "50%",
+              background: "var(--brand-50, #fef3c7)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 28,
+            }}
+          >
+            🏪
+          </div>
+          <h2
+            style={{
+              margin: 0,
+              fontSize: "1.125rem",
+              fontWeight: 700,
+              color: "var(--ink-900)",
+            }}
+          >
+            Set up your shop first
+          </h2>
+          <p
+            style={{
+              margin: 0,
+              fontSize: ".9375rem",
+              color: "var(--ink-500)",
+              maxWidth: 380,
+              lineHeight: 1.5,
+            }}
+          >
+            Complete seller onboarding to register your organisation before you can customise your
+            storefront.
+          </p>
+          <AppLink
+            href={pathFromScreen("s-onboarding")}
+            style={{
+              display: "inline-block",
+              marginTop: 8,
+              padding: "10px 24px",
+              background: "var(--brand)",
+              color: "#fff",
+              borderRadius: "var(--r-md)",
+              fontWeight: 700,
+              fontSize: ".9375rem",
+              textDecoration: "none",
+            }}
+          >
+            Go to onboarding
+          </AppLink>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>

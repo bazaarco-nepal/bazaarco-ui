@@ -1,6 +1,7 @@
 import type { Product } from "@/types";
 import { apiClient, getData, postData } from "./http";
 import type { ApiSuccessResponse } from "./types";
+import { mapProduct } from "./catalog";
 
 export interface BargainOffer {
   id: string;
@@ -20,30 +21,51 @@ export interface CreateBargainOfferPayload {
   yourOffer: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapOffer(raw: any): BargainOffer {
+  const m2r = (v: unknown) => (typeof v === "number" ? v / 100 : 0);
+  return {
+    ...raw,
+    yourOffer:
+      typeof raw.yourOffer === "number" ? raw.yourOffer : m2r(raw.yourOfferMinor),
+    listed:
+      typeof raw.listed === "number" ? raw.listed : m2r(raw.listedMinor),
+    sellerCounter:
+      raw.sellerCounter != null
+        ? raw.sellerCounter
+        : raw.sellerCounterMinor != null
+          ? m2r(raw.sellerCounterMinor)
+          : null,
+    p: raw.p ? mapProduct(raw.p) : raw.p,
+  };
+}
+
 export const bargainsApi = {
-  list(): Promise<BargainOffer[]> {
-    return getData<BargainOffer[]>("/bargains");
+  async list(): Promise<BargainOffer[]> {
+    const raw = await getData<BargainOffer[]>("/bargains");
+    return raw.map(mapOffer);
   },
-  create(payload: CreateBargainOfferPayload): Promise<BargainOffer> {
-    return postData<BargainOffer>("/bargains", payload);
+  async create(payload: CreateBargainOfferPayload): Promise<BargainOffer> {
+    const raw = await postData<BargainOffer>("/bargains", payload);
+    return mapOffer(raw);
   },
   async accept(id: string): Promise<BargainOffer> {
     const { data } = await apiClient.patch<ApiSuccessResponse<BargainOffer>>(
       `/bargains/${id}/accept`,
     );
-    return data.data;
+    return mapOffer(data.data);
   },
   async reject(id: string): Promise<BargainOffer> {
     const { data } = await apiClient.patch<ApiSuccessResponse<BargainOffer>>(
       `/bargains/${id}/reject`,
     );
-    return data.data;
+    return mapOffer(data.data);
   },
   async counter(id: string, counterAmount: number): Promise<BargainOffer> {
     const { data } = await apiClient.patch<ApiSuccessResponse<BargainOffer>>(
       `/bargains/${id}/counter`,
       { counter: counterAmount },
     );
-    return data.data;
+    return mapOffer(data.data);
   },
 };

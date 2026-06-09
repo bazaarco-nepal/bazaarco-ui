@@ -31,17 +31,75 @@ export interface CreateProductQuestionPayload {
 }
 
 /**
- * Normalize a product as it arrives from the API. Core now emits
- * `outOfStock: boolean` directly; honor it when present and otherwise derive it
- * from the numeric `stock` field (`stock <= 0`) so sold-out items are reliably
- * excluded by the home/browse `!outOfStock` filters. `stock` is dropped — the UI
- * `Product` type carries `outOfStock`, not raw stock.
+ * Normalize a raw v3 API product into the UI `Product` shape.
+ *
+ * The backend now stores monetary values in paise (minor units) and renamed
+ * several fields. This function maps everything back to the UI's existing field
+ * names so no component needs to change.
+ *
+ * v3 → UI mappings:
+ *   priceMinor / 100        → price
+ *   originalMinor / 100     → original
+ *   coverImageUrl            → img
+ *   reviewsCount             → reviews
+ *   storeId                  → seller  (also kept as storeId)
+ *   lowStockThreshold        → lowStock
+ *   variants[].priceMinor    → variants[].price
+ *   variants[].originalMinor → variants[].original
  */
-export function mapProduct(raw: Product & { stock?: number }): Product {
-  const { stock, ...rest } = raw;
-  const product = rest as Product;
-  if (typeof product.outOfStock === "boolean") return product;
-  if (typeof stock === "number") product.outOfStock = stock <= 0;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function mapProduct(raw: any): Product {
+  const minor = (v: unknown): number => (typeof v === "number" ? v : 0);
+  const minorToRupees = (v: unknown): number => minor(v) / 100;
+
+  const price =
+    typeof raw.price === "number"
+      ? raw.price
+      : minorToRupees(raw.priceMinor);
+  const original =
+    typeof raw.original === "number"
+      ? raw.original
+      : raw.originalMinor != null
+        ? minorToRupees(raw.originalMinor)
+        : undefined;
+
+  const variants = Array.isArray(raw.variants)
+    ? raw.variants.map(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (v: any) => ({
+          ...v,
+          price:
+            typeof v.price === "number" ? v.price : minorToRupees(v.priceMinor ?? 0),
+          original:
+            typeof v.original === "number"
+              ? v.original
+              : v.originalMinor != null
+                ? minorToRupees(v.originalMinor)
+                : undefined,
+        }),
+      )
+    : raw.variants;
+
+  const product: Product = {
+    ...raw,
+    price,
+    original,
+    // field renames
+    seller: raw.seller ?? raw.storeId ?? "",
+    img: raw.img ?? raw.coverImageUrl ?? undefined,
+    reviews: raw.reviews ?? raw.reviewsCount ?? 0,
+    lowStock: raw.lowStock ?? raw.lowStockThreshold ?? undefined,
+    eta: raw.eta ?? "2–3 days",
+    variants,
+    // Derive outOfStock
+    outOfStock:
+      typeof raw.outOfStock === "boolean"
+        ? raw.outOfStock
+        : typeof raw.stock === "number"
+          ? raw.stock <= 0
+          : false,
+  };
+
   return product;
 }
 
@@ -69,17 +127,28 @@ export interface PagedParams {
   limit?: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapSeller(raw: any): Seller {
+  return {
+    ...raw,
+    reviews: raw.reviews ?? raw.reviewsCount ?? 0,
+    city: raw.city ?? "",
+    tint: raw.tint ?? "blue",
+  };
+}
+
 export const catalogApi = {
   getCategories(): Promise<Category[]> {
     return getData<Category[]>("/catalog/categories");
   },
 
-  getSellers(): Promise<Seller[]> {
-    return getData<Seller[]>("/catalog/sellers");
+  async getSellers(): Promise<Seller[]> {
+    const raw = await getData<Seller[]>("/catalog/sellers");
+    return raw.map(mapSeller);
   },
 
-  getSeller(id: string): Promise<Seller> {
-    return getData<Seller>(`/catalog/sellers/${id}`);
+  async getSeller(id: string): Promise<Seller> {
+    return mapSeller(await getData<Seller>(`/catalog/sellers/${id}`));
   },
 
   getSellerReviews(id: string): Promise<SellerReview[]> {

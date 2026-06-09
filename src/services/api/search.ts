@@ -1,6 +1,7 @@
 import { apiClient } from "./http";
 import type { ApiSuccessResponse } from "./types";
 import type { Product } from "@/types";
+import { mapProduct } from "./catalog";
 
 export interface SearchParams {
   query: string;
@@ -47,7 +48,8 @@ export interface SearchResponse {
 export const searchApi = {
   async search(params: SearchParams): Promise<SearchResponse> {
     const { data } = await apiClient.post<ApiSuccessResponse<SearchResponse>>("/search", params);
-    return data.data;
+    const raw = data.data;
+    return { ...raw, items: (raw.items ?? []).map((h) => ({ ...mapProduct(h), score: h.score })) };
   },
 
   async similar(id: string, limit = 10): Promise<SearchProductHit[]> {
@@ -55,6 +57,6 @@ export const searchApi = {
       `/search/similar/${encodeURIComponent(id)}`,
       { params: { limit } },
     );
-    return data.data.items;
+    return (data.data.items ?? []).map((h) => ({ ...mapProduct(h), score: h.score }));
   },
 };

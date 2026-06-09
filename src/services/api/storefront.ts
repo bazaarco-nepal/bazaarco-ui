@@ -17,9 +17,9 @@ export interface StorefrontData {
   blocks: StorefrontBlock[];
   rating: number;
   verified: boolean;
-  city: string;
-  storeAddress: StoreAddress | null;
-  tint: string;
+  city?: string;
+  storeAddress?: StoreAddress | null;
+  tint?: string;
 }
 
 export interface UpdateStorefrontPayload {

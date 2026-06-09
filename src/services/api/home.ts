@@ -1,5 +1,6 @@
 import type { Product } from "@/types";
 import { getData } from "./http";
+import { mapProduct } from "./catalog";
 
 export interface HeroSlide {
   eyebrow: string;
@@ -25,7 +26,12 @@ export interface HomeData {
 }
 
 export const homeApi = {
-  getHome(): Promise<HomeData> {
-    return getData<HomeData>("/home");
+  async getHome(): Promise<HomeData> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const raw = await getData<any>("/home");
+    return {
+      ...raw,
+      trending: (raw.trending ?? []).map(mapProduct),
+    };
   },
 };

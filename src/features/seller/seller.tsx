@@ -266,7 +266,7 @@ function SellerStoreSwitcher({
 
   return (
     <>
-      <div ref={menuRef} style={{ position: "relative", marginTop: 8 }}>
+      <div ref={menuRef} style={{ position: "relative" }}>
         <button
           type="button"
           onClick={() => setMenuOpen((o) => !o)}
@@ -513,50 +513,82 @@ export function SellerSidebar({
       <aside
         className={"bz-seller-side" + (collapsed ? " collapsed" : "") + (openMobile ? " open" : "")}
       >
-        <div className="bz-side-head">
-          <div className="bz-side-brand" title={displayName}>
-            <StoreAvatar src={logoUrl} name={displayName} size={36} />
-            <div className="bz-side-brand-text" style={{ minWidth: 0, flex: 1 }}>
-              <div
-                style={{
-                  fontWeight: 800,
-                  color: "var(--blue-deep)",
-                  fontSize: ".9375rem",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
+        {/* ── Sidebar header ── */}
+        <div
+          style={{
+            padding: collapsed ? "12px 8px 10px" : "14px 10px 12px 14px",
+            borderBottom: "1px solid var(--line-200)",
+          }}
+        >
+          {/* When collapsed: avatar + expand toggle stacked centrally */}
+          {collapsed ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+              <StoreAvatar src={logoUrl} name={displayName} size={34} />
+              <button
+                className="bz-side-toggle"
+                onClick={() => setCollapsed((c) => !c)}
+                aria-label={t("seller.expandSidebar")}
+                title={t("seller.expandSidebar")}
               >
-                {displayName}
-              </div>
-              <div
-                style={{
-                  fontSize: ".68rem",
-                  color: "var(--ink-500)",
-                  fontWeight: 700,
-                  letterSpacing: ".06em",
-                  textTransform: "uppercase",
-                }}
-              >
-                {t("seller.role")}
-              </div>
+                <Icon name="chevronRight" size={14} />
+              </button>
             </div>
-          </div>
-          {stores.length > 0 && (
-            <SellerStoreSwitcher
-              stores={stores}
-              activeSellerId={activeSellerId}
-              collapsed={collapsed}
-            />
+          ) : (
+            <>
+              {/* Expanded: avatar + name/role + collapse toggle in one row */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <StoreAvatar src={logoUrl} name={displayName} size={34} />
+                <div className="bz-side-brand-text" style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontWeight: 800,
+                      color: "var(--blue-deep)",
+                      fontSize: ".875rem",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      lineHeight: 1.25,
+                    }}
+                    title={displayName}
+                  >
+                    {displayName}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: ".625rem",
+                      color: "var(--ink-400)",
+                      fontWeight: 700,
+                      letterSpacing: ".08em",
+                      textTransform: "uppercase",
+                      lineHeight: 1.4,
+                      marginTop: 1,
+                    }}
+                  >
+                    {t("seller.role")}
+                  </div>
+                </div>
+                <button
+                  className="bz-side-toggle"
+                  onClick={() => setCollapsed((c) => !c)}
+                  aria-label={t("seller.collapseSidebar")}
+                  title={t("seller.collapseSidebar")}
+                >
+                  <Icon name="chevronLeft" size={14} />
+                </button>
+              </div>
+
+              {/* Store switcher — indented, only shown with 2+ stores */}
+              {stores.length > 1 && (
+                <div style={{ paddingLeft: 44, marginTop: 8 }}>
+                  <SellerStoreSwitcher
+                    stores={stores}
+                    activeSellerId={activeSellerId}
+                    collapsed={false}
+                  />
+                </div>
+              )}
+            </>
           )}
-          <button
-            className="bz-side-toggle"
-            onClick={() => setCollapsed((c) => !c)}
-            aria-label={collapsed ? t("seller.expandSidebar") : t("seller.collapseSidebar")}
-            title={collapsed ? t("seller.expandSidebar") : t("seller.collapseSidebar")}
-          >
-            <Icon name={collapsed ? "chevronRight" : "chevronLeft"} size={16} />
-          </button>
         </div>
 
         <div

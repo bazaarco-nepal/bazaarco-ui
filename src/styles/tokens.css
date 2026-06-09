@@ -841,12 +841,12 @@ body {
 
 /* Sidebar header — brand + inline collapse toggle */
 .bz-side-head {
+  border-bottom: 1px solid var(--line-200);
+}
+.bz-side-head-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 14px 12px 14px 16px;
-  border-bottom: 1px solid var(--line-200);
-  min-height: 64px;
 }
 .bz-side-brand {
   display: flex;
@@ -879,14 +879,6 @@ body {
 }
 .bz-side-toggle:hover svg {
   color: #fff !important;
-}
-.bz-seller-side.collapsed .bz-side-head {
-  padding: 14px 8px;
-  flex-direction: column;
-  gap: 8px;
-}
-.bz-seller-side.collapsed .bz-side-brand {
-  justify-content: center;
 }
 .bz-seller-side.collapsed .bz-side-toggle {
   margin: 0 auto;

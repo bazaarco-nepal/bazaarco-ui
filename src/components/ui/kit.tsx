@@ -600,7 +600,7 @@ export function Icon({
 }
 
 /* ---------- Logo ---------- */
-export function Logo({ height = 40, mono }: { height?: number; mono?: boolean }) {
+export function Logo({ height = 40, mono }) {
   return (
     <img
       src={ASSETS.logo}
@@ -662,7 +662,7 @@ export function AppLink({
 }: {
   href: string;
   onNavigate?: () => void;
-  children?: React.ReactNode;
+  children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
   ariaLabel?: string;
@@ -858,17 +858,6 @@ export function IconButton({
   href,
   onNavigate,
   target,
-}: {
-  name: string;
-  onClick?: (e: React.MouseEvent) => void;
-  active?: boolean;
-  badge?: number;
-  label: string;
-  size?: number;
-  title?: string;
-  href?: string;
-  onNavigate?: () => void;
-  target?: string;
 }) {
   const [hov, setHov] = useState(false);
   const linkClick = useSpaLinkClick(href, onNavigate, target);
@@ -1074,27 +1063,19 @@ export function StatusPill({ status }) {
 }
 
 /* ---------- Price ---------- */
-export function Price({
-  value,
-  original,
-  size = "md",
-  color = "var(--blue-deep)",
-}: {
-  value: number;
-  original?: number | null;
-  size?: string;
-  color?: string;
-}) {
+export function Price({ value, original = undefined, size = "md", color = "var(--blue-deep)" }) {
   const fs = size === "lg" ? "1.75rem" : size === "sm" ? "1rem" : "1.25rem";
+  const safeValue = value ?? 0;
+  const safeOriginal = original && original > safeValue ? original : null;
   return (
     <span style={{ display: "inline-flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
       <span
         className="tnum"
         style={{ fontSize: fs, fontWeight: 800, color, letterSpacing: "-.01em" }}
       >
-        Rs.&nbsp;{value.toLocaleString("en-IN")}
+        Rs.&nbsp;{safeValue.toLocaleString("en-IN")}
       </span>
-      {original && (
+      {safeOriginal && (
         <span
           className="tnum"
           style={{
@@ -1104,7 +1085,7 @@ export function Price({
             fontWeight: 500,
           }}
         >
-          Rs.&nbsp;{original.toLocaleString("en-IN")}
+          Rs.&nbsp;{safeOriginal.toLocaleString("en-IN")}
         </span>
       )}
     </span>
@@ -1276,24 +1257,6 @@ export function VideoPlayer({
   onLongPressEnd,
   playbackRate,
   isActive,
-}: {
-  tint?: string;
-  icon?: string;
-  ratio?: string;
-  radius?: string;
-  autoplay?: boolean;
-  label?: React.ReactNode;
-  overlay?: React.ReactNode;
-  compact?: boolean;
-  fill?: boolean;
-  thumb?: string | null;
-  src?: string | null;
-  externalMuted?: boolean;
-  onMutedChange?: (muted: boolean) => void;
-  onLongPressStart?: () => void;
-  onLongPressEnd?: () => void;
-  playbackRate?: number;
-  isActive?: boolean;
 }) {
   const videoRef = useRef(null);
   const [playing, setPlaying] = useState(!!autoplay);
@@ -1933,7 +1896,7 @@ export function SectionHead({
    confusing for first-time buyers). Mobile = big tap button only. Desktop = button + a
    cosmetic numbered bar for users who want a sense of scale / direct jumps.
    CTA stays blue secondary — red is reserved for the one action per screen. */
-export function usePaged<T>(items: T[], pageSize = 12, resetKey?: unknown) {
+export function usePaged(items, pageSize = 12, resetKey) {
   const [count, setCount] = useState(pageSize);
   // Reset to first page when the underlying list changes (e.g. filters applied).
   useEffect(() => {
@@ -1961,7 +1924,7 @@ export function usePaged<T>(items: T[], pageSize = 12, resetKey?: unknown) {
 /* Discrete numbered pages — for operational tables (seller orders / inventory) where
    users want control, exact page jumps, and to return to a known row. Replaces the slice
    each page (NOT cumulative like usePaged). Pairs with <PageBar>. */
-export function usePages<T>(items: T[], perPage = 10, resetKey?: unknown) {
+export function usePages(items, perPage = 10, resetKey) {
   const total = items.length;
   const pageCount = Math.max(1, Math.ceil(total / perPage));
   const [page, setPage] = useState(1);
@@ -1989,21 +1952,6 @@ export function LoadMore({
   pageBar,
   style,
   size = "lg",
-}: {
-  paged: {
-    total: number;
-    shown: number;
-    hasMore: boolean;
-    nextBatch: number;
-    pageSize: number;
-    more: () => void;
-  };
-  noun?: string;
-  onTop?: () => void;
-  onClear?: () => void;
-  pageBar?: React.ReactNode;
-  style?: React.CSSProperties;
-  size?: string;
 }) {
   if (!paged || paged.total === 0) return null;
   const { shown, total, hasMore, nextBatch, pageSize } = paged;
@@ -2068,17 +2016,7 @@ export function LoadMore({
   );
 }
 /* Cosmetic numbered bar (desktop control + sense of scale). Hidden on mobile by default. */
-export function PageBar({
-  page,
-  pageCount,
-  onPage,
-  alwaysShow,
-}: {
-  page: number;
-  pageCount: number;
-  onPage: (n: number) => void;
-  alwaysShow?: boolean;
-}) {
+export function PageBar({ page, pageCount, onPage, alwaysShow }) {
   if (pageCount <= 1) return null;
   const nums = [];
   for (let i = 1; i <= pageCount; i++) {
@@ -2354,6 +2292,7 @@ export function MobileBuyBar({
         borderTop: "1px solid var(--line-200)",
         padding: "12px 14px calc(12px + env(safe-area-inset-bottom))",
         boxShadow: "0 -2px 12px rgba(15,23,42,.08)",
+        
       }}
     >
       {onBargain ? (
@@ -2462,16 +2401,7 @@ export function BottomNav({
 }
 
 /* ---------- Landmark address picker ---------- */
-export function LandmarkAddress<
-  T extends {
-    city: string;
-    area?: string;
-    postal?: string;
-    landmark?: string;
-    lat?: number | null;
-    lng?: number | null;
-  },
->({ value, onChange }: { value: T; onChange: (value: T) => void }) {
+export function LandmarkAddress({ value, onChange }) {
   const v = value || { city: "", area: "", landmark: "", lat: null, lng: null };
   const [mapOpen, setMapOpen] = useState(false);
   const [geoError, setGeoError] = useState(null);

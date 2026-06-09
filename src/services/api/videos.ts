@@ -11,9 +11,43 @@ export interface VideoViewResult {
   viewed: boolean;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapVideoItem(raw: any) {
+  const minorToRupees = (v: unknown) => (typeof v === "number" ? v / 100 : 0);
+  return {
+    ...raw,
+    price: typeof raw.price === "number" ? raw.price : minorToRupees(raw.priceMinor),
+    original:
+      typeof raw.original === "number"
+        ? raw.original
+        : raw.originalMinor != null
+          ? minorToRupees(raw.originalMinor)
+          : null,
+    sellerId: raw.sellerId ?? raw.storeId ?? "",
+    img: raw.img ?? raw.coverImageUrl ?? null,
+    reviews: raw.reviews ?? raw.reviewsCount ?? 0,
+    icon: raw.icon ?? "box",
+    tint: raw.tint ?? "blue",
+    seller: raw.seller
+      ? {
+          ...raw.seller,
+          city: raw.seller.city ?? "",
+          reviews: raw.seller.reviews ?? raw.seller.reviewsCount ?? 0,
+          tint: raw.seller.tint ?? "blue",
+        }
+      : undefined,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapVideoFeedResponse(raw: any): VideoFeedResponse {
+  return { ...raw, items: (raw.items ?? []).map(mapVideoItem) };
+}
+
 export const videosApi = {
-  getFeed(tab: VideoFeedTab = "foryou"): Promise<VideoFeedResponse> {
-    return getData<VideoFeedResponse>("/videos/feed", { tab });
+  async getFeed(tab: VideoFeedTab = "foryou"): Promise<VideoFeedResponse> {
+    const raw = await getData<VideoFeedResponse>("/videos/feed", { tab });
+    return mapVideoFeedResponse(raw);
   },
   like(videoId: string): Promise<VideoLikeResult> {
     return postData<VideoLikeResult>(`/videos/${videoId}/like`);

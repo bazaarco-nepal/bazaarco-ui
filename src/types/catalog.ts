@@ -38,9 +38,9 @@ export interface Seller {
   name: string;
   rating: number;
   reviews: number;
-  city: string;
+  city?: string;
   storeAddress?: StoreAddress | null;
-  tint: Tint;
+  tint?: Tint;
   avatar: string;
 }
 

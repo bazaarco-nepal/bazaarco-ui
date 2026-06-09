@@ -1,4 +1,14 @@
 export { Tracking } from "./extra";
 export { Wishlist } from "./extra";
 export { Bargains } from "./extra";
-export { HelpSupportPage, FAQPage, PrivacyPolicyPage, TermsPage, AboutPage } from "./info-pages";
+export {
+  HelpSupportPage,
+  FAQPage,
+  PrivacyPolicyPage,
+  TermsPage,
+  AboutPage,
+  HowItWorksPage,
+  ContactPage,
+  HowToOrderPage,
+  BargainingGuidePage,
+} from "./info-pages";

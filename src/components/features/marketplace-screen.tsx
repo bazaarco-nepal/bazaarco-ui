@@ -55,6 +55,10 @@ import {
   PrivacyPolicyPage,
   TermsPage,
   AboutPage,
+  HowItWorksPage,
+  ContactPage,
+  HowToOrderPage,
+  BargainingGuidePage,
 } from "@/features";
 import { useBz } from "@/components/common";
 import { EmptyState, Spinner } from "@/components/ui";
@@ -167,6 +171,10 @@ export function MarketplaceScreen() {
   if (screen === "privacy") return <PrivacyPolicyPage />;
   if (screen === "terms") return <TermsPage />;
   if (screen === "about") return <AboutPage />;
+  if (screen === "how-it-works") return <HowItWorksPage />;
+  if (screen === "contact") return <ContactPage />;
+  if (screen === "how-to-order") return <HowToOrderPage />;
+  if (screen === "bargaining-guide") return <BargainingGuidePage />;
 
   if (SELLER_SCREENS.has(screen)) {
     let inner: React.ReactNode;

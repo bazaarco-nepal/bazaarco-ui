@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96" fill="none">
+<ellipse cx="44" cy="82" rx="38" ry="3.5" fill="#1B2A6B" opacity="0.08"/>
+<defs>
+<clipPath id="topiBody">
+<path d="M20 44 C20 38 32 35 48 35 C64 35 76 38 76 44 L76 66 C76 73 64 77 48 77 C32 77 20 73 20 66 Z"/>
+</clipPath>
+</defs>
+
+<!-- ===== Nepal flag on a pole (behind, to the right) ===== -->
+<!-- pole -->
+<rect x="62.6" y="11" width="2.4" height="64" rx="1.2" fill="#7A5C2E"/>
+<rect x="62.6" y="11" width="1" height="64" rx="0.5" fill="#A8854A"/>
+<circle cx="63.8" cy="10.5" r="2.2" fill="#C99B3F"/>
+<!-- flag body: double pennant, crimson field with blue border -->
+<path d="M64 14 L82 22.5 L68 25 L86 36 L64 43 Z" fill="#DC143C" stroke="#003893" stroke-width="2.2" stroke-linejoin="round"/>
+<!-- white moon (upper pennant) -->
+<g>
+<circle cx="69.5" cy="21" r="2.7" fill="#ffffff"/>
+<circle cx="70.8" cy="20.4" r="2.1" fill="#DC143C"/>
+</g>
+<!-- white sun (lower pennant) -->
+<g fill="#ffffff">
+<circle cx="70" cy="34" r="2.2"/>
+<g stroke="#ffffff" stroke-width="1.1" stroke-linecap="round">
+<path d="M70 30 L70 27.8"/><path d="M70 38 L70 40.2"/>
+<path d="M66 34 L63.8 34"/><path d="M74 34 L76.2 34"/>
+<path d="M67.2 31.2 L65.6 29.6"/><path d="M72.8 31.2 L74.4 29.6"/>
+<path d="M67.2 36.8 L65.6 38.4"/><path d="M72.8 36.8 L74.4 38.4"/>
+</g>
+</g>
+
+<!-- ===== Dhaka topi (the Nepali product) ===== -->
+<g transform="translate(-8,16) scale(0.82)">
+<!-- cap body -->
+<path d="M20 44 C20 38 32 35 48 35 C64 35 76 38 76 44 L76 66 C76 73 64 77 48 77 C32 77 20 73 20 66 Z" fill="#C45B6E"/>
+<!-- woven dhaka pattern, clipped to the cap -->
+<g clip-path="url(#topiBody)">
+<g stroke="#8E3A50" stroke-width="2" opacity="0.55">
+<path d="M0 60 L40 20"/><path d="M12 72 L52 32"/><path d="M24 84 L64 44"/>
+<path d="M36 96 L76 56"/><path d="M48 96 L88 56"/><path d="M60 96 L96 60"/>
+<path d="M-4 48 L28 16"/>
+</g>
+<g>
+<g transform="translate(33,48)"><path d="M0 -7 L7 0 L0 7 L-7 0 Z" fill="#F3B59C"/><path d="M0 -3 L3 0 L0 3 L-3 0 Z" fill="#3A4357"/></g>
+<g transform="translate(50,45)"><path d="M0 -7 L7 0 L0 7 L-7 0 Z" fill="#F3B59C"/><path d="M0 -3 L3 0 L0 3 L-3 0 Z" fill="#3A4357"/></g>
+<g transform="translate(67,48)"><path d="M0 -7 L7 0 L0 7 L-7 0 Z" fill="#F3B59C"/><path d="M0 -3 L3 0 L0 3 L-3 0 Z" fill="#3A4357"/></g>
+<g transform="translate(33,66)"><path d="M0 -7 L7 0 L0 7 L-7 0 Z" fill="#F3B59C"/><path d="M0 -3 L3 0 L0 3 L-3 0 Z" fill="#3A4357"/></g>
+<g transform="translate(50,68)"><path d="M0 -7 L7 0 L0 7 L-7 0 Z" fill="#F3B59C"/><path d="M0 -3 L3 0 L0 3 L-3 0 Z" fill="#3A4357"/></g>
+<g transform="translate(67,66)"><path d="M0 -7 L7 0 L0 7 L-7 0 Z" fill="#F3B59C"/><path d="M0 -3 L3 0 L0 3 L-3 0 Z" fill="#3A4357"/></g>
+</g>
+</g>
+<!-- top opening -->
+<path d="M20 44 C20 39 32 36 48 36 C64 36 76 39 76 44 C76 49 64 52 48 52 C32 52 20 49 20 44 Z" fill="#9C4459"/>
+<ellipse cx="48" cy="43" rx="25" ry="6" fill="#7E3447"/>
+<path d="M23 44 C28 40 40 39 48 39 C56 39 68 40 73 44" stroke="#D98B7E" stroke-width="1.4" fill="none" stroke-linecap="round" opacity="0.6"/>
+</g>
+</svg>

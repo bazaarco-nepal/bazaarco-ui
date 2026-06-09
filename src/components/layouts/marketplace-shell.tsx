@@ -24,6 +24,10 @@ const BUYER_BOTTOM_NAV_SCREENS = new Set([
   "privacy",
   "terms",
   "about",
+  "how-it-works",
+  "contact",
+  "how-to-order",
+  "bargaining-guide",
   "store",
   "stores",
 ]);
@@ -47,7 +51,11 @@ function BottomNavBridge() {
       screen === "help" ||
       screen === "privacy" ||
       screen === "terms" ||
-      screen === "about"
+      screen === "about" ||
+      screen === "how-it-works" ||
+      screen === "contact" ||
+      screen === "how-to-order" ||
+      screen === "bargaining-guide"
     ) {
       return "profile";
     }

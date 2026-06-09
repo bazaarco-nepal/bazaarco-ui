@@ -1,16 +1,15 @@
 "use client";
 
 import React from "react";
-import { AppLink, Button } from "@/components/ui";
+import { AppLink } from "@/components/ui";
 import { pathFromScreen, searchPath } from "@/config/routes";
 
 type InfoPageProps = {
   title: string;
   children: React.ReactNode;
-  showBrowse?: boolean;
 };
 
-function InfoPageShell({ title, children, showBrowse = true }: InfoPageProps) {
+function InfoPageShell({ title, children }: InfoPageProps) {
   return (
     <div
       className="bz-container-pad"
@@ -43,20 +42,13 @@ function InfoPageShell({ title, children, showBrowse = true }: InfoPageProps) {
       >
         {children}
       </div>
-      {showBrowse && (
-        <div style={{ marginTop: 32 }}>
-          <Button variant="secondary" href={searchPath()}>
-            Browse products
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
 
 export function HelpSupportPage() {
   return (
-    <InfoPageShell title="Help & support" showBrowse={false}>
+    <InfoPageShell title="Help & support">
       <p>
         Need help with an order, payment, or seller? We&apos;re here for shoppers and sellers across
         Nepal.
@@ -104,7 +96,7 @@ export function HelpSupportPage() {
 
 export function FAQPage() {
   return (
-    <InfoPageShell title="Frequently Asked Questions" showBrowse={false}>
+    <InfoPageShell title="Frequently Asked Questions">
       <p>Find answers to common questions about shopping on BazaarCo.</p>
 
       <h2 style={{ fontSize: "1.125rem", margin: "24px 0 8px" }}>Payment & orders</h2>
@@ -173,7 +165,7 @@ export function FAQPage() {
 
 export function PrivacyPolicyPage() {
   return (
-    <InfoPageShell title="Privacy policy" showBrowse={false}>
+    <InfoPageShell title="Privacy policy">
       <p>
         BazaarCo Nepal Pvt. Ltd. (&quot;BazaarCo&quot;, &quot;we&quot;) respects your privacy. This
         policy explains what we collect, why, and your choices.
@@ -271,6 +263,225 @@ export function AboutPage() {
         We are headquartered in Kathmandu and work with sellers across the country to list products
         with clear photos, honest descriptions, and fast delivery in the valley and beyond.
       </p>
+    </InfoPageShell>
+  );
+}
+
+export function HowItWorksPage() {
+  return (
+    <InfoPageShell title="How BazaarCo Works">
+      <p>
+        BazaarCo connects you directly with local sellers across Nepal. Watch real product videos,
+        bargain on price, and pay your way — including cash on delivery.
+      </p>
+      <h2 style={{ fontSize: "1.125rem", margin: "24px 0 8px" }}>For shoppers</h2>
+      <ol style={{ paddingLeft: 20, margin: 0 }}>
+        <li>
+          <strong>Discover</strong> — browse video-first listings or{" "}
+          <AppLink href={searchPath()} style={{ color: "var(--blue)" }}>
+            search
+          </AppLink>{" "}
+          for what you need.
+        </li>
+        <li>
+          <strong>Bargain</strong> — send an offer and negotiate fairly. See the{" "}
+          <AppLink href={pathFromScreen("bargaining-guide")} style={{ color: "var(--blue)" }}>
+            Bargaining Guide
+          </AppLink>
+          .
+        </li>
+        <li>
+          <strong>Order</strong> — place your order with online payment or cash on delivery. See{" "}
+          <AppLink href={pathFromScreen("how-to-order")} style={{ color: "var(--blue)" }}>
+            How to Order
+          </AppLink>
+          .
+        </li>
+        <li>
+          <strong>Delivery</strong> — sellers prepare your items and BazaarCo coordinates delivery.
+          Read our{" "}
+          <AppLink href="/legal/shipping-and-delivery-policy" style={{ color: "var(--blue)" }}>
+            Delivery &amp; Shipping Policy
+          </AppLink>
+          .
+        </li>
+        <li>
+          <strong>Protection</strong> — every eligible order is covered by{" "}
+          <AppLink href="/legal/buyer-protection-policy" style={{ color: "var(--blue)" }}>
+            Buyer Protection
+          </AppLink>
+          .
+        </li>
+      </ol>
+      <h2 style={{ fontSize: "1.125rem", margin: "24px 0 8px" }}>For sellers</h2>
+      <p>
+        List products for free, reach buyers across Nepal, and get paid on a regular settlement
+        cycle. Learn more in the{" "}
+        <AppLink href="/legal/seller-policy" style={{ color: "var(--blue)" }}>
+          Seller Policy
+        </AppLink>{" "}
+        or{" "}
+        <AppLink href={pathFromScreen("auth")} style={{ color: "var(--blue)" }}>
+          become a seller
+        </AppLink>
+        .
+      </p>
+    </InfoPageShell>
+  );
+}
+
+export function ContactPage() {
+  return (
+    <InfoPageShell title="Contact Us">
+      <p>
+        We&apos;re here for shoppers and sellers across Nepal. Reach our support team any day from 8
+        AM to 8 PM.
+      </p>
+      <h2 style={{ fontSize: "1.125rem", margin: "24px 0 8px" }}>Support</h2>
+      <ul style={{ paddingLeft: 20, margin: "0 0 16px" }}>
+        <li>
+          Email:{" "}
+          <a href="mailto:support@bazaarconepal.com" style={{ color: "var(--blue)" }}>
+            support@bazaarconepal.com
+          </a>
+        </li>
+        <li>
+          WhatsApp &amp; Phone:{" "}
+          <a href="https://wa.me/9779700053075" style={{ color: "var(--blue)" }}>
+            +977 9700053075
+          </a>
+        </li>
+      </ul>
+      <h2 style={{ fontSize: "1.125rem", margin: "24px 0 8px" }}>Complaints &amp; grievances</h2>
+      <p>
+        To raise a formal complaint, email{" "}
+        <a href="mailto:support@bazaarconepal.com" style={{ color: "var(--blue)" }}>
+          support@bazaarconepal.com
+        </a>{" "}
+        marked &ldquo;GRIEVANCE&rdquo;, or follow our{" "}
+        <AppLink href="/legal/grievance-redressal-policy" style={{ color: "var(--blue)" }}>
+          Grievance Redressal Policy
+        </AppLink>
+        . For full company details, see our{" "}
+        <AppLink href="/legal/legal-information" style={{ color: "var(--blue)" }}>
+          Legal Information
+        </AppLink>{" "}
+        page.
+      </p>
+      <h2 style={{ fontSize: "1.125rem", margin: "24px 0 8px" }}>Common requests</h2>
+      <ul style={{ paddingLeft: 20, margin: 0 }}>
+        <li>
+          <strong>Order help</strong> — open{" "}
+          <AppLink href={pathFromScreen("orders")} style={{ color: "var(--blue)" }}>
+            My orders
+          </AppLink>{" "}
+          to track or report an issue.
+        </li>
+        <li>
+          <strong>Selling on BazaarCo</strong> —{" "}
+          <AppLink href={pathFromScreen("auth")} style={{ color: "var(--blue)" }}>
+            register as a seller
+          </AppLink>
+          .
+        </li>
+      </ul>
+    </InfoPageShell>
+  );
+}
+
+export function HowToOrderPage() {
+  return (
+    <InfoPageShell title="How to Order">
+      <p>Ordering on BazaarCo takes just a few steps.</p>
+      <ol style={{ paddingLeft: 20, margin: 0 }}>
+        <li>
+          <strong>Find a product</strong> — browse videos or{" "}
+          <AppLink href={searchPath()} style={{ color: "var(--blue)" }}>
+            search
+          </AppLink>{" "}
+          for what you want.
+        </li>
+        <li>
+          <strong>Bargain (optional)</strong> — send an offer if you&apos;d like to negotiate the
+          price. See the{" "}
+          <AppLink href={pathFromScreen("bargaining-guide")} style={{ color: "var(--blue)" }}>
+            Bargaining Guide
+          </AppLink>
+          .
+        </li>
+        <li>
+          <strong>Add to cart</strong> — add items and review your{" "}
+          <AppLink href={pathFromScreen("cart")} style={{ color: "var(--blue)" }}>
+            cart
+          </AppLink>
+          .
+        </li>
+        <li>
+          <strong>Enter delivery details</strong> — choose or add a delivery address.
+        </li>
+        <li>
+          <strong>Choose payment</strong> — pay online (eSewa, Khalti, bank) or by cash on delivery
+          where available. See the{" "}
+          <AppLink href="/legal/payment-policy" style={{ color: "var(--blue)" }}>
+            Payment Policy
+          </AppLink>
+          .
+        </li>
+        <li>
+          <strong>Confirm &amp; track</strong> — place the order and track it from{" "}
+          <AppLink href={pathFromScreen("orders")} style={{ color: "var(--blue)" }}>
+            My orders
+          </AppLink>
+          .
+        </li>
+      </ol>
+      <p style={{ marginTop: 16 }}>
+        Need to return something? See our{" "}
+        <AppLink href="/legal/return-and-refund-policy" style={{ color: "var(--blue)" }}>
+          Returns, Refunds &amp; Cancellations
+        </AppLink>{" "}
+        policy.
+      </p>
+    </InfoPageShell>
+  );
+}
+
+export function BargainingGuidePage() {
+  return (
+    <InfoPageShell title="Bargaining Guide">
+      <p>
+        Bargaining is at the heart of how Nepal shops — and BazaarCo brings it online. Here&apos;s
+        how to negotiate fairly with sellers.
+      </p>
+      <h2 style={{ fontSize: "1.125rem", margin: "24px 0 8px" }}>How it works</h2>
+      <ol style={{ paddingLeft: 20, margin: 0 }}>
+        <li>
+          <strong>Send an offer</strong> — on a product page, propose your price.
+        </li>
+        <li>
+          <strong>Up to 3 rounds</strong> — you and the seller can counter up to three times to
+          reach a fair price.
+        </li>
+        <li>
+          <strong>Seller responds</strong> — the seller can accept, counter, or reject your offer.
+        </li>
+        <li>
+          <strong>Accepted price</strong> — once accepted, the agreed price is valid for a limited
+          time. Check out before it expires.
+        </li>
+      </ol>
+      <h2 style={{ fontSize: "1.125rem", margin: "24px 0 8px" }}>Tips for fair bargaining</h2>
+      <ul style={{ paddingLeft: 20, margin: 0 }}>
+        <li>Make a reasonable first offer — lowball offers are often rejected.</li>
+        <li>Keep all negotiation on BazaarCo so your order stays protected.</li>
+        <li>
+          Track your offers anytime from{" "}
+          <AppLink href={pathFromScreen("bargains")} style={{ color: "var(--blue)" }}>
+            Bargains
+          </AppLink>
+          .
+        </li>
+      </ul>
     </InfoPageShell>
   );
 }

@@ -557,6 +557,9 @@ export const ICON_PATHS = {
     <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6ZM2 9h4v12H2ZM4 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z" />
   ),
   facebook: <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3Z" />,
+  tiktok: (
+    <path d="M16 3c.4 2.2 1.9 3.9 4 4.3v3.1a7 7 0 0 1-4-1.4V15a6 6 0 1 1-6-6c.35 0 .7.03 1 .1v3.2a3 3 0 1 0 2 2.8V3h3Z" />
+  ),
 };
 export function Icon({
   name,

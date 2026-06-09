@@ -466,44 +466,52 @@ const CAT_TINTS = {
 // sync with the backend taxonomy in
 // bazaarco-api/src/infrastructure/database/seeds/catalog-data.ts.
 const CATEGORY_ICON: Record<string, string> = {
-  electronics: "phone",
-  "home-appliances": "home",
-  fashion: "shirt",
-  "health-beauty": "lipstick",
+  "mobile-phones-tablets": "phone",
+  "electronics-gadgets": "headphones",
+  "computers-accessories": "file",
+  "fashion-clothing": "shirt",
+  "shoes-footwear": "shirt",
+  "bags-watches-accessories": "tag",
+  "beauty-cosmetics": "lipstick",
+  "health-wellness": "leaf",
   "groceries-essentials": "basket",
-  "home-living": "home",
-  "mother-baby-kids": "pacifier",
-  "sports-outdoors": "football",
-  automotive: "truck",
+  "kitchenware-dining": "home",
+  "home-appliances": "home",
+  "home-decor": "home",
+  furniture: "home",
+  "baby-kids-toys": "pacifier",
+  "sports-fitness-outdoors": "football",
+  "automotive-motorbike": "truck",
   "books-stationery": "book",
   "musical-instruments": "headphones",
   "pet-supplies": "leaf",
-  "crafts-heritage": "temple",
-  "digital-goods-services": "file",
-  "tools-home-improvement": "settings",
-  "medical-office-supplies": "filePlus",
+  "local-nepali-handmade": "temple",
 };
 
 // Colorful real-object category artwork served from public/category-icons. Keyed
 // by category id; when present we render the SVG, otherwise we fall back to the
 // line Icon above. Filenames mirror public/category-icons/manifest.json.
 const CATEGORY_ICON_SRC: Record<string, string> = {
-  electronics: "/category-icons/01-electronics.svg",
-  "home-appliances": "/category-icons/02-home-appliances.svg",
-  fashion: "/category-icons/03-fashion.svg",
-  "health-beauty": "/category-icons/04-health-beauty.svg",
-  "groceries-essentials": "/category-icons/05-groceries-essentials.svg",
-  "home-living": "/category-icons/06-home-living.svg",
-  "mother-baby-kids": "/category-icons/07-mother-baby-kids.svg",
-  "sports-outdoors": "/category-icons/08-sports-outdoors.svg",
-  automotive: "/category-icons/09-automotive.svg",
-  "books-stationery": "/category-icons/10-books-stationery.svg",
-  "musical-instruments": "/category-icons/11-musical-instruments.svg",
-  "pet-supplies": "/category-icons/12-pet-supplies.svg",
-  "crafts-heritage": "/category-icons/13-crafts-heritage.svg",
-  "digital-goods-services": "/category-icons/14-digital-goods-services.svg",
-  "tools-home-improvement": "/category-icons/15-tools-home-improvement.svg",
-  "medical-office-supplies": "/category-icons/16-medical-office-supplies.svg",
+  "mobile-phones-tablets": "/category-icons/01-mobile-phones-tablets.svg",
+  "electronics-gadgets": "/category-icons/02-electronics-gadgets.svg",
+  "computers-accessories": "/category-icons/03-computers-accessories.svg",
+  "fashion-clothing": "/category-icons/04-fashion-clothing.svg",
+  "shoes-footwear": "/category-icons/05-shoes-footwear.svg",
+  "bags-watches-accessories": "/category-icons/06-bags-watches-accessories.svg",
+  "beauty-cosmetics": "/category-icons/07-beauty-cosmetics.svg",
+  "health-wellness": "/category-icons/08-health-wellness.svg",
+  "groceries-essentials": "/category-icons/09-groceries-essentials.svg",
+  "kitchenware-dining": "/category-icons/10-kitchenware-dining.svg",
+  "home-appliances": "/category-icons/11-home-appliances.svg",
+  "home-decor": "/category-icons/12-home-decor.svg",
+  furniture: "/category-icons/13-furniture.svg",
+  "baby-kids-toys": "/category-icons/14-baby-kids-toys.svg",
+  "sports-fitness-outdoors": "/category-icons/15-sports-fitness-outdoors.svg",
+  "automotive-motorbike": "/category-icons/16-automotive-motorbike.svg",
+  "books-stationery": "/category-icons/17-books-stationery.svg",
+  "musical-instruments": "/category-icons/18-musical-instruments.svg",
+  "pet-supplies": "/category-icons/19-pet-supplies.svg",
+  "local-nepali-handmade": "/category-icons/20-local-nepali-handmade.svg",
 };
 
 // `compact` is kept for call-site compatibility, but category labels always use
@@ -559,8 +567,8 @@ export function CategoryTile({ c, onClick, compact = false, href }) {
             aria-hidden="true"
             draggable={false}
             style={{
-              width: "72%",
-              height: "72%",
+              width: "84%",
+              height: "84%",
               objectFit: "contain",
               display: "block",
               transform: hov ? "scale(1.06)" : "scale(1)",
@@ -1087,42 +1095,62 @@ export function Navbar() {
 /* ---------- Footer ---------- */
 export function Footer() {
   const { t } = useTranslation();
+  const legalPath = (slug: string) => `/legal/${slug}`;
   const cols: { h: string; links: { label: string; href: string }[] }[] = [
     {
       h: "BazaarCo",
       links: [
-        { label: t("footer.aboutUs"), href: pathFromScreen("about") },
-        { label: t("footer.careers"), href: pathFromScreen("help") },
-        { label: t("footer.press"), href: pathFromScreen("help") },
-        { label: t("footer.sellerStories"), href: pathFromScreen("about") },
+        { label: t("footer.aboutBazaarco"), href: pathFromScreen("about") },
+        { label: t("footer.howItWorks"), href: pathFromScreen("how-it-works") },
+        { label: t("footer.contactUs"), href: pathFromScreen("contact") },
+        { label: t("footer.partnerWithUs"), href: pathFromScreen("auth") },
+        { label: t("footer.legalInformation"), href: legalPath("legal-information") },
       ],
     },
     {
-      h: t("footer.buy"),
+      h: t("footer.colBuyers"),
       links: [
-        { label: t("footer.allStores"), href: pathFromScreen("stores") },
-        { label: t("footer.howToOrder"), href: pathFromScreen("help") },
-        { label: t("footer.paymentOptions"), href: pathFromScreen("help") },
-        { label: t("footer.delivery"), href: pathFromScreen("help") },
-        { label: t("footer.returnsRefunds"), href: pathFromScreen("help") },
+        { label: t("footer.howToOrder"), href: pathFromScreen("how-to-order") },
+        { label: t("footer.bargainingGuide"), href: pathFromScreen("bargaining-guide") },
+        { label: t("footer.deliveryShipping"), href: legalPath("shipping-and-delivery-policy") },
+        { label: t("footer.returnRefundCancel"), href: legalPath("return-and-refund-policy") },
+        { label: t("footer.buyerProtection"), href: legalPath("buyer-protection-policy") },
+        {
+          label: t("footer.warrantyAuthenticity"),
+          href: legalPath("warranty-and-authenticity-policy"),
+        },
+        { label: t("footer.complaintDispute"), href: legalPath("grievance-redressal-policy") },
       ],
     },
     {
-      h: t("footer.sell"),
+      h: t("footer.colSellers"),
       links: [
         { label: t("footer.becomeSeller"), href: pathFromScreen("auth") },
-        { label: t("footer.sellerDashboard"), href: pathFromScreen("s-dashboard") },
-        { label: t("footer.commissionFees"), href: pathFromScreen("help") },
-        { label: t("footer.sellerPolicies"), href: pathFromScreen("terms") },
+        { label: t("footer.sellerPolicy"), href: legalPath("seller-policy") },
+        { label: t("footer.sellerAgreement"), href: legalPath("seller-agreement") },
+        { label: t("footer.commissionFees"), href: legalPath("commission-information") },
+        { label: t("footer.sellerPayout"), href: legalPath("seller-payout-and-settlement-policy") },
+        { label: t("footer.productListingRules"), href: legalPath("product-listing-rules") },
+        {
+          label: t("footer.sellerDeliveryPickup"),
+          href: legalPath("seller-delivery-and-pickup-policy"),
+        },
       ],
     },
     {
-      h: t("footer.helpCol"),
+      h: t("footer.colLegal"),
       links: [
-        { label: t("footer.contactSupport"), href: pathFromScreen("help") },
-        { label: t("footer.trackOrder"), href: pathFromScreen("orders") },
-        { label: t("footer.faqs"), href: pathFromScreen("help") },
-        { label: t("footer.reportIssue"), href: pathFromScreen("help") },
+        { label: t("footer.termsConditions"), href: legalPath("terms-and-conditions") },
+        { label: t("footer.privacyPolicy"), href: legalPath("privacy-policy") },
+        { label: t("footer.paymentPolicy"), href: legalPath("payment-policy") },
+        { label: t("footer.prohibitedProducts"), href: legalPath("prohibited-products-policy") },
+        { label: t("footer.reviewRatingFeedback"), href: legalPath("reviews-and-guidelines") },
+        { label: t("footer.communityGuidelines"), href: legalPath("community-guidelines") },
+        {
+          label: t("footer.intellectualProperty"),
+          href: legalPath("intellectual-property-policy"),
+        },
+        { label: t("footer.cookiePolicy"), href: legalPath("cookie-tracking-notice") },
       ],
     },
   ];
@@ -1137,26 +1165,27 @@ export function Footer() {
         isolation: "isolate",
       }}
     >
-      {/* skyline backdrop — sits behind all content, top-anchored */}
+      {/* Nepal landmark backdrop — decorative, behind the main link columns only */}
       <div
         aria-hidden="true"
+        className="bz-footer-skyline"
         style={{
           position: "absolute",
           top: 0,
           left: 0,
           right: 0,
-          height: 220,
+          height: 360,
           backgroundImage: `url(${ASSETS.skyline})`,
           backgroundRepeat: "no-repeat",
-          backgroundPosition: "center 75%",
-          backgroundSize: "78% auto",
+          backgroundPosition: "center -30px",
+          backgroundSize: "75% auto",
           filter: "invert(1) grayscale(1) brightness(1.6) contrast(1.45)",
           mixBlendMode: "screen",
-          opacity: 0.08,
+          opacity: 0.1,
           WebkitMaskImage:
-            "linear-gradient(to bottom, transparent 0%, #000 40%, #000 78%, transparent 100%)",
+            "linear-gradient(to bottom, transparent 0%, #000 22%, #000 82%, transparent 100%)",
           maskImage:
-            "linear-gradient(to bottom, transparent 0%, #000 40%, #000 78%, transparent 100%)",
+            "linear-gradient(to bottom, transparent 0%, #000 22%, #000 82%, transparent 100%)",
           pointerEvents: "none",
           zIndex: 0,
         }}
@@ -1166,32 +1195,33 @@ export function Footer() {
         style={{
           position: "relative",
           zIndex: 2,
-          maxWidth: "var(--container)",
+          maxWidth: 1280,
           margin: "0 auto",
-          padding: "120px 28px 40px",
+          padding: "72px 28px 48px",
           display: "grid",
-          gridTemplateColumns: "1.4fr 1fr 1fr 1fr 1fr",
-          gap: 32,
+          gridTemplateColumns: "1.6fr repeat(4, 1fr)",
+          gap: 40,
         }}
       >
         <div>
           <Logo height={34} mono />
           <p
-            className="bz-hide-mobile"
+            className="bz-footer-tagline"
             style={{
-              color: "rgba(255,255,255,.65)",
-              fontSize: ".875rem",
+              color: "rgba(255,255,255,.6)",
+              fontSize: ".9375rem",
+              lineHeight: 1.6,
               marginTop: 16,
-              maxWidth: 240,
+              maxWidth: 260,
             }}
           >
-            {t("footer.description")}
+            {t("footer.brandTagline")}
           </p>
           <div
             style={{
               display: "flex",
               gap: 12,
-              marginTop: 20,
+              marginTop: 24,
             }}
           >
             <a
@@ -1204,13 +1234,13 @@ export function Footer() {
               <Icon name="instagram" size={18} />
             </a>
             <a
-              href="https://www.linkedin.com/company/bazaarco"
+              href="https://www.tiktok.com/@bazaarco.nepal?_r=1&_t=ZS-973wPgozpKq"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="LinkedIn"
+              aria-label="TikTok"
               className="bz-footer-social"
             >
-              <Icon name="linkedin" size={18} />
+              <Icon name="tiktok" size={18} fill="currentColor" />
             </a>
             <a
               href="https://www.facebook.com/profile.php?id=61589936558399"
@@ -1221,23 +1251,32 @@ export function Footer() {
             >
               <Icon name="facebook" size={18} />
             </a>
+            <a
+              href="https://www.linkedin.com/company/bazaarco"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn"
+              className="bz-footer-social"
+            >
+              <Icon name="linkedin" size={18} />
+            </a>
           </div>
         </div>
         {cols.map((col, i) => (
           <div key={i}>
             <div
               style={{
-                fontSize: ".8125rem",
+                fontSize: ".75rem",
                 fontWeight: 700,
                 textTransform: "uppercase",
-                letterSpacing: ".06em",
-                marginBottom: 14,
-                color: "rgba(255,255,255,.9)",
+                letterSpacing: ".08em",
+                marginBottom: 16,
+                color: "rgba(255,255,255,.85)",
               }}
             >
               {col.h}
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, lineHeight: 1.8 }}>
               {col.links.map((link) => (
                 <AppLink key={link.label} href={link.href} className="bz-footer-link">
                   {link.label}
@@ -1247,37 +1286,84 @@ export function Footer() {
           </div>
         ))}
       </div>
+      {/* Company details strip — quieter registered-company & grievance disclosure (E-Commerce Act 2081) */}
+      <div
+        style={{
+          position: "relative",
+          zIndex: 2,
+          borderTop: "1px solid rgba(255,255,255,.1)",
+          background: "rgba(0,0,0,.14)",
+        }}
+      >
+        <div
+          className="bz-row-4up"
+          style={{
+            maxWidth: 1280,
+            margin: "0 auto",
+            padding: "28px",
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: 24,
+            color: "rgba(255,255,255,.45)",
+            fontSize: ".75rem",
+            lineHeight: 1.7,
+          }}
+        >
+          <div>
+            <div style={{ color: "rgba(255,255,255,.7)", fontWeight: 600, marginBottom: 4 }}>
+              BazaarCo Nepal Pvt. Ltd.
+            </div>
+            <div>{t("footer.companyTagline")}</div>
+          </div>
+          <div>
+            <div>{t("footer.support")}: +977 9700053075</div>
+            <div>
+              {t("footer.email")}:{" "}
+              <a
+                href="mailto:support@bazaarconepal.com"
+                className="bz-footer-link"
+                style={{ fontSize: ".75rem" }}
+              >
+                support@bazaarconepal.com
+              </a>
+            </div>
+          </div>
+          <div>
+            <div>
+              {t("footer.grievanceContact")}:{" "}
+              <a
+                href="mailto:support@bazaarconepal.com"
+                className="bz-footer-link"
+                style={{ fontSize: ".75rem" }}
+              >
+                support@bazaarconepal.com
+              </a>
+            </div>
+            <div>
+              {t("footer.portalListingNo")}: {t("footer.toBePublished")}
+            </div>
+          </div>
+          <div>
+            <div>
+              {t("footer.panVat")}: {t("footer.toBePublished")}
+            </div>
+            <div>
+              {t("footer.companyRegNo")}: {t("footer.toBePublished")}
+            </div>
+          </div>
+        </div>
+      </div>
       <div style={{ position: "relative", zIndex: 2, borderTop: "1px solid rgba(255,255,255,.1)" }}>
         <div
           style={{
-            maxWidth: "var(--container)",
+            maxWidth: 1280,
             margin: "0 auto",
-            padding: "18px 28px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 16,
-            flexWrap: "wrap",
+            padding: "20px 28px",
+            textAlign: "center",
           }}
         >
           <span style={{ color: "rgba(255,255,255,.5)", fontSize: ".8125rem" }}>
             {t("footer.copyright", { year: new Date().getFullYear() })}
-          </span>
-          <span style={{ display: "inline-flex", gap: 12, fontSize: ".8125rem" }}>
-            <AppLink
-              href={pathFromScreen("privacy")}
-              className="bz-footer-link"
-              style={{ color: "rgba(255,255,255,.5)" }}
-            >
-              {t("footer.privacy")}
-            </AppLink>
-            <AppLink
-              href={pathFromScreen("terms")}
-              className="bz-footer-link"
-              style={{ color: "rgba(255,255,255,.5)" }}
-            >
-              {t("footer.terms")}
-            </AppLink>
           </span>
         </div>
       </div>

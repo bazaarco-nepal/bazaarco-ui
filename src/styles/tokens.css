@@ -2162,12 +2162,12 @@ body {
   }
 }
 
-/* Footer: brand full-width row, then 2x2 link grid */
+/* Footer: brand full-width row, then 2-column link grid on tablet */
 @media (max-width: 900px) {
   .bz-footer-grid {
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 24px 20px !important;
-    padding: 40px 20px 24px !important;
+    gap: 32px 24px !important;
+    padding: 48px 24px 32px !important;
   }
   .bz-footer-grid > :first-child {
     grid-column: 1 / -1;
@@ -2176,8 +2176,20 @@ body {
   .bz-footer-grid > :first-child p {
     max-width: none !important;
     font-size: 0.9375rem !important;
-    line-height: 1.5 !important;
+    line-height: 1.6 !important;
     margin-top: 12px !important;
+  }
+  /* Decorative landmark fights with text on small screens — drop it */
+  .bz-footer-skyline {
+    display: none !important;
+  }
+}
+
+/* Phones: stack every footer section into a single readable column */
+@media (max-width: 560px) {
+  .bz-footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 28px !important;
   }
 }
 

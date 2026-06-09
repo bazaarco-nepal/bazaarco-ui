@@ -66,7 +66,8 @@ function isAccessory(p, q) {
   const ql = q.toLowerCase();
   const name = p.name.toLowerCase();
   if (ql.includes("laptop") && !name.includes("laptop")) return true;
-  if (ql.includes("phone") && !name.includes("phone") && p.cat !== "electronics") return true;
+  if (ql.includes("phone") && !name.includes("phone") && p.cat !== "mobile-phones-tablets")
+    return true;
   if (ql.includes("earbud") && !name.includes("earbud")) return true;
   return false;
 }

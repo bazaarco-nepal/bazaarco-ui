@@ -21,6 +21,10 @@ const GUEST_VIEW_SCREENS = new Set([
   "privacy",
   "terms",
   "about",
+  "how-it-works",
+  "contact",
+  "how-to-order",
+  "bargaining-guide",
 ]);
 
 export function isSellerUser(user?: AuthUser | null): boolean {

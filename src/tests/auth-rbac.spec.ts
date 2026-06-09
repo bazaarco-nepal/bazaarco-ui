@@ -26,7 +26,17 @@ describe("guest video access", () => {
   });
 
   it("info screens (faq + siblings) stay viewable for guests", () => {
-    for (const screen of ["faq", "help", "privacy", "terms", "about"]) {
+    for (const screen of [
+      "faq",
+      "help",
+      "privacy",
+      "terms",
+      "about",
+      "how-it-works",
+      "contact",
+      "how-to-order",
+      "bargaining-guide",
+    ]) {
       expect(isGuestViewableScreen(screen), `"${screen}" should be guest-viewable`).toBe(true);
     }
   });

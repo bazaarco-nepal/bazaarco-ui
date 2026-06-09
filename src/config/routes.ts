@@ -23,6 +23,10 @@ export const BUYER_SCREENS = new Set([
   "privacy",
   "terms",
   "about",
+  "how-it-works",
+  "contact",
+  "how-to-order",
+  "bargaining-guide",
 ]);
 
 export const SELLER_SCREENS = new Set([
@@ -99,6 +103,10 @@ const SCREEN_PATH: Record<string, string> = {
   privacy: "/privacy",
   terms: "/terms",
   about: "/about",
+  "how-it-works": "/how-it-works",
+  contact: "/contact",
+  "how-to-order": "/how-to-order",
+  "bargaining-guide": "/bargaining-guide",
   "s-onboarding": "/seller/onboarding",
   "s-dashboard": "/seller",
   "s-inbox": "/seller/orders",
@@ -249,6 +257,10 @@ const SCREEN_TITLES: Record<string, string> = {
   privacy: "Privacy Policy",
   terms: "Terms & Conditions",
   about: "About Us",
+  "how-it-works": "How BazaarCo Works",
+  contact: "Contact Us",
+  "how-to-order": "How to Order",
+  "bargaining-guide": "Bargaining Guide",
   "s-onboarding": "Become a Seller",
   "s-dashboard": "Seller Dashboard",
   "s-inbox": "Orders",

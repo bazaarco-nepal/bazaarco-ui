@@ -56,7 +56,7 @@ apiClient.interceptors.response.use(
   },
 );
 
-export async function getData<T>(url: string, params?: Record<string, unknown>): Promise<T> {
+export async function getData<T>(url: string, params?: object): Promise<T> {
   try {
     const { data } = await apiClient.get<ApiSuccessResponse<T>>(url, { params });
     return data.data;

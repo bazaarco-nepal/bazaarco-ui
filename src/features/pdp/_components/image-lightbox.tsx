@@ -43,9 +43,12 @@ type FitMetrics = {
   displayH: number;
 };
 
-function pinchDistance(touches: TouchList) {
-  const dx = touches[0].clientX - touches[1].clientX;
-  const dy = touches[0].clientY - touches[1].clientY;
+function pinchDistance(touches: React.TouchList) {
+  const a = touches[0];
+  const b = touches[1];
+  if (!a || !b) return 0;
+  const dx = a.clientX - b.clientX;
+  const dy = a.clientY - b.clientY;
   return Math.hypot(dx, dy);
 }
 
@@ -211,13 +214,16 @@ function ZoomableImage({
     if (e.touches.length === 2) {
       pinchRef.current = { dist: pinchDistance(e.touches), scale };
     } else if (e.touches.length === 1 && scale > 1) {
-      panRef.current = {
-        x: e.touches[0].clientX,
-        y: e.touches[0].clientY,
-        ox: offset.x,
-        oy: offset.y,
-      };
-      setIsPanning(true);
+      const t = e.touches[0];
+      if (t) {
+        panRef.current = {
+          x: t.clientX,
+          y: t.clientY,
+          ox: offset.x,
+          oy: offset.y,
+        };
+        setIsPanning(true);
+      }
     }
   };
 
@@ -229,9 +235,11 @@ function ZoomableImage({
       return;
     }
     if (e.touches.length === 1 && panRef.current && scale > 1) {
+      const t = e.touches[0];
+      if (!t) return;
       e.preventDefault();
-      const nx = panRef.current.ox + (e.touches[0].clientX - panRef.current.x);
-      const ny = panRef.current.oy + (e.touches[0].clientY - panRef.current.y);
+      const nx = panRef.current.ox + (t.clientX - panRef.current.x);
+      const ny = panRef.current.oy + (t.clientY - panRef.current.y);
       applyOffset(nx, ny, scale);
     }
   };
@@ -334,6 +342,9 @@ export function ImageLightbox({ images, index, alt, onIndex, onClose }: ImageLig
 
   const zoomIn = () => setScale((s) => Math.min(MAX_SCALE, s + 0.5));
   const zoomOut = () => setScale((s) => Math.max(MIN_SCALE, s - 0.5));
+
+  // Nothing to show without a source image (e.g. an empty gallery).
+  if (!src) return null;
 
   return (
     <div

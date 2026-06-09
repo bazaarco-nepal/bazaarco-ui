@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { useLegalDocument } from '@/hooks/useLegalDocument';
-import { MarkdownContent } from '@/components/MarkdownContent';
-import './legal-document.css';
+import React from "react";
+import { useLegalDocument } from "@/hooks/useLegalDocument";
+import { MarkdownContent } from "@/components/MarkdownContent";
+import "./legal-document.css";
 
 interface LegalDocumentProps {
   slug: string;
@@ -13,7 +13,7 @@ interface LegalDocumentProps {
 
 export function LegalDocument({
   slug,
-  className = '',
+  className = "",
   showHeader = true,
 }: LegalDocumentProps): React.ReactNode {
   const { document, loading, error } = useLegalDocument(slug);
@@ -35,8 +35,12 @@ export function LegalDocument({
     return (
       <div className={`legal-document-error ${className}`}>
         <p className="legal-document-error__title">Error loading document</p>
-        <p className="legal-document-error__text">{error?.message || 'The legal document could not be loaded.'}</p>
-        <p className="legal-document-error__text">Please try refreshing the page or contact support.</p>
+        <p className="legal-document-error__text">
+          {error?.message || "The legal document could not be loaded."}
+        </p>
+        <p className="legal-document-error__text">
+          Please try refreshing the page or contact support.
+        </p>
       </div>
     );
   }
@@ -46,17 +50,25 @@ export function LegalDocument({
       {showHeader && (
         <header className="legal-document__header">
           <h1 className="legal-document__title">{document.title}</h1>
-          <div className="legal-document__meta">
-            <p>
-              <strong>Version:</strong> {document.version}
-            </p>
-            <p>
-              <strong>Effective Date:</strong> {formatDate(document.effectiveDate)}
-            </p>
-            <p>
-              <strong>Last Updated:</strong> {formatDate(document.lastUpdated)}
-            </p>
-          </div>
+          {(document.version || document.effectiveDate || document.lastUpdated) && (
+            <div className="legal-document__meta">
+              {document.version && (
+                <p>
+                  <strong>Version:</strong> {document.version}
+                </p>
+              )}
+              {document.effectiveDate && (
+                <p>
+                  <strong>Effective Date:</strong> {formatDate(document.effectiveDate)}
+                </p>
+              )}
+              {document.lastUpdated && (
+                <p>
+                  <strong>Last Updated:</strong> {formatDate(document.lastUpdated)}
+                </p>
+              )}
+            </div>
+          )}
         </header>
       )}
 
@@ -68,10 +80,10 @@ export function LegalDocument({
 function formatDate(dateString: string): string {
   try {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   } catch {
     return dateString;

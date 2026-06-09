@@ -3,20 +3,24 @@
  * Route: /legal/[slug] (e.g., /legal/terms-and-conditions)
  */
 
-import React from 'react';
-import { notFound } from 'next/navigation';
-import { LegalDocument } from '@/components/LegalDocument';
-import { LegalPageLayout } from '@/components/LegalPageLayout';
-import { isValidDocumentSlug, getDocumentDisplayName, LEGAL_DOCUMENTS } from '@/services/legal-documents.service';
+import React from "react";
+import { notFound } from "next/navigation";
+import { LegalDocument } from "@/components/LegalDocument";
+import { LegalPageLayout } from "@/components/LegalPageLayout";
+import {
+  isValidDocumentSlug,
+  getDocumentDisplayName,
+  LEGAL_DOCUMENTS,
+} from "@/services/legal-documents.service";
 
 interface LegalPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
-export default function LegalPage({ params }: LegalPageProps): React.ReactNode {
-  const { slug } = params;
+export default async function LegalPage({ params }: LegalPageProps): Promise<React.ReactNode> {
+  const { slug } = await params;
 
   // Validate slug
   if (!isValidDocumentSlug(slug)) {
@@ -46,11 +50,11 @@ export function generateStaticParams() {
  * Set metadata for the page
  */
 export async function generateMetadata({ params }: LegalPageProps) {
-  const { slug } = params;
+  const { slug } = await params;
 
   if (!isValidDocumentSlug(slug)) {
     return {
-      title: 'Not Found',
+      title: "Not Found",
     };
   }
 

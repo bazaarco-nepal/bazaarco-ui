@@ -195,7 +195,7 @@ export function AddressesPage() {
       if (editing === "new") {
         await createAddress.mutateAsync(payload);
         toast("Address saved");
-      } else if (editing && editing !== "new") {
+      } else if (editing) {
         await updateAddress.mutateAsync({ id: editing.id, payload });
         toast("Address updated");
       }

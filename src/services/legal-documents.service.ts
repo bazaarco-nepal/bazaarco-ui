@@ -7,6 +7,10 @@ export interface LegalDocument {
   slug: string;
   title: string;
   content: string;
+  // Optional metadata; not currently emitted by getLegalDocument (markdown-only source).
+  version?: string;
+  effectiveDate?: string;
+  lastUpdated?: string;
 }
 
 export const LEGAL_DOCUMENTS = [
@@ -66,7 +70,7 @@ export async function getLegalDocument(slug: string): Promise<LegalDocument | nu
  */
 function extractTitle(markdown: string): string {
   const match = markdown.match(/^# (.+)$/m);
-  return match ? match[1] : "Document";
+  return match?.[1] ?? "Document";
 }
 
 /**

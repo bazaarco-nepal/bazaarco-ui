@@ -7,6 +7,7 @@ import {
   type UpdateProductPayload,
 } from "@/services/api/seller";
 import type { OrderStatus } from "@/lib/order-utils";
+import type { SellerReview } from "@/types/catalog";
 import {
   sellerOrganizationApi,
   type SetupSellerOrganizationPayload,
@@ -23,6 +24,82 @@ import { storefrontApi, type UpdateStorefrontPayload } from "@/services/api/stor
 import { queryKeys } from "@/services/api/query-keys";
 
 const STALE_TIME = 60 * 1000;
+
+// View-models for the seller dashboard/analytics aggregates the API returns.
+// These mirror the display-only shapes the rendering code reads.
+export interface SellerChartPoint {
+  label: string;
+  value: number;
+}
+
+export interface SellerTopProduct {
+  icon: string;
+  name: string;
+  rev: string | number;
+  units: number;
+  tint: string;
+  spark?: number[];
+}
+
+export interface SellerKpi {
+  label: string;
+  value: string | number;
+  delta?: number;
+  up?: boolean;
+  color?: string;
+  spark?: number[];
+  couriers?: { name: string; to: string; amount: string }[];
+}
+
+export interface SellerDashboardData {
+  salesByDay?: SellerChartPoint[];
+  paymentSplit?: { label: string; value: number; color: string }[];
+  funnel?: SellerChartPoint[];
+  topProducts?: SellerTopProduct[];
+  activity?: { icon: string; color: string; t: string; text: string }[];
+  kpis?: SellerKpi[];
+  bargainGlance?: {
+    pending: number;
+    accepted: number;
+    avgGiven: number;
+    marginGiven: number;
+  };
+}
+
+export interface SellerAnalyticsData {
+  salesByDay?: SellerChartPoint[];
+  topProducts?: SellerTopProduct[];
+  moneyBuckets?: { c: string; en: string; v: number }[];
+}
+
+export interface SellerLedgerData {
+  rows?: {
+    date: string;
+    status: string;
+    cash: string | number;
+    fee: string | number;
+    net: string | number;
+  }[];
+}
+
+export interface SellerNotificationsData {
+  items?: { id: string; title: string; body: string; time: string }[];
+}
+
+export interface SellerBargainOffer {
+  id: string;
+  buyer: string;
+  buyerAvatarUrl?: string | null;
+  city: string;
+  product: string;
+  listed: number;
+  offered: number;
+  yourOffer?: number;
+  time: string;
+  status?: string;
+  accepted?: boolean;
+  rejected?: boolean;
+}
 
 export function useSellerOrganization() {
   return useQuery({
@@ -137,7 +214,7 @@ export function useSubmitSellerVerification() {
 export function useSellerDashboard(range = "week") {
   return useQuery({
     queryKey: queryKeys.seller.dashboard(range),
-    queryFn: () => sellerApi.getDashboard(range),
+    queryFn: () => sellerApi.getDashboard<SellerDashboardData>(range),
     // Keep the previous range's data on screen while the next loads, so
     // toggling Today / 7 days / 30 days doesn't blank the dashboard.
     placeholderData: keepPreviousData,
@@ -181,7 +258,7 @@ export function useSellerInventory() {
 export function useSellerBargains() {
   return useQuery({
     queryKey: queryKeys.seller.bargains,
-    queryFn: () => sellerApi.getBargains(),
+    queryFn: () => sellerApi.getBargains<SellerBargainOffer[]>(),
     staleTime: STALE_TIME,
   });
 }
@@ -189,7 +266,7 @@ export function useSellerBargains() {
 export function useSellerReviews() {
   return useQuery({
     queryKey: queryKeys.seller.reviews,
-    queryFn: () => sellerApi.getReviews(),
+    queryFn: () => sellerApi.getReviews<SellerReview[]>(),
     staleTime: STALE_TIME,
   });
 }
@@ -221,7 +298,7 @@ export function useSellerVideos() {
 export function useSellerAnalytics() {
   return useQuery({
     queryKey: queryKeys.seller.analytics,
-    queryFn: () => sellerApi.getAnalytics(),
+    queryFn: () => sellerApi.getAnalytics<SellerAnalyticsData>(),
     staleTime: STALE_TIME,
   });
 }
@@ -229,7 +306,7 @@ export function useSellerAnalytics() {
 export function useSellerNotifications() {
   return useQuery({
     queryKey: queryKeys.seller.notifications,
-    queryFn: () => sellerApi.getNotifications(),
+    queryFn: () => sellerApi.getNotifications<SellerNotificationsData>(),
     staleTime: STALE_TIME,
   });
 }
@@ -289,7 +366,7 @@ export function useUploadStorefrontBanner() {
 export function useSellerLedger() {
   return useQuery({
     queryKey: queryKeys.seller.ledger,
-    queryFn: () => sellerApi.getLedger(),
+    queryFn: () => sellerApi.getLedger<SellerLedgerData>(),
     staleTime: STALE_TIME,
   });
 }

@@ -17,7 +17,6 @@ export function LogoutConfirmModal({
 }) {
   const confirmRef = useRef<HTMLButtonElement>(null);
 
-  // Escape closes (ignored while pending) + lock body scroll while open.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {

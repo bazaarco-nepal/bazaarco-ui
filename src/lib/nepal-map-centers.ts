@@ -10,7 +10,7 @@ export const NEPAL_CITY_CENTER: Record<string, [number, number]> = {
   Nepalgunj: [28.0506, 81.616],
 };
 
-export const DEFAULT_MAP_CENTER: [number, number] = NEPAL_CITY_CENTER.Kathmandu;
+export const DEFAULT_MAP_CENTER: [number, number] = [27.7172, 85.324];
 
 export function centerForCity(city: string): [number, number] {
   return NEPAL_CITY_CENTER[city] ?? DEFAULT_MAP_CENTER;

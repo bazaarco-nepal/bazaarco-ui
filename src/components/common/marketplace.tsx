@@ -31,6 +31,9 @@ import { BuyerAvatar } from "@/components/common/buyer-avatar";
 import { LogoutConfirmModal } from "@/components/common/logout-confirm-modal";
 
 import type { BazaarContextValue } from "@/types/bazaar";
+import type { Category, Product, Seller } from "@/types";
+import type { AuthUser } from "@/types/auth";
+import type { DeliveryLocation } from "@/lib/delivery-location";
 
 export const BazaarCtx = createContext<BazaarContextValue | null>(null);
 export const useBz = (): BazaarContextValue => {
@@ -42,7 +45,15 @@ export const useBz = (): BazaarContextValue => {
 };
 
 /* ---------- Himalayan outline (legacy hero accent) ---------- */
-export function Himalaya({ color = "rgba(255,255,255,.18)", height = 90, style }) {
+export function Himalaya({
+  color = "rgba(255,255,255,.18)",
+  height = 90,
+  style,
+}: {
+  color?: string;
+  height?: number;
+  style?: React.CSSProperties;
+}) {
   return (
     <svg
       viewBox="0 0 1280 120"
@@ -72,6 +83,13 @@ export function KathmanduSkyline({
   scale = 0.82,
   position = "center 60%",
   style,
+}: {
+  src?: string;
+  height?: number;
+  opacity?: number;
+  scale?: number;
+  position?: string;
+  style?: React.CSSProperties;
 }) {
   const mask =
     "linear-gradient(to bottom, transparent 0%, #000 30%, #000 88%, transparent 100%), linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%)";
@@ -109,6 +127,13 @@ export function SellerRow({
   onToggleSave,
   onVisit,
   compact = false,
+}: {
+  seller?: Seller | null;
+  sellerId?: string;
+  saved?: boolean;
+  onToggleSave?: (sellerId: string) => void;
+  onVisit?: (sellerId: string) => void;
+  compact?: boolean;
 }) {
   if (!seller) {
     return (
@@ -238,7 +263,15 @@ export function SellerRow({
 }
 
 /* ---------- Product card ---------- */
-export function ProductCard({ p, onClick, sale = false }) {
+export function ProductCard({
+  p,
+  onClick,
+  sale = false,
+}: {
+  p: Product;
+  onClick: (p: Product) => void;
+  sale?: boolean;
+}) {
   const { toggleWish, wish } = useBz();
   const locale = useBazaarStore((s) => s.locale);
   const productName = displayProductName(p, locale);
@@ -429,12 +462,22 @@ export function ProductCard({ p, onClick, sale = false }) {
 
 /* ---------- Sale product card ---------- */
 /* Inherits ProductCard; adds sold-count social proof. */
-export function SaleProductCard(props) {
+export function SaleProductCard(props: { p: Product; onClick: (p: Product) => void }) {
   return <ProductCard {...props} sale />;
 }
 
 /* ---------- Horizontal rail of cards ---------- */
-export function ProductRail({ items, onOpen, cols, sale = false }) {
+export function ProductRail({
+  items,
+  onOpen,
+  cols,
+  sale = false,
+}: {
+  items: Product[];
+  onOpen: (p: Product) => void;
+  cols?: number;
+  sale?: boolean;
+}) {
   return (
     <div
       className="bz-grid-cards"
@@ -536,19 +579,44 @@ const CATEGORY_ICON_SRC: Record<string, string> = {
   "digital-goods-services": "/category-icons/03-computers-accessories.svg",
 };
 
+// Shorter labels used only on the mobile homepage grid (the first 6 tiles), where
+// full taxonomy names wrap and look congested. Desktop and the "All categories"
+// view always use the full name. Only ids present here get a short form.
+const CATEGORY_SHORT_NAME: Record<string, string> = {
+  "mobile-phones-tablets": "Mobile Phones",
+  "electronics-gadgets": "Electronics",
+  "computers-accessories": "Computers",
+  "fashion-clothing": "Fashion",
+  "shoes-footwear": "Footwear",
+  "bags-watches-accessories": "Accessories",
+};
+
 // `compact` is kept for call-site compatibility, but category labels always use
 // the exact taxonomy name so buyer views do not drift from the catalog.
-export function CategoryTile({ c, onClick, compact = false, href }) {
+export function CategoryTile({
+  c,
+  onClick,
+  compact = false,
+  href,
+  shortOnMobile = false,
+}: {
+  c: Category;
+  onClick: (c: Category) => void;
+  compact?: boolean;
+  href?: string;
+  shortOnMobile?: boolean;
+}) {
   const [hov, setHov] = useState(false);
   const locale = useBazaarStore((s) => s.locale);
   const tint = CAT_TINTS[c.tint] ?? CAT_TINTS.red;
   const label = displayCategoryLabel(c, locale);
+  const shortLabel = shortOnMobile ? CATEGORY_SHORT_NAME[c.id] : undefined;
   const iconName = CATEGORY_ICON[c.id] ?? "tag";
   const iconSrc = CATEGORY_ICON_SRC[c.id];
   // Nav use (e.g. home → /browse) passes `href` and renders a real anchor so the
   // browser can open it in a new tab. Filter use (browse page) omits href and
   // stays a button toggling an in-page facet.
-  const Tag = href ? AppLink : "button";
+  const Tag: React.ElementType = href ? AppLink : "button";
   const tagProps = href ? { href, onNavigate: () => onClick(c) } : { onClick: () => onClick(c) };
   return (
     <Tag
@@ -603,7 +671,14 @@ export function CategoryTile({ c, onClick, compact = false, href }) {
       </div>
       <div style={{ textAlign: "center", lineHeight: 1.2 }}>
         <div className="bz-cat__en" style={{ fontSize: ".8125rem", fontWeight: 600 }}>
-          {label}
+          {shortLabel ? (
+            <>
+              <span className="bz-hide-mobile">{label}</span>
+              <span className="bz-show-mobile">{shortLabel}</span>
+            </>
+          ) : (
+            label
+          )}
         </div>
       </div>
     </Tag>
@@ -654,10 +729,24 @@ export function DevViewSwitcher() {
   );
 }
 
-export function NavMenuItem({ icon, label, danger, onClick, href, onNavigate }) {
+export function NavMenuItem({
+  icon,
+  label,
+  danger,
+  onClick,
+  href,
+  onNavigate,
+}: {
+  icon: string;
+  label: React.ReactNode;
+  danger?: boolean;
+  onClick?: () => void;
+  href?: string;
+  onNavigate?: () => void;
+}) {
   const [hov, setHov] = useState(false);
   const color = danger ? "var(--red)" : "var(--ink-700)";
-  const Tag = href ? AppLink : "button";
+  const Tag: React.ElementType = href ? AppLink : "button";
   const tagProps = href ? { href, onNavigate } : { onClick };
   return (
     <Tag
@@ -688,7 +777,19 @@ export function NavMenuItem({ icon, label, danger, onClick, href, onNavigate }) 
   );
 }
 
-function AccountMenuPanel({ navLabel, user, authed, goAndClose, onLogout }) {
+function AccountMenuPanel({
+  navLabel,
+  user,
+  authed,
+  goAndClose,
+  onLogout,
+}: {
+  navLabel: React.ReactNode;
+  user: AuthUser | null;
+  authed: boolean;
+  goAndClose: (screen: string) => void;
+  onLogout: () => void;
+}) {
   const { t } = useTranslation();
   return (
     <>
@@ -808,8 +909,8 @@ export function Navbar() {
   // Only offer the navbar "Deliver to" picker while the buyer has no saved
   // address yet. Once one exists, the profile is the source of truth.
   const hasSavedAddress = savedAddresses.length > 0;
-  const desktopMenuRef = useRef(null);
-  const mobileSheetRef = useRef(null);
+  const desktopMenuRef = useRef<HTMLDivElement | null>(null);
+  const mobileSheetRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -817,12 +918,12 @@ export function Navbar() {
     const isMobile = window.matchMedia("(max-width: 768px)").matches;
     const prevOverflow = document.body.style.overflow;
     if (isMobile) document.body.style.overflow = "hidden";
-    const onDocClick = (e) => {
-      const t = e.target;
+    const onDocClick = (e: MouseEvent) => {
+      const t = e.target as Node;
       if (desktopMenuRef.current?.contains(t) || mobileSheetRef.current?.contains(t)) return;
       setMenuOpen(false);
     };
-    const onKey = (e) => {
+    const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setMenuOpen(false);
     };
     document.addEventListener("mousedown", onDocClick);
@@ -834,7 +935,7 @@ export function Navbar() {
     };
   }, [menuOpen]);
 
-  const goAndClose = (s) => {
+  const goAndClose = (s: string) => {
     setMenuOpen(false);
     nav(s);
   };
@@ -931,7 +1032,7 @@ export function Navbar() {
               open={deliverOpen}
               value={deliveryLocation}
               onClose={() => setDeliverOpen(false)}
-              onSave={async (loc) => {
+              onSave={async (loc: DeliveryLocation) => {
                 setDeliveryLocation(loc);
                 setDeliverOpen(false);
                 toast(t("delivery.deliveringTo", { label: formatDeliverToLabel(loc) }));

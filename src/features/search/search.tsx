@@ -133,7 +133,7 @@ export function Search() {
 
   const heading = (() => {
     if (urlQuery) return t("search.resultsFor", { query: urlQuery });
-    if (cats.length === 1) return catName(cats[0]);
+    if (cats.length === 1) return catName(cats[0]!);
     return t("search.allProducts");
   })();
 

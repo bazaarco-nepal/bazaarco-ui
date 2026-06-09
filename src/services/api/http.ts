@@ -21,6 +21,9 @@ export const apiClient = axios.create({
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
+    // UI locale (ne/en) is display-only. Always tell the API to use English so
+    // query params, error messages and responses are never locale-sensitive.
+    "Accept-Language": "en",
   },
 });
 

@@ -21,6 +21,7 @@ import {
   useCreateSellerReview,
 } from "@/hooks/use-catalog";
 import { storeIdFromPath, pathFromScreen } from "@/config/routes";
+import { formatStoreAddress } from "@/lib/store-address";
 import type { Seller } from "@/types";
 
 const RATING_LABELS = ["", "Bad", "Not great", "Okay", "Good", "Excellent"];
@@ -333,7 +334,7 @@ export function Store() {
                 }}
               >
                 <Chip tone="neutral" icon="mapPin">
-                  {seller.city}
+                  {formatStoreAddress(seller.storeAddress, seller.city) || seller.city}
                 </Chip>
                 <span
                   aria-hidden

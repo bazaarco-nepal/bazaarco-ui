@@ -2264,11 +2264,19 @@ export function ChipGroup({ options, value, onChange }) {
 }
 
 /* ---------- Mobile sticky buy bar (guide §3.6) ---------- */
-export function MobileBuyBar({ onAdd, onBuy }) {
+export function MobileBuyBar({
+  onAdd,
+  onBuy,
+  onBargain,
+}: {
+  onAdd: () => void;
+  onBuy: () => void;
+  onBargain?: () => void;
+}) {
   const { t } = useTranslation();
   return (
     <div
-      className="bz-mobile-only"
+      className={`bz-mobile-only${onBargain ? " bz-mobile-buy-bar--with-bargain" : ""}`}
       style={{
         position: "fixed",
         left: 0,
@@ -2281,6 +2289,18 @@ export function MobileBuyBar({ onAdd, onBuy }) {
         boxShadow: "0 -2px 12px rgba(15,23,42,.08)",
       }}
     >
+      {onBargain ? (
+        <Button
+          variant="secondary"
+          size="lg"
+          full
+          icon="bargain"
+          onClick={onBargain}
+          style={{ marginBottom: 10 }}
+        >
+          {t("pdp.makeOffer")}
+        </Button>
+      ) : null}
       <div style={{ display: "flex", gap: 10, flex: 1, minWidth: 0 }}>
         <Button variant="secondary" size="lg" full icon="cart" onClick={onAdd}>
           {t("common.addToCart")}

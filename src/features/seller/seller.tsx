@@ -86,6 +86,8 @@ import {
   useUpdateSellerSettings,
   useSellerOrganization,
   useSetupSellerOrganization,
+  useCreateSellerStore,
+  useSwitchActiveStore,
   useSubmitSellerVerification,
   useSellerStorefront,
   useUpdateStorefront,
@@ -126,6 +128,7 @@ import {
 } from "@/components/common";
 import { ASSETS } from "@/config/assets";
 import { pathFromScreen, storeShareUrl } from "@/config/routes";
+import { emptyStoreAddress, formatStoreAddress, type StoreAddress } from "@/lib/store-address";
 
 export type SellerInboxOrderItem = {
   id: string;
@@ -184,6 +187,277 @@ export const SELLER_NAV = [
   },
 ];
 
+function SellerStoreSwitcher({ stores, activeSellerId, collapsed }) {
+  const { t } = useTranslation();
+  const { toast, nav } = useBz();
+  const switchStore = useSwitchActiveStore();
+  const createStore = useCreateSellerStore();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newStoreAddress, setNewStoreAddress] = useState<StoreAddress>(emptyStoreAddress);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [menuOpen]);
+
+  const handleSwitch = (sellerId: string) => {
+    if (sellerId === activeSellerId || switchStore.isPending) return;
+    switchStore.mutate(sellerId, {
+      onSuccess: () => {
+        setMenuOpen(false);
+        toast("Store switched");
+      },
+      onError: (e) => toast(e instanceof Error ? e.message : "Could not switch store"),
+    });
+  };
+
+  const handleCreate = async () => {
+    const name = newName.trim();
+    if (name.length < 2) {
+      toast("Enter a store name (at least 2 characters)");
+      return;
+    }
+    const city = newStoreAddress.city?.trim();
+    if (!city) {
+      toast("Enter your store city");
+      return;
+    }
+    try {
+      await createStore.mutateAsync({
+        shopName: name,
+        storeAddress: {
+          city,
+          ...(newStoreAddress.area?.trim() ? { area: newStoreAddress.area.trim() } : {}),
+          ...(newStoreAddress.landmark?.trim()
+            ? { landmark: newStoreAddress.landmark.trim() }
+            : {}),
+          ...(newStoreAddress.lat != null ? { lat: newStoreAddress.lat } : {}),
+          ...(newStoreAddress.lng != null ? { lng: newStoreAddress.lng } : {}),
+        },
+      });
+      setAddOpen(false);
+      setNewName("");
+      setNewStoreAddress(emptyStoreAddress());
+      toast("Store created — complete KYC to start selling");
+      nav("s-verification");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Could not create store");
+    }
+  };
+
+  if (!stores?.length) return null;
+
+  return (
+    <>
+      <div ref={menuRef} style={{ position: "relative", marginTop: 8 }}>
+        <button
+          type="button"
+          onClick={() => setMenuOpen((o) => !o)}
+          aria-expanded={menuOpen}
+          aria-label={t("seller.switchStore")}
+          style={{
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: collapsed ? "center" : "space-between",
+            gap: 6,
+            padding: collapsed ? "6px 0" : "6px 10px",
+            borderRadius: "var(--r-sm)",
+            border: "1px solid var(--line-200)",
+            background: "#fff",
+            cursor: "pointer",
+            fontSize: ".75rem",
+            fontWeight: 700,
+            color: "var(--ink-600)",
+          }}
+        >
+          {!collapsed && <span>{t("seller.switchStore")}</span>}
+          <Icon name="chevronDown" size={14} color="var(--ink-500)" />
+        </button>
+        {menuOpen && (
+          <div
+            style={{
+              position: "absolute",
+              top: "calc(100% + 4px)",
+              left: 0,
+              right: collapsed ? "auto" : 0,
+              minWidth: collapsed ? 200 : undefined,
+              zIndex: 50,
+              background: "#fff",
+              border: "1px solid var(--line-200)",
+              borderRadius: "var(--r-md)",
+              boxShadow: "var(--shadow-md)",
+              padding: 6,
+            }}
+          >
+            {stores.map((store) => {
+              const active = store.sellerId === activeSellerId;
+              return (
+                <button
+                  key={store.sellerId}
+                  type="button"
+                  onClick={() => handleSwitch(store.sellerId)}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "8px 10px",
+                    border: "none",
+                    borderRadius: "var(--r-sm)",
+                    background: active ? "var(--tint-blue-50)" : "transparent",
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
+                >
+                  <StoreAvatar src={store.logoUrl} name={store.shopName} size={28} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontWeight: 700,
+                        fontSize: ".8125rem",
+                        color: "var(--ink-900)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {store.shopName}
+                    </div>
+                    {store.city && (
+                      <div style={{ fontSize: ".6875rem", color: "var(--ink-400)" }}>
+                        {store.city}
+                      </div>
+                    )}
+                  </div>
+                  {active && <Icon name="check" size={14} color="var(--blue)" />}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                setAddOpen(true);
+              }}
+              style={{
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "8px 10px",
+                marginTop: 4,
+                border: "none",
+                borderTop: "1px solid var(--line-200)",
+                borderRadius: 0,
+                background: "transparent",
+                cursor: "pointer",
+                fontSize: ".8125rem",
+                fontWeight: 700,
+                color: "var(--blue)",
+              }}
+            >
+              <Icon name="plus" size={14} color="var(--blue)" />
+              {t("seller.addStore")}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {addOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 200,
+            background: "rgba(11,18,32,.45)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 20,
+          }}
+          onClick={() => !createStore.isPending && setAddOpen(false)}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 400,
+              background: "#fff",
+              borderRadius: "var(--r-lg)",
+              padding: 24,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ margin: "0 0 16px", fontSize: "1.125rem", fontWeight: 800 }}>
+              {t("seller.addStore")}
+            </h3>
+            <label style={{ display: "block", marginBottom: 12 }}>
+              <span style={{ fontSize: ".8125rem", fontWeight: 700, color: "var(--ink-600)" }}>
+                {t("seller.storeName")}
+              </span>
+              <input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                maxLength={256}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  marginTop: 6,
+                  padding: "10px 12px",
+                  borderRadius: "var(--r-sm)",
+                  border: "1px solid var(--line-200)",
+                  fontSize: ".875rem",
+                }}
+              />
+            </label>
+            <div style={{ marginBottom: 20 }}>
+              <div
+                style={{
+                  fontSize: ".8125rem",
+                  fontWeight: 700,
+                  color: "var(--ink-600)",
+                  marginBottom: 6,
+                }}
+              >
+                {t("seller.storeAddress")}
+              </div>
+              <p style={{ margin: "0 0 10px", fontSize: ".75rem", color: "var(--ink-500)" }}>
+                {t("seller.storeAddressHint")}
+              </p>
+              <LandmarkAddress value={newStoreAddress} onChange={setNewStoreAddress} />
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <Button
+                variant="ghost"
+                onClick={() => setAddOpen(false)}
+                disabled={createStore.isPending}
+              >
+                {t("common.cancel")}
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => void handleCreate()}
+                disabled={createStore.isPending}
+              >
+                {createStore.isPending ? t("seller.creatingStore") : t("seller.createStore")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 export function SellerSidebar({
   screen,
   onNav,
@@ -194,6 +468,8 @@ export function SellerSidebar({
   badges = {},
   shopName,
   logoUrl,
+  stores = [],
+  activeSellerId = null,
 }) {
   const { t } = useTranslation();
   const close = () => setOpenMobile(false);
@@ -244,6 +520,13 @@ export function SellerSidebar({
               </div>
             </div>
           </div>
+          {stores.length > 0 && (
+            <SellerStoreSwitcher
+              stores={stores}
+              activeSellerId={activeSellerId}
+              collapsed={collapsed}
+            />
+          )}
           <button
             className="bz-side-toggle"
             onClick={() => setCollapsed((c) => !c)}
@@ -406,6 +689,8 @@ export function SellerShell({ screen, children }) {
         badges={badges}
         shopName={organization?.shopName}
         logoUrl={organization?.logoUrl}
+        stores={organization?.stores ?? []}
+        activeSellerId={organization?.sellerId ?? null}
       />
       <section className="bz-side-content">
         <div className="bz-side-mobile-bar">
@@ -591,6 +876,7 @@ export function SellerHelpBar() {
 
 /* ---------- 4.1 Seller Onboarding ---------- */
 export function SellerOnboarding() {
+  const { t } = useTranslation();
   const { nav, toast } = useBz();
   const user = useBazaarStore((s) => s.user);
   const { data: organization } = useSellerOrganization();
@@ -605,6 +891,7 @@ export function SellerOnboarding() {
   const [docPreview, setDocPreview] = useState(null);
   const [scanned, setScanned] = useState(null);
   const [shopName, setShopName] = useState("");
+  const [storeAddress, setStoreAddress] = useState<StoreAddress>(emptyStoreAddress);
 
   const finishSetup = async () => {
     const name = (scanned?.shop || shopName || "").trim();
@@ -621,10 +908,21 @@ export function SellerOnboarding() {
       toast("Upload your NID or PAN photo first");
       return;
     }
+    const storeCity = (storeAddress.city || "").trim();
+    if (storeCity.length < 1) {
+      toast("Enter your store location");
+      return;
+    }
     try {
       await setupOrganization.mutateAsync({
         shopName: name,
-        city: scanned?.address?.split(",").pop()?.trim() || undefined,
+        storeAddress: {
+          city: storeCity,
+          ...(storeAddress.area?.trim() ? { area: storeAddress.area.trim() } : {}),
+          ...(storeAddress.landmark?.trim() ? { landmark: storeAddress.landmark.trim() } : {}),
+          ...(storeAddress.lat != null ? { lat: storeAddress.lat } : {}),
+          ...(storeAddress.lng != null ? { lng: storeAddress.lng } : {}),
+        },
       });
       await submitVerification.mutateAsync({
         file: docFile,
@@ -1127,9 +1425,31 @@ export function SellerOnboarding() {
                 }}
               />
             </div>
+            <div
+              style={{
+                background: "#fff",
+                border: "1.5px solid var(--line-200)",
+                borderRadius: "var(--r-md)",
+                padding: "12px 14px",
+                marginBottom: 10,
+              }}
+            >
+              <label
+                style={{
+                  fontSize: ".75rem",
+                  color: "var(--ink-400)",
+                  fontWeight: 700,
+                  display: "block",
+                  marginBottom: 8,
+                }}
+              >
+                {t("seller.storeLocation")} (required)
+              </label>
+              <LandmarkAddress value={storeAddress} onChange={setStoreAddress} />
+            </div>
             {[
               [`${scanned.docLabel} no.`, "docId"],
-              ["Address", "address"],
+              [t("seller.kycAddress"), "address"],
             ].map(([label, key]) => (
               <div key={key} style={{ marginBottom: 10 }}>
                 <label
@@ -8009,11 +8329,21 @@ export function SellerStorefront() {
   const [logoCropUrl, setLogoCropUrl] = useState<string | null>(null);
   const [about, setAbout] = useState("");
   const [shopName, setShopName] = useState("");
+  const [storeAddress, setStoreAddress] = useState<StoreAddress>(emptyStoreAddress);
 
   useEffect(() => {
     if (!storefront) return;
     setAbout(storefront.about ?? "");
     setShopName(storefront.shopName ?? "");
+    setStoreAddress(
+      storefront.storeAddress ?? {
+        city: storefront.city ?? "",
+        area: "",
+        landmark: "",
+        lat: null,
+        lng: null,
+      },
+    );
   }, [storefront]);
 
   const logoUrl = storefront?.logoUrl;
@@ -8082,8 +8412,23 @@ export function SellerStorefront() {
       toast("Store name is required");
       return;
     }
+    const city = storeAddress.city?.trim();
+    if (!city) {
+      toast("Store address is required");
+      return;
+    }
     try {
-      await updateStorefront.mutateAsync({ about, shopName: trimmedName });
+      await updateStorefront.mutateAsync({
+        about,
+        shopName: trimmedName,
+        storeAddress: {
+          city,
+          ...(storeAddress.area?.trim() ? { area: storeAddress.area.trim() } : {}),
+          ...(storeAddress.landmark?.trim() ? { landmark: storeAddress.landmark.trim() } : {}),
+          ...(storeAddress.lat != null ? { lat: storeAddress.lat } : {}),
+          ...(storeAddress.lng != null ? { lng: storeAddress.lng } : {}),
+        },
+      });
       toast("Storefront published — buyers see it now");
     } catch (e) {
       toast(e instanceof Error ? e.message : "Could not save storefront");
@@ -8317,9 +8662,9 @@ export function SellerStorefront() {
                   >
                     {shopName || "Your store name"}
                   </div>
-                  {storefront?.city && (
+                  {formatStoreAddress(storeAddress, storefront?.city) && (
                     <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 2 }}>
-                      {storefront.city}
+                      {formatStoreAddress(storeAddress, storefront?.city)}
                     </div>
                   )}
                 </div>
@@ -8411,6 +8756,22 @@ export function SellerStorefront() {
                 fontWeight: 700,
                 color: "var(--ink-600)",
                 marginBottom: 8,
+              }}
+            >
+              {t("seller.storeAddress")}
+            </label>
+            <p style={{ margin: "0 0 10px", fontSize: ".75rem", color: "var(--ink-500)" }}>
+              {t("seller.storeAddressHint")}
+            </p>
+            <LandmarkAddress value={storeAddress} onChange={setStoreAddress} />
+            <label
+              style={{
+                display: "block",
+                fontSize: ".8125rem",
+                fontWeight: 700,
+                color: "var(--ink-600)",
+                marginBottom: 8,
+                marginTop: 18,
               }}
             >
               About your store

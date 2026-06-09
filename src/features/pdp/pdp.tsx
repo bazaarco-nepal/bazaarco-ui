@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Icon,
   Logo,
@@ -563,6 +564,7 @@ function BuyNowSheet({
 }
 
 export function PDP({ p: pProp }: PdpProps) {
+  const { t } = useTranslation();
   const {
     addToCart,
     buyNow,
@@ -694,6 +696,14 @@ export function PDP({ p: pProp }: PdpProps) {
     ? Boolean(selVariant.allowBargaining ?? p.allowBargaining)
     : Boolean(p.allowBargaining);
 
+  const openBargain = () => {
+    if (!authed) {
+      promptLogin("Please sign in to make an offer.");
+      return;
+    }
+    setBargain(true);
+  };
+
   const variantPicker = hasPricedVariants ? (
     <div style={{ marginTop: 18 }}>
       <div style={{ fontSize: ".875rem", color: "var(--ink-500)", marginBottom: 10 }}>
@@ -754,7 +764,7 @@ export function PDP({ p: pProp }: PdpProps) {
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
       <div
-        className="bz-pdp-root"
+        className={bargainingAvailable ? "bz-pdp-root bz-pdp-root--bargain" : "bz-pdp-root"}
         style={{
           maxWidth: "var(--container)",
           margin: "0 auto",
@@ -1729,19 +1739,8 @@ export function PDP({ p: pProp }: PdpProps) {
             {/* Bargaining — only when the seller enabled it for this product */}
             <div style={{ marginTop: 12 }}>
               {bargainingAvailable ? (
-                <Button
-                  variant="secondary"
-                  full
-                  icon="bargain"
-                  onClick={() => {
-                    if (!authed) {
-                      promptLogin("Please sign in to make an offer.");
-                      return;
-                    }
-                    setBargain(true);
-                  }}
-                >
-                  Make an offer
+                <Button variant="secondary" full icon="bargain" onClick={openBargain}>
+                  {t("pdp.makeOffer")}
                 </Button>
               ) : (
                 <div
@@ -2002,6 +2001,7 @@ export function PDP({ p: pProp }: PdpProps) {
           onBuy={() =>
             hasPricedVariants ? setBuyNowSheet(true) : void buyNow(p, qty, selVariantId)
           }
+          onBargain={bargainingAvailable ? openBargain : undefined}
         />
 
         {buyNowSheet && (

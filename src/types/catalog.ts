@@ -25,12 +25,21 @@ export interface Category {
   fields: CategoryAttributeField[];
 }
 
+export interface StoreAddress {
+  city: string;
+  area?: string;
+  landmark?: string;
+  lat?: number | null;
+  lng?: number | null;
+}
+
 export interface Seller {
   id: string;
   name: string;
   rating: number;
   reviews: number;
   city: string;
+  storeAddress?: StoreAddress | null;
   tint: Tint;
   avatar: string;
 }

@@ -32,6 +32,10 @@ export function useSellerOrganization() {
   });
 }
 
+function invalidateSellerWorkspace(qc: ReturnType<typeof useQueryClient>) {
+  void qc.invalidateQueries({ queryKey: ["seller"] });
+}
+
 export function useSetupSellerOrganization() {
   const qc = useQueryClient();
   return useMutation({
@@ -39,8 +43,30 @@ export function useSetupSellerOrganization() {
       sellerOrganizationApi.setupOrganization(payload),
     onSuccess: (data) => {
       qc.setQueryData(queryKeys.seller.organization, data);
-      void qc.invalidateQueries({ queryKey: queryKeys.seller.storefront });
-      void qc.invalidateQueries({ queryKey: queryKeys.seller.settings });
+      invalidateSellerWorkspace(qc);
+    },
+  });
+}
+
+export function useCreateSellerStore() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: SetupSellerOrganizationPayload) =>
+      sellerOrganizationApi.createStore(payload),
+    onSuccess: (data) => {
+      qc.setQueryData(queryKeys.seller.organization, data);
+      invalidateSellerWorkspace(qc);
+    },
+  });
+}
+
+export function useSwitchActiveStore() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (sellerId: string) => sellerOrganizationApi.switchActiveStore(sellerId),
+    onSuccess: (data) => {
+      qc.setQueryData(queryKeys.seller.organization, data);
+      invalidateSellerWorkspace(qc);
     },
   });
 }

@@ -263,6 +263,16 @@
   },
   "seller": {
     "role": "Seller",
+    "switchStore": "Switch store",
+    "addStore": "Add new store",
+    "storeName": "Store name",
+    "storeCity": "City",
+    "storeLocation": "Store location",
+    "storeAddress": "Store address",
+    "storeAddressHint": "Where buyers can find your shop — separate from your KYC document address.",
+    "kycAddress": "Address on document",
+    "createStore": "Create store",
+    "creatingStore": "Creating…",
     "expandSidebar": "Expand sidebar",
     "collapseSidebar": "Collapse sidebar",
     "logOut": "Log out",
@@ -465,13 +475,17 @@
     "saveLocation": "Save location",
     "deliveringTo": "Delivering to {{label}}"
   },
+  "pdp": {
+    "makeOffer": "Make an offer",
+    "bargainUnavailable": "Bargaining is not available for this product"
+  },
   "reviews": {
     "writeReview": "Write a review",
     "purchaseToReview": "Purchase this product to write a review.",
     "signInPurchase": "Sign in and purchase this product to write a review.",
     "alreadyReviewed": "You have already reviewed this product.",
     "noReviewsYet": "No reviews yet — be the first to review this product.",
-    "purchaseFirst": "Purchase this product to write the first review."
+    "noReviewsEmpty": "No reviews yet."
   },
   "screens": {
     "home": "Home",

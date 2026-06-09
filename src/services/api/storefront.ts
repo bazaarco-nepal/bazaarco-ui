@@ -7,6 +7,8 @@ export interface StorefrontBlock {
   enabled: boolean;
 }
 
+import type { StoreAddress } from "@/lib/store-address";
+
 export interface StorefrontData {
   shopName: string;
   logoUrl: string;
@@ -16,6 +18,7 @@ export interface StorefrontData {
   rating: number;
   verified: boolean;
   city: string;
+  storeAddress: StoreAddress | null;
   tint: string;
 }
 
@@ -23,6 +26,7 @@ export interface UpdateStorefrontPayload {
   shopName?: string;
   about?: string;
   blocks?: StorefrontBlock[];
+  storeAddress?: StoreAddress;
 }
 
 export const storefrontApi = {

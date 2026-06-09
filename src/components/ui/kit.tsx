@@ -600,7 +600,7 @@ export function Icon({
 }
 
 /* ---------- Logo ---------- */
-export function Logo({ height = 40, mono }) {
+export function Logo({ height = 40, mono }: { height?: number; mono?: boolean }) {
   return (
     <img
       src={ASSETS.logo}
@@ -662,7 +662,7 @@ export function AppLink({
 }: {
   href: string;
   onNavigate?: () => void;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
   ariaLabel?: string;
@@ -858,6 +858,17 @@ export function IconButton({
   href,
   onNavigate,
   target,
+}: {
+  name: string;
+  onClick?: (e: React.MouseEvent) => void;
+  active?: boolean;
+  badge?: number;
+  label: string;
+  size?: number;
+  title?: string;
+  href?: string;
+  onNavigate?: () => void;
+  target?: string;
 }) {
   const [hov, setHov] = useState(false);
   const linkClick = useSpaLinkClick(href, onNavigate, target);
@@ -1063,7 +1074,17 @@ export function StatusPill({ status }) {
 }
 
 /* ---------- Price ---------- */
-export function Price({ value, original, size = "md", color = "var(--blue-deep)" }) {
+export function Price({
+  value,
+  original,
+  size = "md",
+  color = "var(--blue-deep)",
+}: {
+  value: number;
+  original?: number | null;
+  size?: string;
+  color?: string;
+}) {
   const fs = size === "lg" ? "1.75rem" : size === "sm" ? "1rem" : "1.25rem";
   return (
     <span style={{ display: "inline-flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
@@ -1255,6 +1276,24 @@ export function VideoPlayer({
   onLongPressEnd,
   playbackRate,
   isActive,
+}: {
+  tint?: string;
+  icon?: string;
+  ratio?: string;
+  radius?: string;
+  autoplay?: boolean;
+  label?: React.ReactNode;
+  overlay?: React.ReactNode;
+  compact?: boolean;
+  fill?: boolean;
+  thumb?: string | null;
+  src?: string | null;
+  externalMuted?: boolean;
+  onMutedChange?: (muted: boolean) => void;
+  onLongPressStart?: () => void;
+  onLongPressEnd?: () => void;
+  playbackRate?: number;
+  isActive?: boolean;
 }) {
   const videoRef = useRef(null);
   const [playing, setPlaying] = useState(!!autoplay);
@@ -1894,7 +1933,7 @@ export function SectionHead({
    confusing for first-time buyers). Mobile = big tap button only. Desktop = button + a
    cosmetic numbered bar for users who want a sense of scale / direct jumps.
    CTA stays blue secondary — red is reserved for the one action per screen. */
-export function usePaged(items, pageSize = 12, resetKey) {
+export function usePaged<T>(items: T[], pageSize = 12, resetKey?: unknown) {
   const [count, setCount] = useState(pageSize);
   // Reset to first page when the underlying list changes (e.g. filters applied).
   useEffect(() => {
@@ -1922,7 +1961,7 @@ export function usePaged(items, pageSize = 12, resetKey) {
 /* Discrete numbered pages — for operational tables (seller orders / inventory) where
    users want control, exact page jumps, and to return to a known row. Replaces the slice
    each page (NOT cumulative like usePaged). Pairs with <PageBar>. */
-export function usePages(items, perPage = 10, resetKey) {
+export function usePages<T>(items: T[], perPage = 10, resetKey?: unknown) {
   const total = items.length;
   const pageCount = Math.max(1, Math.ceil(total / perPage));
   const [page, setPage] = useState(1);
@@ -1950,6 +1989,21 @@ export function LoadMore({
   pageBar,
   style,
   size = "lg",
+}: {
+  paged: {
+    total: number;
+    shown: number;
+    hasMore: boolean;
+    nextBatch: number;
+    pageSize: number;
+    more: () => void;
+  };
+  noun?: string;
+  onTop?: () => void;
+  onClear?: () => void;
+  pageBar?: React.ReactNode;
+  style?: React.CSSProperties;
+  size?: string;
 }) {
   if (!paged || paged.total === 0) return null;
   const { shown, total, hasMore, nextBatch, pageSize } = paged;
@@ -2014,7 +2068,17 @@ export function LoadMore({
   );
 }
 /* Cosmetic numbered bar (desktop control + sense of scale). Hidden on mobile by default. */
-export function PageBar({ page, pageCount, onPage, alwaysShow }) {
+export function PageBar({
+  page,
+  pageCount,
+  onPage,
+  alwaysShow,
+}: {
+  page: number;
+  pageCount: number;
+  onPage: (n: number) => void;
+  alwaysShow?: boolean;
+}) {
   if (pageCount <= 1) return null;
   const nums = [];
   for (let i = 1; i <= pageCount; i++) {
@@ -2398,7 +2462,16 @@ export function BottomNav({
 }
 
 /* ---------- Landmark address picker ---------- */
-export function LandmarkAddress({ value, onChange }) {
+export function LandmarkAddress<
+  T extends {
+    city: string;
+    area?: string;
+    postal?: string;
+    landmark?: string;
+    lat?: number | null;
+    lng?: number | null;
+  },
+>({ value, onChange }: { value: T; onChange: (value: T) => void }) {
   const v = value || { city: "", area: "", landmark: "", lat: null, lng: null };
   const [mapOpen, setMapOpen] = useState(false);
   const [geoError, setGeoError] = useState(null);

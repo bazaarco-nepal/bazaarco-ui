@@ -41,6 +41,7 @@ import { useVideoFeed } from "@/hooks/use-video-feed";
 import { useVideoLike } from "@/hooks/use-video-like";
 import { videosApi } from "@/services/api/videos";
 import type { VideoFeedItem } from "@/types/video";
+import type { Product } from "@/types";
 import {
   BazaarCtx,
   useBz,
@@ -59,14 +60,19 @@ function useIsMobile(bp = 768) {
   useEffect(() => {
     const mq = window.matchMedia(`(max-width:${bp}px)`);
     setM(mq.matches);
-    const h = (e) => setM(e.matches);
+    const h = (e: MediaQueryListEvent) => setM(e.matches);
     mq.addEventListener("change", h);
     return () => mq.removeEventListener("change", h);
   }, [bp]);
   return m;
 }
 
-function fmtCount(n) {
+// A video feed item carries the full product shape the storefront needs (id,
+// price, media, etc.) and just nests richer seller/engagement data on top. Cart
+// and PDP handoffs read only the shared product fields, so present one as a Product.
+const asProduct = (item: VideoFeedItem): Product => item as unknown as Product;
+
+function fmtCount(n: number | string) {
   const v = typeof n === "number" ? n : Number(n);
   if (!Number.isFinite(v)) return "0";
   if (v >= 1e6) return (v / 1e6).toFixed(1).replace(/\.0$/, "") + "M";
@@ -75,7 +81,23 @@ function fmtCount(n) {
 }
 
 /* ---- side action rail button ---- */
-function ReelAction({ icon, label, count, active, onClick, danger, inside }) {
+function ReelAction({
+  icon,
+  label,
+  count,
+  active,
+  onClick,
+  danger,
+  inside,
+}: {
+  icon: string;
+  label: string;
+  count?: number | null;
+  active?: boolean;
+  onClick?: (e: React.MouseEvent) => void;
+  danger?: boolean;
+  inside?: boolean;
+}) {
   const [hov, setHov] = useState(false);
   return (
     <div
@@ -140,7 +162,15 @@ function ReelAction({ icon, label, count, active, onClick, danger, inside }) {
   );
 }
 
-function ReelThumb({ v, active, onClick }) {
+function ReelThumb({
+  v,
+  active,
+  onClick,
+}: {
+  v: VideoFeedItem;
+  active?: boolean;
+  onClick?: () => void;
+}) {
   return (
     <button
       onClick={onClick}
@@ -231,6 +261,16 @@ function ReelItem({
   onMutedChange,
   radius,
   hideMuteBadge,
+}: {
+  item: VideoFeedItem;
+  isMobile: boolean;
+  isActive: boolean;
+  liked: boolean;
+  onToggleLike: (videoId: string) => void;
+  muted: boolean;
+  onMutedChange: (muted: boolean) => void;
+  radius?: string;
+  hideMuteBadge?: boolean;
 }) {
   const { openProduct, addToCart, toggleWish, wish, toast } = useBz();
   const p = item;
@@ -238,29 +278,29 @@ function ReelItem({
   const wished = wish.includes(p.id);
   const metrics = item.engagement;
   const caption = item.caption;
-  const tint = TINTS[p.tint] || TINTS.blue;
+  const tint = TINTS[p.tint as keyof typeof TINTS] || TINTS.blue;
 
-  const [bursts, setBursts] = useState([]);
+  const [bursts, setBursts] = useState<{ id: number; x: number; y: number }[]>([]);
   const [capExpand, setCapExpand] = useState(false);
   const [fastFwd, setFastFwd] = useState(false);
-  const stageRef = useRef(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
   const lastTap = useRef(0);
-  const longPressRef = useRef(null);
+  const longPressRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wasLongPress = useRef(false);
 
-  const spawnBurst = (x, y) => {
+  const spawnBurst = (x: number, y: number) => {
     const id = Date.now() + Math.random();
     setBursts((b) => [...b, { id, x, y }]);
     setTimeout(() => setBursts((b) => b.filter((h) => h.id !== id)), 900);
   };
 
-  const onStageTap = (e) => {
+  const onStageTap = (e: React.MouseEvent) => {
     if (wasLongPress.current) {
       wasLongPress.current = false;
       return;
     }
     const now = Date.now();
-    if (now - lastTap.current < 300) {
+    if (now - lastTap.current < 300 && stageRef.current) {
       const rect = stageRef.current.getBoundingClientRect();
       const x = e.clientX - rect.left,
         y = e.clientY - rect.top;
@@ -406,7 +446,7 @@ function ReelItem({
       <button
         onClick={(e) => {
           e.stopPropagation();
-          openProduct(p);
+          openProduct(asProduct(p));
         }}
         style={{
           position: "absolute",
@@ -495,7 +535,7 @@ function ReelItem({
         <div style={{ display: "flex", alignItems: "center", gap: 10, pointerEvents: "auto" }}>
           <AppLink
             href={pathFromScreen("pdp", p.id)}
-            onNavigate={() => openProduct(p)}
+            onNavigate={() => openProduct(asProduct(p))}
             ariaLabel={`Visit ${s.name}`}
             style={{
               width: 38,
@@ -503,7 +543,7 @@ function ReelItem({
               borderRadius: "50%",
               padding: 0,
               border: "2px solid #fff",
-              background: TINTS[s.tint][2],
+              background: TINTS[s.tint as keyof typeof TINTS][2],
               color: "#fff",
               fontWeight: 800,
               fontSize: 14,
@@ -606,7 +646,7 @@ function ReelItem({
             spawnBurst(160, 240);
           }}
         />
-        {p.allowBargaining && (
+        {asProduct(p).allowBargaining && (
           <ReelAction
             icon="bargain"
             label="Bargain & ask"
@@ -614,7 +654,7 @@ function ReelItem({
             inside={isMobile}
             onClick={() => {
               toast("Opening bargain chat…");
-              openProduct(p);
+              openProduct(asProduct(p));
             }}
           />
         )}
@@ -721,14 +761,14 @@ export function VideoTheater() {
   );
   const [muted, setMuted] = useState(true);
   const isMobile = useIsMobile();
-  const scrollRef = useRef(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
   const wheelLock = useRef(0);
   const programmaticScroll = useRef(false);
 
   const safeIndex = vids.length ? Math.min(activeIndex, vids.length - 1) : 0;
   const p = vids[safeIndex];
   const s = p?.seller;
-  const tint = TINTS[p?.tint] || TINTS.blue;
+  const tint = TINTS[p?.tint as keyof typeof TINTS] || TINTS.blue;
   const caption = p?.caption ?? "";
   const activeProductId = p?.id;
 
@@ -747,7 +787,7 @@ export function VideoTheater() {
 
   // Scroll programmatically to a target reel index (smooth)
   const scrollToIndex = useCallback(
-    (idx) => {
+    (idx: number) => {
       const el = scrollRef.current;
       if (!el) return;
       const clamped = Math.max(0, Math.min(vids.length - 1, idx));
@@ -767,12 +807,12 @@ export function VideoTheater() {
     const items = root.querySelectorAll("[data-reel-idx]");
     const io = new IntersectionObserver(
       (entries) => {
-        let best = null;
+        let best: IntersectionObserverEntry | null = null;
         for (const en of entries) {
           if (!best || en.intersectionRatio > best.intersectionRatio) best = en;
         }
         if (best && best.intersectionRatio >= 0.6) {
-          const idx = parseInt(best.target.dataset.reelIdx, 10);
+          const idx = parseInt((best.target as HTMLElement).dataset.reelIdx ?? "0", 10);
           setActiveIndex(idx);
         }
       },
@@ -787,7 +827,7 @@ export function VideoTheater() {
     if (isMobile) return;
     const el = scrollRef.current;
     if (!el) return;
-    const onWheel = (e) => {
+    const onWheel = (e: WheelEvent) => {
       if (Math.abs(e.deltaY) < 10) return;
       e.preventDefault();
       const now = Date.now();
@@ -801,8 +841,8 @@ export function VideoTheater() {
 
   // Keyboard: arrows + j/k navigate, m toggles mute, l likes active product
   useEffect(() => {
-    const h = (e) => {
-      if (e.target && /input|textarea/i.test(e.target.tagName)) return;
+    const h = (e: KeyboardEvent) => {
+      if (e.target && /input|textarea/i.test((e.target as HTMLElement).tagName)) return;
       if (e.key === "ArrowDown" || e.key.toLowerCase() === "j") {
         e.preventDefault();
         scrollToIndex(activeIndex + 1);
@@ -819,7 +859,7 @@ export function VideoTheater() {
   }, [activeIndex, scrollToIndex, activeProductId, toggleLike]);
 
   /* ---- snap-scroll feed (renders all reels stacked) ---- */
-  const reelFeed = (radius) => (
+  const reelFeed = (radius?: string) => (
     <div
       ref={scrollRef}
       className="bz-reel-feed"
@@ -855,7 +895,7 @@ export function VideoTheater() {
             onToggleLike={toggleLike}
             muted={muted}
             onMutedChange={setMuted}
-            radius={radius || 0}
+            radius={radius || "0"}
             hideMuteBadge={!isMobile}
           />
         </div>
@@ -1017,7 +1057,7 @@ export function VideoTheater() {
           size="md"
           full
           icon="cart"
-          onClick={() => void addToCart(p, 1, "Added from video")}
+          onClick={() => void addToCart(asProduct(p), 1, "Added from video")}
         >
           Add to Cart
         </Button>
@@ -1027,7 +1067,7 @@ export function VideoTheater() {
           full
           iconRight="arrowRight"
           href={pathFromScreen("pdp", p.id)}
-          onNavigate={() => openProduct(p)}
+          onNavigate={() => openProduct(asProduct(p))}
         >
           View product
         </Button>
@@ -1055,7 +1095,7 @@ export function VideoTheater() {
     >
       <AppLink
         href={pathFromScreen("pdp", p.id)}
-        onNavigate={() => openProduct(p)}
+        onNavigate={() => openProduct(asProduct(p))}
         ariaLabel="Open product details"
         style={{
           display: "flex",
@@ -1126,7 +1166,7 @@ export function VideoTheater() {
         variant="primary"
         size="md"
         icon="cart"
-        onClick={() => void addToCart(p, 1, "Added from video")}
+        onClick={() => void addToCart(asProduct(p), 1, "Added from video")}
       >
         Add
       </Button>
@@ -1239,7 +1279,7 @@ export function VideoTheater() {
           </span>
         </div>
 
-        <div style={{ position: "relative", flex: 1, minHeight: 0 }}>{reelFeed(0)}</div>
+        <div style={{ position: "relative", flex: 1, minHeight: 0 }}>{reelFeed("0")}</div>
 
         {mobileCartBar}
       </div>

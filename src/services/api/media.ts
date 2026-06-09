@@ -33,6 +33,8 @@ export interface CreateSellerVideoPayload {
   tint?: string;
   icon?: string;
   status?: SellerVideoStatus;
+  // Required by the Core API (/seller/videos): video length in seconds, min 5.
+  duration: number;
 }
 
 export interface SellerVideoAnalytics {

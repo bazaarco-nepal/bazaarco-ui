@@ -41,6 +41,7 @@ import { browsePath, categoryIdsFromSearchParams, pathFromScreen } from "@/confi
 import { useCatalog } from "@/hooks/use-catalog";
 import { useSearch } from "@/hooks/use-search";
 import type { SearchParams } from "@/services/api/search";
+import type { Product } from "@/types";
 import {
   BazaarCtx,
   useBz,
@@ -61,7 +62,7 @@ const PLP_SORT_VALUES = ["popular", "newest", "low", "high", "rating"] as const;
 
 /* Loosely-defined "accessory" detection — keeps search clean.
    For demo only; in real life this comes from a category-priority index. */
-function isAccessory(p, q) {
+function isAccessory(p: Product, q: string) {
   if (!q) return false;
   const ql = q.toLowerCase();
   const name = p.name.toLowerCase();
@@ -72,7 +73,17 @@ function isAccessory(p, q) {
   return false;
 }
 
-function DidYouMean({ q, suggestions, onPick, onReset }) {
+function DidYouMean({
+  q,
+  suggestions,
+  onPick,
+  onReset,
+}: {
+  q: string;
+  suggestions: string[];
+  onPick: (s: string) => void;
+  onReset: () => void;
+}) {
   const main = suggestions[0] || "";
   return (
     <div style={{ maxWidth: 560, margin: "32px auto", textAlign: "center" }}>
@@ -181,8 +192,8 @@ export function Browse() {
   const categoryView = urlParams.get("view") === "categories";
   const catFromUrl = useMemo(() => categoryIdsFromSearchParams(urlParams), [urlParams]);
   const [cats, setCats] = useState(catFromUrl);
-  const [quick, setQuick] = useState([]);
-  const [priceBand, setPriceBand] = useState(null); // band id or null
+  const [quick, setQuick] = useState<string[]>([]);
+  const [priceBand, setPriceBand] = useState<string | null>(null); // band id or null
   const [priceMin, setPriceMin] = useState(""); // custom min — overrides band when set
   const [priceMax, setPriceMax] = useState(""); // custom max — overrides band when set
   const initialSort = (() => {
@@ -316,9 +327,9 @@ export function Browse() {
   const related = matches.filter((p) => isAccessory(p, effectiveQuery) && !p.outOfStock);
   const oos = matches.filter((p) => p.outOfStock);
 
-  const toggleCat = (id) =>
+  const toggleCat = (id: string) =>
     setCats((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]));
-  const toggleQuick = (id) =>
+  const toggleQuick = (id: string) =>
     setQuick((q) => (q.includes(id) ? q.filter((x) => x !== id) : [...q, id]));
   const clearPrice = () => {
     setPriceBand(null);
@@ -345,7 +356,7 @@ export function Browse() {
       return c && { key: `c-${id}`, label: categoryLabel(c), onRemove: () => toggleCat(id) };
     }),
     priceActive && { key: "p-range", label: priceLabel, onRemove: clearPrice },
-  ].filter(Boolean);
+  ].filter((c): c is { key: string; label: string; onRemove: () => void } => Boolean(c));
   const hasActive = activeChips.length > 0;
   const showCategoryBrowser = categoryView && !hasActive && !effectiveQuery;
 

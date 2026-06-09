@@ -47,6 +47,8 @@ export interface Seller {
 export interface Product {
   id: string;
   name: string;
+  // Optional Nepali product name; falls back to `name` when absent (see displayProductName).
+  ne?: string;
   description?: string;
   metadata?: Record<string, unknown>;
   price: number;

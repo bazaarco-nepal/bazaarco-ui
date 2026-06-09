@@ -17,7 +17,7 @@ function ProductSection({
 }: {
   title: string;
   query: PicksQuery;
-  seeAllHref: string;
+  seeAllHref?: string;
   hideWhenEmpty?: boolean;
 }) {
   const { t } = useTranslation();
@@ -39,8 +39,8 @@ function ProductSection({
     >
       <SectionHead
         title={title}
-        action={t("common.seeAll")}
-        onAction={() => router.push(seeAllHref)}
+        action={seeAllHref ? t("common.seeAll") : undefined}
+        onAction={seeAllHref ? () => router.push(seeAllHref) : undefined}
       />
 
       <div className="bz-picks-grid">
@@ -79,11 +79,7 @@ export function PicksSections() {
 
   return (
     <>
-      <ProductSection
-        title={t("home.newArrivals")}
-        query={newArrivals}
-        seeAllHref="/browse?sort=newest"
-      />
+      <ProductSection title={t("home.newArrivals")} query={newArrivals} />
       <ProductSection
         title={t("home.topPicks")}
         query={topPicks}

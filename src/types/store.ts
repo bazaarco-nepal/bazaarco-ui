@@ -47,6 +47,8 @@ export interface BazaarStoreState {
   setOrderTotal: (total: number) => void;
   setLastOrderId: (id: string | null) => void;
   setActiveProduct: (product: Product | null) => void;
+  hydrateDelivery: () => void;
+  setDeliveryLocation: (location: DeliveryLocation) => void;
   setDeliveryTier: (tier: DeliveryTier) => void;
   hydrateLocale: () => void;
   setLocale: (locale: Locale) => void;

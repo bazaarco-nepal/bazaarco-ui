@@ -13,5 +13,5 @@ export function tintForName(name: string | null | undefined): TintKey {
     // djb2-style rolling hash, kept unsigned so the modulo never goes negative.
     hash = (hash * 31 + s.charCodeAt(i)) >>> 0;
   }
-  return TINT_KEYS[hash % TINT_KEYS.length];
+  return TINT_KEYS[hash % TINT_KEYS.length]!;
 }

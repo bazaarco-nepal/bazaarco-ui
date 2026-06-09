@@ -15,11 +15,18 @@ export interface AuthUser {
   createdAt: string;
 }
 
+export interface LegalAcceptance {
+  slug: string;
+  version: string;
+}
+
 export interface RegisterPayload {
   email: string;
   name: string;
   password: string;
   intent: AuthIntent;
+  /** Legal documents the user accepted at sign-up; logged by the Core API. */
+  acceptances?: LegalAcceptance[];
 }
 
 export interface PendingEmailVerification {

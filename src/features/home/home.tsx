@@ -54,6 +54,7 @@ import {
 } from "@/components/common";
 import { PicksSections } from "./_components/picks-tabs";
 import { SearchOverlay } from "./_components/search-overlay";
+import type { Product } from "@/types";
 import { BestPicksHero, BestPicksBanner } from "./_components/best-picks-hero";
 
 function Countdown({ initial = 3 * 3600 + 42 * 60 + 9 }) {
@@ -65,7 +66,7 @@ function Countdown({ initial = 3 * 3600 + 42 * 60 + 9 }) {
   const hh = String(Math.floor(s / 3600)).padStart(2, "0");
   const mm = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
   const ss = String(s % 60).padStart(2, "0");
-  const Box = ({ v }) => (
+  const Box = ({ v }: { v: string }) => (
     <span
       className="tnum"
       style={{
@@ -94,7 +95,7 @@ function Countdown({ initial = 3 * 3600 + 42 * 60 + 9 }) {
   );
 }
 
-function VideoRailCard({ p, onOpen }) {
+function VideoRailCard({ p, onOpen }: { p: Product; onOpen: (p: Product) => void }) {
   return (
     <div
       onClick={() => onOpen(p)}
@@ -183,7 +184,15 @@ export function Home() {
     products.filter((p) => !p.outOfStock),
     20,
   );
-  const W = ({ children, style, className }) => (
+  const W = ({
+    children,
+    style,
+    className,
+  }: {
+    children?: React.ReactNode;
+    style?: React.CSSProperties;
+    className?: string;
+  }) => (
     <section
       className={`bz-container-pad${className ? ` ${className}` : ""}`}
       style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px", ...style }}
@@ -384,6 +393,7 @@ export function Home() {
                         c={c}
                         href={browsePath({ cat: c.id })}
                         onClick={() => nav("browse", { cat: c.id })}
+                        shortOnMobile
                       />
                     ))}
             </div>

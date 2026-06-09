@@ -6,7 +6,9 @@ import react from "@vitejs/plugin-react";
 // jsdom environment for component/hook tests; Playwright E2E lives under
 // `tests-e2e/` and is run separately via `npm run test:e2e` (NOT here).
 export default defineConfig({
-  plugins: [react()],
+  // Cast around the vite-version skew between @vitejs/plugin-react (root vite)
+  // and vitest's bundled vite — the Plugin types are structurally identical.
+  plugins: [react() as never],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),

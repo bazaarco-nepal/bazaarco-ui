@@ -4,13 +4,13 @@ import { Spinner } from "@/components/ui";
 
 interface ApiStateProps {
   isLoading: boolean;
-  isError: boolean;
+  isError?: boolean;
   error?: Error | null;
   children: React.ReactNode;
   fallback?: React.ReactNode;
 }
 
-export function ApiState({ isLoading, isError, error, children, fallback }: ApiStateProps) {
+export function ApiState({ isLoading, isError = false, error, children, fallback }: ApiStateProps) {
   if (isLoading) {
     return (
       fallback ?? (

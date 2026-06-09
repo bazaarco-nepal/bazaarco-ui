@@ -67,6 +67,7 @@ import {
 } from "@/hooks/use-bargains";
 import { useUploadImage } from "@/hooks/use-media-upload";
 import type { SellerInventoryItem } from "@/services/api/seller";
+import type { SellerStoreSummary } from "@/services/api/seller-organization";
 import type { CategoryAttributeField } from "@/types";
 import type { OrderStatus } from "@/lib/order-utils";
 import {
@@ -187,7 +188,15 @@ export const SELLER_NAV = [
   },
 ];
 
-function SellerStoreSwitcher({ stores, activeSellerId, collapsed }) {
+function SellerStoreSwitcher({
+  stores,
+  activeSellerId,
+  collapsed,
+}: {
+  stores: SellerStoreSummary[];
+  activeSellerId: string | null;
+  collapsed: boolean;
+}) {
   const { t } = useTranslation();
   const { toast, nav } = useBz();
   const switchStore = useSwitchActiveStore();
@@ -470,6 +479,18 @@ export function SellerSidebar({
   logoUrl,
   stores = [],
   activeSellerId = null,
+}: {
+  screen: string;
+  onNav: (screen: string) => void;
+  collapsed: boolean;
+  setCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+  openMobile: boolean;
+  setOpenMobile: React.Dispatch<React.SetStateAction<boolean>>;
+  badges?: Record<string, number>;
+  shopName?: string | null;
+  logoUrl?: string | null;
+  stores?: SellerStoreSummary[];
+  activeSellerId?: string | null;
 }) {
   const { t } = useTranslation();
   const close = () => setOpenMobile(false);
@@ -546,7 +567,7 @@ export function SellerSidebar({
               <div className="bz-side-group">{t(grp.groupKey)}</div>
               {grp.items.map((it) => {
                 const active = screen === it.id;
-                const badge = it.badgeKey && badges[it.badgeKey] ? badges[it.badgeKey] : 0;
+                const badge = it.badgeKey ? (badges[it.badgeKey] ?? 0) : 0;
                 const showBadge = badge > 0;
                 const label = t(it.labelKey);
                 return (
@@ -598,7 +619,7 @@ export function SellerSidebar({
   );
 }
 
-export function SellerShell({ screen, children }) {
+export function SellerShell({ screen, children }: { screen: string; children: React.ReactNode }) {
   const { t } = useTranslation();
   const { nav } = useBz();
   const { data: organization, isLoading: orgLoading } = useSellerOrganization();
@@ -884,12 +905,18 @@ export function SellerOnboarding() {
   const savedStatus = verification?.status ?? "none";
   const setupOrganization = useSetupSellerOrganization();
   const submitVerification = useSubmitSellerVerification();
-  const docInputRef = useRef(null);
+  const docInputRef = useRef<HTMLInputElement | null>(null);
   const [stage, setStage] = useState("hero"); // hero | docPick | docUpload | review | done
-  const [docType, setDocType] = useState(null); // pan | nid
-  const [docFile, setDocFile] = useState(null);
-  const [docPreview, setDocPreview] = useState(null);
-  const [scanned, setScanned] = useState(null);
+  const [docType, setDocType] = useState<"pan" | "nid" | null>(null);
+  const [docFile, setDocFile] = useState<File | null>(null);
+  const [docPreview, setDocPreview] = useState<string | null>(null);
+  const [scanned, setScanned] = useState<{
+    name: string;
+    shop: string;
+    docLabel: string;
+    docId: string;
+    address: string;
+  } | null>(null);
   const [shopName, setShopName] = useState("");
   const [storeAddress, setStoreAddress] = useState<StoreAddress>(emptyStoreAddress);
 
@@ -938,7 +965,7 @@ export function SellerOnboarding() {
     }
   };
 
-  const startDocUpload = (type) => {
+  const startDocUpload = (type: "pan" | "nid") => {
     setDocType(type);
     setScanned({
       // Pre-fill owner from the signup full name; the seller can correct it.
@@ -951,7 +978,7 @@ export function SellerOnboarding() {
     setStage("docUpload");
   };
 
-  const onDocFile = (e) => {
+  const onDocFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file || !file.type.startsWith("image/")) {
@@ -1126,7 +1153,7 @@ export function SellerOnboarding() {
                     cursor: href ? "pointer" : "default",
                   }}
                 >
-                  <Icon name={i} size={22} color="var(--blue)" />
+                  <Icon name={i ?? ""} size={22} color="var(--blue)" />
                   <div>
                     <div style={{ fontWeight: 700, color: "var(--ink-900)" }}>{t}</div>
                   </div>
@@ -1207,7 +1234,7 @@ export function SellerOnboarding() {
             ].map((d) => (
               <button
                 key={d.id}
-                onClick={() => startDocUpload(d.id)}
+                onClick={() => startDocUpload(d.id as "pan" | "nid")}
                 style={{
                   width: "100%",
                   display: "flex",
@@ -1447,10 +1474,12 @@ export function SellerOnboarding() {
               </label>
               <LandmarkAddress value={storeAddress} onChange={setStoreAddress} />
             </div>
-            {[
-              [`${scanned.docLabel} no.`, "docId"],
-              [t("seller.kycAddress"), "address"],
-            ].map(([label, key]) => (
+            {(
+              [
+                [`${scanned.docLabel} no.`, "docId"],
+                [t("seller.kycAddress"), "address"],
+              ] as [string, "name" | "shop" | "docLabel" | "docId" | "address"][]
+            ).map(([label, key]) => (
               <div key={key} style={{ marginBottom: 10 }}>
                 <label
                   style={{
@@ -1553,11 +1582,19 @@ export function SellerOnboarding() {
 
 /* Inline SVG charts (no deps) */
 
-export function SellerBarChart({ data, height = 280, summaryTotalLabel = "7-day total" }) {
+export function SellerBarChart({
+  data,
+  height = 280,
+  summaryTotalLabel = "7-day total",
+}: {
+  data: { label: string; value: number }[];
+  height?: number;
+  summaryTotalLabel?: string;
+}) {
   const max = Math.max(...data.map((d) => d.value), 1);
   const total = data.reduce((sum, d) => sum + d.value, 0);
   const avg = data.length ? Math.round(total / data.length) : 0;
-  const peakIdx = data.reduce((best, d, i) => (d.value > data[best].value ? i : best), 0);
+  const peakIdx = data.reduce((best, d, i) => (d.value > (data[best]?.value ?? 0) ? i : best), 0);
   const chartH = Math.max(height - 72, 160);
   // With many buckets (24 hourly / 30 daily) the per-bar amount labels overlap,
   // so only show them for the sparser week view.
@@ -1702,7 +1739,15 @@ export function SellerBarChart({ data, height = 280, summaryTotalLabel = "7-day 
   );
 }
 
-export function SellerSparkline({ data, color = "var(--blue)", height = 36 }) {
+export function SellerSparkline({
+  data,
+  color = "var(--blue)",
+  height = 36,
+}: {
+  data: number[];
+  color?: string;
+  height?: number;
+}) {
   const max = Math.max(...data, 1),
     min = Math.min(...data);
   const range = max - min || 1;
@@ -1728,7 +1773,13 @@ export function SellerSparkline({ data, color = "var(--blue)", height = 36 }) {
   );
 }
 
-export function SellerDonut({ slices, size = 160 }) {
+export function SellerDonut({
+  slices,
+  size = 160,
+}: {
+  slices: { label: string; value: number; color: string }[];
+  size?: number;
+}) {
   const total = slices.reduce((s, x) => s + x.value, 0) || 1;
   const r = 40,
     c = 50,
@@ -2050,7 +2101,18 @@ export function SellerDashboard() {
       urgent: false,
       action: { label: t("seller.common.restock"), onAct: () => nav("s-products") },
     },
-  ].filter(Boolean);
+  ].filter(
+    (
+      task,
+    ): task is {
+      icon: string;
+      tint: string;
+      label: string;
+      to: string;
+      urgent: boolean;
+      action: { label: string; onAct: () => void };
+    } => Boolean(task),
+  );
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
@@ -2252,7 +2314,7 @@ export function SellerDashboard() {
               >
                 {k.value}
               </div>
-              <SellerSparkline data={k.spark} color={k.color} />
+              <SellerSparkline data={k.spark ?? []} color={k.color} />
               {k.couriers && (
                 <div
                   style={{
@@ -2264,7 +2326,7 @@ export function SellerDashboard() {
                     gap: 6,
                   }}
                 >
-                  {k.couriers.map((c) => (
+                  {k.couriers.map((c: { name: string; to: string; amount: string }) => (
                     <AppLink
                       key={c.name}
                       href={pathFromScreen(c.to)}
@@ -2457,8 +2519,8 @@ export function SellerDashboard() {
                     width: 38,
                     height: 38,
                     borderRadius: "var(--r-md)",
-                    background: TINTS[t.tint][0],
-                    color: TINTS[t.tint][2],
+                    background: TINTS[t.tint as keyof typeof TINTS][0],
+                    color: TINTS[t.tint as keyof typeof TINTS][2],
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -2466,7 +2528,7 @@ export function SellerDashboard() {
                     flexShrink: 0,
                   }}
                 >
-                  <Icon name={t.icon} size={20} color={TINTS[t.tint][2]} />
+                  <Icon name={t.icon} size={20} color={TINTS[t.tint as keyof typeof TINTS][2]} />
                   {t.urgent && (
                     <span
                       style={{
@@ -2845,7 +2907,7 @@ export function SellerDashboard() {
                     Rs. {p.rev.toLocaleString("en-IN")}
                   </td>
                   <td style={{ padding: "12px 8px", width: 120 }}>
-                    <SellerSparkline data={p.spark} color="var(--blue)" height={24} />
+                    <SellerSparkline data={p.spark ?? []} color="var(--blue)" height={24} />
                   </td>
                 </tr>
               ))}
@@ -2900,14 +2962,14 @@ export function SellerDashboard() {
                   width: 44,
                   height: 44,
                   borderRadius: "var(--r-md)",
-                  background: TINTS[a.tint][0],
-                  color: TINTS[a.tint][2],
+                  background: TINTS[a.tint as keyof typeof TINTS][0],
+                  color: TINTS[a.tint as keyof typeof TINTS][2],
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <Icon name={a.icon} size={22} color={TINTS[a.tint][2]} />
+                <Icon name={a.icon} size={22} color={TINTS[a.tint as keyof typeof TINTS][2]} />
               </span>
               <div style={{ flex: 1, textAlign: "left" }}>
                 <div style={{ fontWeight: 800, fontSize: ".9375rem" }}>{a.label}</div>
@@ -3058,7 +3120,7 @@ export const INBOX_DATE_RANGES = [
   { id: "30d", label: "30 days" },
 ];
 
-export function inDateRange(o, range) {
+export function inDateRange(o: { time: string }, range: string) {
   if (range === "all") return true;
   // Time strings in mock data: "2 min ago", "1 hr ago", "3 hr ago", "yesterday", "2 days ago".
   const t = o.time.toLowerCase();
@@ -3291,7 +3353,10 @@ export function SellerInbox() {
         {/* Status pills */}
         <div style={{ marginBottom: 16 }}>
           <ChipGroup
-            options={tabs.map((t) => ({ value: t.id, label: `${t.label} (${counts[t.id]})` }))}
+            options={tabs.map((t) => ({
+              value: t.id,
+              label: `${t.label} (${counts[t.id as keyof typeof counts]})`,
+            }))}
             value={tab}
             onChange={setTab}
           />
@@ -3316,7 +3381,7 @@ export function SellerInbox() {
               const items = baseFiltered.filter((o) => col.statuses.includes(o.status));
               return (
                 <div
-                  key={col}
+                  key={col.id}
                   style={{
                     background: "var(--line-100)",
                     borderRadius: "var(--r-lg)",
@@ -3450,7 +3515,6 @@ export function SellerOrderDetail() {
         style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
       >
         <EmptyState
-          icon="package"
           title="No order selected"
           message="Open an order from the seller orders list."
           cta="Back to orders"
@@ -3769,7 +3833,7 @@ function keyFromMetadataLabel(label: string) {
   if (!words.length) return "";
   const [first, ...rest] = words;
   return [
-    first.toLowerCase(),
+    (first ?? "").toLowerCase(),
     ...rest.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()),
   ].join("");
 }
@@ -3913,7 +3977,7 @@ export function CategoryAttrFields({
 
           {f.t === "select" && (
             <select
-              value={values[f.k] || ""}
+              value={(values[f.k] as string | number | undefined) || ""}
               onChange={(e) => set(f.k, e.target.value)}
               style={{
                 ...inputStyle,
@@ -4013,7 +4077,7 @@ export function CategoryAttrFields({
 
           {(f.t === "text" || f.t === "num") && (
             <input
-              value={values[f.k] || ""}
+              value={(values[f.k] as string | number | undefined) || ""}
               inputMode={f.t === "num" ? "numeric" : undefined}
               onChange={(e) =>
                 set(f.k, f.t === "num" ? e.target.value.replace(/\D/g, "") : e.target.value)
@@ -4026,7 +4090,7 @@ export function CategoryAttrFields({
           {f.t === "date" && (
             <input
               type="date"
-              value={values[f.k] || ""}
+              value={(values[f.k] as string | number | undefined) || ""}
               onChange={(e) => set(f.k, e.target.value)}
               style={inputStyle}
             />
@@ -4269,7 +4333,7 @@ export function SellerAddProduct({
   }, [isEdit, editingProduct, editing]);
 
   // New category → start its attributes fresh (never carry the wrong category's fields).
-  const pickCategory = (id) => {
+  const pickCategory = (id: string) => {
     setCategory(id);
     setAttrs({});
   };
@@ -4363,7 +4427,7 @@ export function SellerAddProduct({
     ? variants.reduce((sum, v) => sum + (parseInt(v.stock, 10) || 0), 0)
     : stock;
 
-  const updateVariant = (id, key, val) =>
+  const updateVariant = (id: string | number, key: string, val: string | number | boolean) =>
     setVariants((arr) => arr.map((v) => (v.id === id ? { ...v, [key]: val } : v)));
   const addVariant = () =>
     setVariants((arr) => [
@@ -4381,7 +4445,8 @@ export function SellerAddProduct({
         minimumPrice: "",
       },
     ]);
-  const removeVariant = (id) => setVariants((arr) => arr.filter((v) => v.id !== id));
+  const removeVariant = (id: string | number) =>
+    setVariants((arr) => arr.filter((v) => v.id !== id));
 
   // Pricing in the API's shape (price = effective/sale price, original = struck
   // base price). Variant products keep their existing product-level price and
@@ -4462,7 +4527,7 @@ export function SellerAddProduct({
     }
     try {
       const uploaded = await Promise.all(
-        productPhotos.map((photo) => uploadImage.mutateAsync({ file: photo.file })),
+        productPhotos.map((photo) => uploadImage.mutateAsync({ file: photo.file! })),
       );
       const images = uploaded.map((u) => u.url);
       await createProduct.mutateAsync({
@@ -5560,9 +5625,8 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
       >
         <SellerHelpBar />
         <EmptyState
-          icon="package"
           title="No product selected"
-          description="Go back to your inventory and select a product to view."
+          message="Go back to your inventory and select a product to view."
           cta="Back to products"
           onCta={() => nav("s-products")}
         />
@@ -5987,7 +6051,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
             >
               Product Video
             </h3>
-            <VideoPlayer src={product.videoUrl} poster={product.videoThumb} />
+            <VideoPlayer src={product.videoUrl} thumb={product.videoThumb} />
           </div>
         )}
 
@@ -6058,7 +6122,7 @@ function DetailTile({
 }
 
 /* ---------- 4.5 Inventory — swipe-to-sell ---------- */
-const EMPTY_INVENTORY = [];
+const EMPTY_INVENTORY: SellerInventoryItem[] = [];
 
 export const INV_SORTS = [
   { value: "added", label: "Recently added" },
@@ -6075,19 +6139,19 @@ export function SellerInventory() {
   const deleteProduct = useDeleteProduct();
   const acknowledgeModeration = useAcknowledgeProductModeration();
   const [deleteTarget, setDeleteTarget] = useState<SellerInventoryItem | null>(null);
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState<SellerInventoryItem[]>([]);
   useEffect(() => {
     setItems(inventoryData);
   }, [inventoryData]);
-  const [expanded, setExpanded] = useState(null);
-  const [savingId, setSavingId] = useState(null);
-  const [priceDraft, setPriceDraft] = useState({});
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [priceDraft, setPriceDraft] = useState<Record<string, string>>({});
   const [status, setStatus] = useState("all"); // all | active | low | oos
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("added");
 
   const persistStock = useCallback(
-    async (id, newStock) => {
+    async (id: string, newStock: number) => {
       const prev = items.find((it) => it.id === id);
       if (!prev || newStock < 0 || newStock === prev.stock) return;
       setItems((list) => list.map((it) => (it.id === id ? { ...it, stock: newStock } : it)));
@@ -6105,17 +6169,17 @@ export function SellerInventory() {
     [items, updateProduct, toast],
   );
 
-  const dec = (id) => {
+  const dec = (id: string) => {
     const it = items.find((i) => i.id === id);
     if (!it || it.stock <= 0 || savingId) return;
     void persistStock(id, it.stock - 1);
   };
-  const inc = (id) => {
+  const inc = (id: string) => {
     const it = items.find((i) => i.id === id);
     if (!it || savingId) return;
     void persistStock(id, it.stock + 1);
   };
-  const sellInShop = (id) => {
+  const sellInShop = (id: string) => {
     const it = items.find((i) => i.id === id);
     if (!it || it.stock <= 0 || savingId) return;
     void persistStock(id, it.stock - 1);
@@ -6147,7 +6211,7 @@ export function SellerInventory() {
       if (!prev || !prev.variants) return;
       const variantIdx = prev.variants.findIndex((v) => v.id === variantId);
       if (variantIdx < 0) return;
-      const oldVariantStock = prev.variants[variantIdx].stock;
+      const oldVariantStock = prev.variants[variantIdx]?.stock;
       if (newStock === oldVariantStock) return;
       const updatedVariants = prev.variants.map((v) =>
         v.id === variantId ? { ...v, stock: newStock } : v,
@@ -6172,7 +6236,7 @@ export function SellerInventory() {
     [items, updateProduct, toast, savingId],
   );
 
-  const savePrice = async (id) => {
+  const savePrice = async (id: string) => {
     const it = items.find((i) => i.id === id);
     const raw = String(priceDraft[id] ?? it?.price ?? "").replace(/\D/g, "");
     const next = parseInt(raw, 10);
@@ -6193,7 +6257,7 @@ export function SellerInventory() {
     }
   };
 
-  const toggleExpanded = (id) => {
+  const toggleExpanded = (id: string) => {
     setExpanded((cur) => {
       if (cur === id) return null;
       const it = items.find((i) => i.id === id);
@@ -6202,7 +6266,7 @@ export function SellerInventory() {
     });
   };
 
-  const bucket = (it) => (it.stock === 0 ? "oos" : "active");
+  const bucket = (it: SellerInventoryItem) => (it.stock === 0 ? "oos" : "active");
   const counts = {
     all: items.length,
     active: items.filter((it) => bucket(it) === "active").length,
@@ -6385,7 +6449,7 @@ export function SellerInventory() {
             <ChipGroup
               options={statusTabs.map((t) => ({
                 value: t.id,
-                label: `${t.label} (${counts[t.id]})`,
+                label: `${t.label} (${counts[t.id as keyof typeof counts]})`,
               }))}
               value={status}
               onChange={setStatus}
@@ -7182,7 +7246,7 @@ export function SellerLedger() {
                 </tr>
               )}
               {rows.map((r, i) => {
-                const s = statusLabel[r.status];
+                const s = statusLabel[r.status as keyof typeof statusLabel];
                 return (
                   <tr key={i} style={{ borderTop: "1.5px solid var(--line-200)" }}>
                     <td style={{ padding: "14px 12px", fontWeight: 700 }}>{r.date}</td>
@@ -7463,7 +7527,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
       const uploaded = isVideo ? await chatApi.uploadVideo(file) : await chatApi.uploadImage(file);
       await send("", {
         url: uploaded.url,
-        thumbnailUrl: "thumbnailUrl" in uploaded ? uploaded.thumbnailUrl : uploaded.url,
+        thumbnailUrl: "thumbnailUrl" in uploaded ? (uploaded.thumbnailUrl as string) : uploaded.url,
         mediaType: isVideo ? "video" : "image",
         mimeType: file.type,
       });
@@ -7585,7 +7649,10 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
                   name={t.buyer}
                   size={40}
                   fontSize=".875rem"
-                  style={{ background: TINTS[t.tone][0], color: TINTS[t.tone][2] }}
+                  style={{
+                    background: TINTS[t.tone as keyof typeof TINTS][0],
+                    color: TINTS[t.tone as keyof typeof TINTS][2],
+                  }}
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
@@ -7677,7 +7744,10 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
                 name={active.buyer}
                 size={36}
                 fontSize=".875rem"
-                style={{ background: TINTS[active.tone][0], color: TINTS[active.tone][2] }}
+                style={{
+                  background: TINTS[active.tone as keyof typeof TINTS][0],
+                  color: TINTS[active.tone as keyof typeof TINTS][2],
+                }}
               />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 800, fontSize: ".9375rem" }}>{active.buyer}</div>
@@ -8934,7 +9004,7 @@ export function SellerVerificationTimeline() {
   const verification = organization?.verification;
   const status = verification?.status ?? "none";
 
-  const formatWhen = (iso) => {
+  const formatWhen = (iso: string) => {
     if (!iso) return null;
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return null;
@@ -8998,7 +9068,7 @@ export function SellerVerificationTimeline() {
     },
   ];
 
-  const dotFor = (state) => {
+  const dotFor = (state: string) => {
     switch (state) {
       case "done":
         return { bg: "rgba(22,163,74,.12)", fg: "var(--success)" };
@@ -9063,7 +9133,7 @@ export function SellerVerificationTimeline() {
             {milestones.map((m, i) => {
               const dot = dotFor(m.state);
               const last = i === milestones.length - 1;
-              const when = formatWhen(m.at);
+              const when = formatWhen(m.at ?? "");
               const dim = m.state === "todo";
               return (
                 <div key={m.key} style={{ display: "flex", gap: 14 }}>
@@ -9201,7 +9271,7 @@ export function SellerSettings() {
   } = useSellerSettings(organization?.linked === true);
   const updateSettings = useUpdateSellerSettings();
   const [tab, setTab] = useState("account");
-  const [notif, setNotif] = useState(null);
+  const [notif, setNotif] = useState<boolean[][] | null>(null);
   const [pwdResetOpen, setPwdResetOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const noPassword = user?.provider === "google";
@@ -9304,7 +9374,7 @@ export function SellerSettings() {
                 <div style={{ fontWeight: 800, fontSize: ".875rem", marginBottom: 10 }}>
                   {t("seller.settings.recentAlerts")}
                 </div>
-                {notifications.items.map((n) => (
+                {(notifications?.items ?? []).map((n) => (
                   <div
                     key={n.id}
                     style={{
@@ -9374,13 +9444,15 @@ export function SellerSettings() {
                         <td key={ci} style={{ padding: "14px 12px", textAlign: "center" }}>
                           <input
                             type="checkbox"
-                            checked={notif[ri][ci]}
+                            checked={notif[ri]?.[ci] ?? false}
                             disabled={ri === 0 && ci === 0}
                             onChange={() =>
                               setNotif((s) =>
-                                s.map((row, i) =>
-                                  i === ri ? row.map((v, j) => (j === ci ? !v : v)) : row,
-                                ),
+                                s
+                                  ? s.map((row, i) =>
+                                      i === ri ? row.map((v, j) => (j === ci ? !v : v)) : row,
+                                    )
+                                  : s,
                               )
                             }
                             style={{

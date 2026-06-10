@@ -317,3 +317,8 @@ a {
     font-size: 13px !important;
   }
 }
+
+/* Variant image upload button — reveal overlay on hover */
+label:hover .bz-variant-img-hover {
+  opacity: 1 !important;
+}

@@ -79,6 +79,12 @@ export interface Product {
   // Priced variants (Small/Medium/Large, etc.). `price` is the effective
   // (possibly discounted) variant price; `original` the struck-through price.
   variants?: PricedVariant[];
+  /**
+   * Defines variant dimensions when multi-dimensional variants are used.
+   * e.g. [{name:"Color",options:["Orange","Black"]},{name:"Storage",options:["256GB","512GB"]}]
+   * Null/absent for products using flat single-name variants.
+   */
+  variantGroups?: Array<{ name: string; options: string[] }> | null;
   createdAt?: string;
 }
 
@@ -89,6 +95,10 @@ export interface PricedVariant {
   stock: number;
   original?: number | null;
   allowBargaining?: boolean;
+  /** Maps dimension name → selected option for multi-dimensional variants. */
+  optionValues?: Record<string, string> | null;
+  /** Optional photo specific to this variant (e.g. colour swatch). */
+  imageUrl?: string | null;
 }
 
 export interface CartLine extends Product {

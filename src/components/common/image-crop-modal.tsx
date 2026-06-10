@@ -28,9 +28,14 @@ function clampOffset(
   viewW: number,
   viewH: number,
 ): { x: number; y: number } {
+  // The image is rendered at (viewW - dw) / 2 + offset.x (centred), so the
+  // maximum safe shift in either direction is half the overflow — beyond that
+  // the edge of the image would leave a visible gap (black area).
+  const maxX = Math.max(0, (dw - viewW) / 2);
+  const maxY = Math.max(0, (dh - viewH) / 2);
   return {
-    x: Math.min(0, Math.max(viewW - dw, offset.x)),
-    y: Math.min(0, Math.max(viewH - dh, offset.y)),
+    x: Math.max(-maxX, Math.min(maxX, offset.x)),
+    y: Math.max(-maxY, Math.min(maxY, offset.y)),
   };
 }
 

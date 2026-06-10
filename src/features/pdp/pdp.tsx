@@ -636,35 +636,12 @@ export function PDP({ p: pProp }: PdpProps) {
   }, [p.description, profile?.desc]);
   const [mediaIdx, setMediaIdx] = useState(0);
   const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
   const touchDelta = useRef<number>(0);
+  const touchDeltaY = useRef<number>(0);
   const swipeDragging = useRef(false);
   // Gallery, cover first. Falls back to the single cover for older products.
   const gallery = p.images?.length ? p.images : p.img ? [p.img] : [];
-  // Unified media list — photos plus an optional video slide at the end.
-  const media = [
-    ...gallery.map((src) => ({ type: "photo" as const, src })),
-    ...(p.hasVideo ? [{ type: "video" as const, src: p.videoUrl, thumb: p.videoThumb }] : []),
-  ];
-
-  const photoIndexFromMedia = (idx: number) => {
-    const item = media[idx];
-    if (item?.type === "photo") {
-      const i = gallery.indexOf(item.src);
-      return i >= 0 ? i : 0;
-    }
-    return 0;
-  };
-
-  const setMediaFromPhotoIndex = (photoIdx: number) => {
-    const src = gallery[photoIdx];
-    if (!src) return;
-    const mediaI = media.findIndex((m) => m.type === "photo" && m.src === src);
-    setMediaIdx(mediaI >= 0 ? mediaI : photoIdx);
-  };
-
-  const openPhotoLightbox = () => {
-    if (gallery.length > 0) setLightboxOpen(true);
-  };
 
   // Share via the native share sheet when available, falling back to copying the link.
   const shareProduct = async () => {
@@ -700,20 +677,89 @@ export function PDP({ p: pProp }: PdpProps) {
   // when these exist, so there's a single source of truth for the selection.
   const pricedVariants = p.variants ?? [];
   const hasPricedVariants = pricedVariants.length > 0;
+  const variantGroups = p.variantGroups ?? null;
+  const isMultiDimVariant = hasPricedVariants && variantGroups && variantGroups.length > 0;
+
+  // For multi-dimensional mode: selected option per dimension
+  const [selDimensions, setSelDimensions] = useState<Record<string, string>>({});
+
   const [selVariantId, setSelVariantId] = useState<string | null>(null);
+
   useEffect(() => {
     if (!hasPricedVariants) {
       setSelVariantId(null);
+      setSelDimensions({});
       return;
     }
     const inStock = pricedVariants.filter((v) => (v.stock ?? 0) > 0);
     const pool = inStock.length ? inStock : pricedVariants;
-    setSelVariantId(pool.reduce((m, v) => (v.price < m.price ? v : m), pool[0]).id);
+    const cheapest = pool.reduce((m, v) => (v.price < m.price ? v : m), pool[0]);
+    setSelVariantId(cheapest.id);
+    if (isMultiDimVariant && cheapest.optionValues) {
+      setSelDimensions(cheapest.optionValues);
+    } else {
+      setSelDimensions({});
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId, p.variants]);
+
+  // In multi-dim mode: find the matching variant by optionValues
+  const resolvedVariantId: string | null = isMultiDimVariant
+    ? (pricedVariants.find((v) => {
+        if (!v.optionValues) return false;
+        return variantGroups!.every((g) => v.optionValues![g.name] === selDimensions[g.name]);
+      })?.id ?? null)
+    : selVariantId;
+
   const selVariant = hasPricedVariants
-    ? (pricedVariants.find((v) => v.id === selVariantId) ?? null)
+    ? (pricedVariants.find((v) => v.id === resolvedVariantId) ?? null)
     : null;
+
+  // If the selected variant has its own image that isn't already in the main gallery,
+  // prepend it so it always appears as the first (hero) slide — Daraz style.
+  const variantHeroUrl =
+    selVariant?.imageUrl && !gallery.includes(selVariant.imageUrl) ? selVariant.imageUrl : null;
+
+  // Unified media list — variant hero first, then product gallery, then optional video.
+  const media = [
+    ...(variantHeroUrl ? [{ type: "photo" as const, src: variantHeroUrl }] : []),
+    ...gallery.map((src) => ({ type: "photo" as const, src })),
+    ...(p.hasVideo ? [{ type: "video" as const, src: p.videoUrl, thumb: p.videoThumb }] : []),
+  ];
+
+  // When variant changes and brings its own image, jump to slide 0 (the hero).
+  useEffect(() => {
+    if (selVariant?.imageUrl) setMediaIdx(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resolvedVariantId]);
+
+  // Full lightbox image list: variant hero first (if not already in gallery), then gallery.
+  const lightboxImages = variantHeroUrl ? [variantHeroUrl, ...gallery] : gallery;
+
+  const openPhotoLightbox = (startUrl?: string) => {
+    if (lightboxImages.length === 0) return;
+    if (startUrl) {
+      const i = lightboxImages.indexOf(startUrl);
+      if (i >= 0) setMediaIdx(media.findIndex((m) => m.type === "photo" && m.src === startUrl));
+    }
+    setLightboxOpen(true);
+  };
+
+  const photoIndexFromMedia = (idx: number) => {
+    const item = media[idx];
+    if (item?.type === "photo") {
+      const i = lightboxImages.indexOf(item.src);
+      return i >= 0 ? i : 0;
+    }
+    return 0;
+  };
+
+  const setMediaFromPhotoIndex = (photoIdx: number) => {
+    const src = lightboxImages[photoIdx];
+    if (!src) return;
+    const mediaI = media.findIndex((m) => m.type === "photo" && m.src === src);
+    setMediaIdx(mediaI >= 0 ? mediaI : photoIdx);
+  };
   const shownPrice = selVariant ? selVariant.price : p.price;
   const shownOriginal = selVariant ? (selVariant.original ?? null) : p.original;
   const disc = shownOriginal ? Math.round((1 - shownPrice / shownOriginal) * 100) : 0;
@@ -730,42 +776,215 @@ export function PDP({ p: pProp }: PdpProps) {
     setBargain(true);
   };
 
+  /** For multi-dim mode: whether a given option is available (any in-stock SKU with that option) */
+  const isOptionAvailable = (dimName: string, optionVal: string): boolean => {
+    if (!isMultiDimVariant) return true;
+    return pricedVariants.some((v) => {
+      if (!v.optionValues) return false;
+      if (v.optionValues[dimName] !== optionVal) return false;
+      // Check if the combination with current other selections exists and is in-stock
+      const otherDims = variantGroups!.filter((g) => g.name !== dimName);
+      const otherMatch = otherDims.every(
+        (g) => !selDimensions[g.name] || v.optionValues![g.name] === selDimensions[g.name],
+      );
+      return otherMatch;
+    });
+  };
+
+  const isOptionInStock = (dimName: string, optionVal: string): boolean => {
+    if (!isMultiDimVariant) return true;
+    return pricedVariants.some((v) => {
+      if (!v.optionValues || v.optionValues[dimName] !== optionVal) return false;
+      const otherDims = variantGroups!.filter((g) => g.name !== dimName);
+      const otherMatch = otherDims.every(
+        (g) => !selDimensions[g.name] || v.optionValues![g.name] === selDimensions[g.name],
+      );
+      return otherMatch && (v.stock ?? 0) > 0;
+    });
+  };
+
   const variantPicker = hasPricedVariants ? (
     <div style={{ marginTop: 18 }}>
-      <div style={{ fontSize: ".875rem", color: "var(--ink-500)", marginBottom: 10 }}>
-        Option: <span style={{ color: "var(--ink-900)", fontWeight: 700 }}>{selVariant?.name}</span>
-      </div>
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-        {pricedVariants.map((v) => {
-          const active = v.id === selVariantId;
-          const out = (v.stock ?? 0) <= 0;
-          return (
-            <button
-              key={v.id}
-              type="button"
-              disabled={out}
-              onClick={() => setSelVariantId(v.id)}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                minHeight: 48,
-                padding: "10px 20px",
-                borderRadius: "var(--r-md)",
-                cursor: out ? "not-allowed" : "pointer",
-                border: `1.5px solid ${active ? "var(--blue-deep)" : "var(--line-200)"}`,
-                background: active ? "var(--tint-blue-50)" : "#fff",
-                color: out ? "var(--ink-300)" : active ? "var(--blue-deep)" : "var(--ink-700)",
-                fontWeight: 700,
-                fontSize: ".9375rem",
-                textDecoration: out ? "line-through" : "none",
-                opacity: out ? 0.5 : 1,
-              }}
-            >
-              {v.name}
-            </button>
-          );
-        })}
-      </div>
+      {isMultiDimVariant ? (
+        /* Multi-dimensional picker */
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {variantGroups!.map((group) => {
+            const selectedOpt = selDimensions[group.name];
+            return (
+              <div key={group.name}>
+                <div style={{ fontSize: ".875rem", color: "var(--ink-500)", marginBottom: 8 }}>
+                  {group.name}:{" "}
+                  {selectedOpt && (
+                    <span style={{ color: "var(--ink-900)", fontWeight: 700 }}>{selectedOpt}</span>
+                  )}
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {group.options.map((opt) => {
+                    const active = selectedOpt === opt;
+                    const available = isOptionAvailable(group.name, opt);
+                    const inStock = isOptionInStock(group.name, opt);
+                    const out = available && !inStock;
+                    // Find a swatch image from any SKU that has this option value
+                    const swatchImg =
+                      pricedVariants.find((v) => v.optionValues?.[group.name] === opt && v.imageUrl)
+                        ?.imageUrl ?? null;
+                    const hasImg = Boolean(swatchImg);
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        disabled={!available}
+                        onClick={() => {
+                          const next = { ...selDimensions, [group.name]: opt };
+                          setSelDimensions(next);
+                        }}
+                        style={{
+                          display: "inline-flex",
+                          flexDirection: hasImg ? "column" : "row",
+                          alignItems: "center",
+                          gap: hasImg ? 6 : 0,
+                          minHeight: 40,
+                          padding: hasImg ? "8px 10px" : "8px 16px",
+                          borderRadius: "var(--r-md)",
+                          cursor: !available ? "not-allowed" : "pointer",
+                          border: `1.5px solid ${active ? "var(--blue-deep)" : "var(--line-200)"}`,
+                          background: active ? "var(--tint-blue-50)" : "#fff",
+                          color: !available
+                            ? "var(--ink-200)"
+                            : out
+                              ? "var(--ink-400)"
+                              : active
+                                ? "var(--blue-deep)"
+                                : "var(--ink-700)",
+                          fontWeight: active ? 700 : 500,
+                          fontSize: ".8125rem",
+                          opacity: !available ? 0.4 : out ? 0.6 : 1,
+                          position: "relative",
+                        }}
+                      >
+                        {hasImg && (
+                          <img
+                            src={swatchImg!}
+                            alt={opt}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openPhotoLightbox(swatchImg!);
+                            }}
+                            style={{
+                              width: 48,
+                              height: 48,
+                              objectFit: "cover",
+                              borderRadius: "var(--r-sm)",
+                              display: "block",
+                              filter: !available || out ? "grayscale(1)" : "none",
+                              cursor: "zoom-in",
+                            }}
+                          />
+                        )}
+                        <span style={{ textDecoration: out ? "line-through" : "none" }}>{opt}</span>
+                        {out && (
+                          <span
+                            style={{
+                              position: "absolute",
+                              bottom: -1,
+                              right: -1,
+                              fontSize: ".6rem",
+                              background: "var(--ink-300)",
+                              color: "#fff",
+                              padding: "1px 4px",
+                              borderRadius: "var(--r-sm)",
+                            }}
+                          >
+                            sold out
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+          {selVariant && (
+            <div style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}>
+              Selected:{" "}
+              <span style={{ fontWeight: 700, color: "var(--ink-800)" }}>{selVariant.name}</span>
+              {(selVariant.stock ?? 0) <= 0 && (
+                <span style={{ color: "var(--danger)", marginLeft: 8 }}>— Out of stock</span>
+              )}
+            </div>
+          )}
+          {!selVariant && variantGroups!.every((g) => selDimensions[g.name]) && (
+            <div style={{ fontSize: ".8125rem", color: "var(--danger)" }}>
+              This combination is not available.
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Flat single-dimension picker */
+        <>
+          <div style={{ fontSize: ".875rem", color: "var(--ink-500)", marginBottom: 10 }}>
+            Option:{" "}
+            <span style={{ color: "var(--ink-900)", fontWeight: 700 }}>{selVariant?.name}</span>
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {pricedVariants.map((v) => {
+              const active = v.id === selVariantId;
+              const out = (v.stock ?? 0) <= 0;
+              const hasImg = Boolean(v.imageUrl);
+              return (
+                <button
+                  key={v.id}
+                  type="button"
+                  disabled={out}
+                  onClick={() => setSelVariantId(v.id)}
+                  style={{
+                    display: "inline-flex",
+                    flexDirection: hasImg ? "column" : "row",
+                    alignItems: "center",
+                    gap: hasImg ? 6 : 0,
+                    padding: hasImg ? "8px 10px" : "10px 20px",
+                    minHeight: 48,
+                    borderRadius: "var(--r-md)",
+                    cursor: out ? "not-allowed" : "pointer",
+                    border: `1.5px solid ${active ? "var(--blue-deep)" : "var(--line-200)"}`,
+                    background: active ? "var(--tint-blue-50)" : "#fff",
+                    color: out ? "var(--ink-300)" : active ? "var(--blue-deep)" : "var(--ink-700)",
+                    fontWeight: 700,
+                    fontSize: ".8125rem",
+                    textDecoration: out ? "line-through" : "none",
+                    opacity: out ? 0.5 : 1,
+                  }}
+                >
+                  {hasImg && (
+                    <img
+                      src={v.imageUrl!}
+                      alt={v.name}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openPhotoLightbox(v.imageUrl!);
+                      }}
+                      style={{
+                        width: 52,
+                        height: 52,
+                        objectFit: "cover",
+                        borderRadius: "var(--r-sm)",
+                        display: "block",
+                        filter: out ? "grayscale(1)" : "none",
+                        cursor: "zoom-in",
+                      }}
+                    />
+                  )}
+                  <span>{v.name}</span>
+                  {out && hasImg && (
+                    <span style={{ fontSize: ".6rem", color: "var(--ink-400)" }}>sold out</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   ) : null;
 
@@ -777,6 +996,13 @@ export function PDP({ p: pProp }: PdpProps) {
     setBuyNowSheet(false);
     setLightboxOpen(false);
     setDeliverOpen(false);
+    // Scroll to top when product changes so the buyer always starts at the top.
+    const scrollEl = document.getElementById("app-scroll");
+    if (scrollEl) {
+      scrollEl.scrollTop = 0;
+    } else {
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
   }, [productId]);
 
   useEffect(() => {
@@ -824,7 +1050,14 @@ export function PDP({ p: pProp }: PdpProps) {
         </div>
 
         {/* MOBILE HERO — clean app-style layout */}
-        <div className="bz-show-mobile bz-pdp-mobile">
+        <div
+          className="bz-show-mobile bz-pdp-mobile"
+          style={{
+            paddingBottom: bargainingAvailable
+              ? "calc(152px + env(safe-area-inset-bottom, 0px))"
+              : "calc(84px + env(safe-area-inset-bottom, 0px))",
+          }}
+        >
           <div className="bz-pdp-mobile__gallery">
             {media.length > 0 ? (
               <>
@@ -832,27 +1065,37 @@ export function PDP({ p: pProp }: PdpProps) {
                   className="bz-pdp-mobile__viewport"
                   onTouchStart={(e) => {
                     touchStartX.current = e.touches[0].clientX;
+                    touchStartY.current = e.touches[0].clientY;
                     touchDelta.current = 0;
+                    touchDeltaY.current = 0;
                   }}
                   onTouchMove={(e) => {
                     if (touchStartX.current == null) return;
                     touchDelta.current = e.touches[0].clientX - touchStartX.current;
+                    touchDeltaY.current = e.touches[0].clientY - (touchStartY.current ?? 0);
                   }}
                   onTouchEnd={(e) => {
                     if (touchStartX.current == null) return;
                     const dx = touchDelta.current;
+                    const dy = touchDeltaY.current;
                     const maxIdx = Math.max(0, media.length - 1);
-                    // Only treat a tap as "zoom" when it lands on the image hit-area —
-                    // taps on the overlay controls (back / wishlist / share) must reach
-                    // their own onClick instead of opening the lightbox.
                     const onImage = (e.target as HTMLElement).closest(".bz-pdp-mobile__zoom-hit");
-                    if (Math.abs(dx) > 40) {
+                    // Only trigger a photo swipe when horizontal movement is dominant
+                    // (i.e. this is a genuine horizontal swipe, not a diagonal scroll).
+                    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
                       setMediaIdx((i) => Math.max(0, Math.min(maxIdx, i + (dx < 0 ? 1 : -1))));
-                    } else if (Math.abs(dx) <= 12 && media[mediaIdx]?.type === "photo" && onImage) {
+                    } else if (
+                      Math.abs(dx) <= 12 &&
+                      Math.abs(dy) <= 12 &&
+                      media[mediaIdx]?.type === "photo" &&
+                      onImage
+                    ) {
                       openPhotoLightbox();
                     }
                     touchStartX.current = null;
+                    touchStartY.current = null;
                     touchDelta.current = 0;
+                    touchDeltaY.current = 0;
                   }}
                 >
                   <div
@@ -951,23 +1194,42 @@ export function PDP({ p: pProp }: PdpProps) {
                     </div>
                   )}
                 </div>
-                {gallery.length > 1 && (
-                  <div className="bz-pdp-mobile__thumbs" role="tablist" aria-label="Product photos">
-                    {gallery.map((src) => {
-                      const thumbMediaIdx = media.findIndex(
-                        (m) => m.type === "photo" && m.src === src,
-                      );
+                {media.filter((m) => !(m.type === "photo" && m.src === variantHeroUrl)).length >
+                  1 && (
+                  <div className="bz-pdp-mobile__thumbs" role="tablist" aria-label="Product media">
+                    {media.map((m, i) => {
+                      if (m.type === "photo" && m.src === variantHeroUrl) return null;
                       return (
                         <button
-                          key={src}
+                          key={i}
                           type="button"
                           role="tab"
-                          aria-label="View product photo"
-                          aria-selected={thumbMediaIdx === mediaIdx}
+                          aria-label={
+                            m.type === "video" ? "Play product video" : "View product photo"
+                          }
+                          aria-selected={i === mediaIdx}
                           className="bz-pdp-mobile__thumb"
-                          onClick={() => setMediaIdx(thumbMediaIdx >= 0 ? thumbMediaIdx : 0)}
+                          onClick={() => setMediaIdx(i)}
                         >
-                          <img src={src} alt="" />
+                          <img
+                            src={m.type === "video" ? (m.thumb ?? gallery[0] ?? "") : m.src}
+                            alt=""
+                          />
+                          {m.type === "video" && (
+                            <span
+                              style={{
+                                position: "absolute",
+                                inset: 0,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                background: "rgba(0,0,0,.35)",
+                                borderRadius: "inherit",
+                              }}
+                            >
+                              <Icon name="play" size={14} style={{ color: "#fff" }} />
+                            </span>
+                          )}
                         </button>
                       );
                     })}
@@ -1279,22 +1541,28 @@ export function PDP({ p: pProp }: PdpProps) {
                 }}
                 onTouchStart={(e) => {
                   touchStartX.current = e.touches[0].clientX;
+                  touchStartY.current = e.touches[0].clientY;
                   touchDelta.current = 0;
+                  touchDeltaY.current = 0;
                 }}
                 onTouchMove={(e) => {
                   if (touchStartX.current == null) return;
                   touchDelta.current = e.touches[0].clientX - touchStartX.current;
+                  touchDeltaY.current = e.touches[0].clientY - (touchStartY.current ?? 0);
                 }}
                 onTouchEnd={() => {
                   if (touchStartX.current == null) return;
                   const dx = touchDelta.current;
-                  if (Math.abs(dx) > 40) {
+                  const dy = touchDeltaY.current;
+                  if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
                     setMediaIdx((i) =>
                       Math.max(0, Math.min(media.length - 1, i + (dx < 0 ? 1 : -1))),
                     );
                   }
                   touchStartX.current = null;
+                  touchStartY.current = null;
                   touchDelta.current = 0;
+                  touchDeltaY.current = 0;
                 }}
                 onPointerDown={(e) => {
                   if (e.pointerType === "touch") return;
@@ -1473,7 +1741,7 @@ export function PDP({ p: pProp }: PdpProps) {
             ) : (
               <Placeholder icon={p.icon} tint={p.tint} ratio="4 / 5" radius="var(--r-lg)" />
             )}
-            {media.length > 1 && (
+            {media.filter((m) => !(m.type === "photo" && m.src === variantHeroUrl)).length > 1 && (
               <div
                 style={{
                   display: "flex",
@@ -1483,63 +1751,66 @@ export function PDP({ p: pProp }: PdpProps) {
                   paddingBottom: 4,
                 }}
               >
-                {media.map((m, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setMediaIdx(i)}
-                    aria-label={`View media ${i + 1}`}
-                    aria-pressed={mediaIdx === i}
-                    style={{
-                      flex: "0 0 auto",
-                      position: "relative",
-                      width: 72,
-                      height: 88,
-                      borderRadius: "var(--r-md)",
-                      overflow: "hidden",
-                      border: `2px solid ${mediaIdx === i ? "var(--blue)" : "transparent"}`,
-                      cursor: "pointer",
-                      padding: 0,
-                      background: "var(--ink-50)",
-                    }}
-                  >
-                    {m.type === "photo" ? (
-                      <img
-                        src={m.src}
-                        alt={`${p.name} view ${i + 1}`}
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                      />
-                    ) : (
-                      <>
-                        {m.thumb && (
-                          <img
-                            src={m.thumb}
-                            alt=""
-                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                          />
-                        )}
-                        <span
-                          style={{
-                            position: "absolute",
-                            inset: 0,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            background: "rgba(0,0,0,.35)",
-                            color: "#fff",
-                          }}
-                        >
-                          <Icon name="video" size={20} color="#fff" />
-                        </span>
-                      </>
-                    )}
-                  </button>
-                ))}
+                {media.map((m, i) => {
+                  if (m.type === "photo" && m.src === variantHeroUrl) return null;
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => setMediaIdx(i)}
+                      aria-label={`View media ${i + 1}`}
+                      aria-pressed={mediaIdx === i}
+                      style={{
+                        flex: "0 0 auto",
+                        position: "relative",
+                        width: 72,
+                        height: 88,
+                        borderRadius: "var(--r-md)",
+                        overflow: "hidden",
+                        border: `2px solid ${mediaIdx === i ? "var(--blue)" : "transparent"}`,
+                        cursor: "pointer",
+                        padding: 0,
+                        background: "var(--ink-50)",
+                      }}
+                    >
+                      {m.type === "photo" ? (
+                        <img
+                          src={m.src}
+                          alt={`${p.name} view ${i + 1}`}
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                      ) : (
+                        <>
+                          {m.thumb && (
+                            <img
+                              src={m.thumb}
+                              alt=""
+                              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            />
+                          )}
+                          <span
+                            style={{
+                              position: "absolute",
+                              inset: 0,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              background: "rgba(0,0,0,.35)",
+                              color: "#fff",
+                            }}
+                          >
+                            <Icon name="video" size={20} color="#fff" />
+                          </span>
+                        </>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
 
           {/* INFO */}
-          <div className="bz-pdp-info" style={{ position: "sticky", top: 96 }}>
+          <div className="bz-pdp-info" style={{ position: "sticky", top: 102 }}>
             {p.tag && (
               <div style={{ marginBottom: 10 }}>
                 <Chip
@@ -1786,11 +2057,16 @@ export function PDP({ p: pProp }: PdpProps) {
                 size="lg"
                 full
                 icon="cart"
-                onClick={() => void addToCart(p, qty, undefined, selVariantId)}
+                onClick={() => void addToCart(p, qty, undefined, resolvedVariantId)}
               >
                 Add to Cart
               </Button>
-              <Button variant="primary" size="lg" full onClick={() => buyNow(p, qty, selVariantId)}>
+              <Button
+                variant="primary"
+                size="lg"
+                full
+                onClick={() => buyNow(p, qty, resolvedVariantId)}
+              >
                 Buy Now
               </Button>
             </div>
@@ -2085,15 +2361,15 @@ export function PDP({ p: pProp }: PdpProps) {
         {bargain && bargainingAvailable && (
           <BargainModal
             p={p}
-            variantId={selVariantId}
+            variantId={resolvedVariantId}
             listedPrice={shownPrice}
             original={shownOriginal}
             onClose={() => setBargain(false)}
           />
         )}
-        {lightboxOpen && gallery.length > 0 && (
+        {lightboxOpen && lightboxImages.length > 0 && (
           <ImageLightbox
-            images={gallery}
+            images={lightboxImages}
             index={photoIndexFromMedia(mediaIdx)}
             alt={p.name}
             onIndex={setMediaFromPhotoIndex}
@@ -2104,9 +2380,9 @@ export function PDP({ p: pProp }: PdpProps) {
         {/* Mobile sticky buy bar — Buy Now opens an option sheet when the
             product has choices; otherwise it goes straight to checkout. */}
         <MobileBuyBar
-          onAdd={() => void addToCart(p, qty, undefined, selVariantId)}
+          onAdd={() => void addToCart(p, qty, undefined, resolvedVariantId)}
           onBuy={() =>
-            hasPricedVariants ? setBuyNowSheet(true) : void buyNow(p, qty, selVariantId)
+            hasPricedVariants ? setBuyNowSheet(true) : void buyNow(p, qty, resolvedVariantId)
           }
           onBargain={bargainingAvailable ? openBargain : undefined}
         />
@@ -2117,11 +2393,11 @@ export function PDP({ p: pProp }: PdpProps) {
             price={shownPrice}
             original={shownOriginal}
             pricedVariants={pricedVariants}
-            selVariantId={selVariantId}
+            selVariantId={resolvedVariantId}
             onPickVariant={setSelVariantId}
             onConfirm={() => {
               setBuyNowSheet(false);
-              void buyNow(p, qty, selVariantId);
+              void buyNow(p, qty, resolvedVariantId);
             }}
             onClose={() => setBuyNowSheet(false)}
           />

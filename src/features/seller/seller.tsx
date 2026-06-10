@@ -4111,6 +4111,12 @@ export function SellerAddProduct({
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("");
   const [hasVariants, setHasVariants] = useState(false);
+  // 'simple' = flat named variants (legacy), 'multi' = Daraz-style dimension matrix
+  const [variantMode, setVariantMode] = useState<"simple" | "multi">("simple");
+  // Dimension groups for multi-dimensional mode e.g. [{name:"Color",options:["Orange","Black"]}]
+  const [variantGroupDefs, setVariantGroupDefs] = useState<
+    Array<{ id: number; name: string; options: string[] }>
+  >([{ id: 1, name: "Color", options: [""] }]);
   const [variants, setVariants] = useState<
     Array<{
       id: string | number;
@@ -4123,6 +4129,9 @@ export function SellerAddProduct({
       salePct?: string;
       allowBargaining?: boolean;
       minimumPrice?: string;
+      optionValues?: Record<string, string> | null;
+      imageUrl?: string | null;
+      uploadingImg?: boolean;
     }>
   >([
     { id: 1, name: "Small", price: "", stock: "" },
@@ -4164,6 +4173,18 @@ export function SellerAddProduct({
     setBargainMinPrice(editing?.minimumPrice ? String(editing.minimumPrice) : "");
     if (editing?.hasVariants && editing.variants?.length) {
       setHasVariants(true);
+      const editingVG = (editingProduct as any)?.variantGroups as
+        | Array<{ name: string; options: string[] }>
+        | null
+        | undefined;
+      if (editingVG?.length) {
+        setVariantMode("multi");
+        setVariantGroupDefs(
+          editingVG.map((g, i) => ({ id: i + 1, name: g.name, options: g.options })),
+        );
+      } else {
+        setVariantMode("simple");
+      }
       setVariants(
         editing.variants.map((v) => {
           // On sale: `price` is effective and `original` the base; the Price
@@ -4180,6 +4201,8 @@ export function SellerAddProduct({
             salePct: v.discountType === "percent" ? String(v.discountPct ?? "") : "",
             allowBargaining: v.allowBargaining ?? false,
             minimumPrice: v.minimumPrice ? String(v.minimumPrice) : "",
+            optionValues: (v as any).optionValues ?? null,
+            imageUrl: (v as any).imageUrl ?? null,
           };
         }),
       );
@@ -4327,6 +4350,19 @@ export function SellerAddProduct({
 
   const updateVariant = (id: string | number, key: string, val: string | number | boolean) =>
     setVariants((arr) => arr.map((v) => (v.id === id ? { ...v, [key]: val } : v)));
+
+  const handleVariantImageUpload = async (id: string | number, file: File) => {
+    setVariants((arr) => arr.map((v) => (v.id === id ? { ...v, uploadingImg: true } : v)));
+    try {
+      const result = await uploadImage.mutateAsync({ file });
+      setVariants((arr) =>
+        arr.map((v) => (v.id === id ? { ...v, imageUrl: result.url, uploadingImg: false } : v)),
+      );
+    } catch {
+      setVariants((arr) => arr.map((v) => (v.id === id ? { ...v, uploadingImg: false } : v)));
+    }
+  };
+
   const addVariant = () =>
     setVariants((arr) => [
       ...arr,
@@ -4346,13 +4382,105 @@ export function SellerAddProduct({
   const removeVariant = (id: string | number) =>
     setVariants((arr) => arr.filter((v) => v.id !== id));
 
+  // ---------- Multi-dimensional variant helpers ----------
+
+  /** Cartesian product of option arrays → array of {dimension:option} maps */
+  const cartesian = (
+    groups: Array<{ name: string; options: string[] }>,
+  ): Record<string, string>[] => {
+    const validGroups = groups.filter((g) => g.name.trim() && g.options.some((o) => o.trim()));
+    if (!validGroups.length) return [];
+    return validGroups.reduce<Record<string, string>[]>(
+      (combos, group) => {
+        const opts = group.options.filter((o) => o.trim());
+        return combos.flatMap((combo) =>
+          opts.map((opt) => ({ ...combo, [group.name.trim()]: opt.trim() })),
+        );
+      },
+      [{}],
+    );
+  };
+
+  /** Sync `variants` rows to match the current group definitions in multi mode.
+   *  Preserves price/stock for combinations that already exist. */
+  const syncMultiVariants = (groups: typeof variantGroupDefs) => {
+    const combos = cartesian(groups);
+    setVariants((prev) =>
+      combos.map((optionValues) => {
+        const name = Object.values(optionValues).join(" / ");
+        const existing = prev.find(
+          (v) => v.name === name || JSON.stringify(v.optionValues) === JSON.stringify(optionValues),
+        );
+        return {
+          id: existing?.id ?? Date.now() + Math.random(),
+          name,
+          price: existing?.price ?? "",
+          stock: existing?.stock ?? "",
+          onSale: existing?.onSale ?? false,
+          saleMode: existing?.saleMode ?? "percent",
+          salePrice: existing?.salePrice ?? "",
+          salePct: existing?.salePct ?? "",
+          allowBargaining: existing?.allowBargaining ?? false,
+          minimumPrice: existing?.minimumPrice ?? "",
+          optionValues,
+        };
+      }),
+    );
+  };
+
+  const addGroupDef = () => {
+    const next = [...variantGroupDefs, { id: Date.now(), name: "", options: [""] }];
+    setVariantGroupDefs(next);
+  };
+  const removeGroupDef = (id: number) => {
+    const next = variantGroupDefs.filter((g) => g.id !== id);
+    setVariantGroupDefs(next);
+    syncMultiVariants(next);
+  };
+  const updateGroupName = (id: number, name: string) => {
+    const next = variantGroupDefs.map((g) => (g.id === id ? { ...g, name } : g));
+    setVariantGroupDefs(next);
+    syncMultiVariants(next);
+  };
+  const addGroupOption = (groupId: number) => {
+    const next = variantGroupDefs.map((g) =>
+      g.id === groupId ? { ...g, options: [...g.options, ""] } : g,
+    );
+    setVariantGroupDefs(next);
+  };
+  const updateGroupOption = (groupId: number, idx: number, val: string) => {
+    const next = variantGroupDefs.map((g) =>
+      g.id === groupId ? { ...g, options: g.options.map((o, i) => (i === idx ? val : o)) } : g,
+    );
+    setVariantGroupDefs(next);
+    syncMultiVariants(next);
+  };
+  const removeGroupOption = (groupId: number, idx: number) => {
+    const next = variantGroupDefs.map((g) =>
+      g.id === groupId ? { ...g, options: g.options.filter((_, i) => i !== idx) } : g,
+    );
+    setVariantGroupDefs(next);
+    syncMultiVariants(next);
+  };
+
+  /** Builds the variantGroups payload from current group defs (multi mode only) */
+  const buildVariantGroups = () => {
+    if (!hasVariants || variantMode !== "multi") return undefined;
+    const groups = variantGroupDefs
+      .map((g) => ({ name: g.name.trim(), options: g.options.filter((o) => o.trim()) }))
+      .filter((g) => g.name && g.options.length);
+    return groups.length ? groups : undefined;
+  };
+
   // Pricing in the API's shape (price = effective/sale price, original = struck
   // base price). Variant products keep their existing product-level price and
   // carry no product-level discount in this phase. Shared by create and edit.
   const buildPricingPayload = () => {
     if (hasVariants) {
+      // Product-level price is derived server-side from cheapest variant; send
+      // a placeholder ≥ 1 to satisfy Zod. The actual price is ignored by the server.
       return {
-        price: Number(price || displayPrice || 0),
+        price: Math.max(1, Number(price || displayPrice || 1)),
         original: null,
         discountType: null,
         discountPct: null,
@@ -4378,6 +4506,8 @@ export function SellerAddProduct({
               ...pricing,
               allowBargaining: v.allowBargaining ?? false,
               minimumPrice: v.allowBargaining && v.minimumPrice ? Number(v.minimumPrice) : null,
+              optionValues: v.optionValues ?? null,
+              imageUrl: v.imageUrl ?? null,
             };
           })
       : undefined;
@@ -4409,6 +4539,7 @@ export function SellerAddProduct({
           metadata: attrs,
           stock: hasVariants ? undefined : Number(stock) || 0,
           variants: buildVariants(),
+          variantGroups: buildVariantGroups(),
           allowBargaining: hasVariants ? variants.some((v) => v.allowBargaining) : bargainOk,
           minimumPrice: hasVariants
             ? null
@@ -4438,6 +4569,7 @@ export function SellerAddProduct({
         metadata: attrs,
         stock: hasVariants ? undefined : Number(stock) || 0,
         variants: buildVariants(),
+        variantGroups: buildVariantGroups(),
         allowBargaining: hasVariants ? variants.some((v) => v.allowBargaining) : bargainOk,
         minimumPrice: hasVariants
           ? null
@@ -4881,7 +5013,18 @@ export function SellerAddProduct({
                 <input
                   type="checkbox"
                   checked={hasVariants}
-                  onChange={(e) => setHasVariants(e.target.checked)}
+                  onChange={(e) => {
+                    setHasVariants(e.target.checked);
+                    if (!e.target.checked) {
+                      setVariantMode("simple");
+                      setVariantGroupDefs([{ id: 1, name: "Color", options: [""] }]);
+                      setVariants([
+                        { id: 1, name: "Small", price: "", stock: "" },
+                        { id: 2, name: "Medium", price: "", stock: "" },
+                        { id: 3, name: "Large", price: "", stock: "" },
+                      ]);
+                    }
+                  }}
                   style={{ width: 18, height: 18, accentColor: "var(--red)" }}
                 />
                 Has sizes/colors
@@ -5105,218 +5248,709 @@ export function SellerAddProduct({
               </>
             ) : (
               <div>
-                <p style={{ margin: "0 0 10px", fontSize: ".8125rem", color: "var(--ink-500)" }}>
-                  Add one row per variant (e.g. size, color).
-                </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {variants.map((v) => (
-                    <div
-                      key={v.id}
+                {/* Mode toggle: Simple (flat) vs Multi-dimensional */}
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 0,
+                    background: "var(--bg-100, #f5f5f5)",
+                    borderRadius: "var(--r-md)",
+                    padding: 3,
+                    marginBottom: 14,
+                  }}
+                >
+                  {(["simple", "multi"] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => {
+                        setVariantMode(mode);
+                        if (mode === "multi") syncMultiVariants(variantGroupDefs);
+                      }}
                       style={{
-                        border: "1.5px solid var(--line-200)",
-                        borderRadius: "var(--r-md)",
-                        padding: 10,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 8,
+                        flex: 1,
+                        height: 34,
+                        border: "none",
+                        borderRadius: "var(--r-sm, 6px)",
+                        background: variantMode === mode ? "#fff" : "transparent",
+                        boxShadow: variantMode === mode ? "0 1px 4px rgba(0,0,0,.1)" : "none",
+                        fontWeight: variantMode === mode ? 700 : 500,
+                        fontSize: ".8125rem",
+                        color: variantMode === mode ? "var(--ink-900)" : "var(--ink-500)",
+                        cursor: "pointer",
+                        transition: "all .15s",
                       }}
                     >
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "1.4fr 1fr 1fr auto",
-                          gap: 8,
-                          alignItems: "center",
-                        }}
-                      >
-                        <input
-                          value={v.name}
-                          onChange={(e) => updateVariant(v.id, "name", e.target.value)}
-                          placeholder="Variant (e.g. Large, Red)"
-                          style={{
-                            width: "100%",
-                            minWidth: 0,
-                            height: 48,
-                            padding: "0 12px",
-                            border: "1.5px solid var(--line-200)",
-                            borderRadius: "var(--r-md)",
-                            fontFamily: "var(--font-sans)",
-                            outline: "none",
-                          }}
-                        />
-                        <input
-                          value={v.price}
-                          onChange={(e) =>
-                            updateVariant(v.id, "price", e.target.value.replace(/\D/g, ""))
-                          }
-                          inputMode="numeric"
-                          placeholder="Price"
-                          className="tnum"
-                          style={{
-                            width: "100%",
-                            minWidth: 0,
-                            height: 48,
-                            padding: "0 12px",
-                            border: "1.5px solid var(--line-200)",
-                            borderRadius: "var(--r-md)",
-                            fontFamily: "var(--font-sans)",
-                            outline: "none",
-                            textAlign: "center",
-                          }}
-                        />
-                        <input
-                          value={v.stock}
-                          onChange={(e) =>
-                            updateVariant(v.id, "stock", e.target.value.replace(/\D/g, ""))
-                          }
-                          inputMode="numeric"
-                          placeholder="Stock"
-                          className="tnum"
-                          style={{
-                            width: "100%",
-                            minWidth: 0,
-                            height: 48,
-                            padding: "0 12px",
-                            border: "1.5px solid var(--line-200)",
-                            borderRadius: "var(--r-md)",
-                            fontFamily: "var(--font-sans)",
-                            outline: "none",
-                            textAlign: "center",
-                          }}
-                        />
-                        <button
-                          onClick={() => removeVariant(v.id)}
-                          disabled={variants.length <= 1}
-                          style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: "var(--r-md)",
-                            border: "1.5px solid var(--line-200)",
-                            background: "#fff",
-                            cursor: variants.length <= 1 ? "default" : "pointer",
-                            color: "var(--danger)",
-                            opacity: variants.length <= 1 ? 0.3 : 1,
-                          }}
-                        >
-                          <Icon name="trash" size={16} color="var(--danger)" />
-                        </button>
-                      </div>
-
-                      {/* Per-variant discount. The Price field above is the
-                          regular price; this sets the discounted price for this
-                          variant only (removable any time). */}
-                      <label
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          fontSize: ".8125rem",
-                          fontWeight: 700,
-                          color: "var(--ink-600)",
-                          cursor: "pointer",
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={Boolean(v.onSale)}
-                          onChange={(e) => updateVariant(v.id, "onSale", e.target.checked)}
-                        />
-                        Put this variant on sale
-                      </label>
-                      {v.onSale && (
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: 8,
-                            alignItems: "center",
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <select
-                            value={v.saleMode ?? "percent"}
-                            onChange={(e) => updateVariant(v.id, "saleMode", e.target.value)}
-                            style={{
-                              height: 40,
-                              borderRadius: "var(--r-md)",
-                              border: "1.5px solid var(--line-200)",
-                              padding: "0 8px",
-                              fontFamily: "var(--font-sans)",
-                            }}
-                          >
-                            <option value="percent">% off</option>
-                            <option value="amount">Sale price</option>
-                          </select>
-                          {(v.saleMode ?? "percent") === "percent" ? (
-                            <input
-                              value={v.salePct ?? ""}
-                              onChange={(e) =>
-                                updateVariant(
-                                  v.id,
-                                  "salePct",
-                                  e.target.value.replace(/\D/g, "").slice(0, 2),
-                                )
-                              }
-                              inputMode="numeric"
-                              placeholder="% e.g. 20"
-                              className="tnum"
-                              style={{
-                                flex: 1,
-                                minWidth: 80,
-                                height: 40,
-                                padding: "0 10px",
-                                border: "1.5px solid var(--line-200)",
-                                borderRadius: "var(--r-md)",
-                                textAlign: "center",
-                                fontFamily: "var(--font-sans)",
-                              }}
-                            />
-                          ) : (
-                            <input
-                              value={v.salePrice ?? ""}
-                              onChange={(e) =>
-                                updateVariant(v.id, "salePrice", e.target.value.replace(/\D/g, ""))
-                              }
-                              inputMode="numeric"
-                              placeholder="Sale Rs."
-                              className="tnum"
-                              style={{
-                                flex: 1,
-                                minWidth: 80,
-                                height: 40,
-                                padding: "0 10px",
-                                border: "1.5px solid var(--line-200)",
-                                borderRadius: "var(--r-md)",
-                                textAlign: "center",
-                                fontFamily: "var(--font-sans)",
-                              }}
-                            />
-                          )}
-                          <span
-                            style={{
-                              fontSize: ".75rem",
-                              color: isSaleValid(variantSaleInput(v))
-                                ? "var(--ink-500)"
-                                : "var(--danger, #d23)",
-                            }}
-                          >
-                            {isSaleValid(variantSaleInput(v))
-                              ? `Buyers pay Rs. ${saleEffective(variantSaleInput(v)).toLocaleString("en-IN")}`
-                              : "Enter a valid discount below the price"}
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                      {mode === "simple" ? "Simple" : "Multi-dimensional"}
+                    </button>
                   ))}
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  icon="plus"
-                  onClick={addVariant}
-                  style={{ marginTop: 10 }}
-                >
-                  Add another
-                </Button>
+
+                {variantMode === "simple" ? (
+                  /* ---- Simple flat variant list (legacy) ---- */
+                  <div>
+                    <p
+                      style={{ margin: "0 0 10px", fontSize: ".8125rem", color: "var(--ink-500)" }}
+                    >
+                      Add one row per variant (e.g. size, color).
+                    </p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {variants.map((v) => (
+                        <div
+                          key={v.id}
+                          style={{
+                            border: "1.5px solid var(--line-200)",
+                            borderRadius: "var(--r-md)",
+                            padding: 10,
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 8,
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns: "1.4fr 1fr 1fr auto",
+                              gap: 8,
+                              alignItems: "center",
+                            }}
+                          >
+                            <input
+                              value={v.name}
+                              onChange={(e) => updateVariant(v.id, "name", e.target.value)}
+                              placeholder="Variant (e.g. Large, Red)"
+                              style={{
+                                width: "100%",
+                                minWidth: 0,
+                                height: 48,
+                                padding: "0 12px",
+                                border: "1.5px solid var(--line-200)",
+                                borderRadius: "var(--r-md)",
+                                fontFamily: "var(--font-sans)",
+                                outline: "none",
+                              }}
+                            />
+                            <input
+                              value={v.price}
+                              onChange={(e) =>
+                                updateVariant(v.id, "price", e.target.value.replace(/\D/g, ""))
+                              }
+                              inputMode="numeric"
+                              placeholder="Price"
+                              className="tnum"
+                              style={{
+                                width: "100%",
+                                minWidth: 0,
+                                height: 48,
+                                padding: "0 12px",
+                                border: "1.5px solid var(--line-200)",
+                                borderRadius: "var(--r-md)",
+                                fontFamily: "var(--font-sans)",
+                                outline: "none",
+                                textAlign: "center",
+                              }}
+                            />
+                            <input
+                              value={v.stock}
+                              onChange={(e) =>
+                                updateVariant(v.id, "stock", e.target.value.replace(/\D/g, ""))
+                              }
+                              inputMode="numeric"
+                              placeholder="Stock"
+                              className="tnum"
+                              style={{
+                                width: "100%",
+                                minWidth: 0,
+                                height: 48,
+                                padding: "0 12px",
+                                border: "1.5px solid var(--line-200)",
+                                borderRadius: "var(--r-md)",
+                                fontFamily: "var(--font-sans)",
+                                outline: "none",
+                                textAlign: "center",
+                              }}
+                            />
+                            <button
+                              onClick={() => removeVariant(v.id)}
+                              disabled={variants.length <= 1}
+                              style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: "var(--r-md)",
+                                border: "1.5px solid var(--line-200)",
+                                background: "#fff",
+                                cursor: variants.length <= 1 ? "default" : "pointer",
+                                color: "var(--danger)",
+                                opacity: variants.length <= 1 ? 0.3 : 1,
+                              }}
+                            >
+                              <Icon name="trash" size={16} color="var(--danger)" />
+                            </button>
+                          </div>
+
+                          <label
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8,
+                              fontSize: ".8125rem",
+                              fontWeight: 700,
+                              color: "var(--ink-600)",
+                              cursor: "pointer",
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={Boolean(v.onSale)}
+                              onChange={(e) => updateVariant(v.id, "onSale", e.target.checked)}
+                            />
+                            Put this variant on sale
+                          </label>
+                          {v.onSale && (
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: 8,
+                                alignItems: "center",
+                                flexWrap: "wrap",
+                              }}
+                            >
+                              <select
+                                value={v.saleMode ?? "percent"}
+                                onChange={(e) => updateVariant(v.id, "saleMode", e.target.value)}
+                                style={{
+                                  height: 40,
+                                  borderRadius: "var(--r-md)",
+                                  border: "1.5px solid var(--line-200)",
+                                  padding: "0 8px",
+                                  fontFamily: "var(--font-sans)",
+                                }}
+                              >
+                                <option value="percent">% off</option>
+                                <option value="amount">Sale price</option>
+                              </select>
+                              {(v.saleMode ?? "percent") === "percent" ? (
+                                <input
+                                  value={v.salePct ?? ""}
+                                  onChange={(e) =>
+                                    updateVariant(
+                                      v.id,
+                                      "salePct",
+                                      e.target.value.replace(/\D/g, "").slice(0, 2),
+                                    )
+                                  }
+                                  inputMode="numeric"
+                                  placeholder="% e.g. 20"
+                                  className="tnum"
+                                  style={{
+                                    flex: 1,
+                                    minWidth: 80,
+                                    height: 40,
+                                    padding: "0 10px",
+                                    border: "1.5px solid var(--line-200)",
+                                    borderRadius: "var(--r-md)",
+                                    textAlign: "center",
+                                    fontFamily: "var(--font-sans)",
+                                  }}
+                                />
+                              ) : (
+                                <input
+                                  value={v.salePrice ?? ""}
+                                  onChange={(e) =>
+                                    updateVariant(
+                                      v.id,
+                                      "salePrice",
+                                      e.target.value.replace(/\D/g, ""),
+                                    )
+                                  }
+                                  inputMode="numeric"
+                                  placeholder="Sale Rs."
+                                  className="tnum"
+                                  style={{
+                                    flex: 1,
+                                    minWidth: 80,
+                                    height: 40,
+                                    padding: "0 10px",
+                                    border: "1.5px solid var(--line-200)",
+                                    borderRadius: "var(--r-md)",
+                                    textAlign: "center",
+                                    fontFamily: "var(--font-sans)",
+                                  }}
+                                />
+                              )}
+                              <span
+                                style={{
+                                  fontSize: ".75rem",
+                                  color: isSaleValid(variantSaleInput(v))
+                                    ? "var(--ink-500)"
+                                    : "var(--danger, #d23)",
+                                }}
+                              >
+                                {isSaleValid(variantSaleInput(v))
+                                  ? `Buyers pay Rs. ${saleEffective(variantSaleInput(v)).toLocaleString("en-IN")}`
+                                  : "Enter a valid discount below the price"}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Variant photo — shown as hero image on PDP when selected */}
+                          <label
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 10,
+                              cursor: "pointer",
+                              padding: "7px 10px",
+                              border: "1.5px dashed var(--line-300)",
+                              borderRadius: "var(--r-md)",
+                              background: "var(--bg-50)",
+                              transition: "border-color .15s",
+                            }}
+                          >
+                            <input
+                              type="file"
+                              accept="image/*"
+                              style={{ display: "none" }}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) void handleVariantImageUpload(v.id, file);
+                                e.target.value = "";
+                              }}
+                            />
+                            {v.uploadingImg ? (
+                              <Spinner size={16} />
+                            ) : v.imageUrl ? (
+                              <img
+                                src={v.imageUrl}
+                                alt=""
+                                style={{
+                                  width: 44,
+                                  height: 44,
+                                  borderRadius: "var(--r-sm)",
+                                  objectFit: "cover",
+                                  flexShrink: 0,
+                                }}
+                              />
+                            ) : (
+                              <span
+                                style={{
+                                  width: 44,
+                                  height: 44,
+                                  borderRadius: "var(--r-sm)",
+                                  background: "var(--line-100)",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  flexShrink: 0,
+                                }}
+                              >
+                                <Icon name="image" size={20} color="var(--ink-400)" />
+                              </span>
+                            )}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <p
+                                style={{
+                                  margin: 0,
+                                  fontSize: ".8125rem",
+                                  fontWeight: 700,
+                                  color: "var(--ink-700)",
+                                }}
+                              >
+                                {v.imageUrl ? "Change variant photo" : "Add variant photo"}
+                              </p>
+                              <p
+                                style={{
+                                  margin: "2px 0 0",
+                                  fontSize: ".72rem",
+                                  color: "var(--ink-400)",
+                                }}
+                              >
+                                Shows as the main image when buyer selects this variant
+                              </p>
+                            </div>
+                            {v.imageUrl && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setVariants((arr) =>
+                                    arr.map((vv) =>
+                                      vv.id === v.id ? { ...vv, imageUrl: null } : vv,
+                                    ),
+                                  );
+                                }}
+                                style={{
+                                  padding: "4px 8px",
+                                  border: "1px solid var(--line-200)",
+                                  borderRadius: "var(--r-sm)",
+                                  background: "#fff",
+                                  fontSize: ".72rem",
+                                  color: "var(--danger)",
+                                  cursor: "pointer",
+                                  flexShrink: 0,
+                                }}
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon="plus"
+                      onClick={addVariant}
+                      style={{ marginTop: 10 }}
+                    >
+                      Add another
+                    </Button>
+                  </div>
+                ) : (
+                  /* ---- Multi-dimensional variant builder ---- */
+                  <div>
+                    <p
+                      style={{ margin: "0 0 12px", fontSize: ".8125rem", color: "var(--ink-500)" }}
+                    >
+                      Define dimensions (e.g. Color, Storage). The system auto-generates all
+                      combinations.
+                    </p>
+
+                    {/* Dimension group definitions */}
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 10,
+                        marginBottom: 14,
+                      }}
+                    >
+                      {variantGroupDefs.map((group) => (
+                        <div
+                          key={group.id}
+                          style={{
+                            border: "1.5px solid var(--line-200)",
+                            borderRadius: "var(--r-md)",
+                            padding: "10px 12px",
+                            background: "#fafafa",
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 8,
+                              alignItems: "center",
+                              marginBottom: 8,
+                            }}
+                          >
+                            <input
+                              value={group.name}
+                              onChange={(e) => updateGroupName(group.id, e.target.value)}
+                              placeholder="Dimension name (e.g. Color, Storage)"
+                              style={{
+                                flex: 1,
+                                height: 38,
+                                padding: "0 10px",
+                                border: "1.5px solid var(--line-200)",
+                                borderRadius: "var(--r-md)",
+                                fontFamily: "var(--font-sans)",
+                                fontWeight: 700,
+                                outline: "none",
+                              }}
+                            />
+                            <button
+                              onClick={() => removeGroupDef(group.id)}
+                              disabled={variantGroupDefs.length <= 1}
+                              style={{
+                                width: 34,
+                                height: 34,
+                                borderRadius: "var(--r-md)",
+                                border: "1.5px solid var(--line-200)",
+                                background: "#fff",
+                                cursor: variantGroupDefs.length <= 1 ? "default" : "pointer",
+                                opacity: variantGroupDefs.length <= 1 ? 0.3 : 1,
+                              }}
+                            >
+                              <Icon name="trash" size={14} color="var(--danger)" />
+                            </button>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 6,
+                              alignItems: "center",
+                            }}
+                          >
+                            {group.options.map((opt, optIdx) => (
+                              <div
+                                key={optIdx}
+                                style={{ display: "flex", alignItems: "center", gap: 4 }}
+                              >
+                                <input
+                                  value={opt}
+                                  onChange={(e) =>
+                                    updateGroupOption(group.id, optIdx, e.target.value)
+                                  }
+                                  placeholder={`Option ${optIdx + 1}`}
+                                  style={{
+                                    width: 110,
+                                    height: 34,
+                                    padding: "0 8px",
+                                    border: "1.5px solid var(--line-200)",
+                                    borderRadius: "var(--r-md)",
+                                    fontFamily: "var(--font-sans)",
+                                    fontSize: ".8125rem",
+                                    outline: "none",
+                                  }}
+                                />
+                                {group.options.length > 1 && (
+                                  <button
+                                    onClick={() => removeGroupOption(group.id, optIdx)}
+                                    style={{
+                                      width: 24,
+                                      height: 24,
+                                      borderRadius: "50%",
+                                      border: "1px solid var(--line-200)",
+                                      background: "#fff",
+                                      cursor: "pointer",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      padding: 0,
+                                    }}
+                                  >
+                                    <Icon name="x" size={12} color="var(--ink-500)" />
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                            <button
+                              onClick={() => addGroupOption(group.id)}
+                              style={{
+                                height: 34,
+                                padding: "0 10px",
+                                border: "1.5px dashed var(--line-300)",
+                                borderRadius: "var(--r-md)",
+                                background: "transparent",
+                                fontSize: ".75rem",
+                                color: "var(--ink-500)",
+                                cursor: "pointer",
+                              }}
+                            >
+                              + Add option
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon="plus"
+                      onClick={addGroupDef}
+                      style={{ marginBottom: 16 }}
+                    >
+                      Add dimension
+                    </Button>
+
+                    {/* Auto-generated SKU combination table */}
+                    {variants.length > 0 && (
+                      <div>
+                        <p
+                          style={{
+                            margin: "0 0 8px",
+                            fontSize: ".8125rem",
+                            fontWeight: 700,
+                            color: "var(--ink-700)",
+                          }}
+                        >
+                          {variants.length} combination{variants.length !== 1 ? "s" : ""} — fill
+                          price &amp; stock:
+                        </p>
+                        <div
+                          style={{
+                            border: "1.5px solid var(--line-200)",
+                            borderRadius: "var(--r-md)",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {/* Table header */}
+                          <div
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns: `36px repeat(${variantGroupDefs.filter((g) => g.name.trim()).length}, 1fr) 100px 80px`,
+                              background: "var(--bg-100)",
+                              padding: "6px 10px",
+                              gap: 8,
+                              borderBottom: "1px solid var(--line-200)",
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: ".75rem",
+                                fontWeight: 700,
+                                color: "var(--ink-400)",
+                              }}
+                            >
+                              Img
+                            </span>
+                            {variantGroupDefs
+                              .filter((g) => g.name.trim())
+                              .map((g) => (
+                                <span
+                                  key={g.id}
+                                  style={{
+                                    fontSize: ".75rem",
+                                    fontWeight: 700,
+                                    color: "var(--ink-600)",
+                                  }}
+                                >
+                                  {g.name}
+                                </span>
+                              ))}
+                            <span
+                              style={{
+                                fontSize: ".75rem",
+                                fontWeight: 700,
+                                color: "var(--ink-600)",
+                                textAlign: "center",
+                              }}
+                            >
+                              Price (Rs.)
+                            </span>
+                            <span
+                              style={{
+                                fontSize: ".75rem",
+                                fontWeight: 700,
+                                color: "var(--ink-600)",
+                                textAlign: "center",
+                              }}
+                            >
+                              Stock
+                            </span>
+                          </div>
+                          {/* Table rows */}
+                          {variants.map((v) => {
+                            const dimCount = variantGroupDefs.filter((g) => g.name.trim()).length;
+                            return (
+                              <div
+                                key={v.id}
+                                style={{
+                                  display: "grid",
+                                  gridTemplateColumns: `36px repeat(${dimCount}, 1fr) 100px 80px`,
+                                  padding: "6px 10px",
+                                  gap: 8,
+                                  borderBottom: "1px solid var(--line-100, #f0f0f0)",
+                                  alignItems: "center",
+                                }}
+                              >
+                                {/* Per-SKU image upload */}
+                                <label
+                                  title="Add photo for this variant"
+                                  style={{
+                                    width: 36,
+                                    height: 36,
+                                    borderRadius: "var(--r-sm)",
+                                    border: "1.5px dashed var(--line-300)",
+                                    background: v.imageUrl ? "transparent" : "var(--bg-50)",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    overflow: "hidden",
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    style={{ display: "none" }}
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) void handleVariantImageUpload(v.id, file);
+                                      e.target.value = "";
+                                    }}
+                                  />
+                                  {v.uploadingImg ? (
+                                    <Spinner size={12} />
+                                  ) : v.imageUrl ? (
+                                    <img
+                                      src={v.imageUrl}
+                                      alt=""
+                                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                    />
+                                  ) : (
+                                    <Icon name="camera" size={14} color="var(--ink-400)" />
+                                  )}
+                                </label>
+                                {variantGroupDefs
+                                  .filter((g) => g.name.trim())
+                                  .map((g) => (
+                                    <span
+                                      key={g.id}
+                                      style={{
+                                        fontSize: ".8125rem",
+                                        padding: "2px 8px",
+                                        background: "var(--tint-red-50, #fff5f5)",
+                                        borderRadius: 99,
+                                        color: "var(--red)",
+                                        fontWeight: 600,
+                                        display: "inline-block",
+                                        width: "fit-content",
+                                      }}
+                                    >
+                                      {v.optionValues?.[g.name.trim()] ?? "—"}
+                                    </span>
+                                  ))}
+                                <input
+                                  value={v.price}
+                                  onChange={(e) =>
+                                    updateVariant(v.id, "price", e.target.value.replace(/\D/g, ""))
+                                  }
+                                  inputMode="numeric"
+                                  placeholder="0"
+                                  className="tnum"
+                                  style={{
+                                    width: "100%",
+                                    height: 36,
+                                    padding: "0 8px",
+                                    border: `1.5px solid ${v.price ? "var(--line-200)" : "var(--warning, #f59e0b)"}`,
+                                    borderRadius: "var(--r-md)",
+                                    fontFamily: "var(--font-sans)",
+                                    outline: "none",
+                                    textAlign: "center",
+                                    fontSize: ".875rem",
+                                  }}
+                                />
+                                <input
+                                  value={v.stock}
+                                  onChange={(e) =>
+                                    updateVariant(v.id, "stock", e.target.value.replace(/\D/g, ""))
+                                  }
+                                  inputMode="numeric"
+                                  placeholder="0"
+                                  className="tnum"
+                                  style={{
+                                    width: "100%",
+                                    height: 36,
+                                    padding: "0 8px",
+                                    border: `1.5px solid ${v.stock ? "var(--line-200)" : "var(--warning, #f59e0b)"}`,
+                                    borderRadius: "var(--r-md)",
+                                    fontFamily: "var(--font-sans)",
+                                    outline: "none",
+                                    textAlign: "center",
+                                    fontSize: ".875rem",
+                                  }}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -5396,10 +6030,16 @@ export function SellerAddProduct({
                         <div
                           key={v.id}
                           style={{
-                            border: `1.5px solid ${v.allowBargaining ? "var(--red)" : "var(--line-200)"}`,
+                            border: `1.5px solid ${
+                              floorError
+                                ? "var(--danger, #d23)"
+                                : v.allowBargaining
+                                  ? "var(--blue-deep, #2563eb)"
+                                  : "var(--line-200)"
+                            }`,
                             borderRadius: "var(--r-md)",
                             padding: "10px 12px",
-                            background: v.allowBargaining ? "rgba(220,38,38,.03)" : "#fff",
+                            background: v.allowBargaining ? "var(--tint-blue-50, #eff6ff)" : "#fff",
                           }}
                         >
                           <label
@@ -5467,7 +6107,7 @@ export function SellerAddProduct({
                                 }}
                               >
                                 {floorError ??
-                                  `Must be less than Rs. ${variantListedPrice(v).toLocaleString("en-IN")}`}
+                                  `Set a floor below Rs. ${variantListedPrice(v).toLocaleString("en-IN")}`}
                               </span>
                             </div>
                           )}
@@ -8273,7 +8913,10 @@ export function SellerBargain() {
                         onClick={async () => {
                           const mid = Math.round((o.listed + o.offered) / 2 / 10) * 10;
                           try {
-                            await counterMutation.mutateAsync({ id: o.id, counter: Math.round(mid * 100) });
+                            await counterMutation.mutateAsync({
+                              id: o.id,
+                              counter: Math.round(mid * 100),
+                            });
                             toast("Counter offer sent");
                           } catch {
                             toast("Could not send counter");
@@ -8481,6 +9124,7 @@ export function SellerStorefront() {
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const [logoCropUrl, setLogoCropUrl] = useState<string | null>(null);
+  const [bannerCropUrl, setBannerCropUrl] = useState<string | null>(null);
   const [about, setAbout] = useState("");
   const [shopName, setShopName] = useState("");
   const [storeAddress, setStoreAddress] = useState<StoreAddress>(emptyStoreAddress);
@@ -8526,7 +9170,7 @@ export function SellerStorefront() {
     }
   };
 
-  const pickImage = async (file: File, kind: "logo" | "banner") => {
+  const pickImage = (file: File, kind: "logo" | "banner") => {
     const allowed = ["image/jpeg", "image/png", "image/webp"];
     if (!allowed.includes(file.type)) {
       toast("Use JPEG, PNG, or WebP");
@@ -8535,13 +9179,9 @@ export function SellerStorefront() {
     if (kind === "logo") {
       revokeObjectUrl(logoCropUrl);
       setLogoCropUrl(URL.createObjectURL(file));
-      return;
-    }
-    try {
-      await uploadBanner.mutateAsync(file);
-      toast("Banner updated");
-    } catch (e) {
-      toast(e instanceof Error ? e.message : "Upload failed");
+    } else {
+      revokeObjectUrl(bannerCropUrl);
+      setBannerCropUrl(URL.createObjectURL(file));
     }
   };
 
@@ -8555,6 +9195,21 @@ export function SellerStorefront() {
     try {
       await uploadLogo.mutateAsync(file);
       toast("Logo updated");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Upload failed");
+    }
+  };
+
+  const closeBannerCrop = () => {
+    revokeObjectUrl(bannerCropUrl);
+    setBannerCropUrl(null);
+  };
+
+  const saveBannerCrop = async (file: File) => {
+    closeBannerCrop();
+    try {
+      await uploadBanner.mutateAsync(file);
+      toast("Banner updated");
     } catch (e) {
       toast(e instanceof Error ? e.message : "Upload failed");
     }
@@ -8681,6 +9336,22 @@ export function SellerStorefront() {
           fileNamePrefix="shop-logo"
           onCancel={closeLogoCrop}
           onConfirm={(file) => void saveLogoCrop(file)}
+        />
+      ) : null}
+      {bannerCropUrl ? (
+        <ImageCropModal
+          objectUrl={bannerCropUrl}
+          aspectRatio={3}
+          outputWidth={1500}
+          outputHeight={500}
+          maskShape="rect"
+          showBrightness
+          title="Crop shop banner"
+          subtitle="Drag to position · zoom to fill the frame"
+          confirmLabel="Save banner"
+          fileNamePrefix="shop-banner"
+          onCancel={closeBannerCrop}
+          onConfirm={(file) => void saveBannerCrop(file)}
         />
       ) : null}
       <div

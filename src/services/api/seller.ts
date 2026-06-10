@@ -17,6 +17,10 @@ export interface CreateProductVariantPayload {
   discountPct?: number | null;
   allowBargaining?: boolean;
   minimumPrice?: number | null;
+  /** Maps dimension name → selected option for multi-dimensional variants. */
+  optionValues?: Record<string, string> | null;
+  /** Optional Cloudinary URL for a variant-specific photo. */
+  imageUrl?: string | null;
 }
 
 // Discount fields: `price` is the effective (sale) price, `original` the
@@ -40,6 +44,7 @@ export interface UpdateProductPayload extends DiscountFields {
   // 3–5 gallery images, cover first. Replaces the whole gallery; the server
   // re-derives the cover from images[0]. Omit to leave photos untouched.
   images?: string[];
+  variantGroups?: Array<{ name: string; options: string[] }> | null;
 }
 
 export interface SellerInventoryItem {
@@ -98,6 +103,7 @@ export interface CreateProductPayload extends DiscountFields {
   variants?: CreateProductVariantPayload[];
   allowBargaining?: boolean;
   minimumPrice?: number | null;
+  variantGroups?: Array<{ name: string; options: string[] }> | null;
 }
 
 export const sellerApi = {

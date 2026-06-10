@@ -7470,6 +7470,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
 
     const onNew = (payload: { conversationId: string; message: ChatMessage }) => {
       if (payload.conversationId !== active.id) return;
+      if (payload.message.from === "me") return;
       appendMessage(payload.message);
       void invalidateInbox();
     };
@@ -7583,7 +7584,10 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
             }
           : undefined,
       });
-      setMessages((prev) => prev.map((m) => (m.id === clientMessageId ? sent : m)));
+      setMessages((prev) => {
+        const withoutSocketDup = prev.filter((m) => m.id !== sent.id);
+        return withoutSocketDup.map((m) => (m.id === clientMessageId ? sent : m));
+      });
       void invalidateInbox();
     } catch (e) {
       setMessages((prev) => prev.filter((m) => m.id !== clientMessageId));
@@ -7842,23 +7846,6 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
                     : `${active.city} · ${active.lastSeenLabel}`}
                 </div>
               </div>
-              <a
-                href="tel:98XXXXXXXX"
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: "50%",
-                  background: "#16a34a",
-                  color: "#fff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  textDecoration: "none",
-                  flexShrink: 0,
-                }}
-              >
-                <Icon name="phone" size={18} color="#fff" />
-              </a>
             </div>
 
             <div className="bz-chat-shell__messages">

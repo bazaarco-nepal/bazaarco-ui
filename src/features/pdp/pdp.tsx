@@ -161,7 +161,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
       const result = await createOffer.mutateAsync({
         productId: p.id,
         variantId,
-        yourOffer: offer,
+        yourOffer: Math.round(offer * 100),
       });
       setOfferId(result.id);
       setOfferExpires(result.expires);

@@ -8273,7 +8273,7 @@ export function SellerBargain() {
                         onClick={async () => {
                           const mid = Math.round((o.listed + o.offered) / 2 / 10) * 10;
                           try {
-                            await counterMutation.mutateAsync({ id: o.id, counter: mid });
+                            await counterMutation.mutateAsync({ id: o.id, counter: Math.round(mid * 100) });
                             toast("Counter offer sent");
                           } catch {
                             toast("Could not send counter");

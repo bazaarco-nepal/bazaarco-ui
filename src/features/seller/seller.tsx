@@ -7409,6 +7409,8 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
   const [peerTyping, setPeerTyping] = useState(false);
   const [sending, setSending] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  // Composer focus is restored after each send so the keyboard stays up on mobile.
+  const inputRef = useRef<HTMLInputElement>(null);
   const typingStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
@@ -7588,6 +7590,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
       toast(e instanceof Error ? e.message : "Could not send message");
     } finally {
       setSending(false);
+      requestAnimationFrame(() => inputRef.current?.focus());
     }
   };
 
@@ -8021,6 +8024,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
                 <Icon name="image" size={20} color="var(--ink-500)" />
               </button>
               <input
+                ref={inputRef}
                 type="text"
                 className="bz-chat-shell__composer-input"
                 value={msg}

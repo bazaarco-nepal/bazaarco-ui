@@ -543,7 +543,7 @@ function ReelItem({
               borderRadius: "50%",
               padding: 0,
               border: "2px solid #fff",
-              background: TINTS[s.tint as keyof typeof TINTS][2],
+              background: tint[2],
               color: "#fff",
               fontWeight: 800,
               fontSize: 14,
@@ -581,7 +581,7 @@ function ReelItem({
             <span
               style={{ fontSize: ".75rem", opacity: 0.85, textShadow: "0 1px 2px rgba(0,0,0,.5)" }}
             >
-              {s.name} · {s.city}
+              {s.name}
             </span>
           </div>
         </div>

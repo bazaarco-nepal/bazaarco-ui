@@ -8,14 +8,15 @@ export interface VideoFeedEngagement {
   saves: number;
 }
 
+// Mirrors the `store` object Core API returns on each video feed item
+// (bazaarco-api videos.service.ts → mapFeedItem). The storefront models the
+// merchant as `seller`; the API mapper adapts the field name.
 export interface VideoFeedSeller {
   id: string;
   name: string;
-  city: string;
   rating: number;
-  reviews: number;
+  reviewsCount: number;
   avatar: string;
-  tint: string;
 }
 
 export interface VideoFeedItem {

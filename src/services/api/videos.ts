@@ -28,14 +28,8 @@ function mapVideoItem(raw: any) {
     reviews: raw.reviews ?? raw.reviewsCount ?? 0,
     icon: raw.icon ?? "box",
     tint: raw.tint ?? "blue",
-    seller: raw.seller
-      ? {
-          ...raw.seller,
-          city: raw.seller.city ?? "",
-          reviews: raw.seller.reviews ?? raw.seller.reviewsCount ?? 0,
-          tint: raw.seller.tint ?? "blue",
-        }
-      : undefined,
+    // Core API returns the merchant under `store`; the storefront models it as `seller`.
+    seller: raw.store,
   };
 }
 

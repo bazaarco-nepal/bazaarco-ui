@@ -36,6 +36,16 @@ export function useAcceptBargainOffer() {
   });
 }
 
+export function useAcceptCounterOffer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => bargainsApi.acceptCounter(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.bargains });
+    },
+  });
+}
+
 export function useRejectBargainOffer() {
   const queryClient = useQueryClient();
   return useMutation({

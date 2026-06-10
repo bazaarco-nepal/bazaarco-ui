@@ -59,6 +59,17 @@ export const bargainsApi = {
     );
     return mapOffer(data.data);
   },
+  /**
+   * Buyer accepts the seller's counter. This is what arms the offer for
+   * redemption at checkout — adding to cart alone never did.
+   */
+  async acceptCounter(id: string): Promise<BargainOffer> {
+    const raw = await postData<BargainOffer>(
+      `/bargains/${encodeURIComponent(id)}/accept-counter`,
+      {},
+    );
+    return mapOffer(raw);
+  },
   async counter(id: string, counterAmount: number): Promise<BargainOffer> {
     const { data } = await apiClient.patch<ApiSuccessResponse<BargainOffer>>(
       `/bargains/${id}/counter`,

@@ -62,7 +62,8 @@ import {
 } from "@/components/common";
 import { useSeller } from "@/hooks/use-catalog";
 import { useSimilar } from "@/hooks/use-search";
-import { useCreateBargainOffer } from "@/hooks/use-bargains";
+import { useAcceptCounterOffer, useCreateBargainOffer } from "@/hooks/use-bargains";
+import { bargainExpiryLabel } from "@/lib/bargain-expiry";
 import { ApiRequestError } from "@/services/api/http";
 import { resolveDelivery, deliveryEstimate } from "@/lib/delivery-options";
 import type { PdpProps } from "@/types";
@@ -144,6 +145,11 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
   const [offer, setOffer] = useState(Math.round((listed * 0.9) / 10) * 10);
   const [stage, setStage] = useState("offer"); // offer | thinking | counter | accepted
   const [counter, setCounter] = useState(listed);
+  // The server-side offer behind this negotiation: accept-counter needs its id,
+  // and the countdown shows its redemption deadline.
+  const [offerId, setOfferId] = useState<string | null>(null);
+  const [offerExpires, setOfferExpires] = useState<string | null>(null);
+  const acceptCounterOffer = useAcceptCounterOffer();
   // The server's nudge when an offer falls below the hidden floor — e.g. "buyers
   // are getting offers around Rs. X accepted". Shown inline under the input so
   // the buyer can raise their offer without ever learning the true floor.
@@ -157,6 +163,8 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
         variantId,
         yourOffer: offer,
       });
+      setOfferId(result.id);
+      setOfferExpires(result.expires);
       if (result.sellerCounter) setCounter(result.sellerCounter);
       setStage(result.status === "accepted" ? "accepted" : "counter");
     } catch (error) {
@@ -340,6 +348,11 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
               <b className="tnum">Rs. {offer.toLocaleString("en-IN")}</b>. Add it to your cart at
               this price.
             </p>
+            {bargainExpiryLabel(offerExpires) && (
+              <p style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 6 }}>
+                Price locked for you · {bargainExpiryLabel(offerExpires)}
+              </p>
+            )}
             <div style={{ marginTop: 18 }}>
               <Button
                 variant="primary"
@@ -347,12 +360,9 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
                 size="lg"
                 icon="cart"
                 onClick={async () => {
-                  await addToCart(
-                    { ...p, price: offer },
-                    1,
-                    "Added at bargained price!",
-                    variantId,
-                  );
+                  // No price in the payload — the server binds the accepted
+                  // offer to this line and the cart comes back at the agreed price.
+                  await addToCart(p, 1, "Added at bargained price!", variantId);
                   onClose();
                 }}
               >
@@ -402,7 +412,22 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
                 full
                 icon="cart"
                 onClick={async () => {
-                  await addToCart({ ...p, price: counter }, 1, "Deal! Added to cart.", variantId);
+                  // The counter only becomes redeemable once the buyer accepts
+                  // it server-side; add to cart alone never bound the price.
+                  try {
+                    if (!offerId) throw new Error("missing offer id");
+                    const updated = await acceptCounterOffer.mutateAsync(offerId);
+                    setOfferExpires(updated.expires);
+                  } catch (error) {
+                    const msg =
+                      error instanceof ApiRequestError
+                        ? error.message
+                        : "Could not accept this counter — please try bargaining again.";
+                    setTooLowHint(msg);
+                    setStage("offer");
+                    return;
+                  }
+                  await addToCart(p, 1, "Deal! Added to cart.", variantId);
                   onClose();
                 }}
               >

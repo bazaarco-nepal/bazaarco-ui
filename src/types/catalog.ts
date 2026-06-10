@@ -96,6 +96,10 @@ export interface CartLine extends Product {
   // The chosen variant for this line (null/absent for single-price products).
   variantId?: string | null;
   variantName?: string | null;
+  // Set when an accepted bargain is bound to this line — `price` then already
+  // carries the bargained amount the server will charge at checkout.
+  bargained?: boolean;
+  bargainExpiresAt?: string | null;
 }
 
 export interface ProductReview {

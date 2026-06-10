@@ -61,6 +61,76 @@ describe("PDP bargainingAvailable logic", () => {
 // MobileBuyBar onBargain prop contract
 // Tests the expectation that onBargain is passed iff bargainingAvailable.
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Accept-counter flow contract (BargainModal counter stage).
+// Mirrors the handler exactly: server-side acceptance MUST succeed before the
+// item is added to the cart, and a failure aborts the add entirely — adding
+// to cart alone never binds a bargained price.
+// ---------------------------------------------------------------------------
+async function acceptCounterFlow(deps: {
+  offerId: string | null;
+  acceptCounter: (id: string) => Promise<unknown>;
+  addToCart: () => Promise<void>;
+  onError: () => void;
+  close: () => void;
+}) {
+  try {
+    if (!deps.offerId) throw new Error("missing offer id");
+    await deps.acceptCounter(deps.offerId);
+  } catch {
+    deps.onError();
+    return;
+  }
+  await deps.addToCart();
+  deps.close();
+}
+
+describe("BargainModal accept-counter contract", () => {
+  it("accepts the counter server-side before adding to cart", async () => {
+    const calls: string[] = [];
+    await acceptCounterFlow({
+      offerId: "o1",
+      acceptCounter: async () => calls.push("accept"),
+      addToCart: async () => {
+        calls.push("add");
+      },
+      onError: () => calls.push("error"),
+      close: () => calls.push("close"),
+    });
+    expect(calls).toEqual(["accept", "add", "close"]);
+  });
+
+  it("never adds to cart when server-side acceptance fails", async () => {
+    const calls: string[] = [];
+    await acceptCounterFlow({
+      offerId: "o1",
+      acceptCounter: async () => {
+        throw new Error("expired");
+      },
+      addToCart: async () => {
+        calls.push("add");
+      },
+      onError: () => calls.push("error"),
+      close: () => calls.push("close"),
+    });
+    expect(calls).toEqual(["error"]);
+  });
+
+  it("treats a missing offer id as a failure, not a silent add", async () => {
+    const calls: string[] = [];
+    await acceptCounterFlow({
+      offerId: null,
+      acceptCounter: async () => calls.push("accept"),
+      addToCart: async () => {
+        calls.push("add");
+      },
+      onError: () => calls.push("error"),
+      close: () => calls.push("close"),
+    });
+    expect(calls).toEqual(["error"]);
+  });
+});
+
 describe("MobileBuyBar onBargain wiring", () => {
   it("passes onBargain handler when bargainingAvailable is true", () => {
     // Simulates: onBargain={bargainingAvailable ? openBargain : undefined}

@@ -38,6 +38,7 @@ import {
   BackToTop,
 } from "@/components/ui";
 import { useCatalog } from "@/hooks/use-catalog";
+import { bargainExpiryLabel } from "@/lib/bargain-expiry";
 import { useAddresses, pickDefaultAddress } from "@/hooks/use-addresses";
 import { SavedAddressPicker } from "@/features/profile/addresses";
 import {
@@ -546,6 +547,21 @@ export function Cart() {
                       {it.variantName && (
                         <div style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 2 }}>
                           {it.variantName}
+                        </div>
+                      )}
+                      {it.bargained && (
+                        <div
+                          style={{
+                            fontSize: ".75rem",
+                            color: "var(--success)",
+                            fontWeight: 700,
+                            marginTop: 2,
+                          }}
+                        >
+                          Bargained price
+                          {bargainExpiryLabel(it.bargainExpiresAt)
+                            ? ` · ${bargainExpiryLabel(it.bargainExpiresAt)}`
+                            : ""}
                         </div>
                       )}
                       <div
@@ -1104,6 +1120,7 @@ export function Checkout() {
                             style={{ fontSize: ".8125rem", color: "var(--ink-400)", marginTop: 2 }}
                           >
                             Rs. {it.price.toLocaleString("en-IN")} each
+                            {it.bargained ? " · bargained" : ""}
                           </div>
                         </div>
                         <div

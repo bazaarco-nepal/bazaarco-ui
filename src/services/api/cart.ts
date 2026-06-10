@@ -17,7 +17,10 @@ function mapCartResponse(raw: { items: unknown[] }): CartResponse {
         qty: r.qty,
         variantId: r.variantId ?? null,
         variantName: r.variantName ?? null,
-        // Map unitPriceMinor to price if present (cart line-level price override)
+        bargained: r.bargained === true,
+        bargainExpiresAt: r.bargainExpiresAt ?? null,
+        // unitPriceMinor is the server's line-level override — today that means
+        // a bound bargain — and wins over the listed price.
         price:
           typeof r.unitPriceMinor === "number"
             ? m2r(r.unitPriceMinor)

@@ -180,6 +180,12 @@ export const ICON_PATHS = {
       <circle cx="8" cy="18" r="2.2" fill="currentColor" stroke="none" />
     </>
   ),
+  arrowLeft: (
+    <>
+      <line x1="20" y1="12" x2="5" y2="12" />
+      <polyline points="11 18 5 12 11 6" />
+    </>
+  ),
   arrowRight: (
     <>
       <line x1="4" y1="12" x2="19" y2="12" />
@@ -2329,6 +2335,7 @@ export function MobileBuyBar({
         borderTop: "1px solid var(--line-200)",
         padding: "12px 14px calc(12px + env(safe-area-inset-bottom))",
         boxShadow: "0 -2px 12px rgba(15,23,42,.08)",
+        flexDirection: "column",
       }}
     >
       {onBargain ? (

@@ -7409,6 +7409,8 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
   const [peerTyping, setPeerTyping] = useState(false);
   const [sending, setSending] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  // Composer focus is restored after each send so the keyboard stays up on mobile.
+  const inputRef = useRef<HTMLInputElement>(null);
   const typingStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
@@ -7468,6 +7470,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
 
     const onNew = (payload: { conversationId: string; message: ChatMessage }) => {
       if (payload.conversationId !== active.id) return;
+      if (payload.message.from === "me") return;
       appendMessage(payload.message);
       void invalidateInbox();
     };
@@ -7581,13 +7584,17 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
             }
           : undefined,
       });
-      setMessages((prev) => prev.map((m) => (m.id === clientMessageId ? sent : m)));
+      setMessages((prev) => {
+        const withoutSocketDup = prev.filter((m) => m.id !== sent.id);
+        return withoutSocketDup.map((m) => (m.id === clientMessageId ? sent : m));
+      });
       void invalidateInbox();
     } catch (e) {
       setMessages((prev) => prev.filter((m) => m.id !== clientMessageId));
       toast(e instanceof Error ? e.message : "Could not send message");
     } finally {
       setSending(false);
+      requestAnimationFrame(() => inputRef.current?.focus());
     }
   };
 
@@ -7839,23 +7846,6 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
                     : `${active.city} · ${active.lastSeenLabel}`}
                 </div>
               </div>
-              <a
-                href="tel:98XXXXXXXX"
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: "50%",
-                  background: "#16a34a",
-                  color: "#fff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  textDecoration: "none",
-                  flexShrink: 0,
-                }}
-              >
-                <Icon name="phone" size={18} color="#fff" />
-              </a>
             </div>
 
             <div className="bz-chat-shell__messages">
@@ -8021,6 +8011,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
                 <Icon name="image" size={20} color="var(--ink-500)" />
               </button>
               <input
+                ref={inputRef}
                 type="text"
                 className="bz-chat-shell__composer-input"
                 value={msg}

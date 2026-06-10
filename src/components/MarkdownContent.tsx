@@ -1,7 +1,7 @@
-import React from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import './legal-document.css';
+import React from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import "./legal-document.css";
 
 interface MarkdownContentProps {
   content: string;
@@ -25,7 +25,9 @@ export function MarkdownContent({ content }: MarkdownContentProps): React.ReactN
             p: ({ children }) => <p className="legal-document__paragraph">{children}</p>,
             ul: ({ children }) => <ul className="legal-document__list">{children}</ul>,
             li: ({ children }) => <li className="legal-document__list-item">{children}</li>,
-            blockquote: ({ children }) => <blockquote className="legal-document__blockquote">{children}</blockquote>,
+            blockquote: ({ children }) => (
+              <blockquote className="legal-document__blockquote">{children}</blockquote>
+            ),
             code: ({ children }) => <code className="legal-document__inline-code">{children}</code>,
             pre: ({ children }) => <pre className="legal-document__code-block">{children}</pre>,
             table: ({ children }) => <table className="legal-document__table">{children}</table>,
@@ -35,7 +37,12 @@ export function MarkdownContent({ content }: MarkdownContentProps): React.ReactN
             th: ({ children }) => <th className="legal-document__table-header">{children}</th>,
             td: ({ children }) => <td className="legal-document__table-cell">{children}</td>,
             a: ({ href, children }) => (
-              <a href={href} target="_blank" rel="noopener noreferrer" className="legal-document__link">
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="legal-document__link"
+              >
                 {children}
               </a>
             ),

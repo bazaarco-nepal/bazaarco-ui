@@ -8,6 +8,15 @@ export interface BazaarToast {
   msg: string;
   id: number;
   variant: ToastVariant;
+  /**
+   * Optional one-tap reversal (wishlist save is the canonical case). When set,
+   * the toast renders an "Undo" button that runs this and dismisses itself.
+   */
+  undo?: () => void;
+}
+
+export interface ToastOptions {
+  undo?: () => void;
 }
 
 export interface BazaarContextValue {
@@ -32,7 +41,7 @@ export interface BazaarContextValue {
   wishSellers: string[];
   toggleWish: (productId: string) => Promise<void>;
   toggleSellerWish: (sellerId: string) => Promise<void>;
-  toast: (msg: string, variant?: ToastVariant) => void;
+  toast: (msg: string, variant?: ToastVariant, options?: ToastOptions) => void;
   promptLogin: (message?: string) => void;
   query: string;
   setQuery: (query: string) => void;

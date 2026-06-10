@@ -142,7 +142,7 @@
   padding: var(--space-md);
   overflow-x: auto;
   font-size: var(--fs-caption);
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   color: var(--ink-700);
   margin: var(--space-md) 0;
 }
@@ -152,7 +152,7 @@
   border: 1px solid var(--line-200);
   border-radius: var(--r-2xs);
   padding: 0 var(--space-2xs);
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   font-size: var(--fs-caption);
   color: var(--ink-700);
 }
@@ -192,19 +192,13 @@
   color: var(--ink-500);
 }
 
-
 /* Loader skeleton states */
 .legal-document-loader {
   padding: var(--space-lg);
 }
 
 .legal-document-loader__skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--line-100) 0%,
-    var(--line-200) 50%,
-    var(--line-100) 100%
-  );
+  background: linear-gradient(90deg, var(--line-100) 0%, var(--line-200) 50%, var(--line-100) 100%);
   background-size: 200% 100%;
   animation: bz-pulse-loader 1.5s ease-in-out infinite;
   border-radius: var(--r-sm);

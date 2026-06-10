@@ -31,7 +31,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const locale: Locale = raw && isLocale(raw) ? raw : DEFAULT_LOCALE;
 
   return (
-    <html lang={locale === "ne" ? "ne" : "en"} className={`${plusJakarta.variable} ${inter.variable}`}>
+    <html
+      lang={locale === "ne" ? "ne" : "en"}
+      className={`${plusJakarta.variable} ${inter.variable}`}
+    >
       {/* Browser extensions (ColorZilla, Grammarly, etc.) inject attributes like
           `cz-shortcut-listen` onto <body> before React hydrates. Suppress the
           resulting attribute-only mismatch — it's external and not a real bug. */}

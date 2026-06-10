@@ -52,10 +52,7 @@ export function mapProduct(raw: any): Product {
   const minor = (v: unknown): number => (typeof v === "number" ? v : 0);
   const minorToRupees = (v: unknown): number => minor(v) / 100;
 
-  const price =
-    typeof raw.price === "number"
-      ? raw.price
-      : minorToRupees(raw.priceMinor);
+  const price = typeof raw.price === "number" ? raw.price : minorToRupees(raw.priceMinor);
   const original =
     typeof raw.original === "number"
       ? raw.original
@@ -68,8 +65,7 @@ export function mapProduct(raw: any): Product {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (v: any) => ({
           ...v,
-          price:
-            typeof v.price === "number" ? v.price : minorToRupees(v.priceMinor ?? 0),
+          price: typeof v.price === "number" ? v.price : minorToRupees(v.priceMinor ?? 0),
           original:
             typeof v.original === "number"
               ? v.original

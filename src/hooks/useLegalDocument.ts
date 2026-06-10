@@ -2,8 +2,12 @@
  * React hook to fetch and manage legal documents
  */
 
-import { useEffect, useState } from 'react';
-import { getLegalDocument, type LegalDocument, type LegalDocumentSlug } from '@/services/legal-documents.service';
+import { useEffect, useState } from "react";
+import {
+  getLegalDocument,
+  type LegalDocument,
+  type LegalDocumentSlug,
+} from "@/services/legal-documents.service";
 
 interface UseLegalDocumentState {
   document: LegalDocument | null;

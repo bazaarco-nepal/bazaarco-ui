@@ -170,115 +170,117 @@ body {
   animation: bz-fade-up var(--dur-standard) var(--ease) both;
 }
 
-/* Toast notifications — BazaarCo card style with variant accents */
-@keyframes bz-toast-in {
+/* Toast notifications — compact navy pill that floats above the tab bar.
+   Acknowledges an action without hijacking the screen. */
+@keyframes bz-toast-up {
   from {
     opacity: 0;
-    transform: translateX(20px) translateY(-4px) scale(0.96);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
-    transform: translateX(0) translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
-@keyframes bz-toast-out {
+@keyframes bz-toast-down {
   from {
     opacity: 1;
-    transform: translateX(0) translateY(0) scale(1);
+    transform: translateY(0);
   }
   to {
     opacity: 0;
-    transform: translateX(16px) translateY(-6px) scale(0.96);
-  }
-}
-@keyframes bz-toast-progress {
-  from {
-    transform: scaleX(1);
-  }
-  to {
-    transform: scaleX(0);
+    transform: translateY(12px);
   }
 }
 
-.bz-toast {
+/* Fixed full-row container handles placement; the pill inside handles the
+   slide animation. Keeping them separate avoids transform conflicts between
+   horizontal centering (mobile) and the vertical slide. */
+.bz-toast-wrap {
   position: fixed;
-  top: max(76px, calc(env(safe-area-inset-top, 0px) + 60px));
-  right: 20px;
+  left: 0;
+  right: 0;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   z-index: 9999;
   display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: min(320px, calc(100vw - 32px));
-  max-width: min(400px, calc(100vw - 32px));
-  padding: 14px 16px 16px 0;
-  background: #fff;
-  border-radius: var(--r-lg);
-  border: 1.5px solid var(--line-200);
-  box-shadow:
-    var(--sh-3),
-    0 0 0 1px rgba(15, 44, 102, 0.04);
-  overflow: hidden;
-  transform-origin: top right;
+  justify-content: flex-end;
+  padding: 0 24px;
   pointer-events: none;
 }
 
+.bz-toast {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  max-width: min(360px, calc(100vw - 48px));
+  padding: 8px 14px 8px 10px;
+  background: var(--blue-deep);
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+}
+
 .bz-toast--enter {
-  animation: bz-toast-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: bz-toast-up 200ms ease-out both;
 }
 
 .bz-toast--exit {
-  animation: bz-toast-out 300ms cubic-bezier(0.4, 0, 1, 1) both;
+  animation: bz-toast-down 150ms ease-in both;
 }
 
-.bz-toast__accent {
-  width: 4px;
-  align-self: stretch;
-  flex-shrink: 0;
-  margin-right: 2px;
-  border-radius: 0 4px 4px 0;
-  background: var(--bz-toast-accent, var(--success));
-}
-
-.bz-toast__icon {
-  width: 38px;
-  height: 38px;
+.bz-toast__dot {
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: var(--bz-toast-icon-bg, rgba(22, 163, 74, 0.12));
+  background: var(--bz-toast-accent, var(--success));
 }
 
 .bz-toast__msg {
   margin: 0;
-  flex: 1;
   min-width: 0;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.3;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bz-toast__undo {
+  flex-shrink: 0;
+  margin-left: 3px;
+  padding: 2px 2px 2px 9px;
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0;
+  background: none;
+  color: var(--success);
+  font-size: 0.8125rem;
   font-weight: 600;
-  line-height: 1.45;
-  color: var(--blue-deep);
+  cursor: pointer;
 }
 
-.bz-toast__progress {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  height: 3px;
-  transform-origin: left center;
-  background: var(--bz-toast-progress, var(--success));
-  opacity: 0.85;
-  animation: bz-toast-progress var(--bz-toast-duration, 3200ms) linear forwards;
+.bz-toast__undo:active {
+  opacity: 0.7;
 }
 
-@media (max-width: 640px) {
+/* Mobile: centred above the bottom tab bar, flat (no elevation). The tab bar
+   (.bz-bnav) is ~52px + safe area, so 72px clears it with breathing room. */
+@media (max-width: 768px) {
+  .bz-toast-wrap {
+    justify-content: center;
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    padding: 0 16px;
+  }
   .bz-toast {
-    left: 16px;
-    right: 16px;
-    min-width: 0;
-    max-width: none;
-    transform-origin: top center;
+    max-width: 90vw;
+    box-shadow: none;
   }
 }
 
@@ -947,6 +949,294 @@ body {
   }
 }
 
+/* ── Store switcher (multi-store) ──────────────────────────────────────────
+   The trigger chip lives in the sidebar header (desktop) and the mobile top bar.
+   On desktop the panel is an anchored popover; on mobile it is a portal'd bottom
+   sheet (JS picks which to render, so these two never overlap). */
+.bz-store-switcher {
+  position: relative;
+}
+.bz-store-switcher--sidebar,
+.bz-store-switcher--mobilebar {
+  flex: 1;
+  min-width: 0;
+}
+
+.bz-store-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: var(--r-md);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--dur-micro, 120ms) var(--ease);
+}
+.bz-store-chip:hover {
+  background: var(--line-100);
+}
+.bz-store-chip--collapsed {
+  width: auto;
+  padding: 2px;
+  justify-content: center;
+}
+.bz-store-chip-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.bz-store-chip-name {
+  font-weight: 800;
+  font-size: 0.875rem;
+  color: var(--blue-deep);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bz-store-chip-role {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+  margin-top: 1px;
+}
+.bz-store-chip--mobilebar .bz-store-chip-name {
+  font-size: 1rem;
+}
+
+.bz-store-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 95;
+  width: 280px;
+  max-width: calc(100vw - 32px);
+  background: #fff;
+  border: 1px solid var(--line-200);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md);
+  padding: 8px;
+}
+.bz-store-switcher--sidebar-collapsed .bz-store-pop {
+  top: 0;
+  left: calc(100% + 8px);
+}
+.bz-store-pop-head {
+  padding: 4px 8px 8px;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+
+.bz-store-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.bz-store-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: var(--r-md);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+.bz-store-row:hover:not(:disabled) {
+  background: var(--line-100);
+}
+.bz-store-row.active {
+  background: var(--tint-blue-50);
+}
+.bz-store-row:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.bz-store-row-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.bz-store-row-name {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: var(--ink-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bz-store-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.bz-store-row-city {
+  font-size: 0.75rem;
+  color: var(--ink-400);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bz-store-pill {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 1px 8px;
+  border-radius: var(--r-full);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.bz-store-pill.ok {
+  color: var(--success);
+  background: rgba(22, 163, 74, 0.12);
+}
+.bz-store-pill.warn {
+  color: var(--warning);
+  background: rgba(245, 158, 11, 0.14);
+}
+
+.bz-store-add {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px;
+  border: none;
+  border-top: 1px solid var(--line-200);
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--blue);
+}
+.bz-store-add:hover {
+  color: var(--blue-hover);
+}
+
+.bz-store-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(11, 18, 32, 0.5);
+}
+.bz-store-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 121;
+  max-height: 80dvh;
+  overflow-y: auto;
+  padding: 8px 14px calc(16px + env(safe-area-inset-bottom, 0px));
+  background: #fff;
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  box-shadow: 0 -8px 30px rgba(11, 18, 32, 0.18);
+  animation: bz-store-sheet-up 0.24s var(--ease);
+}
+@keyframes bz-store-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+.bz-store-sheet-handle {
+  width: 40px;
+  height: 4px;
+  margin: 4px auto 10px;
+  border-radius: var(--r-full);
+  background: var(--line-200);
+}
+.bz-store-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px 8px;
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: var(--ink-900);
+}
+.bz-store-sheet-head button {
+  display: flex;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.bz-store-modal-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(11, 18, 32, 0.45);
+}
+.bz-store-modal {
+  width: 100%;
+  max-width: 420px;
+  max-height: 90dvh;
+  overflow-y: auto;
+  padding: 24px;
+  background: #fff;
+  border-radius: var(--r-lg);
+}
+.bz-store-modal-title {
+  margin: 0 0 16px;
+  font-size: 1.125rem;
+  font-weight: 800;
+}
+.bz-store-field {
+  display: block;
+  margin-bottom: 16px;
+}
+.bz-store-field-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ink-600);
+}
+.bz-store-field-hint {
+  margin: 0 0 10px;
+  font-size: 0.75rem;
+  color: var(--ink-500);
+}
+.bz-store-field-input {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line-200);
+  border-radius: var(--r-sm);
+  font-size: 0.875rem;
+}
+.bz-store-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
 /* Seller page layouts — use full content area beside sidebar */
 .bz-seller-page {
   width: 100%;
@@ -1448,6 +1738,114 @@ body {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) auto;
   gap: 8px;
   align-items: center;
+}
+
+/* A compact "added detail" row on the Add Product form: label on the left,
+   value control on the right, an X to remove on the far right. The row owns the
+   border + focus ring so the inner control can sit borderless (see cellInput). */
+.bz-spec-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.8fr) minmax(0, 1.5fr) auto;
+  column-gap: 12px;
+  row-gap: 6px;
+  align-items: center;
+  border: 1.5px solid var(--line-200);
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  background: #fff;
+  transition: border-color var(--dur-standard) var(--ease);
+}
+
+.bz-spec-row:focus-within {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--tint-blue-50);
+}
+
+.bz-spec-row__label {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ink-700);
+}
+
+.bz-spec-row__unit {
+  color: var(--ink-400);
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.bz-spec-row__req {
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--saffron);
+  background: var(--line-100);
+  padding: 2px 7px;
+  border-radius: var(--r-full);
+}
+
+.bz-spec-row__control {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+}
+
+.bz-spec-row__remove {
+  grid-column: 3;
+  grid-row: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--ink-400);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background var(--dur-standard) var(--ease),
+    color var(--dur-standard) var(--ease);
+}
+
+@media (hover: hover) {
+  .bz-spec-row__remove:hover {
+    background: var(--line-100);
+    color: var(--ink-700);
+  }
+}
+
+.bz-spec-row__help {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--ink-400);
+}
+
+@media (max-width: 560px) {
+  .bz-spec-row {
+    grid-template-columns: 1fr auto;
+  }
+  .bz-spec-row__label {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .bz-spec-row__remove {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .bz-spec-row__control {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
 }
 
 .bz-photo-cell {

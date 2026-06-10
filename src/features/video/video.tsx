@@ -1182,29 +1182,37 @@ export function VideoTheater() {
 
   if (vids.length === 0) {
     return (
-      <div className="bz-video-theater" style={{ padding: "28px" }}>
-        <div style={{ maxWidth: "var(--container)", margin: "0 auto" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-            <button
-              onClick={goBack}
-              aria-label="Back"
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: "50%",
-                border: "none",
-                background: "rgba(255,255,255,.12)",
-                color: "#fff",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              <Icon name="chevronLeft" size={22} />
-            </button>
-          </div>
+      <div className="bz-video-theater">
+        <div className="bz-video-theater__header">
+          <button
+            onClick={goBack}
+            aria-label="Back"
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: "50%",
+              border: "none",
+              background: "rgba(255,255,255,.12)",
+              color: "#fff",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <Icon name="chevronLeft" size={22} />
+          </button>
+        </div>
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "0 28px 28px",
+          }}
+        >
           <EmptyState
             dark
             title="No videos yet"

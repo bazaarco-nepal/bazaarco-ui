@@ -26,10 +26,8 @@ function mapOffer(raw: any): BargainOffer {
   const m2r = (v: unknown) => (typeof v === "number" ? v / 100 : 0);
   return {
     ...raw,
-    yourOffer:
-      typeof raw.yourOffer === "number" ? raw.yourOffer : m2r(raw.yourOfferMinor),
-    listed:
-      typeof raw.listed === "number" ? raw.listed : m2r(raw.listedMinor),
+    yourOffer: typeof raw.yourOffer === "number" ? raw.yourOffer : m2r(raw.yourOfferMinor),
+    listed: typeof raw.listed === "number" ? raw.listed : m2r(raw.listedMinor),
     sellerCounter:
       raw.sellerCounter != null
         ? raw.sellerCounter

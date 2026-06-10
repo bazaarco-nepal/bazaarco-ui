@@ -111,6 +111,10 @@ export function useSellerOrganization() {
 
 function invalidateSellerWorkspace(qc: ReturnType<typeof useQueryClient>) {
   void qc.invalidateQueries({ queryKey: ["seller"] });
+  // Chat is keyed under ["chat"], not ["seller"], but the inbox and unread badge are
+  // scoped to the active store server-side — so switching stores must refresh them too,
+  // otherwise the seller keeps seeing the previous store's threads until a manual reload.
+  void qc.invalidateQueries({ queryKey: ["chat"] });
 }
 
 export function useSetupSellerOrganization() {

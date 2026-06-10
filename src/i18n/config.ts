@@ -13,7 +13,13 @@ export {
   isLocale,
   type Locale,
 } from "./locale-constants";
-import { DEFAULT_LOCALE, LOCALE_COOKIE_KEY, LOCALE_STORAGE_KEY, isLocale, type Locale } from "./locale-constants";
+import {
+  DEFAULT_LOCALE,
+  LOCALE_COOKIE_KEY,
+  LOCALE_STORAGE_KEY,
+  isLocale,
+  type Locale,
+} from "./locale-constants";
 
 export function readLocaleFromStorage(): Locale {
   if (typeof window === "undefined") return DEFAULT_LOCALE;

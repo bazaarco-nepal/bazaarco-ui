@@ -1751,62 +1751,79 @@ export function QtyStepper({ value, onChange, min = 1, max = 99 }) {
   );
 }
 
-/* ---------- Toast ---------- */
+/* ---------- Toast ----------
+   A compact navy pill that floats above the mobile tab bar (bottom-right on
+   desktop). It acknowledges an action rather than announcing it: a small
+   coloured check/error dot, a short message, and — for reversible actions like
+   a wishlist save — an inline Undo. Tapping the body dismisses it; new toasts
+   replace the current one rather than stacking. */
 const TOAST_EXIT_MS = 320;
-const TOAST_VISIBLE_MS = 3200;
 
-export function Toast({ toast }: { toast: { msg: string; id: number; variant: string } | null }) {
-  const [shown, setShown] = useState<typeof toast>(null);
+type ToastData = { msg: string; id: number; variant: string; undo?: () => void };
+
+export function Toast({ toast }: { toast: ToastData | null }) {
+  const [shown, setShown] = useState<ToastData | null>(null);
   const [leaving, setLeaving] = useState(false);
   const shownRef = useRef(shown);
   shownRef.current = shown;
+  const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const dismiss = () => {
+    if (!shownRef.current) return;
+    setLeaving(true);
+    if (exitTimer.current) clearTimeout(exitTimer.current);
+    exitTimer.current = setTimeout(() => {
+      setShown(null);
+      setLeaving(false);
+    }, TOAST_EXIT_MS);
+  };
 
   useEffect(() => {
     if (toast) {
+      if (exitTimer.current) clearTimeout(exitTimer.current);
       setShown(toast);
       setLeaving(false);
       return;
     }
-    if (!shownRef.current) return;
-    setLeaving(true);
-    const timer = setTimeout(() => {
-      setShown(null);
-      setLeaving(false);
-    }, TOAST_EXIT_MS);
-    return () => clearTimeout(timer);
+    dismiss();
   }, [toast]);
+
+  useEffect(() => () => void (exitTimer.current && clearTimeout(exitTimer.current)), []);
 
   if (!shown) return null;
 
   const variant = shown.variant ?? "success";
   const meta = TOAST_VARIANT_META[variant] ?? TOAST_VARIANT_META.success;
+  const isError = variant === "error";
 
   return (
-    <div
-      key={shown.id}
-      role="status"
-      aria-live="polite"
-      className={`bz-toast bz-toast--${variant} ${leaving ? "bz-toast--exit" : "bz-toast--enter"}`}
-      style={
-        {
-          "--bz-toast-accent": meta.accent,
-          "--bz-toast-icon-bg": meta.iconBg,
-          "--bz-toast-progress": meta.progress,
-          "--bz-toast-duration": `${TOAST_VISIBLE_MS}ms`,
-        } as React.CSSProperties
-      }
-    >
-      <span className="bz-toast__accent" aria-hidden />
-      <span className="bz-toast__icon" aria-hidden>
-        <Icon
-          name={meta.icon}
-          size={18}
-          color={meta.accent}
-          stroke={variant === "error" ? 2.4 : 1.8}
-        />
-      </span>
-      <p className="bz-toast__msg">{shown.msg}</p>
-      <span className="bz-toast__progress" aria-hidden />
+    <div className="bz-toast-wrap">
+      <div
+        key={shown.id}
+        role={isError ? "alert" : "status"}
+        aria-live={isError ? "assertive" : "polite"}
+        className={`bz-toast bz-toast--${variant} ${leaving ? "bz-toast--exit" : "bz-toast--enter"}`}
+        style={{ "--bz-toast-accent": meta.accent } as React.CSSProperties}
+        onClick={dismiss}
+      >
+        <span className="bz-toast__dot" aria-hidden>
+          <Icon name={meta.icon} size={11} color="#fff" stroke={2.4} />
+        </span>
+        <p className="bz-toast__msg">{shown.msg}</p>
+        {shown.undo && (
+          <button
+            type="button"
+            className="bz-toast__undo"
+            aria-label="Undo save to wishlist"
+            onClick={(e) => {
+              e.stopPropagation();
+              shown.undo?.();
+            }}
+          >
+            Undo
+          </button>
+        )}
+      </div>
     </div>
   );
 }

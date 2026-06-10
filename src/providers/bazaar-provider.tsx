@@ -117,17 +117,21 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
     window.scrollTo(0, 0);
   }, []);
 
-  const toast = useCallback((msg: string, variant?: ToastVariant) => {
-    setToastMsg({
-      msg,
-      id: Date.now(),
-      variant: variant ?? inferToastVariant(msg),
-    });
-    if (toastTimer.current) {
-      clearTimeout(toastTimer.current);
-    }
-    toastTimer.current = setTimeout(() => setToastMsg(null), TOAST_VISIBLE_MS);
-  }, []);
+  const toast = useCallback(
+    (msg: string, variant?: ToastVariant, options?: { undo?: () => void }) => {
+      setToastMsg({
+        msg,
+        id: Date.now(),
+        variant: variant ?? inferToastVariant(msg),
+        undo: options?.undo,
+      });
+      if (toastTimer.current) {
+        clearTimeout(toastTimer.current);
+      }
+      toastTimer.current = setTimeout(() => setToastMsg(null), TOAST_VISIBLE_MS);
+    },
+    [],
+  );
 
   const promptLogin = useCallback((message = "Please sign in to continue.") => {
     setAuthPrompt(message);
@@ -162,13 +166,24 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
     [promptLogin],
   );
 
+  // Self-reference so the "Saved to wishlist" toast can offer an Undo that
+  // re-runs the toggle (now a remove) without making toggleWish depend on
+  // itself in useCallback.
+  const toggleWishRef = useRef<(productId: string) => Promise<void>>(async () => {});
+
   const toggleWish = useCallback(
     async (productId: string) => {
       if (!ensureAuthed("Please sign in to save products to your wishlist.")) return;
       const prev = useBazaarStore.getState().wish;
       const isSaved = prev.includes(productId);
       setWish(isSaved ? prev.filter((id) => id !== productId) : [...prev, productId]);
-      toast(isSaved ? "Removed from wishlist" : "Saved to wishlist");
+      if (isSaved) {
+        toast("Removed from wishlist");
+      } else {
+        toast("Saved to wishlist", undefined, {
+          undo: () => void toggleWishRef.current(productId),
+        });
+      }
       try {
         if (isSaved) {
           await removeWishProduct.mutateAsync(productId);
@@ -181,6 +196,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
     },
     [addWishProduct, ensureAuthed, removeWishProduct, setWish, toast],
   );
+  toggleWishRef.current = toggleWish;
 
   const toggleSellerWish = useCallback(
     async (sellerId: string) => {

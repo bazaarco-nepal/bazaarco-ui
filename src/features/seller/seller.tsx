@@ -44,6 +44,7 @@ import {
   SellerVerificationBanner,
   SellerVerificationBlocked,
 } from "@/components/seller/seller-verification-banner";
+import { StoreSwitcherChip } from "./store-switcher";
 import {
   useCompleteOnboarding,
   useLogout,
@@ -87,8 +88,6 @@ import {
   useUpdateSellerSettings,
   useSellerOrganization,
   useSetupSellerOrganization,
-  useCreateSellerStore,
-  useSwitchActiveStore,
   useSubmitSellerVerification,
   useSellerStorefront,
   useUpdateStorefront,
@@ -189,285 +188,6 @@ export const SELLER_NAV = [
   },
 ];
 
-function SellerStoreSwitcher({
-  stores,
-  activeSellerId,
-  collapsed,
-}: {
-  stores: SellerStoreSummary[];
-  activeSellerId: string | null;
-  collapsed: boolean;
-}) {
-  const { t } = useTranslation();
-  const { toast, nav } = useBz();
-  const switchStore = useSwitchActiveStore();
-  const createStore = useCreateSellerStore();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [addOpen, setAddOpen] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [newStoreAddress, setNewStoreAddress] = useState<StoreAddress>(emptyStoreAddress);
-  const menuRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const close = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [menuOpen]);
-
-  const handleSwitch = (sellerId: string) => {
-    if (sellerId === activeSellerId || switchStore.isPending) return;
-    switchStore.mutate(sellerId, {
-      onSuccess: () => {
-        setMenuOpen(false);
-        toast("Store switched");
-      },
-      onError: (e) => toast(e instanceof Error ? e.message : "Could not switch store"),
-    });
-  };
-
-  const handleCreate = async () => {
-    const name = newName.trim();
-    if (name.length < 2) {
-      toast("Enter a store name (at least 2 characters)");
-      return;
-    }
-    const city = newStoreAddress.city?.trim();
-    if (!city) {
-      toast("Enter your store city");
-      return;
-    }
-    try {
-      await createStore.mutateAsync({
-        shopName: name,
-        storeAddress: {
-          city,
-          ...(newStoreAddress.area?.trim() ? { area: newStoreAddress.area.trim() } : {}),
-          ...(newStoreAddress.landmark?.trim()
-            ? { landmark: newStoreAddress.landmark.trim() }
-            : {}),
-          ...(newStoreAddress.lat != null ? { lat: newStoreAddress.lat } : {}),
-          ...(newStoreAddress.lng != null ? { lng: newStoreAddress.lng } : {}),
-        },
-      });
-      setAddOpen(false);
-      setNewName("");
-      setNewStoreAddress(emptyStoreAddress());
-      toast("Store created — complete KYC to start selling");
-      nav("s-verification");
-    } catch (e) {
-      toast(e instanceof Error ? e.message : "Could not create store");
-    }
-  };
-
-  if (!stores?.length) return null;
-
-  return (
-    <>
-      <div ref={menuRef} style={{ position: "relative" }}>
-        <button
-          type="button"
-          onClick={() => setMenuOpen((o) => !o)}
-          aria-expanded={menuOpen}
-          aria-label={t("seller.switchStore")}
-          style={{
-            width: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: collapsed ? "center" : "space-between",
-            gap: 6,
-            padding: collapsed ? "6px 0" : "6px 10px",
-            borderRadius: "var(--r-sm)",
-            border: "1px solid var(--line-200)",
-            background: "#fff",
-            cursor: "pointer",
-            fontSize: ".75rem",
-            fontWeight: 700,
-            color: "var(--ink-600)",
-          }}
-        >
-          {!collapsed && <span>{t("seller.switchStore")}</span>}
-          <Icon name="chevronDown" size={14} color="var(--ink-500)" />
-        </button>
-        {menuOpen && (
-          <div
-            style={{
-              position: "absolute",
-              top: "calc(100% + 4px)",
-              left: 0,
-              right: collapsed ? "auto" : 0,
-              minWidth: collapsed ? 200 : undefined,
-              zIndex: 50,
-              background: "#fff",
-              border: "1px solid var(--line-200)",
-              borderRadius: "var(--r-md)",
-              boxShadow: "var(--shadow-md)",
-              padding: 6,
-            }}
-          >
-            {stores.map((store) => {
-              const active = store.sellerId === activeSellerId;
-              return (
-                <button
-                  key={store.sellerId}
-                  type="button"
-                  onClick={() => handleSwitch(store.sellerId)}
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: "8px 10px",
-                    border: "none",
-                    borderRadius: "var(--r-sm)",
-                    background: active ? "var(--tint-blue-50)" : "transparent",
-                    cursor: "pointer",
-                    textAlign: "left",
-                  }}
-                >
-                  <StoreAvatar src={store.logoUrl} name={store.shopName} size={28} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontWeight: 700,
-                        fontSize: ".8125rem",
-                        color: "var(--ink-900)",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {store.shopName}
-                    </div>
-                    {store.city && (
-                      <div style={{ fontSize: ".6875rem", color: "var(--ink-400)" }}>
-                        {store.city}
-                      </div>
-                    )}
-                  </div>
-                  {active && <Icon name="check" size={14} color="var(--blue)" />}
-                </button>
-              );
-            })}
-            <button
-              type="button"
-              onClick={() => {
-                setMenuOpen(false);
-                setAddOpen(true);
-              }}
-              style={{
-                width: "100%",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "8px 10px",
-                marginTop: 4,
-                border: "none",
-                borderTop: "1px solid var(--line-200)",
-                borderRadius: 0,
-                background: "transparent",
-                cursor: "pointer",
-                fontSize: ".8125rem",
-                fontWeight: 700,
-                color: "var(--blue)",
-              }}
-            >
-              <Icon name="plus" size={14} color="var(--blue)" />
-              {t("seller.addStore")}
-            </button>
-          </div>
-        )}
-      </div>
-
-      {addOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 200,
-            background: "rgba(11,18,32,.45)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 20,
-          }}
-          onClick={() => !createStore.isPending && setAddOpen(false)}
-        >
-          <div
-            style={{
-              width: "100%",
-              maxWidth: 400,
-              background: "#fff",
-              borderRadius: "var(--r-lg)",
-              padding: 24,
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 style={{ margin: "0 0 16px", fontSize: "1.125rem", fontWeight: 800 }}>
-              {t("seller.addStore")}
-            </h3>
-            <label style={{ display: "block", marginBottom: 12 }}>
-              <span style={{ fontSize: ".8125rem", fontWeight: 700, color: "var(--ink-600)" }}>
-                {t("seller.storeName")}
-              </span>
-              <input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                maxLength={256}
-                style={{
-                  display: "block",
-                  width: "100%",
-                  marginTop: 6,
-                  padding: "10px 12px",
-                  borderRadius: "var(--r-sm)",
-                  border: "1px solid var(--line-200)",
-                  fontSize: ".875rem",
-                }}
-              />
-            </label>
-            <div style={{ marginBottom: 20 }}>
-              <div
-                style={{
-                  fontSize: ".8125rem",
-                  fontWeight: 700,
-                  color: "var(--ink-600)",
-                  marginBottom: 6,
-                }}
-              >
-                {t("seller.storeAddress")}
-              </div>
-              <p style={{ margin: "0 0 10px", fontSize: ".75rem", color: "var(--ink-500)" }}>
-                {t("seller.storeAddressHint")}
-              </p>
-              <LandmarkAddress value={newStoreAddress} onChange={setNewStoreAddress} />
-            </div>
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-              <Button
-                variant="ghost"
-                onClick={() => setAddOpen(false)}
-                disabled={createStore.isPending}
-              >
-                {t("common.cancel")}
-              </Button>
-              <Button
-                variant="primary"
-                onClick={() => void handleCreate()}
-                disabled={createStore.isPending}
-              >
-                {createStore.isPending ? t("seller.creatingStore") : t("seller.createStore")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
-
 export function SellerSidebar({
   screen,
   onNav,
@@ -476,8 +196,6 @@ export function SellerSidebar({
   openMobile,
   setOpenMobile,
   badges = {},
-  shopName,
-  logoUrl,
   stores = [],
   activeSellerId = null,
 }: {
@@ -488,8 +206,6 @@ export function SellerSidebar({
   openMobile: boolean;
   setOpenMobile: React.Dispatch<React.SetStateAction<boolean>>;
   badges?: Record<string, number>;
-  shopName?: string | null;
-  logoUrl?: string | null;
   stores?: SellerStoreSummary[];
   activeSellerId?: string | null;
 }) {
@@ -497,7 +213,6 @@ export function SellerSidebar({
   const close = () => setOpenMobile(false);
   const logoutMutation = useLogout();
   const [confirmLogout, setConfirmLogout] = useState(false);
-  const displayName = shopName?.trim() || "BazaarCo";
   const handleLogout = () => {
     logoutMutation.mutate(undefined, {
       onSuccess: () => {
@@ -520,10 +235,16 @@ export function SellerSidebar({
             borderBottom: "1px solid var(--line-200)",
           }}
         >
-          {/* When collapsed: avatar + expand toggle stacked centrally */}
+          {/* The store chip doubles as the active-store identity and the switcher
+              trigger. It's always present so adding/switching stores is reachable
+              even with a single store and on a collapsed sidebar. */}
           {collapsed ? (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-              <StoreAvatar src={logoUrl} name={displayName} size={34} />
+              <StoreSwitcherChip
+                variant="sidebar-collapsed"
+                stores={stores}
+                activeSellerId={activeSellerId}
+              />
               <button
                 className="bz-side-toggle"
                 onClick={() => setCollapsed((c) => !c)}
@@ -534,60 +255,21 @@ export function SellerSidebar({
               </button>
             </div>
           ) : (
-            <>
-              {/* Expanded: avatar + name/role + collapse toggle in one row */}
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <StoreAvatar src={logoUrl} name={displayName} size={34} />
-                <div className="bz-side-brand-text" style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontWeight: 800,
-                      color: "var(--blue-deep)",
-                      fontSize: ".875rem",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      lineHeight: 1.25,
-                    }}
-                    title={displayName}
-                  >
-                    {displayName}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: ".625rem",
-                      color: "var(--ink-400)",
-                      fontWeight: 700,
-                      letterSpacing: ".08em",
-                      textTransform: "uppercase",
-                      lineHeight: 1.4,
-                      marginTop: 1,
-                    }}
-                  >
-                    {t("seller.role")}
-                  </div>
-                </div>
-                <button
-                  className="bz-side-toggle"
-                  onClick={() => setCollapsed((c) => !c)}
-                  aria-label={t("seller.collapseSidebar")}
-                  title={t("seller.collapseSidebar")}
-                >
-                  <Icon name="chevronLeft" size={14} />
-                </button>
-              </div>
-
-              {/* Store switcher — indented, only shown with 2+ stores */}
-              {stores.length > 1 && (
-                <div style={{ paddingLeft: 44, marginTop: 8 }}>
-                  <SellerStoreSwitcher
-                    stores={stores}
-                    activeSellerId={activeSellerId}
-                    collapsed={false}
-                  />
-                </div>
-              )}
-            </>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <StoreSwitcherChip
+                variant="sidebar"
+                stores={stores}
+                activeSellerId={activeSellerId}
+              />
+              <button
+                className="bz-side-toggle"
+                onClick={() => setCollapsed((c) => !c)}
+                aria-label={t("seller.collapseSidebar")}
+                title={t("seller.collapseSidebar")}
+              >
+                <Icon name="chevronLeft" size={14} />
+              </button>
+            </div>
           )}
         </div>
 
@@ -729,8 +411,6 @@ export function SellerShell({ screen, children }: { screen: string; children: Re
     }
   }, [organization, orgLoading, screen, nav]);
 
-  const current = SELLER_NAV.flatMap((g) => g.items).find((it) => it.id === screen);
-
   return (
     <div className={"bz-seller-shell" + (collapsed ? " collapsed" : "")}>
       <SellerSidebar
@@ -741,8 +421,6 @@ export function SellerShell({ screen, children }: { screen: string; children: Re
         openMobile={openMobile}
         setOpenMobile={setOpenMobile}
         badges={badges}
-        shopName={organization?.shopName}
-        logoUrl={organization?.logoUrl}
         stores={organization?.stores ?? []}
         activeSellerId={organization?.sellerId ?? null}
       />
@@ -761,11 +439,18 @@ export function SellerShell({ screen, children }: { screen: string; children: Re
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
+              flexShrink: 0,
             }}
           >
             <Icon name="menu" size={22} />
           </button>
-          <h2>{current ? t(current.labelKey) : t("seller.defaultTitle")}</h2>
+          {/* Active-store chip is the primary identity on mobile and opens the
+              switcher bottom sheet without having to open the nav drawer. */}
+          <StoreSwitcherChip
+            variant="mobilebar"
+            stores={organization?.stores ?? []}
+            activeSellerId={organization?.sellerId ?? null}
+          />
         </div>
         {organization?.linked &&
           organization.verification &&
@@ -3907,11 +3592,30 @@ export function CategoryAttrFields({
   const [customLabels, setCustomLabels] = useState<Record<string, string>>({});
   const [newMetaLabel, setNewMetaLabel] = useState("");
   const [newMetaValue, setNewMetaValue] = useState("");
-  const fields = categories.find((c) => c.id === category)?.fields || [];
+  // Optional fields the seller has chosen to add (revealed from a suggestion chip)
+  // but may not have filled yet. We can't lean on `values` for this because
+  // cleanMetadata() drops empty entries, so an added-but-blank field would vanish.
+  const [opened, setOpened] = useState<Set<string>>(new Set());
+  // Whether the "Custom detail" add row is showing.
+  const [showCustom, setShowCustom] = useState(false);
+  const cat = categories.find((c) => c.id === category);
+  const fields = cat?.fields || [];
   const fieldKeys = new Set(fields.map((field) => field.k));
   const customKeys = Object.keys(values).filter(
     (key) => !fieldKeys.has(key) && !RESERVED_METADATA_KEYS.has(key),
   );
+  // Required fields and anything already filled or explicitly opened show as rows;
+  // everything else stays tucked behind a suggestion chip (progressive disclosure).
+  const isShown = (f: CategoryAttributeField) =>
+    f.req === true || values[f.k] !== undefined || opened.has(f.k);
+  const shownFields = fields.filter(isShown);
+  const chipFields = fields.filter((f) => !isShown(f));
+  // Reset reveal state when the seller switches category — the old keys no longer
+  // map to this category's fields.
+  useEffect(() => {
+    setOpened(new Set());
+    setShowCustom(false);
+  }, [category]);
   const inputStyle = {
     width: "100%",
     height: 48,
@@ -3934,11 +3638,36 @@ export function CategoryAttrFields({
     fontWeight: 700,
     cursor: "pointer",
   };
+  // Borderless control that lives inside a spec row (the row itself carries the
+  // border + focus ring), so the input reads as plain text next to its label.
+  const cellInput = {
+    width: "100%",
+    minWidth: 0,
+    height: 40,
+    border: "none",
+    outline: "none",
+    background: "transparent",
+    padding: 0,
+    fontFamily: "var(--font-sans)",
+    fontSize: ".9375rem",
+    color: "var(--ink-900)",
+  };
   const set = (k: string, v: unknown) => onChange(cleanMetadata({ ...values, [k]: v }));
   const remove = (k: string) => {
     const next = { ...values };
     delete next[k];
     onChange(cleanMetadata(next));
+  };
+  // Reveal an optional field as an editable row (from its suggestion chip).
+  const openField = (k: string) => setOpened((prev) => new Set(prev).add(k));
+  // Send an optional field back to the suggestion row: clear its value and reveal.
+  const removeField = (k: string) => {
+    setOpened((prev) => {
+      const next = new Set(prev);
+      next.delete(k);
+      return next;
+    });
+    remove(k);
   };
   const toggleMulti = (k: string, opt: string) => {
     const cur = Array.isArray(values[k]) ? values[k] : [];
@@ -3976,243 +3705,354 @@ export function CategoryAttrFields({
     setCustomLabels((labels) => ({ ...labels, [key]: label }));
     setNewMetaLabel("");
     setNewMetaValue("");
+    setShowCustom(false);
   };
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {fields.map((f) => (
-        <div key={f.k}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-            <label
-              style={{
-                fontSize: ".8125rem",
-                fontWeight: 700,
-                color: "var(--ink-700)",
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                marginBottom: 6,
-                flexWrap: "wrap",
-              }}
-            >
-              {f.en}
-              {f.u && (
-                <span style={{ color: "var(--ink-400)", fontWeight: 600, fontSize: ".75rem" }}>
-                  ({f.u})
-                </span>
-              )}
-            </label>
-            {values[f.k] !== undefined && (
-              <button type="button" onClick={() => remove(f.k)} style={buttonStyle}>
-                Clear
+  const cancelCustom = () => {
+    setNewMetaLabel("");
+    setNewMetaValue("");
+    setShowCustom(false);
+  };
+  // A field's editable control, sized to sit borderless inside a spec row.
+  const renderControl = (f: CategoryAttributeField) => {
+    if (f.t === "select") {
+      return (
+        <select
+          value={(values[f.k] as string | number | undefined) || ""}
+          onChange={(e) => set(f.k, e.target.value)}
+          aria-label={f.en}
+          style={{
+            ...cellInput,
+            cursor: "pointer",
+            color: values[f.k] ? "var(--ink-900)" : "var(--ink-400)",
+            fontWeight: values[f.k] ? 600 : 400,
+          }}
+        >
+          <option value="">Choose…</option>
+          {(f.o ?? []).map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
+        </select>
+      );
+    }
+    if (f.t === "multi") {
+      return (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {[
+            ...(f.o ?? []),
+            ...((Array.isArray(values[f.k]) ? values[f.k] : []) as string[]).filter(
+              (v) => !(f.o ?? []).includes(v),
+            ),
+          ].map((o) => {
+            const selected = Array.isArray(values[f.k]) ? (values[f.k] as string[]) : [];
+            const on = selected.includes(o);
+            return (
+              <button
+                key={o}
+                type="button"
+                onClick={() => toggleMulti(f.k, o)}
+                aria-pressed={on}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "var(--r-full)",
+                  cursor: "pointer",
+                  fontWeight: 700,
+                  fontSize: ".8125rem",
+                  minHeight: 40,
+                  border: `1.5px solid ${on ? "var(--blue)" : "var(--line-200)"}`,
+                  background: on ? "var(--tint-blue-50)" : "#fff",
+                  color: on ? "var(--blue)" : "var(--ink-500)",
+                }}
+              >
+                {on ? "✓ " : ""}
+                {o}
               </button>
-            )}
-          </div>
-
-          {f.t === "select" && (
-            <select
-              value={(values[f.k] as string | number | undefined) || ""}
-              onChange={(e) => set(f.k, e.target.value)}
-              style={{
-                ...inputStyle,
-                color: values[f.k] ? "var(--ink-900)" : "var(--ink-400)",
-                fontWeight: values[f.k] ? 600 : 400,
-              }}
-            >
-              <option value="">Choose…</option>
-              {(f.o ?? []).map((o) => (
-                <option key={o} value={o}>
-                  {o}
-                </option>
-              ))}
-            </select>
-          )}
-
-          {f.t === "multi" && (
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {[
-                ...(f.o ?? []),
-                ...((Array.isArray(values[f.k]) ? values[f.k] : []) as string[]).filter(
-                  (v) => !(f.o ?? []).includes(v),
-                ),
-              ].map((o) => {
-                const selected = Array.isArray(values[f.k]) ? (values[f.k] as string[]) : [];
-                const on = selected.includes(o);
-                return (
-                  <button
-                    key={o}
-                    type="button"
-                    onClick={() => toggleMulti(f.k, o)}
-                    aria-pressed={on}
-                    style={{
-                      padding: "10px 14px",
-                      borderRadius: "var(--r-full)",
-                      cursor: "pointer",
-                      fontWeight: 700,
-                      fontSize: ".8125rem",
-                      minHeight: 44,
-                      border: `1.5px solid ${on ? "var(--blue)" : "var(--line-200)"}`,
-                      background: on ? "var(--tint-blue-50)" : "#fff",
-                      color: on ? "var(--blue)" : "var(--ink-500)",
-                    }}
-                  >
-                    {on ? "✓ " : ""}
-                    {o}
-                  </button>
-                );
-              })}
-              {f.allowOther && (
-                <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
-                  <input
-                    value={otherText[f.k] || ""}
-                    onChange={(e) => setOtherText((t) => ({ ...t, [f.k]: e.target.value }))}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addOther(f.k);
-                      }
-                    }}
-                    placeholder="Other…"
-                    style={{
-                      width: 120,
-                      minHeight: 44,
-                      padding: "0 12px",
-                      borderRadius: "var(--r-full)",
-                      border: "1.5px dashed var(--line-200)",
-                      outline: "none",
-                      fontFamily: "var(--font-sans)",
-                      fontSize: ".8125rem",
-                      color: "var(--ink-900)",
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => addOther(f.k)}
-                    disabled={!(otherText[f.k] || "").trim()}
-                    style={{
-                      minHeight: 44,
-                      padding: "0 14px",
-                      borderRadius: "var(--r-full)",
-                      border: "1.5px solid var(--blue)",
-                      background: "#fff",
-                      color: "var(--blue)",
-                      fontWeight: 700,
-                      fontSize: ".8125rem",
-                      cursor: (otherText[f.k] || "").trim() ? "pointer" : "default",
-                      opacity: (otherText[f.k] || "").trim() ? 1 : 0.4,
-                    }}
-                  >
-                    + Add
-                  </button>
-                </span>
-              )}
-            </div>
-          )}
-
-          {(f.t === "text" || f.t === "num") && (
-            <input
-              value={(values[f.k] as string | number | undefined) || ""}
-              inputMode={f.t === "num" ? "numeric" : undefined}
-              onChange={(e) =>
-                set(f.k, f.t === "num" ? e.target.value.replace(/\D/g, "") : e.target.value)
-              }
-              placeholder="Type here"
-              style={inputStyle}
-            />
-          )}
-
-          {f.t === "date" && (
-            <input
-              type="date"
-              value={(values[f.k] as string | number | undefined) || ""}
-              onChange={(e) => set(f.k, e.target.value)}
-              style={inputStyle}
-            />
-          )}
-
-          {f.t === "toggle" && (
-            <label
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                cursor: "pointer",
-                fontSize: ".875rem",
-                color: "var(--ink-700)",
-                fontWeight: 600,
-              }}
-            >
+            );
+          })}
+          {f.allowOther && (
+            <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
               <input
-                type="checkbox"
-                checked={!!values[f.k]}
-                onChange={(e) => set(f.k, e.target.checked)}
-                style={{ width: 20, height: 20, accentColor: "var(--blue)" }}
+                value={otherText[f.k] || ""}
+                onChange={(e) => setOtherText((t) => ({ ...t, [f.k]: e.target.value }))}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addOther(f.k);
+                  }
+                }}
+                placeholder="Other…"
+                style={{
+                  width: 120,
+                  minHeight: 40,
+                  padding: "0 12px",
+                  borderRadius: "var(--r-full)",
+                  border: "1.5px dashed var(--line-200)",
+                  outline: "none",
+                  fontFamily: "var(--font-sans)",
+                  fontSize: ".8125rem",
+                  color: "var(--ink-900)",
+                }}
               />
-              Yes
-            </label>
+              <button
+                type="button"
+                onClick={() => addOther(f.k)}
+                disabled={!(otherText[f.k] || "").trim()}
+                style={{
+                  minHeight: 40,
+                  padding: "0 14px",
+                  borderRadius: "var(--r-full)",
+                  border: "1.5px solid var(--blue)",
+                  background: "#fff",
+                  color: "var(--blue)",
+                  fontWeight: 700,
+                  fontSize: ".8125rem",
+                  cursor: (otherText[f.k] || "").trim() ? "pointer" : "default",
+                  opacity: (otherText[f.k] || "").trim() ? 1 : 0.4,
+                }}
+              >
+                + Add
+              </button>
+            </span>
           )}
+        </div>
+      );
+    }
+    if (f.t === "date") {
+      return (
+        <input
+          type="date"
+          value={(values[f.k] as string | number | undefined) || ""}
+          onChange={(e) => set(f.k, e.target.value)}
+          aria-label={f.en}
+          style={cellInput}
+        />
+      );
+    }
+    if (f.t === "toggle") {
+      const on = !!values[f.k];
+      return (
+        <button
+          type="button"
+          role="switch"
+          aria-checked={on}
+          aria-label={f.en}
+          onClick={() => set(f.k, !on)}
+          style={{
+            width: 46,
+            height: 28,
+            flexShrink: 0,
+            justifySelf: "start",
+            borderRadius: "var(--r-full)",
+            border: "none",
+            cursor: "pointer",
+            padding: 3,
+            background: on ? "var(--blue)" : "var(--line-200)",
+            display: "inline-flex",
+            justifyContent: on ? "flex-end" : "flex-start",
+            transition: "background var(--dur-standard) var(--ease)",
+          }}
+        >
+          <span
+            style={{
+              width: 22,
+              height: 22,
+              borderRadius: "50%",
+              background: "#fff",
+              display: "block",
+              boxShadow: "0 1px 2px rgba(0,0,0,.2)",
+            }}
+          />
+        </button>
+      );
+    }
+    // text / num
+    return (
+      <input
+        value={(values[f.k] as string | number | undefined) || ""}
+        inputMode={f.t === "num" ? "numeric" : undefined}
+        onChange={(e) =>
+          set(f.k, f.t === "num" ? e.target.value.replace(/\D/g, "") : e.target.value)
+        }
+        placeholder="Type here"
+        aria-label={f.en}
+        style={cellInput}
+      />
+    );
+  };
 
-          {f.help && (
-            <p style={{ fontSize: ".75rem", color: "var(--ink-400)", margin: "6px 0 0" }}>
-              {f.help}
-            </p>
+  const showCustomChip = !showCustom;
+  const showSuggestions = chipFields.length > 0 || showCustomChip;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* Added rows — required fields always, plus anything the seller filled or opened */}
+      {shownFields.map((f) => (
+        <div className="bz-spec-row" key={f.k}>
+          <div className="bz-spec-row__label">
+            {f.en}
+            {f.u && <span className="bz-spec-row__unit">({f.u})</span>}
+            {f.req && <span className="bz-spec-row__req">Required</span>}
+          </div>
+          <div className="bz-spec-row__control">{renderControl(f)}</div>
+          {!f.req && (
+            <button
+              type="button"
+              onClick={() => removeField(f.k)}
+              className="bz-spec-row__remove"
+              aria-label={`Remove ${f.en}`}
+            >
+              <Icon name="x" size={16} />
+            </button>
           )}
+          {f.help && <p className="bz-spec-row__help">{f.help}</p>}
         </div>
       ))}
 
+      {/* Custom details the seller already added — label is editable */}
       {customKeys.map((key) => (
-        <div key={key} className="bz-metadata-row">
+        <div key={key} className="bz-spec-row">
           <input
             value={customLabels[key] ?? labelFromMetadataKey(key)}
             onChange={(e) => setCustomLabels((labels) => ({ ...labels, [key]: e.target.value }))}
             onBlur={() => commitCustomLabel(key)}
-            style={inputStyle}
-            aria-label="Metadata label"
+            className="bz-spec-row__label"
+            style={cellInput}
+            aria-label="Detail name"
           />
           <input
             value={String(values[key] ?? "")}
             onChange={(e) => set(key, e.target.value)}
-            style={inputStyle}
-            aria-label="Metadata value"
+            className="bz-spec-row__control"
+            style={cellInput}
+            aria-label="Detail value"
           />
-          <button type="button" onClick={() => remove(key)} style={buttonStyle}>
-            Delete
+          <button
+            type="button"
+            onClick={() => remove(key)}
+            className="bz-spec-row__remove"
+            aria-label="Remove custom detail"
+          >
+            <Icon name="x" size={16} />
           </button>
         </div>
       ))}
 
-      <div className="bz-metadata-row">
-        <input
-          value={newMetaLabel}
-          onChange={(e) => setNewMetaLabel(e.target.value)}
-          placeholder="Custom detail"
-          style={inputStyle}
-        />
-        <input
-          value={newMetaValue}
-          onChange={(e) => setNewMetaValue(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              addCustom();
-            }
-          }}
-          placeholder="Value"
-          style={inputStyle}
-        />
-        <button
-          type="button"
-          onClick={addCustom}
-          disabled={!newMetaLabel.trim() || !newMetaValue.trim()}
-          style={{
-            ...buttonStyle,
-            borderColor: "var(--blue)",
-            color: "var(--blue)",
-            opacity: newMetaLabel.trim() && newMetaValue.trim() ? 1 : 0.45,
-          }}
-        >
-          Add
-        </button>
-      </div>
+      {/* Inline custom-detail editor (opened from the dashed chip) */}
+      {showCustom && (
+        <div className="bz-metadata-row">
+          <input
+            value={newMetaLabel}
+            onChange={(e) => setNewMetaLabel(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") cancelCustom();
+            }}
+            placeholder="Detail name (e.g. Fabric origin)"
+            style={inputStyle}
+            aria-label="Custom detail name"
+            autoFocus
+          />
+          <input
+            value={newMetaValue}
+            onChange={(e) => setNewMetaValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addCustom();
+              }
+              if (e.key === "Escape") cancelCustom();
+            }}
+            placeholder="Value"
+            style={inputStyle}
+            aria-label="Custom detail value"
+          />
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              type="button"
+              onClick={addCustom}
+              disabled={!newMetaLabel.trim() || !newMetaValue.trim()}
+              style={{
+                ...buttonStyle,
+                borderColor: "var(--blue)",
+                color: "var(--blue)",
+                opacity: newMetaLabel.trim() && newMetaValue.trim() ? 1 : 0.45,
+              }}
+            >
+              Add
+            </button>
+            <button type="button" onClick={cancelCustom} style={buttonStyle}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Suggestion chips — tap to reveal a row; added ones drop out of this list */}
+      {showSuggestions && (
+        <div style={{ marginTop: shownFields.length || customKeys.length ? 4 : 0 }}>
+          <div
+            style={{
+              fontSize: ".6875rem",
+              fontWeight: 800,
+              letterSpacing: ".06em",
+              textTransform: "uppercase",
+              color: "var(--ink-400)",
+              marginBottom: 10,
+            }}
+          >
+            Suggested for {cat?.en ?? "this product"}
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {chipFields.map((f) => (
+              <button
+                key={f.k}
+                type="button"
+                onClick={() => openField(f.k)}
+                style={{
+                  minHeight: 40,
+                  padding: "0 16px",
+                  borderRadius: "var(--r-full)",
+                  border: "1.5px solid var(--line-200)",
+                  background: "#fff",
+                  color: "var(--ink-700)",
+                  fontWeight: 700,
+                  fontSize: ".875rem",
+                  cursor: "pointer",
+                }}
+              >
+                {f.en}
+              </button>
+            ))}
+            {showCustomChip && (
+              <button
+                type="button"
+                onClick={() => setShowCustom(true)}
+                style={{
+                  minHeight: 40,
+                  padding: "0 16px",
+                  borderRadius: "var(--r-full)",
+                  border: "1.5px dashed var(--blue)",
+                  background: "transparent",
+                  color: "var(--blue)",
+                  fontWeight: 700,
+                  fontSize: ".875rem",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <Icon name="edit" size={15} color="var(--blue)" />
+                Custom detail
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      <p style={{ margin: "2px 0 0", fontSize: ".8125rem", color: "var(--ink-400)" }}>
+        Tap any chip to add it. Done? Just keep scrolling — this section is optional.
+      </p>
     </div>
   );
 }
@@ -4413,14 +4253,39 @@ export function SellerAddProduct({
   // but no offer could be accepted. Mirrors the server rule so the seller gets
   // the feedback before submitting. Checked per variant for variant products.
   const productListedPrice = applyDiscount ? saleEffectivePrice : baseNum;
+  // The listed (effective) price a variant's floor must stay below.
+  const variantListedPrice = (v: {
+    price: string;
+    onSale?: boolean;
+    saleMode?: string;
+    salePrice?: string;
+    salePct?: string;
+  }) => (v.onSale ? saleEffective(variantSaleInput(v)) : Number(v.price) || 0);
+  // Live, per-variant validation for the min-bargain-price field. Returns an
+  // error string to show under the field, or null when the row is fine. Mirrors
+  // the server rule: a whole number above 0 and strictly below the variant's
+  // own listed price. Fires independently for each variant row.
+  const variantFloorError = (v: {
+    price: string;
+    onSale?: boolean;
+    saleMode?: string;
+    salePrice?: string;
+    salePct?: string;
+    allowBargaining?: boolean;
+    minimumPrice?: string;
+  }): string | null => {
+    if (!v.allowBargaining) return null;
+    const raw = (v.minimumPrice ?? "").trim();
+    if (raw === "") return "Enter a lowest price to enable bargaining";
+    const floor = Number(raw);
+    if (!Number.isInteger(floor) || floor <= 0) return "Enter a whole number above 0";
+    const listed = variantListedPrice(v);
+    if (listed > 0 && floor >= listed)
+      return `Must be less than Rs. ${listed.toLocaleString("en-IN")}`;
+    return null;
+  };
   const bargainFloorOk = hasVariants
-    ? variants
-        .filter((v) => v.allowBargaining && v.name && v.price && v.stock)
-        .every((v) => {
-          const listed = v.onSale ? saleEffective(variantSaleInput(v)) : Number(v.price);
-          const floor = Number(v.minimumPrice);
-          return floor > 0 && floor < listed;
-        })
+    ? variants.every((v) => variantFloorError(v) === null)
     : !bargainOk || (Number(bargainMinPrice) > 0 && Number(bargainMinPrice) < productListedPrice);
 
   const canPublish =
@@ -4934,15 +4799,33 @@ export function SellerAddProduct({
                 >
                   <Icon name="sliders" size={18} color="var(--blue)" />
                 </span>
-                <div style={{ flex: 1 }}>
-                  <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>
-                    Product specifications
-                  </h3>
+                <div
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>Product details</h3>
+                  <span
+                    style={{
+                      fontSize: ".75rem",
+                      fontWeight: 700,
+                      color: "var(--ink-500)",
+                      background: "var(--line-100)",
+                      padding: "3px 10px",
+                      borderRadius: "var(--r-full)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Optional · skip anytime
+                  </span>
                 </div>
               </div>
               <p style={{ margin: "0 0 14px", fontSize: ".8125rem", color: "var(--ink-500)" }}>
-                Add any details that matter for this exact item. Suggested fields are optional, and
-                you can add your own.
+                Add only what matters for this item. More detail = more buyer trust.
               </p>
 
               <CategoryAttrFields category={category} values={attrs} onChange={setAttrs} />
@@ -5507,73 +5390,90 @@ export function SellerAddProduct({
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {variants
                     .filter((v) => v.name && v.price)
-                    .map((v) => (
-                      <div
-                        key={v.id}
-                        style={{
-                          border: `1.5px solid ${v.allowBargaining ? "var(--red)" : "var(--line-200)"}`,
-                          borderRadius: "var(--r-md)",
-                          padding: "10px 12px",
-                          background: v.allowBargaining ? "rgba(220,38,38,.03)" : "#fff",
-                        }}
-                      >
-                        <label
+                    .map((v) => {
+                      const floorError = variantFloorError(v);
+                      return (
+                        <div
+                          key={v.id}
                           style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 10,
-                            cursor: "pointer",
+                            border: `1.5px solid ${v.allowBargaining ? "var(--red)" : "var(--line-200)"}`,
+                            borderRadius: "var(--r-md)",
+                            padding: "10px 12px",
+                            background: v.allowBargaining ? "rgba(220,38,38,.03)" : "#fff",
                           }}
                         >
-                          <input
-                            type="checkbox"
-                            checked={Boolean(v.allowBargaining)}
-                            onChange={(e) =>
-                              updateVariant(v.id, "allowBargaining", e.target.checked)
-                            }
-                            style={{ width: 16, height: 16, accentColor: "var(--red)" }}
-                          />
-                          <span style={{ fontWeight: 700, fontSize: ".875rem", flex: 1 }}>
-                            {v.name}
-                          </span>
-                          <span
-                            className="tnum"
-                            style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}
+                          <label
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 10,
+                              cursor: "pointer",
+                            }}
                           >
-                            Rs. {Number(v.price).toLocaleString("en-IN")}
-                          </span>
-                        </label>
-                        {v.allowBargaining && (
-                          <div style={{ marginTop: 8, paddingLeft: 26 }}>
-                            <label
-                              style={{
-                                fontSize: ".75rem",
-                                color: "var(--ink-600)",
-                                display: "block",
-                                marginBottom: 4,
-                              }}
-                            >
-                              Min. price (Rs.)
-                            </label>
                             <input
-                              type="number"
-                              min={1}
-                              placeholder="e.g. 800"
-                              value={v.minimumPrice ?? ""}
-                              onChange={(e) => updateVariant(v.id, "minimumPrice", e.target.value)}
-                              style={{
-                                width: "100%",
-                                maxWidth: 200,
-                                padding: "8px 10px",
-                                border: "1.5px solid var(--line-200)",
-                                borderRadius: "var(--r-md)",
-                                fontSize: ".8125rem",
-                              }}
+                              type="checkbox"
+                              checked={Boolean(v.allowBargaining)}
+                              onChange={(e) =>
+                                updateVariant(v.id, "allowBargaining", e.target.checked)
+                              }
+                              style={{ width: 16, height: 16, accentColor: "var(--red)" }}
                             />
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                            <span style={{ fontWeight: 700, fontSize: ".875rem", flex: 1 }}>
+                              {v.name}
+                            </span>
+                            <span
+                              className="tnum"
+                              style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}
+                            >
+                              Rs. {Number(v.price).toLocaleString("en-IN")}
+                            </span>
+                          </label>
+                          {v.allowBargaining && (
+                            <div style={{ marginTop: 8, paddingLeft: 26 }}>
+                              <label
+                                style={{
+                                  fontSize: ".75rem",
+                                  color: "var(--ink-600)",
+                                  display: "block",
+                                  marginBottom: 4,
+                                }}
+                              >
+                                Min. price (Rs.)
+                              </label>
+                              <input
+                                type="number"
+                                min={1}
+                                placeholder="e.g. 800"
+                                value={v.minimumPrice ?? ""}
+                                onChange={(e) =>
+                                  updateVariant(v.id, "minimumPrice", e.target.value)
+                                }
+                                aria-invalid={floorError ? true : undefined}
+                                style={{
+                                  width: "100%",
+                                  maxWidth: 200,
+                                  padding: "8px 10px",
+                                  border: `1.5px solid ${floorError ? "var(--danger, #d23)" : "var(--line-200)"}`,
+                                  borderRadius: "var(--r-md)",
+                                  fontSize: ".8125rem",
+                                }}
+                              />
+                              <span
+                                style={{
+                                  display: "block",
+                                  marginTop: 4,
+                                  fontSize: ".72rem",
+                                  color: floorError ? "var(--danger, #d23)" : "var(--ink-400)",
+                                }}
+                              >
+                                {floorError ??
+                                  `Must be less than Rs. ${variantListedPrice(v).toLocaleString("en-IN")}`}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                 </div>
                 <p style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 8 }}>
                   Offers at or above the min price are auto-accepted. Buyers never see this limit.

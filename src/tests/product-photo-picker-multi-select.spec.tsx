@@ -88,4 +88,37 @@ describe("ProductPhotoPicker — multi-select", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent(/same photo twice/i);
   });
+
+  // REGRESSION: `input.files` is a LIVE FileList — resetting `input.value` (so the
+  // same file can be re-picked) empties it. Real browsers clear it; jsdom doesn't.
+  // The handler must snapshot the files BEFORE clearing, or the picked photo is
+  // silently dropped and the cropper never opens. This test mimics the browser.
+  it("opens the cropper even though clearing input.value empties the live FileList", () => {
+    const { container } = render(<ProductPhotoPicker photos={[]} onChange={() => {}} max={5} />);
+    const input = fileInput(container);
+    const file = imageFile("a.jpg");
+    // A single object emptied IN PLACE, like a browser's live FileList — so a
+    // handler that grabbed the reference before clearing sees it go to length 0.
+    const liveList: Record<string, unknown> & {
+      length: number;
+      [Symbol.iterator](): Iterator<File>;
+    } = {
+      0: file,
+      length: 1,
+      *[Symbol.iterator]() {
+        for (let i = 0; i < this.length; i++) yield (this as Record<number, File>)[i]!;
+      },
+    };
+    Object.defineProperty(input, "files", { configurable: true, get: () => liveList });
+    Object.defineProperty(input, "value", {
+      configurable: true,
+      get: () => "",
+      set: () => {
+        delete liveList[0];
+        liveList.length = 0; // browser behaviour: clearing value empties the list
+      },
+    });
+    fireEvent.change(input);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
 });

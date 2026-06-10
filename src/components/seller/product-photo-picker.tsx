@@ -397,15 +397,17 @@ export function ProductPhotoPicker({
     });
 
   const onFileChosen = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const fileList = e.target.files;
+    // Snapshot the picked files BEFORE clearing the input: `e.target.files` is a
+    // live FileList that resetting `value` empties, which would drop everything.
+    const files = e.target.files ? Array.from(e.target.files) : [];
     e.target.value = "";
     const replaceIndex = pickIndex;
     setPickIndex(null);
-    if (!fileList || fileList.length === 0) return;
+    if (files.length === 0) return;
 
     // Replace flow stays single-file: swap the chosen slot, ignore any extras.
     if (replaceIndex !== null) {
-      const file = fileList[0];
+      const file = files[0];
       if (!file || !file.type.startsWith("image/")) return;
       if (isDuplicateName(normalizeFileName(file.name), replaceIndex)) {
         setError("You are not allowed to use the same photo twice.");
@@ -427,7 +429,7 @@ export function ProductPhotoPicker({
     let droppedExtra = false;
     let droppedDuplicate = false;
 
-    for (const file of Array.from(fileList)) {
+    for (const file of files) {
       if (!file.type.startsWith("image/")) continue;
       const name = normalizeFileName(file.name);
       if (isDuplicateName(name, null) || seen.has(name)) {

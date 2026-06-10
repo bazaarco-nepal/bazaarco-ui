@@ -567,19 +567,15 @@ function ReelItem({
             )}
           </AppLink>
           <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span
-                style={{
-                  fontWeight: 800,
-                  fontSize: ".9375rem",
-                  textShadow: "0 1px 2px rgba(0,0,0,.5)",
-                }}
-              >
-                @{s.id}
-              </span>
-            </div>
             <span
-              style={{ fontSize: ".75rem", opacity: 0.85, textShadow: "0 1px 2px rgba(0,0,0,.5)" }}
+              style={{
+                fontWeight: 800,
+                fontSize: ".9375rem",
+                textShadow: "0 1px 2px rgba(0,0,0,.5)",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
             >
               {s.name}
             </span>

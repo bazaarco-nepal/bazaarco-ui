@@ -2292,7 +2292,6 @@ export function MobileBuyBar({
         borderTop: "1px solid var(--line-200)",
         padding: "12px 14px calc(12px + env(safe-area-inset-bottom))",
         boxShadow: "0 -2px 12px rgba(15,23,42,.08)",
-        
       }}
     >
       {onBargain ? (
@@ -2402,7 +2401,10 @@ export function BottomNav({
 
 /* ---------- Landmark address picker ---------- */
 export function LandmarkAddress({ value, onChange }) {
-  const v = value || { city: "", area: "", landmark: "", lat: null, lng: null };
+  // Normalize per-field, not just when `value` is missing entirely: a partial
+  // address (e.g. { city } with no area/landmark) must still yield defined
+  // strings, or the inputs flip from controlled to uncontrolled.
+  const v = { city: "", area: "", landmark: "", lat: null, lng: null, ...(value || {}) };
   const [mapOpen, setMapOpen] = useState(false);
   const [geoError, setGeoError] = useState(null);
   const [geoLoading, setGeoLoading] = useState(false);

@@ -66,7 +66,7 @@ import {
   useCounterBargainOffer,
 } from "@/hooks/use-bargains";
 import { useUploadImage } from "@/hooks/use-media-upload";
-import type { SellerInventoryItem } from "@/services/api/seller";
+import type { CreateProductVariantPayload, SellerInventoryItem } from "@/services/api/seller";
 import type { SellerStoreSummary } from "@/services/api/seller-organization";
 import type { CategoryAttributeField } from "@/types";
 import type { OrderStatus } from "@/lib/order-utils";
@@ -6188,44 +6188,146 @@ export function SellerInventory() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [priceDraft, setPriceDraft] = useState<Record<string, string>>({});
+  // Pending (uncommitted) stock edits. Kept OUTSIDE `items` so the inventory
+  // refetch triggered by every save (or window refocus) can't silently wipe an
+  // in-progress edit. `stockDraft`: productId -> stock (single-SKU products).
+  // `variantStockDraft`: productId -> { variantId -> stock }.
+  const [stockDraft, setStockDraft] = useState<Record<string, number>>({});
+  const [variantStockDraft, setVariantStockDraft] = useState<
+    Record<string, Record<string, number>>
+  >({});
   const [status, setStatus] = useState("all"); // all | active | low | oos
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("added");
 
-  const persistStock = useCallback(
-    async (id: string, newStock: number) => {
-      const prev = items.find((it) => it.id === id);
-      if (!prev || newStock < 0 || newStock === prev.stock) return;
-      setItems((list) => list.map((it) => (it.id === id ? { ...it, stock: newStock } : it)));
+  // Effective (draft-aware) stock readers — what the seller currently sees.
+  const effStock = useCallback(
+    (it: SellerInventoryItem) => stockDraft[it.id] ?? it.stock,
+    [stockDraft],
+  );
+  const effVariantStock = useCallback(
+    (productId: string, v: CreateProductVariantPayload) =>
+      variantStockDraft[productId]?.[v.id] ?? v.stock,
+    [variantStockDraft],
+  );
+  // Server variant list overlaid with any local drafts (the payload to save).
+  const effVariants = useCallback(
+    (it: SellerInventoryItem): CreateProductVariantPayload[] =>
+      (it.variants ?? []).map((v) => ({ ...v, stock: effVariantStock(it.id, v) })),
+    [effVariantStock],
+  );
+  const stockDirty = useCallback(
+    (it: SellerInventoryItem) => {
+      if (it.hasVariants && it.variants?.length) {
+        return it.variants.some((v) => effVariantStock(it.id, v) !== v.stock);
+      }
+      return effStock(it) !== it.stock;
+    },
+    [effStock, effVariantStock],
+  );
+
+  // Local-only edits (no backend call). The `+`/`−` steppers and the typed
+  // input mutate the draft; nothing hits the API until Save.
+  const adjustStock = (it: SellerInventoryItem, delta: number) => {
+    if (savingId) return;
+    const next = Math.max(0, effStock(it) + delta);
+    setStockDraft((d) => ({ ...d, [it.id]: next }));
+  };
+  const typeStock = (it: SellerInventoryItem, raw: string) => {
+    const digits = raw.replace(/\D/g, "");
+    setStockDraft((d) => ({ ...d, [it.id]: digits === "" ? 0 : parseInt(digits, 10) }));
+  };
+  const adjustVariant = (
+    it: SellerInventoryItem,
+    v: CreateProductVariantPayload,
+    delta: number,
+  ) => {
+    if (savingId) return;
+    const next = Math.max(0, effVariantStock(it.id, v) + delta);
+    setVariantStockDraft((d) => ({ ...d, [it.id]: { ...(d[it.id] ?? {}), [v.id]: next } }));
+  };
+  const typeVariant = (it: SellerInventoryItem, v: CreateProductVariantPayload, raw: string) => {
+    const digits = raw.replace(/\D/g, "");
+    const next = digits === "" ? 0 : parseInt(digits, 10);
+    setVariantStockDraft((d) => ({ ...d, [it.id]: { ...(d[it.id] ?? {}), [v.id]: next } }));
+  };
+
+  const clearDraft = (id: string) => {
+    setStockDraft((d) => {
+      if (!(id in d)) return d;
+      const next = { ...d };
+      delete next[id];
+      return next;
+    });
+    setVariantStockDraft((d) => {
+      if (!(id in d)) return d;
+      const next = { ...d };
+      delete next[id];
+      return next;
+    });
+  };
+
+  // The single backend-touching path for stock: commits the final value in ONE
+  // PATCH, optimistically updates the row, then clears the draft so the inventory
+  // refetch reconciles cleanly. On failure the draft is kept for a retry.
+  const commitStock = useCallback(
+    async (
+      id: string,
+      payload: { stock: number } | { variants: CreateProductVariantPayload[] },
+    ) => {
+      const prev = items.find((i) => i.id === id);
+      if (!prev || savingId) return;
+      if ("stock" in payload && payload.stock === prev.stock) {
+        clearDraft(id);
+        return;
+      }
       setSavingId(id);
       try {
-        await updateProduct.mutateAsync({ id, stock: newStock });
+        await updateProduct.mutateAsync({ id, ...payload });
+        setItems((list) =>
+          list.map((it) => {
+            if (it.id !== id) return it;
+            if ("variants" in payload) {
+              const total = payload.variants.reduce((sum, v) => sum + v.stock, 0);
+              return { ...it, stock: total, variants: payload.variants };
+            }
+            return { ...it, stock: payload.stock };
+          }),
+        );
+        clearDraft(id);
         toast("Stock saved");
       } catch (err) {
-        setItems((list) => list.map((it) => (it.id === id ? prev : it)));
         toast(err instanceof Error ? err.message : "Could not update stock");
       } finally {
         setSavingId(null);
       }
     },
-    [items, updateProduct, toast],
+    [items, updateProduct, toast, savingId],
   );
 
-  const dec = (id: string) => {
-    const it = items.find((i) => i.id === id);
-    if (!it || it.stock <= 0 || savingId) return;
-    void persistStock(id, it.stock - 1);
+  const saveStock = (it: SellerInventoryItem) => {
+    if (it.hasVariants && it.variants?.length) {
+      void commitStock(it.id, { variants: effVariants(it) });
+    } else {
+      void commitStock(it.id, { stock: effStock(it) });
+    }
   };
-  const inc = (id: string) => {
-    const it = items.find((i) => i.id === id);
-    if (!it || savingId) return;
-    void persistStock(id, it.stock + 1);
-  };
-  const sellInShop = (id: string) => {
-    const it = items.find((i) => i.id === id);
-    if (!it || it.stock <= 0 || savingId) return;
-    void persistStock(id, it.stock - 1);
+
+  // "Sold one in shop" is a discrete real-world sale: commit −1 immediately
+  // (folding in any pending draft) in a single call.
+  const sellInShop = (it: SellerInventoryItem) => {
+    if (savingId) return;
+    const cur = effStock(it);
+    if (cur <= 0) return;
+    void commitStock(it.id, { stock: cur - 1 });
     toast("Sold one in shop · −1 stock");
+  };
+  const sellVariantInShop = (it: SellerInventoryItem, v: CreateProductVariantPayload) => {
+    if (savingId) return;
+    if (effVariantStock(it.id, v) <= 0) return;
+    const variants = effVariants(it).map((x) => (x.id === v.id ? { ...x, stock: x.stock - 1 } : x));
+    void commitStock(it.id, { variants });
+    toast(`Sold one ${v.name} in shop`);
   };
 
   const confirmDelete = async () => {
@@ -6245,38 +6347,6 @@ export function SellerInventory() {
       toast(err instanceof Error ? err.message : "Could not delete this product");
     }
   };
-
-  const persistVariantStock = useCallback(
-    async (productId: string, variantId: string, newStock: number) => {
-      if (newStock < 0 || savingId) return;
-      const prev = items.find((it) => it.id === productId);
-      if (!prev || !prev.variants) return;
-      const variantIdx = prev.variants.findIndex((v) => v.id === variantId);
-      if (variantIdx < 0) return;
-      const oldVariantStock = prev.variants[variantIdx]?.stock;
-      if (newStock === oldVariantStock) return;
-      const updatedVariants = prev.variants.map((v) =>
-        v.id === variantId ? { ...v, stock: newStock } : v,
-      );
-      const newTotalStock = updatedVariants.reduce((sum, v) => sum + v.stock, 0);
-      setItems((list) =>
-        list.map((it) =>
-          it.id === productId ? { ...it, stock: newTotalStock, variants: updatedVariants } : it,
-        ),
-      );
-      setSavingId(productId);
-      try {
-        await updateProduct.mutateAsync({ id: productId, variants: updatedVariants });
-        toast("Stock saved");
-      } catch (err) {
-        setItems((list) => list.map((it) => (it.id === productId ? prev : it)));
-        toast(err instanceof Error ? err.message : "Could not update stock");
-      } finally {
-        setSavingId(null);
-      }
-    },
-    [items, updateProduct, toast, savingId],
-  );
 
   const savePrice = async (id: string) => {
     const it = items.find((i) => i.id === id);
@@ -6767,8 +6837,9 @@ export function SellerInventory() {
                               </div>
                               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                                 {it.variants.map((v) => {
-                                  const vLow = v.stock <= 3 && v.stock > 0;
-                                  const vOos = v.stock === 0;
+                                  const vStock = effVariantStock(it.id, v);
+                                  const vLow = vStock <= 3 && vStock > 0;
+                                  const vOos = vStock === 0;
                                   return (
                                     <div
                                       key={v.id}
@@ -6824,16 +6895,16 @@ export function SellerInventory() {
                                           type="button"
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            void persistVariantStock(it.id, v.id, v.stock - 1);
+                                            adjustVariant(it, v, -1);
                                           }}
-                                          disabled={v.stock === 0 || savingId === it.id}
+                                          disabled={vStock === 0 || savingId === it.id}
                                           style={{
                                             width: 36,
                                             height: 40,
                                             background: "#fff",
                                             border: "none",
                                             cursor:
-                                              v.stock === 0 || savingId === it.id
+                                              vStock === 0 || savingId === it.id
                                                 ? "not-allowed"
                                                 : "pointer",
                                             color: "var(--ink-700)",
@@ -6844,22 +6915,32 @@ export function SellerInventory() {
                                         >
                                           <Icon name="minus" size={14} />
                                         </button>
-                                        <span
+                                        <input
+                                          type="text"
+                                          inputMode="numeric"
+                                          aria-label={`${v.name} stock`}
+                                          value={String(vStock)}
+                                          onClick={(e) => e.stopPropagation()}
+                                          onChange={(e) => typeVariant(it, v, e.target.value)}
+                                          disabled={savingId === it.id}
                                           className="tnum"
                                           style={{
-                                            width: 36,
+                                            width: 44,
+                                            height: 40,
                                             textAlign: "center",
                                             fontWeight: 800,
                                             fontSize: ".9375rem",
+                                            border: "none",
+                                            outline: "none",
+                                            background: "transparent",
+                                            color: "var(--ink-700)",
                                           }}
-                                        >
-                                          {v.stock}
-                                        </span>
+                                        />
                                         <button
                                           type="button"
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            void persistVariantStock(it.id, v.id, v.stock + 1);
+                                            adjustVariant(it, v, 1);
                                           }}
                                           disabled={savingId === it.id}
                                           style={{
@@ -6883,8 +6964,7 @@ export function SellerInventory() {
                                           disabled={savingId === it.id}
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            void persistVariantStock(it.id, v.id, v.stock - 1);
-                                            toast(`Sold one ${v.name} in shop`);
+                                            sellVariantInShop(it, v);
                                           }}
                                           style={{
                                             height: 32,
@@ -6915,8 +6995,36 @@ export function SellerInventory() {
                                   fontWeight: 600,
                                 }}
                               >
-                                Total: {it.stock} units
+                                Total: {effVariants(it).reduce((sum, v) => sum + v.stock, 0)} units
                               </div>
+                              {stockDirty(it) && (
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    gap: 8,
+                                    marginTop: 10,
+                                    flexWrap: "wrap",
+                                  }}
+                                >
+                                  <Button
+                                    variant="primary"
+                                    size="sm"
+                                    loading={savingId === it.id}
+                                    disabled={savingId === it.id}
+                                    onClick={() => saveStock(it)}
+                                  >
+                                    Save stock
+                                  </Button>
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    disabled={savingId === it.id}
+                                    onClick={() => clearDraft(it.id)}
+                                  >
+                                    Reset
+                                  </Button>
+                                </div>
+                              )}
                             </>
                           ) : (
                             <>
@@ -6960,16 +7068,16 @@ export function SellerInventory() {
                                     type="button"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      dec(it.id);
+                                      adjustStock(it, -1);
                                     }}
-                                    disabled={it.stock === 0 || savingId === it.id}
+                                    disabled={effStock(it) === 0 || savingId === it.id}
                                     style={{
                                       width: 44,
                                       height: 48,
                                       background: "#fff",
                                       border: "none",
                                       cursor:
-                                        it.stock === 0 || savingId === it.id
+                                        effStock(it) === 0 || savingId === it.id
                                           ? "not-allowed"
                                           : "pointer",
                                       color: "var(--ink-700)",
@@ -6977,22 +7085,32 @@ export function SellerInventory() {
                                   >
                                     <Icon name="minus" size={18} />
                                   </button>
-                                  <span
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    aria-label="Stock"
+                                    value={String(effStock(it))}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onChange={(e) => typeStock(it, e.target.value)}
+                                    disabled={savingId === it.id}
                                     className="tnum"
                                     style={{
-                                      width: 48,
+                                      width: 56,
+                                      height: 48,
                                       textAlign: "center",
                                       fontWeight: 800,
                                       fontSize: "1.125rem",
+                                      border: "none",
+                                      outline: "none",
+                                      background: "transparent",
+                                      color: "var(--ink-700)",
                                     }}
-                                  >
-                                    {it.stock}
-                                  </span>
+                                  />
                                   <button
                                     type="button"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      inc(it.id);
+                                      adjustStock(it, 1);
                                     }}
                                     disabled={savingId === it.id}
                                     style={{
@@ -7008,16 +7126,38 @@ export function SellerInventory() {
                                   </button>
                                 </div>
                               </div>
-                              {!oos && (
-                                <Button
-                                  variant="secondary"
-                                  disabled={savingId === it.id}
-                                  onClick={() => sellInShop(it.id)}
-                                  icon="store"
-                                >
-                                  Sold one in shop (−1)
-                                </Button>
-                              )}
+                              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                {stockDirty(it) && (
+                                  <>
+                                    <Button
+                                      variant="primary"
+                                      loading={savingId === it.id}
+                                      disabled={savingId === it.id}
+                                      onClick={() => saveStock(it)}
+                                      icon="check"
+                                    >
+                                      Save stock
+                                    </Button>
+                                    <Button
+                                      variant="secondary"
+                                      disabled={savingId === it.id}
+                                      onClick={() => clearDraft(it.id)}
+                                    >
+                                      Reset
+                                    </Button>
+                                  </>
+                                )}
+                                {effStock(it) > 0 && (
+                                  <Button
+                                    variant="secondary"
+                                    disabled={savingId === it.id}
+                                    onClick={() => sellInShop(it)}
+                                    icon="store"
+                                  >
+                                    Sold one in shop (−1)
+                                  </Button>
+                                )}
+                              </div>
                             </>
                           )}
                           <div style={{ marginTop: 14 }}>

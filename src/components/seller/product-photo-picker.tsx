@@ -84,10 +84,16 @@ function ImageCropModal({
   objectUrl,
   onConfirm,
   onCancel,
+  stepCurrent,
+  stepTotal,
 }: {
   objectUrl: string;
   onConfirm: (file: File, previewUrl: string) => void;
   onCancel: () => void;
+  // When a seller picks several photos at once we crop them one after another;
+  // these drive the "Photo 2 of 4" progress hint. Absent for a single photo.
+  stepCurrent?: number;
+  stepTotal?: number;
 }) {
   const imgRef = useRef<HTMLImageElement>(null);
   const dragRef = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
@@ -164,6 +170,8 @@ function ImageCropModal({
   const L = layout();
   const ix = L ? (CROP_VIEW - L.dw) / 2 + offset.x : 0;
   const iy = L ? (CROP_VIEW - L.dh) / 2 + offset.y : 0;
+  const isBatch = !!stepTotal && stepTotal > 1;
+  const moreToCome = isBatch && (stepCurrent ?? 0) < (stepTotal ?? 0);
 
   return (
     <div
@@ -204,7 +212,9 @@ function ImageCropModal({
           Crop & adjust
         </h3>
         <p style={{ margin: "0 0 16px", fontSize: ".8125rem", color: "var(--ink-500)" }}>
-          Drag to position · zoom and brightness below
+          {isBatch
+            ? `Photo ${stepCurrent} of ${stepTotal} · drag to position`
+            : "Drag to position · zoom and brightness below"}
         </p>
 
         <div
@@ -311,7 +321,7 @@ function ImageCropModal({
               cursor: "pointer",
             }}
           >
-            Cancel
+            {isBatch ? "Skip" : "Cancel"}
           </button>
           <button
             type="button"
@@ -329,7 +339,7 @@ function ImageCropModal({
               opacity: loaded && !busy ? 1 : 0.6,
             }}
           >
-            {busy ? "Saving…" : "Use photo"}
+            {busy ? "Saving…" : moreToCome ? "Use & next" : "Use photo"}
           </button>
         </div>
       </div>
@@ -352,6 +362,14 @@ export function ProductPhotoPicker({
   const photosRef = useRef(photos);
   photosRef.current = photos;
   const [cropDraft, setCropDraft] = useState<CropDraft | null>(null);
+  // Photos chosen in the same multi-select, waiting their turn in the cropper.
+  const [cropQueue, setCropQueue] = useState<CropDraft[]>([]);
+  const cropQueueRef = useRef(cropQueue);
+  cropQueueRef.current = cropQueue;
+  const cropDraftRef = useRef(cropDraft);
+  cropDraftRef.current = cropDraft;
+  // Size of the current multi-select batch, for the "Photo X of Y" hint. 0 = single.
+  const [batchTotal, setBatchTotal] = useState(0);
   const [pickIndex, setPickIndex] = useState<number | null>(null);
   const [error, setError] = useState("");
 
@@ -367,32 +385,106 @@ export function ProductPhotoPicker({
     if (replaceIndex === null && photos.length >= max) return;
     setError("");
     setPickIndex(replaceIndex);
+    // Multi-select only makes sense when adding; replacing fills one slot.
+    if (fileRef.current) fileRef.current.multiple = replaceIndex === null;
     fileRef.current?.click();
   };
 
-  const onFileChosen = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    if (!file.type.startsWith("image/")) return;
-    const incomingName = normalizeFileName(file.name);
-    const duplicate = photos.some((photo, index) => {
-      if (pickIndex !== null && index === pickIndex) return false;
-      return normalizeFileName(photo.sourceName || photo.file?.name || "") === incomingName;
+  const isDuplicateName = (name: string, ignoreIndex: number | null) =>
+    photos.some((photo, index) => {
+      if (ignoreIndex !== null && index === ignoreIndex) return false;
+      return normalizeFileName(photo.sourceName || photo.file?.name || "") === name;
     });
-    if (duplicate) {
-      setError("You are not allowed to use the same photo twice.");
-      setPickIndex(null);
+
+  const onFileChosen = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    e.target.value = "";
+    const replaceIndex = pickIndex;
+    setPickIndex(null);
+    if (!fileList || fileList.length === 0) return;
+
+    // Replace flow stays single-file: swap the chosen slot, ignore any extras.
+    if (replaceIndex !== null) {
+      const file = fileList[0];
+      if (!file || !file.type.startsWith("image/")) return;
+      if (isDuplicateName(normalizeFileName(file.name), replaceIndex)) {
+        setError("You are not allowed to use the same photo twice.");
+        return;
+      }
+      setBatchTotal(0);
+      setCropQueue([]);
+      setCropDraft({ objectUrl: URL.createObjectURL(file), sourceName: file.name, replaceIndex });
       return;
     }
-    const objectUrl = URL.createObjectURL(file);
-    setCropDraft({ objectUrl, sourceName: file.name, replaceIndex: pickIndex });
-    setPickIndex(null);
+
+    // Add flow accepts a whole gallery selection. Keep it within the remaining
+    // slots and drop anything that duplicates an existing or already-picked name.
+    const remaining = max - photos.length;
+    if (remaining <= 0) return;
+
+    const seen = new Set<string>();
+    const batch: CropDraft[] = [];
+    let droppedExtra = false;
+    let droppedDuplicate = false;
+
+    for (const file of Array.from(fileList)) {
+      if (!file.type.startsWith("image/")) continue;
+      const name = normalizeFileName(file.name);
+      if (isDuplicateName(name, null) || seen.has(name)) {
+        droppedDuplicate = true;
+        continue;
+      }
+      if (batch.length >= remaining) {
+        droppedExtra = true;
+        continue;
+      }
+      seen.add(name);
+      batch.push({
+        objectUrl: URL.createObjectURL(file),
+        sourceName: file.name,
+        replaceIndex: null,
+      });
+    }
+
+    if (batch.length === 0) {
+      if (droppedDuplicate) setError("You are not allowed to use the same photo twice.");
+      return;
+    }
+    if (droppedExtra) setError(`You can add up to ${max} photos — extra photos weren't added.`);
+    else if (droppedDuplicate) setError("Duplicate photos were skipped.");
+
+    const first = batch[0];
+    if (!first) return;
+    setBatchTotal(batch.length);
+    setCropQueue(batch.slice(1));
+    setCropDraft(first);
+  };
+
+  // Pull the next queued photo into the cropper, or close out when the batch ends.
+  const advanceQueue = () => {
+    const rest = cropQueueRef.current;
+    if (rest.length === 0) {
+      setCropDraft(null);
+      setCropQueue([]);
+      setBatchTotal(0);
+      return;
+    }
+    const next = rest[0];
+    if (!next) {
+      setCropDraft(null);
+      setCropQueue([]);
+      setBatchTotal(0);
+      return;
+    }
+    const remaining = rest.slice(1);
+    cropQueueRef.current = remaining;
+    setCropQueue(remaining);
+    setCropDraft(next);
   };
 
   const closeCrop = () => {
-    if (cropDraft) revoke(cropDraft.objectUrl);
-    setCropDraft(null);
+    if (cropDraftRef.current) revoke(cropDraftRef.current.objectUrl);
+    advanceQueue();
   };
 
   // Only object URLs we minted need revoking; a remote (CDN) preview must be
@@ -406,13 +498,16 @@ export function ProductPhotoPicker({
     revoke(cropDraft.objectUrl);
     const id = crypto.randomUUID?.() ?? String(Date.now());
     const next: ProductPhoto = { id, previewUrl, file, sourceName: cropDraft.sourceName };
+    // Use the live ref, not the closed-over prop: across a batch each confirm
+    // must append to the photos already added earlier in the same batch.
+    const current = photosRef.current;
     if (cropDraft.replaceIndex !== null) {
-      revokeLocalPreview(photos[cropDraft.replaceIndex]);
-      onChange(photos.map((p, i) => (i === cropDraft.replaceIndex ? next : p)));
+      revokeLocalPreview(current[cropDraft.replaceIndex]);
+      onChange(current.map((p, i) => (i === cropDraft.replaceIndex ? next : p)));
     } else {
-      onChange([...photos, next]);
+      onChange([...current, next]);
     }
-    setCropDraft(null);
+    advanceQueue();
   };
 
   const removePhoto = (index: number) => {
@@ -425,6 +520,9 @@ export function ProductPhotoPicker({
       photosRef.current.forEach((p) => {
         if (p.file) revoke(p.previewUrl);
       });
+      // Don't leak previews for photos still queued/being cropped at unmount.
+      if (cropDraftRef.current) revoke(cropDraftRef.current.objectUrl);
+      cropQueueRef.current.forEach((d) => revoke(d.objectUrl));
     };
   }, []);
 
@@ -469,6 +567,9 @@ export function ProductPhotoPicker({
               title="Remove"
               style={{
                 position: "absolute",
+                // Sit above the full-cell replace overlay (z-index 1) so the tap
+                // lands on remove, not the replace picker underneath it.
+                zIndex: 2,
                 top: 6,
                 right: 6,
                 width: 24,
@@ -585,6 +686,8 @@ export function ProductPhotoPicker({
           objectUrl={cropDraft.objectUrl}
           onConfirm={onCropConfirm}
           onCancel={closeCrop}
+          stepCurrent={batchTotal - cropQueue.length}
+          stepTotal={batchTotal}
         />
       )}
     </>

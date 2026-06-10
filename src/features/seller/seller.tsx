@@ -9520,13 +9520,12 @@ export function SellerSettings() {
   const { toast, nav } = useBz();
   const user = useBazaarStore((s) => s.user);
   const { data: organization } = useSellerOrganization();
+  // Account settings (password, email, language, delete) work without KYC, so the
+  // page stays open for sellers who deferred onboarding. Only the alert matrix —
+  // which needs an active store — is hidden until the org is linked.
+  const orgLinked = organization?.linked === true;
   const { data: notifications } = useSellerNotifications();
-  const {
-    data: settings,
-    isLoading,
-    isError,
-    error,
-  } = useSellerSettings(organization?.linked === true);
+  const { data: settings, isLoading, isError, error } = useSellerSettings(orgLinked);
   const updateSettings = useUpdateSellerSettings();
   const [tab, setTab] = useState("account");
   const [notif, setNotif] = useState<boolean[][] | null>(null);
@@ -9552,18 +9551,6 @@ export function SellerSettings() {
     }
   };
 
-  if (organization && !organization.linked) {
-    return (
-      <div className="bz-seller-page">
-        <SellerHelpBar />
-        <p style={{ color: "var(--ink-600)" }}>{t("seller.settings.onboardingRequired")}</p>
-        <Button variant="primary" href={pathFromScreen("s-onboarding")}>
-          {t("seller.common.goToOnboarding")}
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
       <div className="bz-seller-page" style={{ maxWidth: "var(--container)", margin: "0 auto" }}>
@@ -9584,7 +9571,7 @@ export function SellerSettings() {
         >
           {[
             { id: "account", labelKey: "seller.settings.tabAccount" },
-            { id: "alerts", labelKey: "seller.settings.tabAlerts" },
+            ...(orgLinked ? [{ id: "alerts", labelKey: "seller.settings.tabAlerts" }] : []),
           ].map((tabDef) => {
             const active = tab === tabDef.id;
             return (

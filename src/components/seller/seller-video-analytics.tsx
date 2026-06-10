@@ -257,28 +257,12 @@ export function SellerVideoAnalyticsPanel({ analytics }: { analytics: SellerVide
       bg: "var(--tint-blue-50)",
     },
     {
-      label: "Total likes",
-      value: totals.likes.toLocaleString("en-IN"),
-      sub: "Buyer engagement",
-      icon: "heart" as const,
-      color: "var(--red)",
-      bg: "rgba(230,57,70,.08)",
-    },
-    {
       label: "Live videos",
       value: String(totals.published),
       sub: `${totals.drafts} draft`,
       icon: "video" as const,
       color: "var(--success)",
       bg: "rgba(22,163,74,.08)",
-    },
-    {
-      label: "Engagement",
-      value: `${totals.engagementRate}%`,
-      sub: "Likes ÷ views",
-      icon: "trendingUp" as const,
-      color: "var(--saffron)",
-      bg: "rgba(247,127,0,.08)",
     },
   ];
 
@@ -298,7 +282,7 @@ export function SellerVideoAnalyticsPanel({ analytics }: { analytics: SellerVide
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
           gap: 14,
           marginBottom: 14,
         }}

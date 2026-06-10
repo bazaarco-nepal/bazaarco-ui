@@ -990,11 +990,16 @@ body {
   width: 100%;
 }
 
+/*
+ * Seller "Your library" cards.
+ * Mobile-first: each card is a tight horizontal list item (thumb left, text +
+ * actions right). On wider screens the container reflows into a multi-column
+ * grid and each card stacks vertically (thumb on top, body below).
+ */
 .bz-seller-video-library-grid {
-  width: 100%;
-}
-
-.bz-seller-video-library-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
   width: 100%;
 }
 
@@ -1003,47 +1008,35 @@ body {
   border: 1.5px solid var(--line-200);
   border-radius: var(--r-lg);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   width: 100%;
   box-sizing: border-box;
-}
-
-.bz-seller-video-card--wide {
-  flex-direction: row;
-  align-items: stretch;
+  overflow: hidden;
 }
 
 .bz-seller-video-card__media {
-  padding: 12px;
+  width: 30%;
+  max-width: 104px;
   flex-shrink: 0;
-}
-
-.bz-seller-video-card--wide .bz-seller-video-card__media {
-  width: min(200px, 32vw);
-  max-width: 200px;
-  padding: 12px;
+  padding: 10px;
   box-sizing: border-box;
 }
 
 .bz-seller-video-card__body {
-  padding: 12px 14px 14px;
   flex: 1;
   min-width: 0;
+  padding: 10px 12px 10px 2px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   box-sizing: border-box;
-}
-
-.bz-seller-video-card--wide .bz-seller-video-card__body {
-  padding: 14px 16px;
 }
 
 .bz-seller-video-card__title-row {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
 }
 
 .bz-seller-video-card__title {
@@ -1066,33 +1059,37 @@ body {
   margin-top: 2px;
 }
 
-.bz-seller-video-card__tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
 .bz-seller-video-card__actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
   margin-top: auto;
   padding-top: 10px;
 }
 
 .bz-seller-video-card__actions > * {
-  flex: 1 1 7rem;
+  flex: 1 1 0;
   min-width: 0;
 }
 
-@media (max-width: 640px) {
-  .bz-seller-video-card--wide {
+@media (min-width: 700px) {
+  .bz-seller-video-library-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+  }
+
+  .bz-seller-video-card {
     flex-direction: column;
   }
 
-  .bz-seller-video-card--wide .bz-seller-video-card__media {
+  .bz-seller-video-card__media {
     width: 100%;
     max-width: none;
+    padding: 10px 10px 0;
+  }
+
+  .bz-seller-video-card__body {
+    padding: 10px 12px 12px;
   }
 }
 
@@ -1310,6 +1307,52 @@ body {
 .bz-upload-preview__meta.is-bad {
   color: #fff;
   background: var(--danger);
+}
+
+/* Prominent "record upright" callout — plain language, simple visual. */
+.bz-upload-orient {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border-radius: var(--r-md);
+  background: var(--tint-blue-50);
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  margin-bottom: 12px;
+}
+.bz-upload-orient__shapes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.bz-upload-orient__phone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+.bz-upload-orient__phone--good {
+  width: 28px;
+  height: 44px; /* tall = upright (the right way) */
+  background: var(--success);
+}
+.bz-upload-orient__phone--bad {
+  width: 44px;
+  height: 28px; /* wide = sideways (the wrong way) */
+  background: var(--ink-300);
+}
+.bz-upload-orient__title {
+  font-weight: 800;
+  font-size: 0.9375rem;
+  color: var(--blue-deep);
+  line-height: 1.2;
+}
+.bz-upload-orient__sub {
+  font-size: 0.75rem;
+  color: var(--ink-500);
+  margin-top: 3px;
+  line-height: 1.4;
 }
 
 .bz-upload-tips {

@@ -33,6 +33,13 @@ vi.mock("@/hooks/use-media-upload", () => ({
 
 vi.mock("@/hooks/use-seller", () => ({
   useSellerOrganization: () => ({ data: { sellerId: "sel_1" } }),
+  useSellerInventory: () => ({
+    data: [
+      { id: "prod-1", name: "Chunky Bracelet" },
+      { id: "prod-2", name: "Pashmina Shawl" },
+    ],
+    isLoading: false,
+  }),
 }));
 
 vi.mock("@/hooks/use-catalog", () => ({

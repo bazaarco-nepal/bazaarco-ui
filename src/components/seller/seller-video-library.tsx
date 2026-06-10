@@ -6,8 +6,7 @@ import { useEffect, useState } from "react";
 import { VideoUploadForm } from "@/components/common/video-upload-form";
 import { Button, Chip, EmptyState, Icon, Spinner } from "@/components/ui";
 import { useDeleteSellerVideo, useUpdateSellerVideo } from "@/hooks/use-media-upload";
-import { useSellerProducts } from "@/hooks/use-catalog";
-import { useSellerOrganization } from "@/hooks/use-seller";
+import { useSellerInventory } from "@/hooks/use-seller";
 import {
   SellerVideoAnalyticsPanel,
   type SellerVideoAnalytics,
@@ -45,6 +44,8 @@ function VideoThumb({
 }) {
   const [playing, setPlaying] = useState(false);
 
+  // Clips are vertical 9:16 — same as the buyer watch stage — so we frame the
+  // thumbnail at the exact ratio buyers see, with no cropping.
   return (
     <button
       type="button"
@@ -54,7 +55,6 @@ function VideoThumb({
         position: "relative",
         width: "100%",
         aspectRatio: "9 / 16",
-        maxHeight: 280,
         border: "none",
         padding: 0,
         borderRadius: "var(--r-md)",
@@ -134,10 +134,10 @@ function VideoEditModal({
   onSaved: (message: string) => void;
 }) {
   const update = useUpdateSellerVideo();
-  const { data: organization } = useSellerOrganization();
-  const { data: products, isLoading: productsLoading } = useSellerProducts(
-    organization?.sellerId ?? null,
-  );
+  // Seller's OWN inventory (auth-scoped) — the public catalog endpoint 404s
+  // until the store is verified and hides non-active listings, leaving the
+  // picker empty. See video-upload-form.tsx for the same fix.
+  const { data: products, isLoading: productsLoading } = useSellerInventory();
   const [productId, setProductId] = useState("");
   const [status, setStatus] = useState<"draft" | "published">(
     video.status === "draft" ? "draft" : "published",
@@ -237,36 +237,105 @@ function VideoEditModal({
         <label style={{ display: "block", fontSize: ".8125rem", fontWeight: 600, marginBottom: 8 }}>
           Visibility
         </label>
-        <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-          <Button
-            type="button"
-            variant={status === "draft" ? "primary" : "secondary"}
-            size="sm"
-            disabled={update.isPending}
-            onClick={() => setStatus("draft")}
-          >
-            Draft
-          </Button>
-          <Button
-            type="button"
-            variant={status === "published" ? "primary" : "secondary"}
-            size="sm"
-            disabled={update.isPending}
-            onClick={() => setStatus("published")}
-          >
-            Published
-          </Button>
+        {/* Sliding segmented switch — one control with a single active state,
+            instead of two same-shaped pills where it's unclear which is "on". */}
+        <div
+          role="radiogroup"
+          aria-label="Visibility"
+          style={{
+            position: "relative",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            background: "var(--line-100)",
+            border: "1px solid var(--line-200)",
+            borderRadius: "var(--r-full)",
+            padding: 4,
+            marginBottom: 6,
+            opacity: update.isPending ? 0.6 : 1,
+          }}
+        >
+          <span
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              top: 4,
+              bottom: 4,
+              left: status === "draft" ? 4 : "50%",
+              width: "calc(50% - 4px)",
+              background: "#fff",
+              borderRadius: "var(--r-full)",
+              boxShadow: "0 1px 3px rgba(0,0,0,.14)",
+              transition: "left var(--dur-standard) var(--ease)",
+            }}
+          />
+          {(
+            [
+              { value: "draft", label: "Draft", dot: "var(--saffron)" },
+              { value: "published", label: "Published", dot: "var(--success)" },
+            ] as const
+          ).map((opt) => {
+            const active = status === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                disabled={update.isPending}
+                onClick={() => setStatus(opt.value)}
+                style={{
+                  position: "relative",
+                  zIndex: 1,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 7,
+                  height: 36,
+                  border: "none",
+                  background: "transparent",
+                  borderRadius: "var(--r-full)",
+                  fontFamily: "var(--font-sans)",
+                  fontSize: ".875rem",
+                  fontWeight: active ? 700 : 600,
+                  color: active ? "var(--ink-900)" : "var(--ink-400)",
+                  cursor: update.isPending ? "not-allowed" : "pointer",
+                  transition: "color var(--dur-standard) var(--ease)",
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "var(--r-full)",
+                    background: active ? opt.dot : "var(--ink-300)",
+                  }}
+                />
+                {opt.label}
+              </button>
+            );
+          })}
         </div>
+        <p style={{ margin: "0 0 14px", fontSize: ".75rem", color: "var(--ink-400)" }}>
+          {status === "published"
+            ? "Live — buyers can see this video."
+            : "Draft — only you can see this video."}
+        </p>
 
         {error && (
           <p style={{ color: "var(--danger)", fontSize: ".8125rem", fontWeight: 600 }}>{error}</p>
         )}
 
-        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-          <Button variant="primary" disabled={update.isPending} onClick={() => void save()}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
+          <Button
+            variant="primary"
+            style={{ flex: 1 }}
+            disabled={update.isPending}
+            onClick={() => void save()}
+          >
             {update.isPending ? <Spinner size={18} /> : "Save changes"}
           </Button>
-          <Button variant="secondary" disabled={update.isPending} onClick={onClose}>
+          <Button variant="ghost" disabled={update.isPending} onClick={onClose}>
             Cancel
           </Button>
         </div>
@@ -277,13 +346,11 @@ function VideoEditModal({
 
 function VideoCard({
   video,
-  wide,
   onEdit,
   onDeleted,
   onToast,
 }: {
   video: SellerVideoItem;
-  wide?: boolean;
   onEdit: () => void;
   onDeleted: () => void;
   onToast: (msg: string) => void;
@@ -302,7 +369,7 @@ function VideoCard({
   };
 
   return (
-    <article className={`bz-seller-video-card${wide ? " bz-seller-video-card--wide" : ""}`}>
+    <article className="bz-seller-video-card">
       <div className="bz-seller-video-card__media">
         <VideoThumb src={video.videoUrl} thumb={video.thumb} title={video.title} />
       </div>
@@ -328,10 +395,6 @@ function VideoCard({
           <span>
             <Icon name="eye" size={12} style={{ verticalAlign: "middle", marginRight: 4 }} />
             {video.views.toLocaleString("en-IN")} views
-          </span>
-          <span>
-            <Icon name="heart" size={12} style={{ verticalAlign: "middle", marginRight: 4 }} />
-            {video.likes} likes
           </span>
         </div>
         <div className="bz-seller-video-card__actions">
@@ -444,25 +507,8 @@ export function SellerVideoLibrary({
           title="No videos yet"
           message="Add a short vertical clip to help buyers discover your products. Tap “Add video” at the top to upload your first one."
         />
-      ) : videos.length === 1 ? (
-        <div className="bz-seller-video-library-list">
-          <VideoCard
-            video={videos[0]!}
-            wide
-            onEdit={() => setEditing(videos[0]!)}
-            onDeleted={onRefetch}
-            onToast={onToast}
-          />
-        </div>
       ) : (
-        <div
-          className="bz-seller-video-library-grid"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
-            gap: 16,
-          }}
-        >
+        <div className="bz-seller-video-library-grid">
           {videos.map((v) => (
             <VideoCard
               key={v.id}

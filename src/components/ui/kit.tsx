@@ -528,6 +528,26 @@ export const ICON_PATHS = {
       <path d="M4 21V4h12l-2 4 2 4H4" />
     </>
   ),
+  building: (
+    <>
+      <line x1="3" y1="21" x2="21" y2="21" />
+      <path d="M5 21V7l8-4v18" />
+      <path d="M19 21V11l-6-3.5" />
+      <line x1="9" y1="9" x2="9" y2="9.01" />
+      <line x1="9" y1="12" x2="9" y2="12.01" />
+      <line x1="9" y1="15" x2="9" y2="15.01" />
+      <line x1="9" y1="18" x2="9" y2="18.01" />
+    </>
+  ),
+  locate: (
+    <>
+      <circle cx="12" cy="12" r="3" />
+      <line x1="12" y1="2" x2="12" y2="5" />
+      <line x1="12" y1="19" x2="12" y2="22" />
+      <line x1="2" y1="12" x2="5" y2="12" />
+      <line x1="19" y1="12" x2="22" y2="12" />
+    </>
+  ),
   refresh: (
     <>
       <polyline points="20 9 17 12 14 9" />
@@ -2405,7 +2425,7 @@ export function LandmarkAddress({ value, onChange }) {
   // address (e.g. { city } with no area/landmark) must still yield defined
   // strings, or the inputs flip from controlled to uncontrolled.
   const v = { city: "", area: "", landmark: "", lat: null, lng: null, ...(value || {}) };
-  const [mapOpen, setMapOpen] = useState(false);
+  const [mapOpen, setMapOpen] = useState(true);
   const [geoError, setGeoError] = useState(null);
   const [geoLoading, setGeoLoading] = useState(false);
   const geoWatchRef = useRef(null);
@@ -2506,43 +2526,57 @@ export function LandmarkAddress({ value, onChange }) {
       <div>
         <label
           style={{
-            fontSize: ".8125rem",
+            fontSize: ".75rem",
             fontWeight: 600,
-            color: "var(--ink-700)",
+            color: "var(--ink-600)",
             display: "block",
             marginBottom: 6,
           }}
         >
           City
         </label>
-        <select
-          value={v.city}
-          onChange={(e) => {
-            setMapOpen(false);
-            onChange({ ...v, city: e.target.value, area: "", lat: undefined, lng: undefined });
-          }}
-          style={{
-            width: "100%",
-            height: 48,
-            border: "1px solid var(--line-200)",
-            borderRadius: "var(--r-md)",
-            padding: "0 14px",
-            fontSize: ".9375rem",
-            fontFamily: "var(--font-sans)",
-            background: "#fff",
-            color: v.city ? "var(--ink-900)" : "var(--ink-400)",
-          }}
-        >
-          <option value="">Select city…</option>
-          {cities.map((c) => {
-            const deliverable = isDeliverableCity(c);
-            return (
-              <option key={c} value={c} disabled={!deliverable}>
-                {deliverable ? c : `${c} — coming soon`}
-              </option>
-            );
-          })}
-        </select>
+        <div style={{ position: "relative" }}>
+          <Icon
+            name="building"
+            size={18}
+            color="var(--ink-400)"
+            style={{
+              position: "absolute",
+              left: 13,
+              top: "50%",
+              transform: "translateY(-50%)",
+              pointerEvents: "none",
+            }}
+          />
+          <select
+            value={v.city}
+            onChange={(e) => {
+              setGeoError(null);
+              onChange({ ...v, city: e.target.value, area: "", lat: undefined, lng: undefined });
+            }}
+            style={{
+              width: "100%",
+              height: 48,
+              border: "1px solid var(--line-200)",
+              borderRadius: "var(--r-md)",
+              padding: "0 14px 0 40px",
+              fontSize: ".9375rem",
+              fontFamily: "var(--font-sans)",
+              background: "#fff",
+              color: v.city ? "var(--ink-900)" : "var(--ink-400)",
+            }}
+          >
+            <option value="">Select city…</option>
+            {cities.map((c) => {
+              const deliverable = isDeliverableCity(c);
+              return (
+                <option key={c} value={c} disabled={!deliverable}>
+                  {deliverable ? c : `${c} — coming soon`}
+                </option>
+              );
+            })}
+          </select>
+        </div>
         {v.city && !isDeliverableCity(v.city) && (
           <p
             role="alert"
@@ -2561,126 +2595,150 @@ export function LandmarkAddress({ value, onChange }) {
       <div>
         <label
           style={{
-            fontSize: ".8125rem",
+            fontSize: ".75rem",
             fontWeight: 600,
-            color: "var(--ink-700)",
+            color: "var(--ink-600)",
             display: "block",
             marginBottom: 6,
           }}
         >
           Area / Ward
         </label>
-        <input
-          list={v.city ? `bz-areas-${v.city}` : undefined}
-          value={v.area}
-          onChange={(e) => onChange({ ...v, area: e.target.value })}
-          disabled={!v.city}
-          placeholder={v.city ? "e.g. Mahalaxmi, Chabahil — or pick below" : "Select city first"}
-          style={{
-            width: "100%",
-            height: 48,
-            border: "1px solid var(--line-200)",
-            borderRadius: "var(--r-md)",
-            padding: "0 14px",
-            fontSize: ".9375rem",
-            fontFamily: "var(--font-sans)",
-            background: v.city ? "#fff" : "var(--line-100)",
-          }}
-        />
-        {v.city && (
-          <datalist id={`bz-areas-${v.city}`}>
-            {(areas[v.city] || []).map((a) => (
-              <option key={a} value={a} />
-            ))}
-          </datalist>
-        )}
+        <div style={{ position: "relative" }}>
+          <Icon
+            name="mapPin"
+            size={18}
+            color="var(--ink-400)"
+            style={{
+              position: "absolute",
+              left: 13,
+              top: "50%",
+              transform: "translateY(-50%)",
+              pointerEvents: "none",
+            }}
+          />
+          <input
+            list={v.city ? `bz-areas-${v.city}` : undefined}
+            value={v.area}
+            onChange={(e) => onChange({ ...v, area: e.target.value })}
+            disabled={!v.city}
+            placeholder={v.city ? "e.g. Mahalaxmi, Chabahil — or pick below" : "Select city first"}
+            style={{
+              width: "100%",
+              height: 48,
+              border: "1px solid var(--line-200)",
+              borderRadius: "var(--r-md)",
+              padding: "0 14px 0 40px",
+              fontSize: ".9375rem",
+              fontFamily: "var(--font-sans)",
+              background: v.city ? "#fff" : "var(--line-100)",
+            }}
+          />
+          {v.city && (
+            <datalist id={`bz-areas-${v.city}`}>
+              {(areas[v.city] || []).map((a) => (
+                <option key={a} value={a} />
+              ))}
+            </datalist>
+          )}
+        </div>
       </div>
       <div>
         <label
           style={{
-            fontSize: ".8125rem",
+            fontSize: ".75rem",
             fontWeight: 600,
-            color: "var(--ink-700)",
+            color: "var(--ink-600)",
             display: "block",
             marginBottom: 6,
           }}
         >
-          Landmark
+          Landmark <span style={{ fontWeight: 400, color: "var(--ink-400)" }}>(optional)</span>
         </label>
-        <input
-          value={v.landmark}
-          onChange={(e) => onChange({ ...v, landmark: e.target.value })}
-          placeholder='e.g. "Next to Bhatbhateni, opposite the petrol pump"'
-          style={{
-            width: "100%",
-            height: 48,
-            border: "1px solid var(--line-200)",
-            borderRadius: "var(--r-md)",
-            padding: "0 14px",
-            fontSize: ".9375rem",
-            fontFamily: "var(--font-sans)",
-            background: "#fff",
-          }}
-        />
+        <div style={{ position: "relative" }}>
+          <Icon
+            name="flag"
+            size={18}
+            color="var(--ink-400)"
+            style={{
+              position: "absolute",
+              left: 13,
+              top: "50%",
+              transform: "translateY(-50%)",
+              pointerEvents: "none",
+            }}
+          />
+          <input
+            value={v.landmark}
+            onChange={(e) => onChange({ ...v, landmark: e.target.value })}
+            placeholder='e.g. "Next to Bhatbhateni, opposite the petrol pump"'
+            style={{
+              width: "100%",
+              height: 48,
+              border: "1px solid var(--line-200)",
+              borderRadius: "var(--r-md)",
+              padding: "0 14px 0 40px",
+              fontSize: ".9375rem",
+              fontFamily: "var(--font-sans)",
+              background: "#fff",
+            }}
+          />
+        </div>
       </div>
-      <div style={{ display: "flex", gap: 10 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+        }}
+      >
         <button
           type="button"
-          disabled={!v.city}
+          onClick={useMyLocation}
+          disabled={geoLoading}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 7,
+            padding: "9px 14px",
+            background: "#fff",
+            border: "1px solid var(--blue)",
+            color: "var(--blue)",
+            borderRadius: "var(--r-md)",
+            cursor: geoLoading ? "wait" : "pointer",
+            fontWeight: 600,
+            fontSize: ".8125rem",
+            fontFamily: "var(--font-sans)",
+          }}
+        >
+          <Icon name="locate" size={16} />
+          {geoLoading ? "Locating…" : "Use my location"}
+        </button>
+        <button
+          type="button"
           onClick={() => {
             setGeoError(null);
             setMapOpen((open) => !open);
           }}
           style={{
-            flex: 1,
-            height: 48,
             display: "inline-flex",
             alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-            background: mapOpen || hasPin ? "var(--tint-blue-50)" : "#fff",
-            border: `1px solid ${mapOpen || hasPin ? "var(--blue)" : "var(--line-200)"}`,
-            color: "var(--blue)",
-            borderRadius: "var(--r-md)",
-            cursor: v.city ? "pointer" : "not-allowed",
-            fontWeight: 600,
-            fontSize: ".875rem",
-            fontFamily: "var(--font-sans)",
-            opacity: v.city ? 1 : 0.55,
-          }}
-        >
-          <Icon name="mapPin" size={18} />
-          {mapOpen ? "Hide map" : hasPin ? "Edit pin" : "Drop a pin"}
-        </button>
-        <button
-          type="button"
-          onClick={useMyLocation}
-          style={{
-            flex: 1,
-            height: 48,
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-            background: "#fff",
-            border: "1px solid var(--line-200)",
-            color: "var(--blue)",
-            borderRadius: "var(--r-md)",
+            gap: 6,
+            padding: "6px 4px",
+            background: "transparent",
+            border: "none",
+            color: "var(--ink-500)",
             cursor: "pointer",
-            fontWeight: 600,
-            fontSize: ".875rem",
+            fontWeight: 500,
+            fontSize: ".8125rem",
             fontFamily: "var(--font-sans)",
           }}
         >
-          <Icon name="mapPin" size={16} />
-          {geoLoading ? "Locating…" : "Use my location"}
+          <Icon name={mapOpen ? "eyeOff" : "eye"} size={16} />
+          {mapOpen ? "Hide map" : "Show map"}
         </button>
       </div>
-      {!v.city && (
-        <p style={{ margin: 0, fontSize: ".75rem", color: "var(--ink-400)" }}>
-          Select a city first to open the map.
-        </p>
-      )}
       {geoError && (
         <p style={{ margin: 0, fontSize: ".75rem", color: "var(--danger)" }}>{geoError}</p>
       )}
@@ -2695,14 +2753,35 @@ export function LandmarkAddress({ value, onChange }) {
           Pin saved ({v.lat.toFixed(5)}, {v.lng.toFixed(5)})
         </p>
       )}
-      {mapOpen && v.city && (
-        <MapPinPicker
-          city={v.city}
-          lat={v.lat}
-          lng={v.lng}
-          onPick={(lat, lng) => applyCoords(lat, lng)}
-        />
-      )}
+      {mapOpen &&
+        (v.city ? (
+          <MapPinPicker
+            city={v.city}
+            lat={v.lat}
+            lng={v.lng}
+            onPick={(lat, lng) => applyCoords(lat, lng)}
+          />
+        ) : (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              height: 170,
+              borderRadius: "var(--r-md)",
+              border: "1px dashed var(--line-200)",
+              background: "var(--line-100)",
+              color: "var(--ink-400)",
+              textAlign: "center",
+              padding: "0 16px",
+            }}
+          >
+            <Icon name="mapPin" size={22} color="var(--ink-400)" />
+            <span style={{ fontSize: ".8125rem" }}>Select a city to load the map.</span>
+          </div>
+        ))}
       <div
         style={{
           display: "flex",

@@ -3,8 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Icon, Spinner } from "@/components/ui";
 import { useCreateSellerVideo, useUploadVideo } from "@/hooks/use-media-upload";
-import { useSellerProducts } from "@/hooks/use-catalog";
-import { useSellerOrganization } from "@/hooks/use-seller";
+import { useSellerInventory } from "@/hooks/use-seller";
 
 const MIN_DURATION_SEC = 5;
 const MAX_DURATION_SEC = 30;
@@ -36,10 +35,10 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
   const [progress, setProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const { data: organization } = useSellerOrganization();
-  const { data: products, isLoading: productsLoading } = useSellerProducts(
-    organization?.sellerId ?? null,
-  );
+  // Use the seller's OWN inventory (auth-scoped), not the public storefront
+  // endpoint — the latter 404s until the store is KYC-verified and hides any
+  // non-active listing, so the picker came up empty for new/unverified sellers.
+  const { data: products, isLoading: productsLoading } = useSellerInventory();
 
   const uploadVideo = useUploadVideo();
   const createVideo = useCreateSellerVideo();
@@ -156,19 +155,32 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
       </header>
 
       <div className="bz-upload-form__body">
+        <div className="bz-upload-orient">
+          <div className="bz-upload-orient__shapes" aria-hidden="true">
+            <span className="bz-upload-orient__phone bz-upload-orient__phone--good">
+              <Icon name="check" size={13} color="#fff" />
+            </span>
+            <span className="bz-upload-orient__phone bz-upload-orient__phone--bad">
+              <Icon name="x" size={13} color="#fff" />
+            </span>
+          </div>
+          <div>
+            <div className="bz-upload-orient__title">Hold your phone upright</div>
+            <div className="bz-upload-orient__sub">
+              Record tall, like a TikTok or a Reel. Don&apos;t turn your phone sideways.
+            </div>
+          </div>
+        </div>
+
         <div className="bz-upload-tips">
           <div className="bz-upload-tips__head">
-            <Icon name="edit" size={16} color="var(--blue)" />
-            Edit &amp; crop before you upload
+            <Icon name="edit" size={16} color="var(--blue)" />A few quick tips
           </div>
           <ul className="bz-upload-tips__list">
             <li>
-              Video must be <strong>5–30 seconds</strong> (Photos / Gallery → Edit).
+              Keep it short — <strong>5 to 30 seconds</strong>.
             </li>
-            <li>
-              Crop to vertical <strong>9:16</strong> so it looks good in the video feed.
-            </li>
-            <li>Good lighting, stable shot, product clearly visible.</li>
+            <li>Good light, steady hands, and show the product clearly.</li>
           </ul>
         </div>
 

@@ -28,12 +28,19 @@ export function MapPinPicker({ city, lat, lng, onPick, height = 220 }: MapPinPic
   const mapRef = useRef<LeafletMap | null>(null);
   const markerRef = useRef<LeafletMarker | null>(null);
   const onPickRef = useRef(onPick);
+  // Starting position is read from refs so the map doesn't re-init on every
+  // lat/lng change — "Use my location" streams coords via watchPosition, and
+  // tearing the map down on each tick raced invalidateSize() against remove().
+  const latRef = useRef(lat);
+  const lngRef = useRef(lng);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     onPickRef.current = onPick;
-  }, [onPick]);
+    latRef.current = lat;
+    lngRef.current = lng;
+  }, [onPick, lat, lng]);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,8 +65,12 @@ export function MapPinPicker({ city, lat, lng, onPick, height = 220 }: MapPinPic
         }
 
         const center = centerForCity(city);
+        const startLat = latRef.current;
+        const startLng = lngRef.current;
         const start: [number, number] =
-          typeof lat === "number" && typeof lng === "number" ? [lat, lng] : center;
+          typeof startLat === "number" && typeof startLng === "number"
+            ? [startLat, startLng]
+            : center;
 
         map = L.map(containerRef.current, { scrollWheelZoom: true }).setView(start, 14);
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -84,11 +95,14 @@ export function MapPinPicker({ city, lat, lng, onPick, height = 220 }: MapPinPic
           emit(marker.getLatLng());
         });
 
-        if (typeof lat !== "number" || typeof lng !== "number") {
+        if (typeof startLat !== "number" || typeof startLng !== "number") {
           emit(marker.getLatLng());
         }
 
         requestAnimationFrame(() => {
+          // The map may have been removed (city change / unmount) before this
+          // frame runs; invalidateSize() on a torn-down map throws.
+          if (cancelled || mapRef.current !== map) return;
           map?.invalidateSize();
         });
         setReady(true);
@@ -107,7 +121,7 @@ export function MapPinPicker({ city, lat, lng, onPick, height = 220 }: MapPinPic
       mapRef.current = null;
       markerRef.current = null;
     };
-  }, [city, lat, lng]); // re-init when the requested starting point changes
+  }, [city]); // re-init only on city change; lat/lng updates flow through the sync effect below
 
   useEffect(() => {
     if (!mapRef.current || !markerRef.current) return;
@@ -128,6 +142,16 @@ export function MapPinPicker({ city, lat, lng, onPick, height = 220 }: MapPinPic
           border: "1px solid var(--line-200)",
           overflow: "hidden",
           background: "var(--line-100)",
+          // Trap Leaflet's panes/controls (z-index 200–1000) inside their own
+          // stacking context. Without this the container is a plain in-flow box,
+          // so those internal layers escape to the page root and paint over the
+          // fixed bottom nav (z 100) and the seller drawer + backdrop (z 90/80) —
+          // the map bleeding through the menu on mobile. position+z-index:0 keeps
+          // the whole map below that chrome; isolation backs it up where a UA
+          // ignores z-index:0 on a non-flex/grid child.
+          position: "relative",
+          zIndex: 0,
+          isolation: "isolate",
         }}
         aria-label="Map — tap to place your delivery pin"
       />

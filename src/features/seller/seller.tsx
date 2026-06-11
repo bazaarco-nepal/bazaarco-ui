@@ -4486,7 +4486,13 @@ export function SellerAddProduct({
         discountPct: null,
       };
     }
-    return buildPricing(applyDiscount, saleInput);
+    const p = buildPricing(applyDiscount, saleInput);
+    // Backend stores prices as minor units (paisa); multiply rupees → paisa here.
+    return {
+      ...p,
+      price: Math.round(p.price * 100),
+      original: p.original != null ? Math.round(p.original * 100) : null,
+    };
   };
 
   // Variants the seller actually filled, in the API's shape. Shared by create
@@ -4496,16 +4502,26 @@ export function SellerAddProduct({
       ? variants
           .filter((v) => v.name && v.price && v.stock)
           .map((v) => {
+            // All prices are entered in rupees; backend stores as paisa → multiply by 100.
             const pricing = v.onSale
-              ? buildPricing(true, variantSaleInput(v))
-              : { price: Number(v.price), original: null, discountType: null, discountPct: null };
+              ? (() => {
+                  const p = buildPricing(true, variantSaleInput(v));
+                  return {
+                    ...p,
+                    price: Math.round(p.price * 100),
+                    original: p.original != null ? Math.round(p.original * 100) : null,
+                  };
+                })()
+              : { price: Math.round(Number(v.price) * 100), original: null, discountType: null, discountPct: null };
             return {
               id: String(v.id),
               name: v.name.trim(),
               stock: Number(v.stock),
               ...pricing,
               allowBargaining: v.allowBargaining ?? false,
-              minimumPrice: v.allowBargaining && v.minimumPrice ? Number(v.minimumPrice) : null,
+              minimumPrice: v.allowBargaining && v.minimumPrice
+                ? Math.round(Number(v.minimumPrice) * 100)
+                : null,
               optionValues: v.optionValues ?? null,
               imageUrl: v.imageUrl ?? null,
             };
@@ -4544,7 +4560,7 @@ export function SellerAddProduct({
           minimumPrice: hasVariants
             ? null
             : bargainOk && bargainMinPrice
-              ? Number(bargainMinPrice)
+              ? Math.round(Number(bargainMinPrice) * 100)
               : null,
         });
         toast("Product updated");
@@ -4574,7 +4590,7 @@ export function SellerAddProduct({
         minimumPrice: hasVariants
           ? null
           : bargainOk && bargainMinPrice
-            ? Number(bargainMinPrice)
+            ? Math.round(Number(bargainMinPrice) * 100)
             : null,
       });
       toast("Product published!");
@@ -6891,16 +6907,17 @@ export function SellerInventory() {
   const savePrice = async (id: string) => {
     const it = items.find((i) => i.id === id);
     const raw = String(priceDraft[id] ?? it?.price ?? "").replace(/\D/g, "");
-    const next = parseInt(raw, 10);
-    if (!it || !Number.isFinite(next) || next <= 0) {
+    const nextRupees = parseInt(raw, 10);
+    if (!it || !Number.isFinite(nextRupees) || nextRupees <= 0) {
       toast("Enter a valid price (Rs.)");
       return;
     }
-    if (next === it.price) return;
+    if (nextRupees === it.price) return;
     setSavingId(id);
     try {
-      await updateProduct.mutateAsync({ id, price: next });
-      setItems((list) => list.map((i) => (i.id === id ? { ...i, price: next } : i)));
+      // Backend stores prices as minor units (paisa); convert rupees → paisa.
+      await updateProduct.mutateAsync({ id, price: Math.round(nextRupees * 100) });
+      setItems((list) => list.map((i) => (i.id === id ? { ...i, price: nextRupees } : i)));
       toast("Price saved");
     } catch (err) {
       toast(err instanceof Error ? err.message : "Could not update price");

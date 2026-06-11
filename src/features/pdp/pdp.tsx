@@ -137,6 +137,14 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
   const { addToCart } = useBz();
   const { sellerOf } = useCatalog();
   const createOffer = useCreateBargainOffer();
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
   // Bargaining is conducted on the chosen variant's listed (discounted) price.
   // The seller's accept-floor is private — never sent to the buyer — so the
   // starting offer is anchored off the listed price alone.
@@ -178,12 +186,12 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 500,
+        zIndex: 1000,
         background: "rgba(11,18,32,.5)",
         display: "flex",
-        alignItems: "center",
+        alignItems: isMobile ? "flex-end" : "center",
         justifyContent: "center",
-        padding: 24,
+        padding: isMobile ? 0 : 24,
       }}
       onClick={onClose}
     >
@@ -192,10 +200,14 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
         onClick={(e) => e.stopPropagation()}
         style={{
           background: "#fff",
-          borderRadius: "var(--r-xl)",
-          width: 460,
-          maxWidth: "100%",
-          padding: 28,
+          borderRadius: isMobile ? "var(--r-xl) var(--r-xl) 0 0" : "var(--r-xl)",
+          width: isMobile ? "100%" : 460,
+          maxWidth: isMobile ? "100%" : "calc(100% - 48px)",
+          maxHeight: "90vh",
+          overflowY: "auto",
+          padding: isMobile
+            ? "24px 20px calc(24px + env(safe-area-inset-bottom))"
+            : 28,
           position: "relative",
         }}
       >

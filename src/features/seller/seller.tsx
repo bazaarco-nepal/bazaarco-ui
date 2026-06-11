@@ -7727,42 +7727,58 @@ export function SellerInventory() {
                             >
                               Price (Rs.)
                             </div>
-                            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                              <input
-                                type="text"
-                                inputMode="numeric"
-                                value={priceDraft[it.id] ?? String(it.price)}
-                                onChange={(e) =>
-                                  setPriceDraft((d) => ({
-                                    ...d,
-                                    [it.id]: e.target.value.replace(/\D/g, ""),
-                                  }))
-                                }
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") void savePrice(it.id);
-                                }}
-                                disabled={savingId === it.id}
-                                className="tnum"
+                            {it.hasVariants ? (
+                              <div
                                 style={{
-                                  flex: "1 1 140px",
-                                  minWidth: 120,
-                                  height: 48,
-                                  padding: "0 12px",
-                                  border: "1.5px solid var(--line-200)",
-                                  borderRadius: "var(--r-md)",
-                                  fontSize: "1rem",
-                                  fontWeight: 700,
-                                  outline: "none",
+                                  fontSize: ".8125rem",
+                                  color: "var(--ink-400)",
+                                  padding: "10px 0",
                                 }}
-                              />
-                              <Button
-                                variant="primary"
-                                disabled={savingId === it.id}
-                                onClick={() => void savePrice(it.id)}
                               >
-                                Save price
-                              </Button>
-                            </div>
+                                Price is set per variant — use{" "}
+                                <span style={{ fontWeight: 700, color: "var(--blue-deep)" }}>
+                                  Edit
+                                </span>{" "}
+                                below to update variant prices.
+                              </div>
+                            ) : (
+                              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={priceDraft[it.id] ?? String(it.price)}
+                                  onChange={(e) =>
+                                    setPriceDraft((d) => ({
+                                      ...d,
+                                      [it.id]: e.target.value.replace(/\D/g, ""),
+                                    }))
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") void savePrice(it.id);
+                                  }}
+                                  disabled={savingId === it.id}
+                                  className="tnum"
+                                  style={{
+                                    flex: "1 1 140px",
+                                    minWidth: 120,
+                                    height: 48,
+                                    padding: "0 12px",
+                                    border: "1.5px solid var(--line-200)",
+                                    borderRadius: "var(--r-md)",
+                                    fontSize: "1rem",
+                                    fontWeight: 700,
+                                    outline: "none",
+                                  }}
+                                />
+                                <Button
+                                  variant="primary"
+                                  disabled={savingId === it.id}
+                                  onClick={() => void savePrice(it.id)}
+                                >
+                                  Save price
+                                </Button>
+                              </div>
+                            )}
                           </div>
                           <div
                             style={{

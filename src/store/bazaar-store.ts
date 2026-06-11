@@ -28,6 +28,7 @@ export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
   screenOverride: null,
   orderTotal: 0,
   lastOrderId: null,
+  sellerReuploadIntent: false,
   activeProduct: null,
   deliveryLocation: DEFAULT_DELIVERY,
   deliveryHydrated: false,
@@ -79,6 +80,7 @@ export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
   setScreenOverride: (screenOverride) => set({ screenOverride }),
   setOrderTotal: (orderTotal) => set({ orderTotal }),
   setLastOrderId: (lastOrderId) => set({ lastOrderId }),
+  setSellerReuploadIntent: (sellerReuploadIntent) => set({ sellerReuploadIntent }),
   setActiveProduct: (activeProduct) => set({ activeProduct }),
   setDeliveryTier: (deliveryTier) => set({ deliveryTier }),
   hydrateLocale: () => {

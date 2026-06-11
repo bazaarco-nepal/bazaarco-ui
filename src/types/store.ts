@@ -21,6 +21,9 @@ export interface BazaarStoreState {
   screenOverride: string | null;
   orderTotal: number;
   lastOrderId: string | null;
+  /** Set when the seller taps "Re-upload document" on the KYC page — lets the
+   *  onboarding flow restart even while verification is pending. */
+  sellerReuploadIntent: boolean;
   activeProduct: Product | null;
   deliveryLocation: DeliveryLocation;
   deliveryHydrated: boolean;
@@ -46,6 +49,7 @@ export interface BazaarStoreState {
   setScreenOverride: (screen: string | null) => void;
   setOrderTotal: (total: number) => void;
   setLastOrderId: (id: string | null) => void;
+  setSellerReuploadIntent: (intent: boolean) => void;
   setActiveProduct: (product: Product | null) => void;
   hydrateDelivery: () => void;
   setDeliveryLocation: (location: DeliveryLocation) => void;

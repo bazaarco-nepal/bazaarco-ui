@@ -618,13 +618,26 @@ export function SellerOnboarding() {
   const { t } = useTranslation();
   const { nav, toast } = useBz();
   const user = useBazaarStore((s) => s.user);
+  const reuploadIntent = useBazaarStore((s) => s.sellerReuploadIntent);
+  const setReuploadIntent = useBazaarStore((s) => s.setSellerReuploadIntent);
   const { data: organization } = useSellerOrganization();
   const verification = organization?.verification;
   const savedStatus = verification?.status ?? "none";
   const setupOrganization = useSetupSellerOrganization();
   const submitVerification = useSubmitSellerVerification();
+  // Sellers who already have a store (the add-another-store flow) entered the
+  // store name and location at creation time. Pull the saved storefront so we
+  // can pre-fill those fields here instead of asking again. Gated on `linked`
+  // so a brand-new seller — who has no store yet — never fires this request.
+  const { data: existingStorefront } = useSellerStorefront({
+    enabled: !!organization?.linked,
+  });
+  const seededFromStore = useRef(false);
   const docInputRef = useRef<HTMLInputElement | null>(null);
   const [stage, setStage] = useState("hero"); // hero | docPick | docUpload | review | done
+  // Set when the seller chooses to re-upload from the "done" screen — lets the
+  // upload flow run again even though the server now reports a pending status.
+  const [forceReupload, setForceReupload] = useState(false);
   const [docType, setDocType] = useState<"pan" | "nid" | null>(null);
   const [docFile, setDocFile] = useState<File | null>(null);
   const [docPreview, setDocPreview] = useState<string | null>(null);
@@ -637,6 +650,42 @@ export function SellerOnboarding() {
   } | null>(null);
   const [shopName, setShopName] = useState("");
   const [storeAddress, setStoreAddress] = useState<StoreAddress>(emptyStoreAddress);
+
+  // Seed the store name and location from the already-created store so the
+  // seller isn't asked for the same address twice. Runs once, and the
+  // functional updates leave anything the seller has already typed untouched.
+  useEffect(() => {
+    if (seededFromStore.current || !existingStorefront) return;
+    const savedName = existingStorefront.shopName?.trim() ?? "";
+    const savedAddress = existingStorefront.storeAddress ?? null;
+    if (!savedName && !savedAddress?.city) return;
+    seededFromStore.current = true;
+    if (savedName) setShopName((cur) => cur || savedName);
+    if (savedAddress?.city) {
+      setStoreAddress((cur) =>
+        cur.city
+          ? cur
+          : {
+              city: savedAddress.city,
+              area: savedAddress.area ?? "",
+              landmark: savedAddress.landmark ?? "",
+              lat: savedAddress.lat ?? null,
+              lng: savedAddress.lng ?? null,
+            },
+      );
+    }
+  }, [existingStorefront]);
+
+  // The seller arrived from the KYC page's "Re-upload document" button. Drop them
+  // straight into the document picker and let the flow run even while a previous
+  // submission is still pending. We consume the one-shot flag so a later visit to
+  // onboarding shows the normal status-aware screens again.
+  useEffect(() => {
+    if (!reuploadIntent) return;
+    setForceReupload(true);
+    setStage("docPick");
+    setReuploadIntent(false);
+  }, [reuploadIntent, setReuploadIntent]);
 
   const finishSetup = async () => {
     const name = (scanned?.shop || shopName || "").trim();
@@ -658,6 +707,16 @@ export function SellerOnboarding() {
       toast("Enter your store location");
       return;
     }
+    const docId = (scanned?.docId || "").trim();
+    if (docId.length < 1) {
+      toast(`Enter your ${scanned?.docLabel ?? "document"} number`);
+      return;
+    }
+    const docAddress = (scanned?.address || "").trim();
+    if (docAddress.length < 1) {
+      toast("Enter the address on your document");
+      return;
+    }
     try {
       await setupOrganization.mutateAsync({
         shopName: name,
@@ -672,9 +731,9 @@ export function SellerOnboarding() {
       await submitVerification.mutateAsync({
         file: docFile,
         docType,
-        docIdNumber: scanned?.docId?.trim() || undefined,
+        docIdNumber: docId,
         ownerName: owner,
-        address: scanned?.address?.trim() || undefined,
+        address: docAddress,
       });
       clearDeferredSellerOnboarding();
       setStage("done");
@@ -749,7 +808,7 @@ export function SellerOnboarding() {
     );
   }
 
-  if (savedStatus === "pending" && stage !== "done") {
+  if (savedStatus === "pending" && stage !== "done" && !forceReupload && !reuploadIntent) {
     const submittedDoc = verification?.docType === "pan" ? "PAN" : "NID";
     return (
       <div
@@ -910,7 +969,7 @@ export function SellerOnboarding() {
         {stage === "docPick" && (
           <div>
             <button
-              onClick={() => setStage("hero")}
+              onClick={() => (forceReupload ? nav("s-verification") : setStage("hero"))}
               style={{
                 background: "none",
                 border: "none",
@@ -989,28 +1048,6 @@ export function SellerOnboarding() {
                 <Icon name="chevronRight" size={22} color="var(--ink-400)" />
               </button>
             ))}
-
-            <div
-              style={{
-                background: "var(--tint-blue-50)",
-                borderRadius: "var(--r-md)",
-                padding: 12,
-                fontSize: ".8125rem",
-                color: "var(--blue-deep)",
-                display: "flex",
-                gap: 8,
-                marginTop: 6,
-              }}
-            >
-              <Icon name="badgeCheck" size={16} color="var(--blue)" />
-              <span>
-                No document? Call{" "}
-                <a href="tel:16600121234" style={{ color: "var(--blue)", fontWeight: 700 }}>
-                  16600-12-12-34
-                </a>{" "}
-                — we visit you.
-              </span>
-            </div>
           </div>
         )}
 
@@ -1192,39 +1229,76 @@ export function SellerOnboarding() {
               </label>
               <LandmarkAddress value={storeAddress} onChange={setStoreAddress} />
             </div>
-            {(
-              [
-                [`${scanned.docLabel} no.`, "docId"],
-                [t("seller.kycAddress"), "address"],
-              ] as [string, "name" | "shop" | "docLabel" | "docId" | "address"][]
-            ).map(([label, key]) => (
-              <div key={key} style={{ marginBottom: 10 }}>
-                <label
-                  style={{
-                    fontSize: ".75rem",
-                    color: "var(--ink-400)",
-                    fontWeight: 700,
-                    display: "block",
-                    marginBottom: 6,
-                  }}
-                >
-                  {label}
-                </label>
-                <input
-                  value={scanned[key] ?? ""}
-                  onChange={(e) => setScanned((s) => (s ? { ...s, [key]: e.target.value } : s))}
-                  style={{
-                    width: "100%",
-                    height: 44,
-                    padding: "0 12px",
-                    border: "1.5px solid var(--line-200)",
-                    borderRadius: "var(--r-md)",
-                    fontSize: ".9375rem",
-                    fontFamily: "var(--font-sans)",
-                  }}
-                />
-              </div>
-            ))}
+            <div
+              style={{
+                background: "#fff",
+                border: "1.5px solid var(--line-200)",
+                borderRadius: "var(--r-md)",
+                padding: "12px 14px",
+                marginBottom: 10,
+              }}
+            >
+              <label
+                style={{
+                  fontSize: ".75rem",
+                  color: "var(--ink-400)",
+                  fontWeight: 700,
+                  display: "block",
+                  marginBottom: 8,
+                }}
+              >
+                {scanned.docLabel} no. (required)
+              </label>
+              <input
+                value={scanned.docId ?? ""}
+                onChange={(e) => setScanned((s) => (s ? { ...s, docId: e.target.value } : s))}
+                placeholder={`${scanned.docLabel} number as on your document`}
+                style={{
+                  width: "100%",
+                  height: 44,
+                  padding: "0 12px",
+                  border: "1.5px solid var(--line-200)",
+                  borderRadius: "var(--r-md)",
+                  fontSize: ".9375rem",
+                  fontFamily: "var(--font-sans)",
+                }}
+              />
+            </div>
+            <div
+              style={{
+                background: "#fff",
+                border: "1.5px solid var(--line-200)",
+                borderRadius: "var(--r-md)",
+                padding: "12px 14px",
+                marginBottom: 10,
+              }}
+            >
+              <label
+                style={{
+                  fontSize: ".75rem",
+                  color: "var(--ink-400)",
+                  fontWeight: 700,
+                  display: "block",
+                  marginBottom: 8,
+                }}
+              >
+                {t("seller.kycAddress")} (required)
+              </label>
+              <input
+                value={scanned.address ?? ""}
+                onChange={(e) => setScanned((s) => (s ? { ...s, address: e.target.value } : s))}
+                placeholder="Address exactly as printed on your document"
+                style={{
+                  width: "100%",
+                  height: 44,
+                  padding: "0 12px",
+                  border: "1.5px solid var(--line-200)",
+                  borderRadius: "var(--r-md)",
+                  fontSize: ".9375rem",
+                  fontFamily: "var(--font-sans)",
+                }}
+              />
+            </div>
             <div style={{ marginTop: 18 }}>
               <Button
                 variant="primary"
@@ -1285,7 +1359,19 @@ export function SellerOnboarding() {
               <Button variant="primary" size="lg" full href={pathFromScreen("s-dashboard")}>
                 Open dashboard
               </Button>
-              <Button variant="ghost" full href={pathFromScreen("s-onboarding")}>
+              <Button
+                variant="ghost"
+                full
+                onClick={() => {
+                  if (docPreview) URL.revokeObjectURL(docPreview);
+                  setDocFile(null);
+                  setDocPreview(null);
+                  setScanned(null);
+                  setDocType(null);
+                  setForceReupload(true);
+                  setStage("docPick");
+                }}
+              >
                 Re-upload document
               </Button>
             </div>
@@ -9775,11 +9861,7 @@ export function SellerStorefront() {
                 {t("seller.storeAddressHint")}
               </p>
             </div>
-            <LandmarkAddress
-              value={storeAddress}
-              onChange={setStoreAddress}
-              showRiderNote={false}
-            />
+            <LandmarkAddress value={storeAddress} onChange={setStoreAddress} />
           </div>
         </div>
       </div>
@@ -9953,9 +10035,18 @@ export const NOTIF_CHANNELS = [
 export function SellerVerificationTimeline() {
   const { t } = useTranslation();
   const { nav } = useBz();
+  const setReuploadIntent = useBazaarStore((s) => s.setSellerReuploadIntent);
   const { data: organization, isLoading, isError, error } = useSellerOrganization();
   const verification = organization?.verification;
   const status = verification?.status ?? "none";
+
+  // Re-upload sends the seller back through the document + details flow and on to
+  // a fresh admin review. The intent flag lets onboarding restart even while a
+  // submission is still pending (otherwise it just shows the "in review" screen).
+  const startReupload = () => {
+    setReuploadIntent(true);
+    nav("s-onboarding");
+  };
 
   const formatWhen = (iso: string) => {
     if (!iso) return null;
@@ -10039,7 +10130,7 @@ export function SellerVerificationTimeline() {
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
-      <div className="bz-seller-page" style={{ maxWidth: "var(--container)", margin: "0 auto" }}>
+      <div className="bz-seller-page">
         <SellerHelpBar />
         {/* Full-width status page — the timeline and summary span the whole
            seller content area rather than sitting in a narrow column. */}
@@ -10259,11 +10350,37 @@ export function SellerVerificationTimeline() {
 
           {/* Action — finish, re-submit, or get started depending on status. The
              buttons size to their label (full-width only on mobile, see .bz-kyc-actions). */}
-          {(status === "none" || status === "rejected") && (
+          {status === "none" && (
             <div className="bz-kyc-actions">
               <Button variant="primary" size="lg" onClick={() => nav("s-onboarding")}>
-                {status === "rejected" ? "Re-upload document" : "Start verification"}
+                Start verification
               </Button>
+            </div>
+          )}
+          {status === "rejected" && (
+            <div className="bz-kyc-actions">
+              <Button variant="primary" size="lg" onClick={startReupload}>
+                Re-upload document
+              </Button>
+            </div>
+          )}
+          {/* Pending sellers can still fix a wrong upload — replacing the document
+             sends a fresh submission back to admin review. Lower emphasis, since
+             most pending sellers just need to wait. */}
+          {status === "pending" && (
+            <div className="bz-kyc-actions" style={{ flexWrap: "wrap" }}>
+              <Button variant="secondary" size="lg" onClick={startReupload}>
+                Re-upload document
+              </Button>
+              <span
+                style={{
+                  fontSize: ".8125rem",
+                  color: "var(--ink-500)",
+                  alignSelf: "center",
+                }}
+              >
+                Uploaded the wrong document? Re-upload to replace your pending submission.
+              </span>
             </div>
           )}
           {status === "approved" && (
@@ -10320,7 +10437,7 @@ export function SellerSettings() {
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
-      <div className="bz-seller-page" style={{ maxWidth: "var(--container)", margin: "0 auto" }}>
+      <div className="bz-seller-page">
         <SellerHelpBar />
         <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
           {t("seller.settings.title")}
@@ -10588,31 +10705,37 @@ export function SellerSettings() {
         )}
 
         {tab === "account" && (
-          <div
-            style={{
-              background: "#fff",
-              border: "1.5px solid var(--danger)",
-              borderRadius: "var(--r-lg)",
-              padding: 16,
-              marginTop: 18,
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              flexWrap: "wrap",
-            }}
-          >
-            <Icon name="trash" size={22} color="var(--danger)" />
-            <div style={{ flex: 1, minWidth: 180 }}>
-              <div style={{ fontWeight: 800, color: "var(--danger)" }}>
-                {t("seller.settings.deleteAccountTitle")}
-              </div>
-              <div style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}>
-                {t("seller.settings.deleteAccountSub")}
-              </div>
-            </div>
-            <Button variant="danger" onClick={() => setConfirmDelete(true)}>
+          <div style={{ display: "flex", justifyContent: "center", marginTop: 18 }}>
+            <button
+              onClick={() => setConfirmDelete(true)}
+              style={{
+                alignSelf: "center",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+                background: "none",
+                border: "none",
+                padding: "4px 2px",
+                marginTop: 14,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                fontWeight: 500,
+                fontSize: ".75rem",
+                color: "var(--ink-400)",
+                opacity: 0.55,
+                transition: "opacity .15s, color .15s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = "0.85";
+                e.currentTarget.style.color = "var(--danger)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = "0.55";
+                e.currentTarget.style.color = "var(--ink-400)";
+              }}
+            >
               {t("seller.common.deleteAccount")}
-            </Button>
+            </button>
           </div>
         )}
 

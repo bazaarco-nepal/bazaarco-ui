@@ -1241,12 +1241,12 @@ export function Profile() {
             )}
             <div className="bz-delete-actions">
               <Button
-                variant="secondary"
+                variant="primary"
                 full
                 disabled={deleteMutation.isPending || otpMutation.isPending}
                 onClick={closeDeleteModal}
               >
-                Keep account
+                Cancel
               </Button>
               {deleteStep === "request" ? (
                 <Button
@@ -1256,7 +1256,7 @@ export function Profile() {
                   loading={otpMutation.isPending}
                   onClick={handleRequestDeleteOtp}
                 >
-                  Send verification code
+                  Proceed
                 </Button>
               ) : (
                 <Button

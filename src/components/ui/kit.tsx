@@ -2444,7 +2444,7 @@ export function BottomNav({
 }
 
 /* ---------- Landmark address picker ---------- */
-export function LandmarkAddress({ value, onChange }) {
+export function LandmarkAddress({ value, onChange, showRiderNote = true }) {
   // Normalize per-field, not just when `value` is missing entirely: a partial
   // address (e.g. { city } with no area/landmark) must still yield defined
   // strings, or the inputs flip from controlled to uncontrolled.
@@ -2806,20 +2806,22 @@ export function LandmarkAddress({ value, onChange }) {
             <span style={{ fontSize: ".8125rem" }}>Select a city to load the map.</span>
           </div>
         ))}
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          background: "var(--tint-blue-50)",
-          borderRadius: "var(--r-md)",
-          padding: "10px 12px",
-          fontSize: ".8125rem",
-          color: "var(--blue-deep)",
-        }}
-      >
-        <Icon name="shieldCheck" size={18} color="var(--blue-deep)" style={{ flexShrink: 0 }} />
-        <span>Don't worry — our rider will call before arriving to find your exact gate.</span>
-      </div>
+      {showRiderNote && (
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            background: "var(--tint-blue-50)",
+            borderRadius: "var(--r-md)",
+            padding: "10px 12px",
+            fontSize: ".8125rem",
+            color: "var(--blue-deep)",
+          }}
+        >
+          <Icon name="shieldCheck" size={18} color="var(--blue-deep)" style={{ flexShrink: 0 }} />
+          <span>Don't worry — our rider will call before arriving to find your exact gate.</span>
+        </div>
+      )}
     </div>
   );
 }

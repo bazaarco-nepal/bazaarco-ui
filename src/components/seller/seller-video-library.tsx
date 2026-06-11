@@ -453,14 +453,19 @@ export function SellerVideoLibrary({
           justifyContent: "space-between",
           alignItems: "center",
           marginBottom: 8,
-          flexWrap: "wrap",
           gap: 10,
         }}
       >
         <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
           Videos
         </h1>
-        <Button variant="primary" icon="plus" onClick={onToggleUpload}>
+        <Button
+          variant="primary"
+          size="sm"
+          icon="plus"
+          onClick={onToggleUpload}
+          style={{ flexShrink: 0 }}
+        >
           Add video
         </Button>
       </div>

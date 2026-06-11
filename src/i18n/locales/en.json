@@ -56,7 +56,8 @@
     "back": "Back",
     "clear": "Clear",
     "home": "Home",
-    "ok": "OK"
+    "ok": "OK",
+    "comingSoon": "Soon"
   },
   "auth": {
     "pleaseSignIn": "Please sign in",
@@ -370,6 +371,7 @@
       "title": "My products",
       "subtitle": "Manage your catalogue — update stock, prices, and details.",
       "addProduct": "Add product",
+      "addShort": "Add",
       "editProduct": "Edit product",
       "addAProduct": "Add a product",
       "filterAll": "All",

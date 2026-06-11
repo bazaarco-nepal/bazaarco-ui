@@ -1246,6 +1246,31 @@ body {
   box-sizing: border-box;
 }
 
+/* KYC verification — a status/confirmation page that spans the full width of the
+   seller content area on every breakpoint. */
+.bz-kyc {
+  width: 100%;
+}
+.bz-kyc-actions {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+/* Mobile: buttons stack and fill the width (the correct mobile pattern). */
+.bz-kyc-actions > button,
+.bz-kyc-actions > a {
+  width: 100% !important;
+}
+@media (min-width: 721px) {
+  /* Desktop: buttons size to their label instead of stretching edge to edge. */
+  .bz-kyc-actions > button,
+  .bz-kyc-actions > a {
+    width: auto !important;
+    min-width: 200px;
+  }
+}
+
 .bz-seller-analytics-layout {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));

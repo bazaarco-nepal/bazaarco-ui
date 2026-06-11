@@ -4512,16 +4512,22 @@ export function SellerAddProduct({
                     original: p.original != null ? Math.round(p.original * 100) : null,
                   };
                 })()
-              : { price: Math.round(Number(v.price) * 100), original: null, discountType: null, discountPct: null };
+              : {
+                  price: Math.round(Number(v.price) * 100),
+                  original: null,
+                  discountType: null,
+                  discountPct: null,
+                };
             return {
               id: String(v.id),
               name: v.name.trim(),
               stock: Number(v.stock),
               ...pricing,
               allowBargaining: v.allowBargaining ?? false,
-              minimumPrice: v.allowBargaining && v.minimumPrice
-                ? Math.round(Number(v.minimumPrice) * 100)
-                : null,
+              minimumPrice:
+                v.allowBargaining && v.minimumPrice
+                  ? Math.round(Number(v.minimumPrice) * 100)
+                  : null,
               optionValues: v.optionValues ?? null,
               imageUrl: v.imageUrl ?? null,
             };
@@ -6755,6 +6761,9 @@ export function SellerInventory() {
   const [status, setStatus] = useState("all"); // all | active | low | oos
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("added");
+  // Keep the add-product action compact on phones so it stays inline with the
+  // title instead of wrapping into an orphaned button above the search bar.
+  const isMobile = useIsNarrow(768);
 
   // Effective (draft-aware) stock readers — what the seller currently sees.
   const effStock = useCallback(
@@ -6992,11 +7001,10 @@ export function SellerInventory() {
               justifyContent: "space-between",
               alignItems: "center",
               gap: 12,
-              flexWrap: "wrap",
               marginBottom: 14,
             }}
           >
-            <div>
+            <div style={{ minWidth: 0 }}>
               <h1
                 style={{
                   margin: 0,
@@ -7011,8 +7019,14 @@ export function SellerInventory() {
                 {t("seller.products.subtitle")}
               </p>
             </div>
-            <Button variant="primary" icon="plus" href={pathFromScreen("s-add")}>
-              {t("seller.products.addProduct")}
+            <Button
+              variant="primary"
+              size="sm"
+              icon="plus"
+              href={pathFromScreen("s-add")}
+              style={{ flexShrink: 0 }}
+            >
+              {isMobile ? t("seller.products.addShort") : t("seller.products.addProduct")}
             </Button>
           </div>
 
@@ -8055,7 +8069,9 @@ export function SellerLedger() {
 }
 
 /* ---------- 4.7 Customer Chat ---------- */
-function useChatMobile(bp = 720) {
+// Tracks whether the viewport is at/below a breakpoint. Generic — used by the
+// chat split-pane and the storefront's column layout.
+function useIsNarrow(bp = 720) {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia(`(max-width:${bp}px)`);
@@ -8070,7 +8086,7 @@ function useChatMobile(bp = 720) {
 export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
   const { t } = useTranslation();
   const { toast } = useBz();
-  const isMobile = useChatMobile();
+  const isMobile = useIsNarrow();
   const { data: inbox, isLoading, isError, error } = useChatInbox();
   const { invalidateInbox, invalidateMessages } = useInvalidateChat();
   const chatThreads = useMemo(() => inbox?.threads ?? [], [inbox?.threads]);
@@ -9146,6 +9162,14 @@ export function SellerReviews() {
 }
 
 /* ---------- 4.11 Storefront builder ---------- */
+const fieldLabelStyle: React.CSSProperties = {
+  display: "block",
+  fontSize: ".8125rem",
+  fontWeight: 700,
+  color: "var(--ink-600)",
+  marginBottom: 8,
+};
+
 export function SellerStorefront() {
   const { t } = useTranslation();
   const { toast } = useBz();
@@ -9184,6 +9208,39 @@ export function SellerStorefront() {
     uploadLogo.isPending ||
     removeLogo.isPending ||
     uploadBanner.isPending;
+  // Below this width the two form columns stack; above it, store info takes one
+  // column and the wider address + map column takes two.
+  const narrow = useIsNarrow(860);
+  // At/below the bottom-nav breakpoint we move Publish into a sticky save bar
+  // pinned above the nav; above it the inline header button is the right home.
+  const isMobile = useIsNarrow(768);
+
+  // "Unsaved changes" tracks only the fields Publish actually saves: store name,
+  // location, and about. Logo and banner upload on their own and are intentionally
+  // excluded, so swapping them never marks the storefront as dirty.
+  const isDirty = useMemo(() => {
+    if (!storefront) return false;
+    const savedAddress =
+      storefront.storeAddress ??
+      ({
+        city: storefront.city ?? "",
+        area: "",
+        landmark: "",
+        lat: null,
+        lng: null,
+      } as StoreAddress);
+    const addressChanged =
+      (storeAddress.city ?? "") !== (savedAddress.city ?? "") ||
+      (storeAddress.area ?? "") !== (savedAddress.area ?? "") ||
+      (storeAddress.landmark ?? "") !== (savedAddress.landmark ?? "") ||
+      (storeAddress.lat ?? null) !== (savedAddress.lat ?? null) ||
+      (storeAddress.lng ?? null) !== (savedAddress.lng ?? null);
+    return (
+      shopName !== (storefront.shopName ?? "") ||
+      about !== (storefront.about ?? "") ||
+      addressChanged
+    );
+  }, [storefront, shopName, about, storeAddress]);
 
   const handleRemoveLogo = async () => {
     try {
@@ -9392,7 +9449,8 @@ export function SellerStorefront() {
         style={{
           maxWidth: "var(--container)",
           margin: "0 auto",
-          padding: "20px clamp(14px, 4vw, 28px) 100px",
+          // Reserve room for the sticky save bar so it never covers the last card.
+          padding: `20px clamp(14px, 4vw, 28px) ${isMobile && isDirty ? 172 : 100}px`,
         }}
       >
         <SellerHelpBar />
@@ -9421,9 +9479,11 @@ export function SellerStorefront() {
               Customize how buyers see your shop.
             </p>
           </div>
-          <Button variant="primary" disabled={busy} onClick={() => void publish()}>
-            {updateStorefront.isPending ? "Publishing…" : "Publish"}
-          </Button>
+          {!isMobile && (
+            <Button variant="primary" disabled={busy || !isDirty} onClick={() => void publish()}>
+              {updateStorefront.isPending ? "Publishing…" : "Publish changes"}
+            </Button>
+          )}
         </div>
 
         <input
@@ -9627,33 +9687,34 @@ export function SellerStorefront() {
           </div>
         </div>
 
-        {/* Edit fields */}
+        {/* Edit fields — store info gets one column, address + map gets two */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+            gridTemplateColumns: narrow ? "1fr" : "minmax(0, 1fr) minmax(0, 2fr)",
             gap: 16,
+            alignItems: "start",
           }}
         >
+          {/* Store info: identity + description live together */}
           <div
             style={{
               background: "#fff",
               border: "1.5px solid var(--line-200)",
               borderRadius: "var(--r-lg)",
-              padding: 20,
+              padding: "clamp(18px, 2.4vw, 24px)",
             }}
           >
-            <label
-              style={{
-                display: "block",
-                fontSize: ".8125rem",
-                fontWeight: 700,
-                color: "var(--ink-600)",
-                marginBottom: 8,
-              }}
-            >
-              Store name
-            </label>
+            <div style={{ marginBottom: 18 }}>
+              <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 800, color: "var(--ink-900)" }}>
+                Store info
+              </h2>
+              <p style={{ margin: "2px 0 0", fontSize: ".75rem", color: "var(--ink-500)" }}>
+                How buyers recognise and trust your shop.
+              </p>
+            </div>
+
+            <label style={fieldLabelStyle}>Store name</label>
             <input
               value={shopName}
               onChange={(e) => setShopName(e.target.value)}
@@ -9673,62 +9734,101 @@ export function SellerStorefront() {
             <p style={{ margin: "8px 0 0", fontSize: ".75rem", color: "var(--ink-400)" }}>
               Visible to buyers on your store page and product listings.
             </p>
-          </div>
 
-          <div
-            style={{
-              background: "#fff",
-              border: "1.5px solid var(--line-200)",
-              borderRadius: "var(--r-lg)",
-              padding: 20,
-            }}
-          >
-            <label
-              style={{
-                display: "block",
-                fontSize: ".8125rem",
-                fontWeight: 700,
-                color: "var(--ink-600)",
-                marginBottom: 8,
-              }}
-            >
-              {t("seller.storeAddress")}
-            </label>
-            <p style={{ margin: "0 0 10px", fontSize: ".75rem", color: "var(--ink-500)" }}>
-              {t("seller.storeAddressHint")}
-            </p>
-            <LandmarkAddress value={storeAddress} onChange={setStoreAddress} />
-            <label
-              style={{
-                display: "block",
-                fontSize: ".8125rem",
-                fontWeight: 700,
-                color: "var(--ink-600)",
-                marginBottom: 8,
-                marginTop: 18,
-              }}
-            >
-              About your store
-            </label>
+            <label style={{ ...fieldLabelStyle, marginTop: 20 }}>About your store</label>
             <textarea
               value={about}
               onChange={(e) => setAbout(e.target.value)}
-              placeholder="Tell buyers your story..."
+              placeholder="What do you sell, and why should buyers trust you? e.g. “Handwoven pashmina from a family workshop in Bhaktapur since 1998 — genuine, fairly priced, free delivery inside the valley.”"
               style={{
                 width: "100%",
-                minHeight: 100,
+                minHeight: 150,
                 padding: 12,
                 border: "1.5px solid var(--line-200)",
                 borderRadius: "var(--r-md)",
                 fontFamily: "var(--font-sans)",
                 fontSize: ".875rem",
+                lineHeight: 1.5,
                 outline: "none",
                 resize: "vertical",
               }}
             />
+            <p style={{ margin: "8px 0 0", fontSize: ".75rem", color: "var(--ink-400)" }}>
+              A short, honest intro converts browsers into buyers.
+            </p>
+          </div>
+
+          {/* Store location: wider column gives the map real room to work */}
+          <div
+            style={{
+              background: "#fff",
+              border: "1.5px solid var(--line-200)",
+              borderRadius: "var(--r-lg)",
+              padding: "clamp(18px, 2.4vw, 24px)",
+            }}
+          >
+            <div style={{ marginBottom: 14 }}>
+              <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 800, color: "var(--ink-900)" }}>
+                {t("seller.storeAddress")}
+              </h2>
+              <p style={{ margin: "2px 0 0", fontSize: ".75rem", color: "var(--ink-500)" }}>
+                {t("seller.storeAddressHint")}
+              </p>
+            </div>
+            <LandmarkAddress
+              value={storeAddress}
+              onChange={setStoreAddress}
+              showRiderNote={false}
+            />
           </div>
         </div>
       </div>
+
+      {/* Mobile: sticky save bar above the bottom nav, only when there's something to save */}
+      {isMobile && isDirty && (
+        <div
+          style={{
+            position: "fixed",
+            left: 0,
+            right: 0,
+            bottom: "calc(52px + env(safe-area-inset-bottom, 0px))",
+            zIndex: 90,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            padding: "10px clamp(14px, 4vw, 20px)",
+            background: "#fff",
+            borderTop: "1px solid var(--line-200)",
+            boxShadow: "0 -4px 16px rgba(0,0,0,.06)",
+          }}
+        >
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 7,
+              fontSize: ".8125rem",
+              fontWeight: 600,
+              color: "var(--ink-600)",
+            }}
+          >
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: "var(--blue)",
+                flexShrink: 0,
+              }}
+            />
+            Unsaved changes
+          </span>
+          <Button variant="primary" disabled={busy} onClick={() => void publish()}>
+            {updateStorefront.isPending ? "Publishing…" : "Publish changes"}
+          </Button>
+        </div>
+      )}
     </ApiState>
   );
 }
@@ -9902,7 +10002,10 @@ export function SellerVerificationTimeline() {
       key: "review",
       icon: reviewed ? "shieldCheck" : "clock",
       en: reviewed ? "Reviewed by BazaarCo" : "Under review by BazaarCo",
-      at: reviewed ? verification?.reviewedAt : null,
+      // No timestamp of its own — review and the decision happen as one event,
+      // so the actual time lives on the decision step below. Showing reviewedAt
+      // here too would just repeat the same timestamp and read like a bug.
+      at: null,
       state: reviewed ? "done" : submitted ? "current" : "todo",
       hint: status === "pending" ? "Usually decided within 1–2 working days." : null,
     },
@@ -9938,10 +10041,13 @@ export function SellerVerificationTimeline() {
     <ApiState isLoading={isLoading} isError={isError} error={error}>
       <div className="bz-seller-page" style={{ maxWidth: "var(--container)", margin: "0 auto" }}>
         <SellerHelpBar />
-        <div style={{ maxWidth: 640 }}>
-          {/* Header — title + live status pill, wraps on narrow screens */}
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Full-width status page — the timeline and summary span the whole
+           seller content area rather than sitting in a narrow column. */}
+        <div className="bz-kyc">
+          {/* Header — the status pill lives inline beside the title, since the
+             current state is the single most important thing on this page. */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <h1
                 style={{
                   margin: 0,
@@ -9952,25 +10058,27 @@ export function SellerVerificationTimeline() {
               >
                 {t("seller.kyc.title")}
               </h1>
-              <p style={{ margin: "4px 0 0", fontSize: ".875rem", color: "var(--ink-500)" }}>
-                Track your document verification status.
-              </p>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  background: meta.bg,
+                  color: meta.fg,
+                  fontWeight: 800,
+                  fontSize: ".8125rem",
+                  padding: "6px 12px",
+                  borderRadius: 999,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {meta.label}
+              </span>
             </div>
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                background: meta.bg,
-                color: meta.fg,
-                fontWeight: 800,
-                fontSize: ".8125rem",
-                padding: "6px 12px",
-                borderRadius: 999,
-                whiteSpace: "nowrap",
-              }}
-            >
-              {meta.label}
-            </span>
+            <p style={{ margin: "6px 0 0", fontSize: ".875rem", color: "var(--ink-500)" }}>
+              {status === "approved"
+                ? "Your seller account is fully verified."
+                : "Track your document verification status."}
+            </p>
           </div>
 
           {/* Vertical timeline */}
@@ -10089,17 +10197,81 @@ export function SellerVerificationTimeline() {
             })}
           </div>
 
-          {/* Action — finish or re-submit depending on status */}
+          {/* Approved isn't a dead end — tell the seller what they've unlocked and
+             point them straight at the next useful action. */}
+          {status === "approved" && (
+            <div
+              style={{
+                marginTop: 16,
+                background: "rgba(22,163,74,.06)",
+                border: "1px solid rgba(22,163,74,.25)",
+                borderRadius: "var(--r-lg)",
+                padding: "18px 20px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <Icon name="badgeCheck" size={20} color="var(--success)" />
+                <div style={{ fontWeight: 800, fontSize: "1rem", color: "var(--ink-900)" }}>
+                  You&apos;re verified — your store is live
+                </div>
+              </div>
+              <p
+                style={{
+                  margin: "8px 0 0",
+                  fontSize: ".875rem",
+                  color: "var(--ink-600)",
+                  lineHeight: 1.5,
+                }}
+              >
+                Buyers can now find your store and place orders. Here&apos;s what you can do:
+              </p>
+              <ul
+                style={{
+                  margin: "10px 0 0",
+                  padding: 0,
+                  listStyle: "none",
+                  display: "grid",
+                  gap: 8,
+                }}
+              >
+                {[
+                  "List unlimited products",
+                  "Upload product videos",
+                  "Receive orders and payouts",
+                ].map((line) => (
+                  <li
+                    key={line}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      fontSize: ".875rem",
+                      color: "var(--ink-700)",
+                    }}
+                  >
+                    <Icon name="check" size={15} color="var(--success)" />
+                    {line}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Action — finish, re-submit, or get started depending on status. The
+             buttons size to their label (full-width only on mobile, see .bz-kyc-actions). */}
           {(status === "none" || status === "rejected") && (
-            <div style={{ marginTop: 18 }}>
-              <Button variant="primary" size="lg" full onClick={() => nav("s-onboarding")}>
+            <div className="bz-kyc-actions">
+              <Button variant="primary" size="lg" onClick={() => nav("s-onboarding")}>
                 {status === "rejected" ? "Re-upload document" : "Start verification"}
               </Button>
             </div>
           )}
           {status === "approved" && (
-            <div style={{ marginTop: 18 }}>
-              <Button variant="primary" size="lg" full onClick={() => nav("s-dashboard")}>
+            <div className="bz-kyc-actions">
+              <Button variant="primary" size="lg" onClick={() => nav("s-add")}>
+                Start listing products
+              </Button>
+              <Button variant="ghost" size="lg" onClick={() => nav("s-dashboard")}>
                 Open dashboard
               </Button>
             </div>
@@ -10165,8 +10337,12 @@ export function SellerSettings() {
           }}
         >
           {[
-            { id: "account", labelKey: "seller.settings.tabAccount" },
-            ...(orgLinked ? [{ id: "alerts", labelKey: "seller.settings.tabAlerts" }] : []),
+            { id: "account", labelKey: "seller.settings.tabAccount", soon: false },
+            // Alerts is being rebuilt — show the tab so sellers know it's coming,
+            // but keep it disabled (not clickable) until the feature ships.
+            ...(orgLinked
+              ? [{ id: "alerts", labelKey: "seller.settings.tabAlerts", soon: true }]
+              : []),
           ].map((tabDef) => {
             const active = tab === tabDef.id;
             return (
@@ -10174,23 +10350,45 @@ export function SellerSettings() {
                 key={tabDef.id}
                 role="tab"
                 aria-selected={active}
-                onClick={() => setTab(tabDef.id)}
+                aria-disabled={tabDef.soon}
+                disabled={tabDef.soon}
+                onClick={tabDef.soon ? undefined : () => setTab(tabDef.id)}
                 style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
                   background: "none",
                   border: "none",
                   borderBottom: `2px solid ${active ? "var(--red)" : "transparent"}`,
                   marginBottom: -2,
                   padding: "12px 18px",
-                  cursor: "pointer",
+                  cursor: tabDef.soon ? "not-allowed" : "pointer",
                   fontWeight: active ? 800 : 600,
                   fontSize: ".9375rem",
-                  color: active ? "var(--red)" : "var(--ink-500)",
+                  color: tabDef.soon ? "var(--ink-300)" : active ? "var(--red)" : "var(--ink-500)",
                   fontFamily: "var(--font-sans)",
                   transition:
                     "color var(--dur-standard) var(--ease), border-color var(--dur-standard) var(--ease)",
                 }}
               >
                 {t(tabDef.labelKey)}
+                {tabDef.soon && (
+                  <span
+                    style={{
+                      fontSize: ".625rem",
+                      fontWeight: 800,
+                      letterSpacing: ".04em",
+                      textTransform: "uppercase",
+                      color: "var(--ink-400)",
+                      background: "var(--line-100)",
+                      border: "1px solid var(--line-200)",
+                      borderRadius: 999,
+                      padding: "2px 7px",
+                    }}
+                  >
+                    {t("common.comingSoon")}
+                  </span>
+                )}
               </button>
             );
           })}

@@ -45,7 +45,8 @@ import { useTracking } from "@/hooks/use-tracking";
 import { useCancelOrder, useOrder } from "@/hooks/use-orders";
 import { canCancelOrder } from "@/lib/order-utils";
 import { ConfirmModal } from "@/features/checkout/checkout";
-import { useBargains } from "@/hooks/use-bargains";
+import { useAcceptCounterOffer, useBargains } from "@/hooks/use-bargains";
+import { bargainExpiryLabel } from "@/lib/bargain-expiry";
 import { useWishlistQuery } from "@/hooks/use-wishlist";
 import { useBazaarStore } from "@/store/bazaar-store";
 import {
@@ -636,13 +637,19 @@ export function Bargains() {
   const { t } = useTranslation();
   const { nav, openProduct, addToCart, toast } = useBz();
   const { data: offers = [], isLoading, isError, error } = useBargains();
+  const acceptCounter = useAcceptCounterOffer();
 
-  const tones = { pending: "saffron", countered: "blue", accepted: "success", declined: "neutral" };
+  const tones = {
+    pending: "saffron",
+    countered: "blue",
+    accepted: "success",
+    rejected: "neutral",
+  };
   const labels = {
     pending: t("bargains.statusPending"),
     countered: t("bargains.statusCountered"),
     accepted: t("bargains.statusAccepted"),
-    declined: t("bargains.statusDeclined"),
+    rejected: t("bargains.statusDeclined"),
   };
 
   return (
@@ -734,9 +741,15 @@ export function Bargains() {
                         }}
                       >
                         {o.p.name}
+                        {o.variantName && (
+                          <span style={{ color: "var(--ink-500)", fontWeight: 500 }}>
+                            {" "}
+                            · {o.variantName}
+                          </span>
+                        )}
                       </div>
-                      <Chip tone={tones[o.status]} size="sm">
-                        {labels[o.status]}
+                      <Chip tone={tones[o.status] ?? "neutral"} size="sm">
+                        {labels[o.status] ?? o.status}
                       </Chip>
                     </div>
                     <div
@@ -772,71 +785,96 @@ export function Bargains() {
                     </div>
                     <div style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 6 }}>
                       {o.age}
-                      {o.expires ? ` · expires in ${o.expires}` : ""}
+                      {(o.status === "pending" || o.status === "countered") &&
+                      o.expires &&
+                      new Date(o.expires).getTime() <= Date.now() ? (
+                        <span style={{ color: "var(--red)", fontWeight: 600 }}>
+                          {" "}
+                          · Offer expired — send a new one
+                        </span>
+                      ) : bargainExpiryLabel(o.expires) ? (
+                        ` · ${bargainExpiryLabel(o.expires)}`
+                      ) : (
+                        ""
+                      )}
                     </div>
                   </div>
                 </div>
 
-                {(o.status === "pending" ||
-                  o.status === "countered" ||
-                  o.status === "accepted") && (
-                  <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-                    {o.status === "accepted" && (
+                <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+                  {o.status === "accepted" && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      icon="cart"
+                      onClick={() =>
+                        // No price in the payload — the server binds the accepted
+                        // offer to this (product, variant) line at the agreed price.
+                        void addToCart(
+                          o.p,
+                          1,
+                          `Added at bargained price · Rs. ${(o.agreed ?? o.yourOffer).toLocaleString("en-IN")}`,
+                          o.variantId,
+                        )
+                      }
+                    >
+                      Add to cart
+                    </Button>
+                  )}
+                  {o.status === "countered" && (
+                    <>
                       <Button
                         variant="primary"
                         size="sm"
-                        icon="cart"
-                        onClick={() =>
-                          void addToCart(
-                            o.p,
-                            1,
-                            `Added at bargained price · Rs. ${o.yourOffer.toLocaleString("en-IN")}`,
-                          )
-                        }
+                        disabled={acceptCounter.isPending}
+                        onClick={async () => {
+                          // Accepting server-side is what locks the price for
+                          // checkout — a toast alone never bound the deal.
+                          try {
+                            await acceptCounter.mutateAsync(o.id);
+                            toast(t("bargains.counterAccepted"));
+                          } catch (err) {
+                            toast(
+                              err instanceof Error ? err.message : "Could not accept the counter",
+                              "error",
+                            );
+                          }
+                        }}
                       >
-                        Add to cart
+                        Accept Rs. {o.sellerCounter.toLocaleString("en-IN")}
                       </Button>
-                    )}
-                    {o.status === "countered" && (
-                      <>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => toast(t("bargains.counterAccepted"))}
-                        >
-                          Accept Rs. {o.sellerCounter.toLocaleString("en-IN")}
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          href={pathFromScreen("pdp", o.p.id)}
-                          onNavigate={() => openProduct(o.p)}
-                        >
-                          Counter back
-                        </Button>
-                      </>
-                    )}
-                    {o.status === "pending" && (
                       <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toast(t("bargains.offerWithdrawn"))}
-                      >
-                        Withdraw offer
-                      </Button>
-                    )}
-                    {o.status !== "accepted" && (
-                      <Button
-                        variant="ghost"
+                        variant="secondary"
                         size="sm"
                         href={pathFromScreen("pdp", o.p.id)}
                         onNavigate={() => openProduct(o.p)}
                       >
-                        View product
+                        Counter back
                       </Button>
-                    )}
-                  </div>
-                )}
+                    </>
+                  )}
+                  {o.status === "rejected" && (
+                    <span
+                      style={{
+                        fontSize: ".8125rem",
+                        color: "var(--ink-500)",
+                        alignSelf: "center",
+                      }}
+                    >
+                      Raise your price a bit and offer again.
+                    </span>
+                  )}
+                  {o.status !== "accepted" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      href={pathFromScreen("pdp", o.p.id)}
+                      onNavigate={() => openProduct(o.p)}
+                    >
+                      View product
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
           </div>

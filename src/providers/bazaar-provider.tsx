@@ -291,14 +291,31 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addToCart = useCallback(
-    async (product: Product, qty = 1, successMessage?: string, variantId?: string | null) => {
+    async (
+      product: Product,
+      qty = 1,
+      successMessage?: string,
+      // A single variant, or several at once — a grouped-variant product lets
+      // the buyer pick one option from each group and add them together.
+      variantId?: string | null | Array<string | null>,
+    ) => {
       if (!ensureAuthed("Please sign in to add items to your cart.")) return;
+      const variantIds = Array.isArray(variantId) ? variantId : [variantId ?? null];
       try {
-        await addItem.mutateAsync({ product, qty, variantId });
-        // A freshly-added item should be selected for checkout. No-op while the
-        // selection is still the "all" sentinel.
-        setSelectedCartIds((prev) => selectLine(prev, cartLineKey({ id: product.id, variantId })));
-        const defaultMsg = qty > 1 ? `${qty} added to cart` : "Added to cart";
+        for (const vid of variantIds) {
+          await addItem.mutateAsync({ product, qty, variantId: vid });
+          // A freshly-added item should be selected for checkout. No-op while the
+          // selection is still the "all" sentinel.
+          setSelectedCartIds((prev) =>
+            selectLine(prev, cartLineKey({ id: product.id, variantId: vid })),
+          );
+        }
+        const defaultMsg =
+          variantIds.length > 1
+            ? `${variantIds.length} options added to cart`
+            : qty > 1
+              ? `${qty} added to cart`
+              : "Added to cart";
         toast(successMessage ?? defaultMsg);
       } catch (error) {
         const msg = error instanceof ApiRequestError ? error.message : "Could not add to cart";
@@ -340,10 +357,13 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   );
 
   const buyNow = useCallback(
-    async (product: Product, qty = 1, variantId?: string | null) => {
+    async (product: Product, qty = 1, variantId?: string | null | Array<string | null>) => {
       if (!ensureAuthed("Please sign in to buy now and checkout.")) return;
+      const variantIds = Array.isArray(variantId) ? variantId : [variantId ?? null];
       try {
-        await addItem.mutateAsync({ product, qty, variantId });
+        for (const vid of variantIds) {
+          await addItem.mutateAsync({ product, qty, variantId: vid });
+        }
         nav("checkout");
       } catch (error) {
         const msg = error instanceof ApiRequestError ? error.message : "Could not add to cart";

@@ -315,11 +315,12 @@ export function useSellerNotifications() {
   });
 }
 
-export function useSellerStorefront() {
+export function useSellerStorefront(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.seller.storefront,
     queryFn: () => sellerApi.getStorefront(),
     staleTime: STALE_TIME,
+    enabled: options?.enabled ?? true,
   });
 }
 

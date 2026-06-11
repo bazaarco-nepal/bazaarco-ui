@@ -688,7 +688,7 @@ export function AppLink({
 }: {
   href: string;
   onNavigate?: () => void;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
   ariaLabel?: string;
@@ -1283,6 +1283,24 @@ export function VideoPlayer({
   onLongPressEnd,
   playbackRate,
   isActive,
+}: {
+  tint?: string;
+  icon?: string;
+  ratio?: string;
+  radius?: string;
+  autoplay?: boolean;
+  label?: React.ReactNode;
+  overlay?: React.ReactNode;
+  compact?: boolean;
+  fill?: boolean;
+  thumb?: string | null;
+  src?: string | null;
+  externalMuted?: boolean;
+  onMutedChange?: (muted: boolean) => void;
+  onLongPressStart?: () => void;
+  onLongPressEnd?: () => void;
+  playbackRate?: number;
+  isActive?: boolean;
 }) {
   const videoRef = useRef(null);
   const [playing, setPlaying] = useState(!!autoplay);
@@ -1967,7 +1985,7 @@ export function usePaged(items, pageSize = 12, resetKey) {
 /* Discrete numbered pages — for operational tables (seller orders / inventory) where
    users want control, exact page jumps, and to return to a known row. Replaces the slice
    each page (NOT cumulative like usePaged). Pairs with <PageBar>. */
-export function usePages(items, perPage = 10, resetKey) {
+export function usePages<T>(items: T[], perPage = 10, resetKey?: unknown) {
   const total = items.length;
   const pageCount = Math.max(1, Math.ceil(total / perPage));
   const [page, setPage] = useState(1);
@@ -2444,7 +2462,7 @@ export function BottomNav({
 }
 
 /* ---------- Landmark address picker ---------- */
-export function LandmarkAddress({ value, onChange, showRiderNote = true }) {
+export function LandmarkAddress({ value, onChange }) {
   // Normalize per-field, not just when `value` is missing entirely: a partial
   // address (e.g. { city } with no area/landmark) must still yield defined
   // strings, or the inputs flip from controlled to uncontrolled.
@@ -2806,22 +2824,6 @@ export function LandmarkAddress({ value, onChange, showRiderNote = true }) {
             <span style={{ fontSize: ".8125rem" }}>Select a city to load the map.</span>
           </div>
         ))}
-      {showRiderNote && (
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            background: "var(--tint-blue-50)",
-            borderRadius: "var(--r-md)",
-            padding: "10px 12px",
-            fontSize: ".8125rem",
-            color: "var(--blue-deep)",
-          }}
-        >
-          <Icon name="shieldCheck" size={18} color="var(--blue-deep)" style={{ flexShrink: 0 }} />
-          <span>Don't worry — our rider will call before arriving to find your exact gate.</span>
-        </div>
-      )}
     </div>
   );
 }

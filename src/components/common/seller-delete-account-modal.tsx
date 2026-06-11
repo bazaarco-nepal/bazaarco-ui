@@ -331,12 +331,12 @@ export function SellerDeleteAccountModal({
         )}
         <div className="bz-delete-actions">
           <Button
-            variant="secondary"
+            variant="primary"
             full
             disabled={deleteMutation.isPending || otpMutation.isPending}
             onClick={closeModal}
           >
-            Keep account
+            Cancel
           </Button>
           {step === "request" ? (
             <Button
@@ -346,7 +346,7 @@ export function SellerDeleteAccountModal({
               loading={otpMutation.isPending}
               onClick={handleRequestOtp}
             >
-              Send verification code
+              Proceed
             </Button>
           ) : (
             <Button

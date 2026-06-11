@@ -1240,9 +1240,13 @@ body {
 /* Seller page layouts — use full content area beside sidebar */
 .bz-seller-page {
   width: 100%;
-  max-width: none;
-  margin: 0;
-  padding: 20px 24px 100px;
+  /* Center seller content to the same --container width the KYC banner uses, so
+     the page body lines up with the banner above it on wide screens. Side
+     padding (28px) also matches the banner. Mobile (<=768px) is forced back to
+     16px by the media rules below, so this only affects desktop. */
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 20px 28px 100px;
   box-sizing: border-box;
 }
 

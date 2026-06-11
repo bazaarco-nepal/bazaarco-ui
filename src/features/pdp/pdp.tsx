@@ -62,8 +62,13 @@ import {
 } from "@/components/common";
 import { useSeller } from "@/hooks/use-catalog";
 import { useSimilar } from "@/hooks/use-search";
-import { useAcceptCounterOffer, useCreateBargainOffer } from "@/hooks/use-bargains";
+import {
+  useAcceptCounterOffer,
+  useBargainActivity,
+  useCreateBargainOffer,
+} from "@/hooks/use-bargains";
 import { bargainExpiryLabel } from "@/lib/bargain-expiry";
+import { matchSelectedVariants, toggleOption, variantBacksOption } from "@/lib/variant-selection";
 import { ApiRequestError } from "@/services/api/http";
 import { resolveDelivery, deliveryEstimate } from "@/lib/delivery-options";
 import type { PdpProps } from "@/types";
@@ -134,9 +139,13 @@ function TabbedPair({ items }: { items: TabItem[] }) {
    BazaarCo — Product Detail Page (video-led)
    ============================================================ */
 function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
-  const { addToCart } = useBz();
+  const { addToCart, nav } = useBz();
   const { sellerOf } = useCatalog();
   const createOffer = useCreateBargainOffer();
+  // Social proof: other buyers bargaining on this item right now (excludes you).
+  const othersBargaining = useBargainActivity(p.id).data ?? 0;
+  // Daily attempts left, learned from the server's reply to the last offer.
+  const [attemptsLeft, setAttemptsLeft] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 639px)");
@@ -150,8 +159,24 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
   // starting offer is anchored off the listed price alone.
   const listed = listedPrice ?? p.price;
   const variant = variantId && p.variants ? p.variants.find((v) => v.id === variantId) : null;
-  const [offer, setOffer] = useState(Math.round((listed * 0.9) / 10) * 10);
-  const [stage, setStage] = useState("offer"); // offer | thinking | counter | accepted
+  // Suggested starting offer, 10% under the listed price rounded to the nearest 10.
+  const suggestedOffer = Math.round((listed * 0.9) / 10) * 10;
+  // Held as a string so the field can be emptied while typing — a numeric state
+  // would snap a cleared input back to 0 and trap a leading zero (e.g. "0700").
+  const [offer, setOffer] = useState(String(suggestedOffer));
+  const offerValue = Number(offer);
+  // Coarse acceptance hint, derived ONLY from the public listed price — never the
+  // seller's floor — so it can't be slid to reverse-engineer the minimum. Three
+  // buckets keep it directional, not a precise probability.
+  const chance =
+    offerValue <= 0 || listed <= 0
+      ? null
+      : offerValue >= listed * 0.95
+        ? { label: "High chance of acceptance", color: "var(--success)", steps: 3 }
+        : offerValue >= listed * 0.85
+          ? { label: "Medium chance", color: "var(--saffron)", steps: 2 }
+          : { label: "Low chance — try a bit higher", color: "var(--red)", steps: 1 };
+  const [stage, setStage] = useState("offer"); // offer | thinking | pending | counter | accepted
   const [counter, setCounter] = useState(listed);
   // The server-side offer behind this negotiation: accept-counter needs its id,
   // and the countdown shows its redemption deadline.
@@ -163,18 +188,32 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
   // the buyer can raise their offer without ever learning the true floor.
   const [tooLowHint, setTooLowHint] = useState<string | null>(null);
   const submit = async () => {
+    if (!offerValue || offerValue <= 0) {
+      setTooLowHint("Enter an offer amount to continue.");
+      return;
+    }
     setTooLowHint(null);
     setStage("thinking");
     try {
       const result = await createOffer.mutateAsync({
         productId: p.id,
         variantId,
-        yourOffer: Math.round(offer * 100),
+        yourOffer: Math.round(offerValue * 100),
       });
       setOfferId(result.id);
       setOfferExpires(result.expires);
+      if (typeof result.attemptsRemaining === "number") setAttemptsLeft(result.attemptsRemaining);
       if (result.sellerCounter) setCounter(result.sellerCounter);
-      setStage(result.status === "accepted" ? "accepted" : "counter");
+      // A fresh offer always lands with the seller as `pending` — acceptance
+      // only ever arrives later, in My Offers. The other branches cover the
+      // server answering an already-settled negotiation.
+      setStage(
+        result.status === "accepted"
+          ? "accepted"
+          : result.status === "countered"
+            ? "counter"
+            : "pending",
+      );
     } catch (error) {
       const msg = error instanceof ApiRequestError ? error.message : "Could not send offer";
       setTooLowHint(msg);
@@ -205,9 +244,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
           maxWidth: isMobile ? "100%" : "calc(100% - 48px)",
           maxHeight: "90vh",
           overflowY: "auto",
-          padding: isMobile
-            ? "24px 20px calc(24px + env(safe-area-inset-bottom))"
-            : 28,
+          padding: isMobile ? "24px 20px calc(24px + env(safe-area-inset-bottom))" : 28,
           position: "relative",
         }}
       >
@@ -268,6 +305,26 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
           </div>
         </div>
 
+        {othersBargaining > 0 && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 16,
+              padding: "8px 12px",
+              borderRadius: "var(--r-md)",
+              background: "var(--saffron-50, rgba(234,88,12,.08))",
+              fontSize: ".8125rem",
+              fontWeight: 600,
+              color: "var(--saffron, #c2410c)",
+            }}
+          >
+            🔥 {othersBargaining} other {othersBargaining === 1 ? "buyer is" : "buyers are"}{" "}
+            bargaining on this right now
+          </div>
+        )}
+
         {stage === "offer" && (
           <>
             <label style={{ fontSize: ".8125rem", fontWeight: 600, color: "var(--ink-700)" }}>
@@ -281,7 +338,9 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
                 type="number"
                 value={offer}
                 onChange={(e) => {
-                  setOffer(+e.target.value);
+                  // Keep digits only and drop any leading zeros so the field never
+                  // traps a "0" in front of what the buyer types.
+                  setOffer(e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, ""));
                   if (tooLowHint) setTooLowHint(null);
                 }}
                 className="tnum"
@@ -298,17 +357,72 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
                 }}
               />
             </div>
+            {chance && !tooLowHint && (
+              <div
+                style={{ display: "flex", alignItems: "center", gap: 10, margin: "10px 0 0" }}
+                aria-label={chance.label}
+              >
+                <div style={{ display: "flex", gap: 3, flex: 1, maxWidth: 120 }}>
+                  {[1, 2, 3].map((step) => (
+                    <span
+                      key={step}
+                      style={{
+                        flex: 1,
+                        height: 6,
+                        borderRadius: 3,
+                        background: step <= chance.steps ? chance.color : "var(--line-200)",
+                        transition: "background .2s",
+                      }}
+                    />
+                  ))}
+                </div>
+                <span style={{ fontSize: ".8125rem", fontWeight: 700, color: chance.color }}>
+                  {chance.label}
+                </span>
+              </div>
+            )}
             {tooLowHint && (
-              <p
+              <div
                 role="alert"
                 style={{
-                  fontSize: ".8125rem",
-                  color: "var(--red)",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 8,
                   margin: "8px 0 0",
-                  lineHeight: 1.4,
+                  padding: "10px 12px",
+                  borderRadius: "var(--r-md)",
+                  background: "var(--red-50, rgba(220,38,38,.06))",
+                  border: "1px solid var(--red-100, rgba(220,38,38,.18))",
                 }}
               >
-                {tooLowHint}
+                <span style={{ flexShrink: 0, lineHeight: 0, marginTop: 1 }}>
+                  <Icon name="trendingUp" size={16} color="var(--red)" />
+                </span>
+                <p
+                  style={{
+                    fontSize: ".8125rem",
+                    color: "var(--red)",
+                    margin: 0,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {tooLowHint}
+                </p>
+              </div>
+            )}
+            {attemptsLeft !== null && (
+              <p
+                style={{
+                  fontSize: ".75rem",
+                  fontWeight: 600,
+                  color: attemptsLeft === 0 ? "var(--red)" : "var(--ink-500)",
+                  textAlign: "center",
+                  margin: "12px 0 0",
+                }}
+              >
+                {attemptsLeft === 0
+                  ? "No bargain attempts left on this item today."
+                  : `${attemptsLeft} bargain ${attemptsLeft === 1 ? "attempt" : "attempts"} left on this item today.`}
               </p>
             )}
             <div style={{ marginTop: 20 }}>
@@ -338,6 +452,49 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
           </div>
         )}
 
+        {stage === "pending" && (
+          <div style={{ textAlign: "center", padding: "10px 0" }}>
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: "50%",
+                background: "var(--tint-blue-50)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 14px",
+              }}
+            >
+              <Icon name="clock" size={30} color="var(--blue)" />
+            </div>
+            <h3 style={{ margin: 0, fontSize: "1.25rem" }}>Offer sent!</h3>
+            <p style={{ color: "var(--ink-500)", marginTop: 8 }}>
+              {sellerOf(p)?.name ?? "The seller"} got your offer of{" "}
+              <b className="tnum">Rs. {offerValue.toLocaleString("en-IN")}</b>. They can accept,
+              counter, or decline — we'll show their reply in My Offers.
+            </p>
+            <p style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 6 }}>
+              Sellers usually reply within a few minutes.
+            </p>
+            <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+              <Button variant="secondary" full onClick={onClose}>
+                Keep shopping
+              </Button>
+              <Button
+                variant="primary"
+                full
+                onClick={() => {
+                  onClose();
+                  nav("bargains");
+                }}
+              >
+                View my offers
+              </Button>
+            </div>
+          </div>
+        )}
+
         {stage === "accepted" && (
           <div style={{ textAlign: "center", padding: "10px 0" }}>
             <div
@@ -357,8 +514,8 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
             <h3 style={{ margin: 0, fontSize: "1.25rem" }}>Offer accepted! 🎉</h3>
             <p style={{ color: "var(--ink-500)", marginTop: 8 }}>
               {sellerOf(p)?.name} accepted{" "}
-              <b className="tnum">Rs. {offer.toLocaleString("en-IN")}</b>. Add it to your cart at
-              this price.
+              <b className="tnum">Rs. {offerValue.toLocaleString("en-IN")}</b>. Add it to your cart
+              at this price.
             </p>
             {bargainExpiryLabel(offerExpires) && (
               <p style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 6 }}>
@@ -378,7 +535,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
                   onClose();
                 }}
               >
-                Add to cart · Rs. {offer.toLocaleString("en-IN")}
+                Add to cart · Rs. {offerValue.toLocaleString("en-IN")}
               </Button>
             </div>
           </div>
@@ -413,7 +570,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
                 variant="secondary"
                 full
                 onClick={() => {
-                  setOffer(Math.round((listed * 0.9) / 10) * 10);
+                  setOffer(String(suggestedOffer));
                   setStage("offer");
                 }}
               >
@@ -467,6 +624,9 @@ function BuyNowSheet({
   pricedVariants,
   selVariantId,
   onPickVariant,
+  // When set (grouped variants), rendered instead of the flat option list so
+  // the sheet shares the page's selection state and rules.
+  picker = null,
   onConfirm,
   onClose,
 }) {
@@ -544,53 +704,68 @@ function BuyNowSheet({
         </div>
 
         {/* Priced-variant picker — choosing changes the price above. */}
-        {pricedVariants.length > 0 && (
+        {picker ? (
           <div style={{ marginBottom: 18 }}>
             <div
               style={{
                 fontSize: ".9375rem",
                 fontWeight: 700,
                 color: "var(--ink-900)",
-                marginBottom: 10,
               }}
             >
               Choose an option
             </div>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              {pricedVariants.map((v) => {
-                const active = v.id === selVariantId;
-                const out = (v.stock ?? 0) <= 0;
-                return (
-                  <button
-                    key={v.id}
-                    type="button"
-                    disabled={out}
-                    onClick={() => onPickVariant(v.id)}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "baseline",
-                      gap: 6,
-                      minHeight: 50,
-                      padding: "0 18px",
-                      borderRadius: "var(--r-md)",
-                      cursor: out ? "not-allowed" : "pointer",
-                      border: `2px solid ${active ? "var(--ink-900)" : "var(--line-200)"}`,
-                      background: active ? "var(--ink-900)" : "#fff",
-                      color: out ? "var(--ink-300)" : active ? "#fff" : "var(--ink-800)",
-                      fontWeight: 700,
-                      fontSize: "1rem",
-                      textDecoration: out ? "line-through" : "none",
-                    }}
-                  >
-                    {v.name}
-                    <span className="tnum" style={{ fontSize: ".875rem", opacity: 0.85 }}>
-                      Rs.&nbsp;{v.price.toLocaleString("en-IN")}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            {picker}
           </div>
+        ) : (
+          pricedVariants.length > 0 && (
+            <div style={{ marginBottom: 18 }}>
+              <div
+                style={{
+                  fontSize: ".9375rem",
+                  fontWeight: 700,
+                  color: "var(--ink-900)",
+                  marginBottom: 10,
+                }}
+              >
+                Choose an option
+              </div>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                {pricedVariants.map((v) => {
+                  const active = v.id === selVariantId;
+                  const out = (v.stock ?? 0) <= 0;
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      disabled={out}
+                      onClick={() => onPickVariant(v.id)}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "baseline",
+                        gap: 6,
+                        minHeight: 50,
+                        padding: "0 18px",
+                        borderRadius: "var(--r-md)",
+                        cursor: out ? "not-allowed" : "pointer",
+                        border: `2px solid ${active ? "var(--ink-900)" : "var(--line-200)"}`,
+                        background: active ? "var(--ink-900)" : "#fff",
+                        color: out ? "var(--ink-300)" : active ? "#fff" : "var(--ink-800)",
+                        fontWeight: 700,
+                        fontSize: "1rem",
+                        textDecoration: out ? "line-through" : "none",
+                      }}
+                    >
+                      {v.name}
+                      <span className="tnum" style={{ fontSize: ".875rem", opacity: 0.85 }}>
+                        Rs.&nbsp;{v.price.toLocaleString("en-IN")}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )
         )}
 
         <Button variant="primary" full size="lg" onClick={onConfirm}>
@@ -698,7 +873,11 @@ export function PDP({ p: pProp }: PdpProps) {
   const [selVariantId, setSelVariantId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!hasPricedVariants) {
+    // Grouped/multi-dim products start with nothing selected: the buyer picks
+    // exactly what they want (one group, or several) and can unselect again.
+    // The price shows the product's "from" price until they do. Flat products
+    // keep preselecting the cheapest in-stock option so the price is concrete.
+    if (!hasPricedVariants || isMultiDimVariant) {
       setSelVariantId(null);
       setSelDimensions({});
       return;
@@ -707,20 +886,23 @@ export function PDP({ p: pProp }: PdpProps) {
     const pool = inStock.length ? inStock : pricedVariants;
     const cheapest = pool.reduce((m, v) => (v.price < m.price ? v : m), pool[0]);
     setSelVariantId(cheapest.id);
-    if (isMultiDimVariant && cheapest.optionValues) {
-      setSelDimensions(cheapest.optionValues);
-    } else {
-      setSelDimensions({});
-    }
+    setSelDimensions({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productId, p.variants]);
 
-  // In multi-dim mode: find the matching variant by optionValues
+  // A variant is selected when every option it declares matches the buyer's
+  // picks. Grouped variants carry a single {group: option} pair, so groups are
+  // independent — one pick per group, several can be active at once. Legacy
+  // cartesian variants declare every group and so resolve only when all of
+  // them are picked, exactly as before.
+  const selectedVariants = isMultiDimVariant
+    ? matchSelectedVariants(pricedVariants, selDimensions)
+    : [];
+
   const resolvedVariantId: string | null = isMultiDimVariant
-    ? (pricedVariants.find((v) => {
-        if (!v.optionValues) return false;
-        return variantGroups!.every((g) => v.optionValues![g.name] === selDimensions[g.name]);
-      })?.id ?? null)
+    ? selectedVariants.length === 1
+      ? selectedVariants[0].id
+      : null
     : selVariantId;
 
   const selVariant = hasPricedVariants
@@ -772,8 +954,22 @@ export function PDP({ p: pProp }: PdpProps) {
     const mediaI = media.findIndex((m) => m.type === "photo" && m.src === src);
     setMediaIdx(mediaI >= 0 ? mediaI : photoIdx);
   };
-  const shownPrice = selVariant ? selVariant.price : p.price;
-  const shownOriginal = selVariant ? (selVariant.original ?? null) : p.original;
+  // Price reflects what's actually picked: one variant → its price; several
+  // (one per group) → their total; nothing yet → the product's "from" price.
+  const shownPrice =
+    selectedVariants.length > 0
+      ? selectedVariants.reduce((sum, v) => sum + v.price, 0)
+      : selVariant
+        ? selVariant.price
+        : p.price;
+  const shownOriginal =
+    selectedVariants.length > 0
+      ? selectedVariants.every((v) => v.original != null)
+        ? selectedVariants.reduce((sum, v) => sum + (v.original ?? 0), 0)
+        : null
+      : selVariant
+        ? (selVariant.original ?? null)
+        : p.original;
   const disc = shownOriginal ? Math.round((1 - shownPrice / shownOriginal) * 100) : 0;
   // Per-variant bargaining: check the selected variant's flag, falling back to product-level.
   const bargainingAvailable = selVariant
@@ -785,34 +981,52 @@ export function PDP({ p: pProp }: PdpProps) {
       promptLogin("Please sign in to make an offer.");
       return;
     }
+    // An offer is for one concrete option — its price and its floor.
+    if (isMultiDimVariant && !selVariant) {
+      toast(
+        selectedVariants.length > 1
+          ? "Offers work on one option at a time — keep just one selected."
+          : "Select an option first to make an offer.",
+      );
+      return;
+    }
     setBargain(true);
   };
 
-  /** For multi-dim mode: whether a given option is available (any in-stock SKU with that option) */
+  /** For multi-dim mode: whether a given option is available (any SKU backs it) */
   const isOptionAvailable = (dimName: string, optionVal: string): boolean => {
     if (!isMultiDimVariant) return true;
-    return pricedVariants.some((v) => {
-      if (!v.optionValues) return false;
-      if (v.optionValues[dimName] !== optionVal) return false;
-      // Check if the combination with current other selections exists and is in-stock
-      const otherDims = variantGroups!.filter((g) => g.name !== dimName);
-      const otherMatch = otherDims.every(
-        (g) => !selDimensions[g.name] || v.optionValues![g.name] === selDimensions[g.name],
-      );
-      return otherMatch;
-    });
+    return pricedVariants.some((v) => variantBacksOption(v, selDimensions, dimName, optionVal));
   };
 
   const isOptionInStock = (dimName: string, optionVal: string): boolean => {
     if (!isMultiDimVariant) return true;
-    return pricedVariants.some((v) => {
-      if (!v.optionValues || v.optionValues[dimName] !== optionVal) return false;
-      const otherDims = variantGroups!.filter((g) => g.name !== dimName);
-      const otherMatch = otherDims.every(
-        (g) => !selDimensions[g.name] || v.optionValues![g.name] === selDimensions[g.name],
-      );
-      return otherMatch && (v.stock ?? 0) > 0;
-    });
+    return pricedVariants.some(
+      (v) => variantBacksOption(v, selDimensions, dimName, optionVal) && (v.stock ?? 0) > 0,
+    );
+  };
+
+  /** Resolves what the buy CTAs act on, nudging the buyer when nothing usable
+   *  is selected. Returns the variant ids to add (one cart line each), or null
+   *  after showing the reason. */
+  const selectionToBuy = (): Array<string | null> | null => {
+    if (!isMultiDimVariant) {
+      if (selVariant && (selVariant.stock ?? 0) <= 0) {
+        toast(`${selVariant.name} is out of stock`);
+        return null;
+      }
+      return [resolvedVariantId];
+    }
+    if (selectedVariants.length === 0) {
+      toast("Select an option first");
+      return null;
+    }
+    const out = selectedVariants.find((v) => (v.stock ?? 0) <= 0);
+    if (out) {
+      toast(`${out.name} is out of stock`);
+      return null;
+    }
+    return selectedVariants.map((v) => v.id);
   };
 
   const variantPicker = hasPricedVariants ? (
@@ -847,8 +1061,8 @@ export function PDP({ p: pProp }: PdpProps) {
                         type="button"
                         disabled={!available}
                         onClick={() => {
-                          const next = { ...selDimensions, [group.name]: opt };
-                          setSelDimensions(next);
+                          // Tapping the active option unselects it — nothing is forced.
+                          setSelDimensions((prev) => toggleOption(prev, group.name, opt));
                         }}
                         style={{
                           display: "inline-flex",
@@ -917,20 +1131,27 @@ export function PDP({ p: pProp }: PdpProps) {
               </div>
             );
           })}
-          {selVariant && (
+          {selectedVariants.length > 0 && (
             <div style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}>
               Selected:{" "}
-              <span style={{ fontWeight: 700, color: "var(--ink-800)" }}>{selVariant.name}</span>
-              {(selVariant.stock ?? 0) <= 0 && (
-                <span style={{ color: "var(--danger)", marginLeft: 8 }}>— Out of stock</span>
-              )}
+              {selectedVariants.map((v, i) => (
+                <span key={v.id}>
+                  {i > 0 && ", "}
+                  <span style={{ fontWeight: 700, color: "var(--ink-800)" }}>{v.name}</span>
+                  {(v.stock ?? 0) <= 0 && (
+                    <span style={{ color: "var(--danger)" }}> (out of stock)</span>
+                  )}
+                </span>
+              ))}
             </div>
           )}
-          {!selVariant && variantGroups!.every((g) => selDimensions[g.name]) && (
-            <div style={{ fontSize: ".8125rem", color: "var(--danger)" }}>
-              This combination is not available.
-            </div>
-          )}
+          {selectedVariants.length === 0 &&
+            Object.keys(selDimensions).length > 0 &&
+            variantGroups!.every((g) => selDimensions[g.name]) && (
+              <div style={{ fontSize: ".8125rem", color: "var(--danger)" }}>
+                This combination is not available.
+              </div>
+            )}
         </div>
       ) : (
         /* Flat single-dimension picker */
@@ -1290,7 +1511,10 @@ export function PDP({ p: pProp }: PdpProps) {
                 {p.rating.toFixed(1)} ({p.reviews})
               </div>
             </div>
-            <div style={{ marginTop: 8 }}>
+            <div style={{ marginTop: 8, display: "flex", alignItems: "baseline", gap: 8 }}>
+              {isMultiDimVariant && selectedVariants.length === 0 && (
+                <span style={{ fontSize: ".875rem", color: "var(--ink-500)" }}>From</span>
+              )}
               <Price value={shownPrice} original={shownOriginal ?? undefined} size="lg" />
             </div>
 
@@ -1854,6 +2078,9 @@ export function PDP({ p: pProp }: PdpProps) {
                 flexWrap: "wrap",
               }}
             >
+              {isMultiDimVariant && selectedVariants.length === 0 && (
+                <span style={{ fontSize: ".875rem", color: "var(--ink-500)" }}>From</span>
+              )}
               <Price value={shownPrice} original={shownOriginal ?? undefined} size="lg" />
               {disc > 0 && <Chip tone="red">-{disc}% OFF</Chip>}
             </div>
@@ -2069,7 +2296,10 @@ export function PDP({ p: pProp }: PdpProps) {
                 size="lg"
                 full
                 icon="cart"
-                onClick={() => void addToCart(p, qty, undefined, resolvedVariantId)}
+                onClick={() => {
+                  const sel = selectionToBuy();
+                  if (sel) void addToCart(p, qty, undefined, sel);
+                }}
               >
                 Add to Cart
               </Button>
@@ -2077,7 +2307,10 @@ export function PDP({ p: pProp }: PdpProps) {
                 variant="primary"
                 size="lg"
                 full
-                onClick={() => buyNow(p, qty, resolvedVariantId)}
+                onClick={() => {
+                  const sel = selectionToBuy();
+                  if (sel) void buyNow(p, qty, sel);
+                }}
               >
                 Buy Now
               </Button>
@@ -2392,10 +2625,18 @@ export function PDP({ p: pProp }: PdpProps) {
         {/* Mobile sticky buy bar — Buy Now opens an option sheet when the
             product has choices; otherwise it goes straight to checkout. */}
         <MobileBuyBar
-          onAdd={() => void addToCart(p, qty, undefined, resolvedVariantId)}
-          onBuy={() =>
-            hasPricedVariants ? setBuyNowSheet(true) : void buyNow(p, qty, resolvedVariantId)
-          }
+          onAdd={() => {
+            const sel = selectionToBuy();
+            if (sel) void addToCart(p, qty, undefined, sel);
+          }}
+          onBuy={() => {
+            if (hasPricedVariants) {
+              setBuyNowSheet(true);
+              return;
+            }
+            const sel = selectionToBuy();
+            if (sel) void buyNow(p, qty, sel);
+          }}
           onBargain={bargainingAvailable ? openBargain : undefined}
         />
 
@@ -2407,9 +2648,14 @@ export function PDP({ p: pProp }: PdpProps) {
             pricedVariants={pricedVariants}
             selVariantId={resolvedVariantId}
             onPickVariant={setSelVariantId}
+            // Grouped products confirm with the same picker as the page, so the
+            // sheet and the page never disagree about what's selected.
+            picker={isMultiDimVariant ? variantPicker : null}
             onConfirm={() => {
+              const sel = selectionToBuy();
+              if (!sel) return;
               setBuyNowSheet(false);
-              void buyNow(p, qty, resolvedVariantId);
+              void buyNow(p, qty, sel);
             }}
             onClose={() => setBuyNowSheet(false)}
           />

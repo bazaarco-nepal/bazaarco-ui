@@ -53,8 +53,10 @@ import {
 } from "@/hooks/use-auth";
 import { usePendingSellerVerifications, useReviewSellerVerification } from "@/hooks/use-admin";
 import { useBazaarStore } from "@/store/bazaar-store";
+import { bargainExpiryLabel } from "@/lib/bargain-expiry";
 import { displayName, userInitial } from "@/lib/display";
 import { saleEffective, saleValid as isSaleValid, buildPricing } from "@/lib/discount";
+import { groupedVariantRows } from "@/lib/variant-selection";
 import {
   clearDeferredSellerOnboarding,
   deferSellerOnboarding,
@@ -96,6 +98,7 @@ import {
   useRemoveStorefrontLogo,
   useSellerLedger,
   useUpdateSellerOrderStatus,
+  type SellerBargainOffer,
 } from "@/hooks/use-seller";
 import { useChatInbox, useChatMessages, useInvalidateChat } from "@/hooks/use-chat";
 import {
@@ -4468,32 +4471,16 @@ export function SellerAddProduct({
   const removeVariant = (id: string | number) =>
     setVariants((arr) => arr.filter((v) => v.id !== id));
 
-  // ---------- Multi-dimensional variant helpers ----------
-
-  /** Cartesian product of option arrays → array of {dimension:option} maps */
-  const cartesian = (
-    groups: Array<{ name: string; options: string[] }>,
-  ): Record<string, string>[] => {
-    const validGroups = groups.filter((g) => g.name.trim() && g.options.some((o) => o.trim()));
-    if (!validGroups.length) return [];
-    return validGroups.reduce<Record<string, string>[]>(
-      (combos, group) => {
-        const opts = group.options.filter((o) => o.trim());
-        return combos.flatMap((combo) =>
-          opts.map((opt) => ({ ...combo, [group.name.trim()]: opt.trim() })),
-        );
-      },
-      [{}],
-    );
-  };
+  // ---------- Grouped variant helpers ----------
 
   /** Sync `variants` rows to match the current group definitions in multi mode.
-   *  Preserves price/stock for combinations that already exist. */
+   *  Groups are independent option lists, NOT axes of a combination matrix:
+   *  one sellable SKU per (group, option), each with its own price and stock
+   *  (see lib/variant-selection). Preserves price/stock for rows that already
+   *  exist. */
   const syncMultiVariants = (groups: typeof variantGroupDefs) => {
-    const combos = cartesian(groups);
     setVariants((prev) =>
-      combos.map((optionValues) => {
-        const name = Object.values(optionValues).join(" / ");
+      groupedVariantRows(groups).map(({ name, optionValues }) => {
         const existing = prev.find(
           (v) => v.name === name || JSON.stringify(v.optionValues) === JSON.stringify(optionValues),
         );
@@ -5388,7 +5375,7 @@ export function SellerAddProduct({
                         transition: "all .15s",
                       }}
                     >
-                      {mode === "simple" ? "Simple" : "Multi-dimensional"}
+                      {mode === "simple" ? "Simple" : "Grouped"}
                     </button>
                   ))}
                 </div>
@@ -5715,13 +5702,13 @@ export function SellerAddProduct({
                     </Button>
                   </div>
                 ) : (
-                  /* ---- Multi-dimensional variant builder ---- */
+                  /* ---- Grouped variant builder ---- */
                   <div>
                     <p
                       style={{ margin: "0 0 12px", fontSize: ".8125rem", color: "var(--ink-500)" }}
                     >
-                      Define dimensions (e.g. Color, Storage). The system auto-generates all
-                      combinations.
+                      Make a group for each version (e.g. Black, Red) and list the options it comes
+                      in (e.g. S, M, L). Every option gets its own price &amp; stock.
                     </p>
 
                     {/* Dimension group definitions */}
@@ -5754,7 +5741,7 @@ export function SellerAddProduct({
                             <input
                               value={group.name}
                               onChange={(e) => updateGroupName(group.id, e.target.value)}
-                              placeholder="Dimension name (e.g. Color, Storage)"
+                              placeholder="Group name (e.g. Black, Red)"
                               style={{
                                 flex: 1,
                                 height: 38,
@@ -5859,7 +5846,7 @@ export function SellerAddProduct({
                       onClick={addGroupDef}
                       style={{ marginBottom: 16 }}
                     >
-                      Add dimension
+                      Add group
                     </Button>
 
                     {/* Auto-generated SKU combination table */}
@@ -5873,8 +5860,8 @@ export function SellerAddProduct({
                             color: "var(--ink-700)",
                           }}
                         >
-                          {variants.length} combination{variants.length !== 1 ? "s" : ""} — fill
-                          price &amp; stock:
+                          {variants.length} option{variants.length !== 1 ? "s" : ""} — fill price
+                          &amp; stock:
                         </p>
                         <div
                           style={{
@@ -5887,7 +5874,7 @@ export function SellerAddProduct({
                           <div
                             style={{
                               display: "grid",
-                              gridTemplateColumns: `36px repeat(${variantGroupDefs.filter((g) => g.name.trim()).length}, 1fr) 100px 80px`,
+                              gridTemplateColumns: `36px 1fr 1fr 100px 80px`,
                               background: "var(--bg-100)",
                               padding: "6px 10px",
                               gap: 8,
@@ -5903,20 +5890,24 @@ export function SellerAddProduct({
                             >
                               Img
                             </span>
-                            {variantGroupDefs
-                              .filter((g) => g.name.trim())
-                              .map((g) => (
-                                <span
-                                  key={g.id}
-                                  style={{
-                                    fontSize: ".75rem",
-                                    fontWeight: 700,
-                                    color: "var(--ink-600)",
-                                  }}
-                                >
-                                  {g.name}
-                                </span>
-                              ))}
+                            <span
+                              style={{
+                                fontSize: ".75rem",
+                                fontWeight: 700,
+                                color: "var(--ink-600)",
+                              }}
+                            >
+                              Group
+                            </span>
+                            <span
+                              style={{
+                                fontSize: ".75rem",
+                                fontWeight: 700,
+                                color: "var(--ink-600)",
+                              }}
+                            >
+                              Option
+                            </span>
                             <span
                               style={{
                                 fontSize: ".75rem",
@@ -5940,13 +5931,18 @@ export function SellerAddProduct({
                           </div>
                           {/* Table rows */}
                           {variants.map((v) => {
-                            const dimCount = variantGroupDefs.filter((g) => g.name.trim()).length;
+                            // Each row carries a single {group: option} pair. Legacy
+                            // cartesian rows (multi-key, pre-grouped model) still render
+                            // by joining their entries until the seller regenerates them.
+                            const pairs = Object.entries(v.optionValues ?? {});
+                            const groupLabel = pairs.map(([g]) => g).join(" · ") || "—";
+                            const optionLabel = pairs.map(([, o]) => o).join(" / ") || v.name;
                             return (
                               <div
                                 key={v.id}
                                 style={{
                                   display: "grid",
-                                  gridTemplateColumns: `36px repeat(${dimCount}, 1fr) 100px 80px`,
+                                  gridTemplateColumns: `36px 1fr 1fr 100px 80px`,
                                   padding: "6px 10px",
                                   gap: 8,
                                   borderBottom: "1px solid var(--line-100, #f0f0f0)",
@@ -5992,25 +5988,32 @@ export function SellerAddProduct({
                                     <Icon name="camera" size={14} color="var(--ink-400)" />
                                   )}
                                 </label>
-                                {variantGroupDefs
-                                  .filter((g) => g.name.trim())
-                                  .map((g) => (
-                                    <span
-                                      key={g.id}
-                                      style={{
-                                        fontSize: ".8125rem",
-                                        padding: "2px 8px",
-                                        background: "var(--tint-red-50, #fff5f5)",
-                                        borderRadius: 99,
-                                        color: "var(--red)",
-                                        fontWeight: 600,
-                                        display: "inline-block",
-                                        width: "fit-content",
-                                      }}
-                                    >
-                                      {v.optionValues?.[g.name.trim()] ?? "—"}
-                                    </span>
-                                  ))}
+                                <span
+                                  style={{
+                                    fontSize: ".8125rem",
+                                    fontWeight: 700,
+                                    color: "var(--ink-700)",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
+                                  }}
+                                >
+                                  {groupLabel}
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: ".8125rem",
+                                    padding: "2px 8px",
+                                    background: "var(--tint-red-50, #fff5f5)",
+                                    borderRadius: 99,
+                                    color: "var(--red)",
+                                    fontWeight: 600,
+                                    display: "inline-block",
+                                    width: "fit-content",
+                                  }}
+                                >
+                                  {optionLabel}
+                                </span>
                                 <input
                                   value={v.price}
                                   onChange={(e) =>
@@ -6224,7 +6227,8 @@ export function SellerAddProduct({
                     })}
                 </div>
                 <p style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 8 }}>
-                  Offers at or above the min price are auto-accepted. Buyers never see this limit.
+                  Offers below the min price are declined automatically. Offers at or above it come
+                  to you to accept, counter, or decline. Buyers never see this limit.
                 </p>
               </>
             ) : (
@@ -6255,7 +6259,8 @@ export function SellerAddProduct({
                     }}
                   />
                   <p style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 4 }}>
-                    Offers at or above this price are auto-accepted. Buyers never see this limit.
+                    Offers below this price are declined automatically. Offers at or above it come
+                    to you to accept, counter, or decline. Buyers never see this limit.
                   </p>
                 </>
               )
@@ -8840,10 +8845,319 @@ function bargainStatus(o: {
   status?: string;
   accepted?: boolean;
   rejected?: boolean;
-}): "accepted" | "rejected" | "pending" {
+}): "accepted" | "rejected" | "countered" | "pending" {
   if (o.status === "accepted" || o.accepted) return "accepted";
   if (o.status === "rejected" || o.rejected) return "rejected";
+  if (o.status === "countered") return "countered";
   return "pending";
+}
+
+/** One row in the seller's bargain inbox. Kept as its own component so each card
+ *  can hold the seller's in-progress counter amount without a shared map of state. */
+function BargainOfferCard({
+  o,
+  acceptMutation,
+  rejectMutation,
+  counterMutation,
+  toast,
+}: {
+  o: SellerBargainOffer;
+  acceptMutation: ReturnType<typeof useAcceptBargainOffer>;
+  rejectMutation: ReturnType<typeof useRejectBargainOffer>;
+  counterMutation: ReturnType<typeof useCounterBargainOffer>;
+  toast: (msg: string) => void;
+}) {
+  const status = bargainStatus(o);
+  const listed = Number(o.listed) || 0;
+  const offered = Number(o.offered ?? o.yourOffer) || 0;
+  const saving = Math.max(0, listed - offered);
+  // Midpoint between the offer and the listed price — a starting point the
+  // seller can edit, never sent on its own.
+  const suggestion = Math.round((listed + offered) / 2 / 10) * 10;
+  const [countering, setCountering] = useState(false);
+  const [counterText, setCounterText] = useState(String(suggestion));
+
+  // Send a counter — either the one-tap suggested amount, or whatever the seller
+  // typed into the custom field.
+  const sendCounter = async (amountRs?: number) => {
+    const amount = amountRs ?? Number(counterText);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast("Enter your counter amount");
+      return;
+    }
+    try {
+      await counterMutation.mutateAsync({ id: o.id, counter: Math.round(amount * 100) });
+      toast("Counter offer sent");
+      setCountering(false);
+    } catch (error) {
+      toast(error instanceof ApiRequestError ? error.message : "Could not send counter");
+    }
+  };
+
+  return (
+    <div
+      style={{
+        background: "#fff",
+        border: `1.5px solid ${status === "pending" ? "var(--red)" : "var(--line-200)"}`,
+        borderRadius: "var(--r-lg)",
+        padding: 14,
+        display: "flex",
+        gap: 12,
+      }}
+    >
+      <BuyerAvatar
+        src={o.buyerAvatarUrl}
+        name={o.buyer}
+        size={56}
+        fontSize="1.25rem"
+        style={{ background: "var(--tint-blue-50)", color: "var(--blue)" }}
+      />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+          {status === "pending" && (
+            <Chip tone="red" size="sm" icon="bargain">
+              New offer
+            </Chip>
+          )}
+          {status === "countered" && (
+            <Chip tone="blue" size="sm" icon="bargain">
+              Counter sent
+            </Chip>
+          )}
+          {status === "accepted" && (
+            <Chip tone="success" size="sm" icon="check">
+              Accepted
+            </Chip>
+          )}
+          {status === "rejected" && (
+            <Chip tone="danger" size="sm" icon="x">
+              Rejected
+            </Chip>
+          )}
+          {status === "pending" && o.recommendation && (
+            <Chip
+              tone={
+                o.recommendation === "strong"
+                  ? "success"
+                  : o.recommendation === "fair"
+                    ? "saffron"
+                    : "neutral"
+              }
+              size="sm"
+            >
+              {o.recommendation === "strong"
+                ? "Strong offer"
+                : o.recommendation === "fair"
+                  ? "Fair — consider a counter"
+                  : "Close to your floor"}
+            </Chip>
+          )}
+          <span style={{ fontSize: ".7rem", color: "var(--ink-400)", marginLeft: "auto" }}>
+            {o.time}
+          </span>
+        </div>
+        {(status === "pending" || status === "countered") &&
+          (() => {
+            const label = bargainExpiryLabel(o.expiresAt);
+            const lapsed = o.expiresAt != null && new Date(o.expiresAt).getTime() <= Date.now();
+            if (lapsed)
+              return (
+                <div
+                  style={{
+                    fontSize: ".7rem",
+                    color: "var(--red)",
+                    fontWeight: 600,
+                    marginBottom: 2,
+                  }}
+                >
+                  Offer expired
+                </div>
+              );
+            if (label)
+              return (
+                <div
+                  style={{
+                    fontSize: ".7rem",
+                    color: "var(--saffron)",
+                    fontWeight: 600,
+                    marginBottom: 2,
+                  }}
+                >
+                  {label.replace("Expires in", "Respond within")}
+                </div>
+              );
+            return null;
+          })()}
+        <div style={{ fontWeight: 800 }}>
+          {o.buyer} · {o.city}
+        </div>
+        <div style={{ fontSize: ".8125rem", color: "var(--ink-700)", marginTop: 2 }}>
+          {o.product}
+        </div>
+        <div
+          style={{
+            display: "flex",
+            gap: 16,
+            marginTop: 6,
+            fontSize: ".875rem",
+            flexWrap: "wrap",
+          }}
+        >
+          <span>
+            Listed:{" "}
+            <span
+              className="tnum"
+              style={{ textDecoration: "line-through", color: "var(--ink-500)" }}
+            >
+              Rs. {fmtRs(listed)}
+            </span>
+          </span>
+          <span>
+            Offer:{" "}
+            <span className="tnum" style={{ fontWeight: 800, color: "var(--blue-deep)" }}>
+              Rs. {fmtRs(offered)}
+            </span>
+          </span>
+          <span className="tnum" style={{ color: "var(--saffron)", fontWeight: 700 }}>
+            −Rs. {fmtRs(saving)}
+          </span>
+        </div>
+
+        {/* Once the seller has countered, the ball is in the buyer's court —
+            show what was sent, no further actions until the buyer replies. */}
+        {status === "countered" && o.sellerCounter != null && (
+          <div style={{ marginTop: 8, fontSize: ".8125rem", color: "var(--ink-600)" }}>
+            You countered at{" "}
+            <span className="tnum" style={{ fontWeight: 800, color: "var(--blue-deep)" }}>
+              Rs. {fmtRs(o.sellerCounter)}
+            </span>{" "}
+            · waiting for the buyer.
+          </div>
+        )}
+
+        {status === "pending" && !countering && (
+          <div style={{ marginTop: 10 }}>
+            {/* One tap each: accept, counter at the suggested split, or reject. */}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    await acceptMutation.mutateAsync(o.id);
+                    toast("Offer accepted");
+                  } catch {
+                    toast("Could not accept offer");
+                  }
+                }}
+              >
+                Accept
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                loading={counterMutation.isPending}
+                onClick={() => void sendCounter(suggestion)}
+              >
+                Counter Rs {fmtRs(suggestion)}
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    await rejectMutation.mutateAsync(o.id);
+                    toast("Offer rejected");
+                  } catch {
+                    toast("Could not reject offer");
+                  }
+                }}
+              >
+                Reject
+              </Button>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setCounterText(String(suggestion));
+                setCountering(true);
+              }}
+              style={{
+                marginTop: 8,
+                background: "none",
+                border: "none",
+                padding: 0,
+                cursor: "pointer",
+                fontSize: ".75rem",
+                fontWeight: 600,
+                color: "var(--blue)",
+              }}
+            >
+              Counter a different amount
+            </button>
+          </div>
+        )}
+
+        {status === "pending" && countering && (
+          <div style={{ marginTop: 10 }}>
+            <label
+              style={{
+                display: "block",
+                fontSize: ".75rem",
+                fontWeight: 700,
+                color: "var(--ink-600)",
+                marginBottom: 6,
+              }}
+            >
+              Your counter offer
+            </label>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontWeight: 800, color: "var(--blue-deep)" }}>Rs.</span>
+                <input
+                  type="number"
+                  value={counterText}
+                  autoFocus
+                  onChange={(e) =>
+                    setCounterText(e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, ""))
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") void sendCounter();
+                  }}
+                  className="tnum"
+                  style={{
+                    width: 120,
+                    height: 38,
+                    border: "1.5px solid var(--line-200)",
+                    borderRadius: "var(--r-md)",
+                    padding: "0 12px",
+                    fontSize: "1rem",
+                    fontWeight: 800,
+                    color: "var(--blue-deep)",
+                    fontFamily: "var(--font-sans)",
+                  }}
+                />
+              </div>
+              <Button
+                variant="primary"
+                size="sm"
+                loading={counterMutation.isPending}
+                onClick={() => void sendCounter()}
+              >
+                Send counter
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setCountering(false)}>
+                Cancel
+              </Button>
+            </div>
+            <p style={{ fontSize: ".7rem", color: "var(--ink-400)", margin: "6px 0 0" }}>
+              Must be at or above your minimum price for this item.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 /* ---------- 4.8 Bargaining ---------- */
@@ -8945,141 +9259,16 @@ export function SellerBargain() {
           Offers
         </h2>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {BARGAIN_OFFERS.map((o) => {
-            const status = bargainStatus(o);
-            const listed = Number(o.listed) || 0;
-            const offered = Number(o.offered ?? o.yourOffer) || 0;
-            const saving = Math.max(0, listed - offered);
-            return (
-              <div
-                key={o.id}
-                style={{
-                  background: "#fff",
-                  border: `1.5px solid ${status === "pending" ? "var(--red)" : "var(--line-200)"}`,
-                  borderRadius: "var(--r-lg)",
-                  padding: 14,
-                  display: "flex",
-                  gap: 12,
-                }}
-              >
-                <BuyerAvatar
-                  src={o.buyerAvatarUrl}
-                  name={o.buyer}
-                  size={56}
-                  fontSize="1.25rem"
-                  style={{ background: "var(--tint-blue-50)", color: "var(--blue)" }}
-                />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                    {status === "pending" && (
-                      <Chip tone="red" size="sm" icon="bargain">
-                        New offer
-                      </Chip>
-                    )}
-                    {status === "accepted" && (
-                      <Chip tone="success" size="sm" icon="check">
-                        Accepted
-                      </Chip>
-                    )}
-                    {status === "rejected" && (
-                      <Chip tone="danger" size="sm" icon="x">
-                        Rejected
-                      </Chip>
-                    )}
-                    <span
-                      style={{ fontSize: ".7rem", color: "var(--ink-400)", marginLeft: "auto" }}
-                    >
-                      {o.time}
-                    </span>
-                  </div>
-                  <div style={{ fontWeight: 800 }}>
-                    {o.buyer} · {o.city}
-                  </div>
-                  <div style={{ fontSize: ".8125rem", color: "var(--ink-700)", marginTop: 2 }}>
-                    {o.product}
-                  </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 16,
-                      marginTop: 6,
-                      fontSize: ".875rem",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <span>
-                      Listed:{" "}
-                      <span
-                        className="tnum"
-                        style={{ textDecoration: "line-through", color: "var(--ink-500)" }}
-                      >
-                        Rs. {fmtRs(listed)}
-                      </span>
-                    </span>
-                    <span>
-                      Offer:{" "}
-                      <span className="tnum" style={{ fontWeight: 800, color: "var(--blue-deep)" }}>
-                        Rs. {fmtRs(offered)}
-                      </span>
-                    </span>
-                    <span className="tnum" style={{ color: "var(--saffron)", fontWeight: 700 }}>
-                      −Rs. {fmtRs(saving)}
-                    </span>
-                  </div>
-                  {status === "pending" && (
-                    <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={async () => {
-                          try {
-                            await acceptMutation.mutateAsync(o.id);
-                            toast("Offer accepted");
-                          } catch {
-                            toast("Could not accept offer");
-                          }
-                        }}
-                      >
-                        Accept
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={async () => {
-                          const mid = Math.round((o.listed + o.offered) / 2 / 10) * 10;
-                          try {
-                            await counterMutation.mutateAsync({
-                              id: o.id,
-                              counter: Math.round(mid * 100),
-                            });
-                            toast("Counter offer sent");
-                          } catch {
-                            toast("Could not send counter");
-                          }
-                        }}
-                      >
-                        Counter
-                      </Button>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={async () => {
-                          try {
-                            await rejectMutation.mutateAsync(o.id);
-                            toast("Offer rejected");
-                          } catch {
-                            toast("Could not reject offer");
-                          }
-                        }}
-                      >
-                        Reject
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {BARGAIN_OFFERS.map((o) => (
+            <BargainOfferCard
+              key={o.id}
+              o={o}
+              acceptMutation={acceptMutation}
+              rejectMutation={rejectMutation}
+              counterMutation={counterMutation}
+              toast={toast}
+            />
+          ))}
         </div>
       </div>
     </ApiState>

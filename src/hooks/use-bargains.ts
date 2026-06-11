@@ -14,6 +14,17 @@ export function useBargains() {
   });
 }
 
+/** Live count of other buyers bargaining on a product — drives the hot-item badge.
+ *  Enabled only when a productId is given so the PDP can gate it on bargaining. */
+export function useBargainActivity(productId: string | null) {
+  return useQuery({
+    queryKey: [...queryKeys.bargains, "activity", productId],
+    queryFn: () => bargainsApi.activity(productId as string),
+    enabled: !!productId,
+    staleTime: 30 * 1000,
+  });
+}
+
 export function useCreateBargainOffer() {
   const queryClient = useQueryClient();
 

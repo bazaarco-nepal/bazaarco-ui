@@ -124,7 +124,7 @@ export interface PagedParams {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapSeller(raw: any): Seller {
+export function mapSeller(raw: any): Seller {
   return {
     ...raw,
     reviews: raw.reviews ?? raw.reviewsCount ?? 0,

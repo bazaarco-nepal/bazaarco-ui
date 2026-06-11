@@ -31,11 +31,17 @@ export interface BazaarContextValue {
     product: Product,
     qty?: number,
     successMessage?: string,
-    variantId?: string | null,
+    // One variant, or several at once (grouped-variant products let the buyer
+    // pick one option from each group and add them together).
+    variantId?: string | null | Array<string | null>,
   ) => Promise<void>;
   updateCartQty: (productId: string, qty: number, variantId?: string | null) => Promise<void>;
   removeFromCart: (productId: string, variantId?: string | null) => Promise<void>;
-  buyNow: (product: Product, qty?: number, variantId?: string | null) => Promise<void>;
+  buyNow: (
+    product: Product,
+    qty?: number,
+    variantId?: string | null | Array<string | null>,
+  ) => Promise<void>;
   cartCount: number;
   wish: string[];
   wishSellers: string[];

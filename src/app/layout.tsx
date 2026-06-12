@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { AppProviders } from "@/providers/app-providers";
+import { GoogleAnalytics } from "@/components/analytics/google-analytics";
+import { GoogleAnalyticsPageView } from "@/components/analytics/google-analytics-page-view";
 import { MicrosoftClarity } from "@/components/analytics/microsoft-clarity";
 import { DEFAULT_LOCALE, isLocale, LOCALE_COOKIE_KEY, type Locale } from "@/i18n/locale-constants";
 import "@/styles/globals.css";
@@ -40,7 +43,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           `cz-shortcut-listen` onto <body> before React hydrates. Suppress the
           resulting attribute-only mismatch — it's external and not a real bug. */}
       <body suppressHydrationWarning>
+        <GoogleAnalytics />
         <MicrosoftClarity />
+        <Suspense fallback={null}>
+          <GoogleAnalyticsPageView />
+        </Suspense>
         <AppProviders initialLocale={locale}>{children}</AppProviders>
       </body>
     </html>

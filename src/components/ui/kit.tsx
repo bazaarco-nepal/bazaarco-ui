@@ -873,6 +873,19 @@ export function Spinner({ size = 18, color = "currentColor" }) {
     />
   );
 }
+type IconButtonProps = {
+  name: string;
+  label: string;
+  onClick?: React.MouseEventHandler<HTMLButtonElement | HTMLAnchorElement>;
+  active?: boolean;
+  badge?: number;
+  size?: number;
+  title?: string;
+  href?: string;
+  onNavigate?: () => void;
+  target?: React.HTMLAttributeAnchorTarget;
+};
+
 export function IconButton({
   name,
   onClick,
@@ -884,7 +897,7 @@ export function IconButton({
   href,
   onNavigate,
   target,
-}) {
+}: IconButtonProps) {
   const [hov, setHov] = useState(false);
   const linkClick = useSpaLinkClick(href, onNavigate, target);
   const Tag = href ? "a" : "button";
@@ -2005,6 +2018,30 @@ export function usePages<T>(items: T[], perPage = 10, resetKey?: unknown) {
     goPage: (n) => setPage(Math.min(Math.max(1, n), pageCount)),
   };
 }
+type LoadMorePaged = {
+  visible: unknown[];
+  shown: number;
+  total: number;
+  pageSize: number;
+  hasMore: boolean;
+  nextBatch: number;
+  page: number;
+  pageCount: number;
+  more: () => void;
+  goPage: (n: number) => void;
+  reset: () => void;
+};
+
+type LoadMoreProps = {
+  paged: LoadMorePaged | null | undefined;
+  noun?: string;
+  onTop?: () => void;
+  onClear?: () => void;
+  pageBar?: React.ReactNode;
+  style?: React.CSSProperties;
+  size?: string;
+};
+
 export function LoadMore({
   paged,
   noun = "products",
@@ -2013,7 +2050,7 @@ export function LoadMore({
   pageBar,
   style,
   size = "lg",
-}) {
+}: LoadMoreProps) {
   if (!paged || paged.total === 0) return null;
   const { shown, total, hasMore, nextBatch, pageSize } = paged;
   // Everything fit on the first page — never paginated, so skip the end-state chrome.

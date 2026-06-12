@@ -25,7 +25,6 @@ import {
   MobileBuyBar,
   BottomNav,
   LandmarkAddress,
-  usePaged,
   usePages,
   LoadMore,
   BackToTop,
@@ -172,7 +171,6 @@ export function Home() {
   const [searchOpen, setSearchOpen] = useState(false);
   const { data: homeData, isLoading: homeLoading, isError: homeError, error: homeErr } = useHome();
   const exploreFeed = useHomeExploreFeed(homeData?.explore);
-  const feedPaged = usePaged(exploreFeed.items, 20);
   const loading = homeLoading;
   const isError = homeError;
   const error = homeErr;
@@ -524,27 +522,29 @@ export function Home() {
               <div className="bz-picks-grid">
                 {homeLoading && exploreFeed.items.length === 0
                   ? Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
-                  : feedPaged.visible.map((p) => (
+                  : exploreFeed.items.map((p) => (
                       <ProductCard key={p.id} p={p} onClick={openProduct} />
                     ))}
               </div>
-              {!homeLoading && (
+              {!homeLoading && exploreFeed.total > 0 && (
                 <LoadMore
                   paged={{
-                    ...feedPaged,
-                    hasMore: feedPaged.hasMore || exploreFeed.hasNextPage,
-                    nextBatch: feedPaged.hasMore
-                      ? feedPaged.nextBatch
-                      : exploreFeed.hasNextPage
-                        ? 20
-                        : 0,
+                    visible: exploreFeed.items,
+                    shown: exploreFeed.items.length,
+                    total: exploreFeed.total,
+                    pageSize: exploreFeed.pageSize,
+                    hasMore: exploreFeed.hasNextPage,
+                    nextBatch: Math.min(
+                      exploreFeed.pageSize,
+                      Math.max(0, exploreFeed.total - exploreFeed.items.length),
+                    ),
+                    page: exploreFeed.page,
+                    pageCount: Math.max(1, exploreFeed.totalPages),
                     more: () => {
-                      if (feedPaged.hasMore) {
-                        feedPaged.more();
-                        return;
-                      }
                       void exploreFeed.loadMore();
                     },
+                    goPage: () => {},
+                    reset: () => {},
                   }}
                   noun="products"
                   size="sm"

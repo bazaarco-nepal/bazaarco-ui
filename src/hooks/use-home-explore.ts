@@ -10,6 +10,8 @@ const EXPLORE_PAGE_SIZE = 20;
 export function useHomeExploreFeed(initial?: PaginatedData<Product>) {
   const [items, setItems] = useState<Product[]>(initial?.items ?? []);
   const [page, setPage] = useState(initial?.page ?? 1);
+  const [total, setTotal] = useState(initial?.total ?? 0);
+  const [totalPages, setTotalPages] = useState(initial?.totalPages ?? 0);
   const [hasNextPage, setHasNextPage] = useState(
     Boolean(initial && initial.page < initial.totalPages),
   );
@@ -19,6 +21,8 @@ export function useHomeExploreFeed(initial?: PaginatedData<Product>) {
     if (!initial) return;
     setItems(initial.items);
     setPage(initial.page);
+    setTotal(initial.total);
+    setTotalPages(initial.totalPages);
     setHasNextPage(initial.page < initial.totalPages);
   }, [initial]);
 
@@ -29,6 +33,8 @@ export function useHomeExploreFeed(initial?: PaginatedData<Product>) {
       const next = await catalogApi.getProducts({ page: page + 1, limit: EXPLORE_PAGE_SIZE });
       setItems((current) => [...current, ...next.items]);
       setPage(next.page);
+      setTotal(next.total);
+      setTotalPages(next.totalPages);
       setHasNextPage(next.page < next.totalPages);
     } finally {
       setIsFetchingNextPage(false);
@@ -39,6 +45,10 @@ export function useHomeExploreFeed(initial?: PaginatedData<Product>) {
 
   return {
     items: inStock,
+    total,
+    totalPages,
+    page,
+    pageSize: EXPLORE_PAGE_SIZE,
     hasNextPage,
     isFetchingNextPage,
     loadMore,

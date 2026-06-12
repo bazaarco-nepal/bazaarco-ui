@@ -46,6 +46,15 @@ export interface Seller {
   avatar: string;
 }
 
+/** Inline seller snapshot embedded in the product detail response. */
+export interface ProductSeller {
+  id: string;
+  name: string;
+  avatar: string;
+  rating: number;
+  reviews: number;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -61,6 +70,8 @@ export interface Product {
   discountPct?: number | null;
   cat: string;
   seller: string;
+  /** Inline seller info from the product detail endpoint. */
+  sellerInfo?: ProductSeller;
   icon: string;
   tint: Tint;
   rating: number;

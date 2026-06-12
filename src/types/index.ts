@@ -4,6 +4,7 @@ export type {
   CategoryAttributeType,
   CategoryAttributeField,
   Seller,
+  ProductSeller,
   Product,
   CartLine,
   ProductReview,

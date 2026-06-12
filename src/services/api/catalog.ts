@@ -87,6 +87,16 @@ export function mapProduct(raw: any): Product {
     lowStock: raw.lowStock ?? raw.lowStockThreshold ?? undefined,
     eta: raw.eta ?? "2–3 days",
     variants,
+    // Inline seller snapshot from product detail endpoint
+    sellerInfo: raw.store
+      ? {
+          id: raw.store.id,
+          name: raw.store.name,
+          avatar: raw.store.avatar,
+          rating: raw.store.rating,
+          reviews: raw.store.reviewsCount ?? raw.store.reviews ?? 0,
+        }
+      : undefined,
     // Derive outOfStock
     outOfStock:
       typeof raw.outOfStock === "boolean"

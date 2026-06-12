@@ -39,15 +39,8 @@ import {
 } from "@/components/ui";
 import { pathFromScreen, productShareUrl, searchPath } from "@/config/routes";
 import { useBazaarStore } from "@/store/bazaar-store";
-import { displayCategoryLabel } from "@/lib/locale-display";
 import { formatDeliverToLabel } from "@/lib/delivery-location";
-import {
-  useCatalog,
-  useProduct,
-  useProductReviews,
-  useProductProfile,
-  useRatingDistribution,
-} from "@/hooks/use-catalog";
+import { useProduct } from "@/hooks/use-catalog";
 import {
   BazaarCtx,
   useBz,
@@ -60,7 +53,6 @@ import {
   DevViewSwitcher,
   SellerRow,
 } from "@/components/common";
-import { useSeller } from "@/hooks/use-catalog";
 import { useSimilar } from "@/hooks/use-search";
 import {
   useAcceptCounterOffer,
@@ -140,7 +132,7 @@ function TabbedPair({ items }: { items: TabItem[] }) {
    ============================================================ */
 function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
   const { addToCart, nav } = useBz();
-  const { sellerOf } = useCatalog();
+  const sellerName = p.sellerInfo?.name ?? "seller";
   const createOffer = useCreateBargainOffer();
   // Social proof: other buyers bargaining on this item right now (excludes you).
   const othersBargaining = useBargainActivity(p.id).data ?? 0;
@@ -447,7 +439,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
           <div style={{ padding: "30px 0", textAlign: "center" }}>
             <Spinner size={32} color="var(--blue)" />
             <p style={{ color: "var(--ink-500)", marginTop: 16 }}>
-              Sending your offer to {sellerOf(p)?.name ?? "seller"}…
+              Sending your offer to {sellerName}…
             </p>
           </div>
         )}
@@ -470,7 +462,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
             </div>
             <h3 style={{ margin: 0, fontSize: "1.25rem" }}>Offer sent!</h3>
             <p style={{ color: "var(--ink-500)", marginTop: 8 }}>
-              {sellerOf(p)?.name ?? "The seller"} got your offer of{" "}
+              {sellerName} got your offer of{" "}
               <b className="tnum">Rs. {offerValue.toLocaleString("en-IN")}</b>. They can accept,
               counter, or decline — we'll show their reply in My Offers.
             </p>
@@ -513,9 +505,8 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
             </div>
             <h3 style={{ margin: 0, fontSize: "1.25rem" }}>Offer accepted! 🎉</h3>
             <p style={{ color: "var(--ink-500)", marginTop: 8 }}>
-              {sellerOf(p)?.name} accepted{" "}
-              <b className="tnum">Rs. {offerValue.toLocaleString("en-IN")}</b>. Add it to your cart
-              at this price.
+              {sellerName} accepted <b className="tnum">Rs. {offerValue.toLocaleString("en-IN")}</b>
+              . Add it to your cart at this price.
             </p>
             {bargainExpiryLabel(offerExpires) && (
               <p style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 6 }}>
@@ -549,15 +540,15 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
                   width: 36,
                   height: 36,
                   borderRadius: "50%",
-                  background: TINTS[sellerOf(p)?.tint ?? "blue"][0],
+                  background: TINTS["blue"][0],
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   fontWeight: 800,
-                  color: TINTS[sellerOf(p)?.tint ?? "blue"][2],
+                  color: TINTS["blue"][2],
                 }}
               >
-                {sellerOf(p)?.name?.[0]}
+                {sellerName[0]}
               </span>
             </div>
             <h3 style={{ margin: 0, fontSize: "1.125rem" }}>Seller countered</h3>
@@ -793,34 +784,24 @@ export function PDP({ p: pProp }: PdpProps) {
     promptLogin,
   } = useBz();
   const productId = pProp.id;
-  const { data: productFromApi, isLoading: productDetailLoading } = useProduct(productId);
-  const catalog = useCatalog();
+  const { data: productFromApi, isLoading, isError, error } = useProduct(productId);
   const deliveryLocation = useBazaarStore((s) => s.deliveryLocation);
-  const locale = useBazaarStore((s) => s.locale);
   const setDeliveryLocation = useBazaarStore((s) => s.setDeliveryLocation);
   const hasDeliveryLoc = Boolean(deliveryLocation?.city);
   const p = productFromApi ?? pProp;
-  const { data: reviews = [], isLoading: reviewsLoading } = useProductReviews(productId);
-  const { data: profile, isLoading: profileLoading } = useProductProfile(productId);
-  const { data: ratingDist = [], isLoading: ratingLoading } = useRatingDistribution(productId);
-  const isLoading =
-    productDetailLoading || catalog.isLoading || reviewsLoading || profileLoading || ratingLoading;
-  const isError = catalog.isError;
-  const error = catalog.error;
-  const { products, categories, sellerOf } = catalog;
-  const { data: sellerFromApi } = useSeller(p.seller);
-  const s = sellerOf(p) ?? sellerFromApi;
-  // Vector "find similar" (Typesense) for the recommendations rail; fall back to
-  // same-category products if the search service returns nothing / is unavailable.
-  const { data: similarFromSearch = [] } = useSimilar(productId, 10);
-  const related = products.filter((x) => x.cat === p.cat && x.id !== p.id);
-  const similarItems = similarFromSearch.length > 0 ? similarFromSearch : related;
-  const { variants = [], specs = [] } = profile ?? {};
+  const s = p.sellerInfo ?? null;
+  // Vector "find similar" (Typesense) for the recommendations rail.
+  const { data: similarItems = [] } = useSimilar(productId, 10);
+  // Derive specs from product metadata key-value pairs.
+  const specs: [string, string][] = useMemo(() => {
+    if (!p.metadata || typeof p.metadata !== "object") return [];
+    return Object.entries(p.metadata)
+      .filter(([, v]) => v != null && String(v).trim() !== "")
+      .map(([k, v]) => [k, String(v)]);
+  }, [p.metadata]);
   const desc = useMemo(() => {
-    const fromListing = p.description?.trim();
-    if (fromListing) return fromListing;
-    return profile?.desc?.trim() ?? "";
-  }, [p.description, profile?.desc]);
+    return p.description?.trim() ?? "";
+  }, [p.description]);
   const [mediaIdx, setMediaIdx] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
@@ -857,8 +838,6 @@ export function PDP({ p: pProp }: PdpProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [descOpen, setDescOpen] = useState(false);
   const [deliverOpen, setDeliverOpen] = useState(false);
-  const [variantSel, setVariantSel] = useState<Record<string, number>>({});
-
   // Priced variants (the seller's real SKUs) drive the price a buyer pays and
   // what's added to the cart. The cosmetic template swatches below are suppressed
   // when these exist, so there's a single source of truth for the selection.
@@ -1238,13 +1217,7 @@ export function PDP({ p: pProp }: PdpProps) {
     }
   }, [productId]);
 
-  useEffect(() => {
-    setVariantSel(
-      Object.fromEntries((profile?.variants ?? []).map((v) => [v.name, v.default || 0])),
-    );
-  }, [productId, profile?.variants]);
   const wished = wish.includes(p.id);
-  const pickVariant = (name, i) => setVariantSel((prev) => ({ ...prev, [name]: i }));
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
@@ -1273,10 +1246,7 @@ export function PDP({ p: pProp }: PdpProps) {
           </AppLink>
           <Icon name="chevronRight" size={13} color="var(--ink-300)" />
           <AppLink href={searchPath({ cat: p.cat })} className="bz-crumb">
-            {(() => {
-              const cat = (categories ?? []).find((c) => c.id === p.cat);
-              return cat ? displayCategoryLabel(cat, locale) : p.cat;
-            })()}
+            {p.cat}
           </AppLink>
           <Icon name="chevronRight" size={13} color="var(--ink-300)" />
           <span style={{ color: "var(--ink-700)" }}>{p.name}</span>
@@ -1519,80 +1489,6 @@ export function PDP({ p: pProp }: PdpProps) {
             </div>
 
             {variantPicker}
-
-            {/* Cosmetic template swatches — hidden when priced variants exist */}
-            {!hasPricedVariants &&
-              variants.map((v) => {
-                const sel = variantSel[v.name] ?? 0;
-                const isColor = v.kind === "swatch";
-                return (
-                  <div key={v.name} style={{ marginTop: 18 }}>
-                    <div
-                      style={{
-                        fontSize: ".8125rem",
-                        color: "var(--ink-500)",
-                        marginBottom: 8,
-                      }}
-                    >
-                      {v.name}:{" "}
-                      <span style={{ color: "var(--ink-900)", fontWeight: 600 }}>
-                        {isColor ? v.options[sel]?.label : v.options[sel]}
-                      </span>
-                    </div>
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                      {v.options.map((opt, i) =>
-                        isColor ? (
-                          <button
-                            key={i}
-                            type="button"
-                            aria-label={opt.label}
-                            onClick={() => pickVariant(v.name, i)}
-                            style={{
-                              width: 40,
-                              height: 40,
-                              borderRadius: "50%",
-                              cursor: "pointer",
-                              border: `2px solid ${sel === i ? "var(--blue-deep)" : "var(--line-200)"}`,
-                              padding: 3,
-                              background: "#fff",
-                            }}
-                          >
-                            <span
-                              style={{
-                                display: "block",
-                                width: "100%",
-                                height: "100%",
-                                borderRadius: "50%",
-                                background: TINTS[opt.tint][2],
-                              }}
-                            />
-                          </button>
-                        ) : (
-                          <button
-                            key={i}
-                            type="button"
-                            onClick={() => pickVariant(v.name, i)}
-                            style={{
-                              minWidth: 56,
-                              minHeight: 48,
-                              padding: "10px 20px",
-                              borderRadius: "var(--r-md)",
-                              cursor: "pointer",
-                              border: `1.5px solid ${sel === i ? "var(--blue-deep)" : "var(--line-200)"}`,
-                              background: sel === i ? "var(--tint-blue-50)" : "#fff",
-                              color: sel === i ? "var(--blue-deep)" : "var(--ink-700)",
-                              fontWeight: 700,
-                              fontSize: ".9375rem",
-                            }}
-                          >
-                            {opt}
-                          </button>
-                        ),
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
 
             {/* Delivery fee — explicit (legal-safe) */}
             <div
@@ -2197,80 +2093,6 @@ export function PDP({ p: pProp }: PdpProps) {
 
             {variantPicker}
 
-            {/* Cosmetic template swatches — hidden when priced variants exist */}
-            {!hasPricedVariants &&
-              variants.map((v, vi) => {
-                const sel = variantSel[v.name] ?? 0;
-                return (
-                  <div key={v.name} style={{ marginTop: vi === 0 ? 4 : 22 }}>
-                    <div
-                      style={{
-                        fontSize: ".875rem",
-                        fontWeight: 700,
-                        color: "var(--ink-800)",
-                        marginBottom: 10,
-                      }}
-                    >
-                      {v.name}
-                      {v.kind === "swatch" && (
-                        <span style={{ color: "var(--ink-500)", fontWeight: 500 }}>
-                          : {v.options[sel].label}
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                      {v.options.map((opt, i) =>
-                        v.kind === "swatch" ? (
-                          <button
-                            key={i}
-                            onClick={() => pickVariant(v.name, i)}
-                            aria-label={opt.label}
-                            style={{
-                              width: 48,
-                              height: 48,
-                              borderRadius: "var(--r-md)",
-                              cursor: "pointer",
-                              border: `2px solid ${sel === i ? "var(--blue-deep)" : "var(--line-200)"}`,
-                              padding: 3,
-                              background: "#fff",
-                            }}
-                          >
-                            <span
-                              style={{
-                                display: "block",
-                                width: "100%",
-                                height: "100%",
-                                borderRadius: 5,
-                                background: TINTS[opt.tint][2],
-                              }}
-                            />
-                          </button>
-                        ) : (
-                          <button
-                            key={i}
-                            onClick={() => pickVariant(v.name, i)}
-                            style={{
-                              minWidth: 56,
-                              minHeight: 48,
-                              padding: "10px 20px",
-                              borderRadius: "var(--r-md)",
-                              cursor: "pointer",
-                              border: `1.5px solid ${sel === i ? "var(--blue-deep)" : "var(--line-200)"}`,
-                              background: sel === i ? "var(--tint-blue-50)" : "#fff",
-                              color: sel === i ? "var(--blue-deep)" : "var(--ink-700)",
-                              fontWeight: 700,
-                              fontSize: ".9375rem",
-                            }}
-                          >
-                            {opt}
-                          </button>
-                        ),
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-
             {/* Quantity row */}
             <div
               style={{
@@ -2572,14 +2394,7 @@ export function PDP({ p: pProp }: PdpProps) {
                   key: "reviews",
                   label: "Reviews",
                   content: (
-                    <ReviewsSection
-                      productId={p.id}
-                      rating={p.rating}
-                      reviewCount={p.reviews}
-                      reviews={reviews}
-                      ratingDist={ratingDist}
-                      loading={reviewsLoading || ratingLoading}
-                    />
+                    <ReviewsSection productId={p.id} rating={p.rating} reviewCount={p.reviews} />
                   ),
                 },
                 {

@@ -4,10 +4,14 @@ import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Icon, RatingStars } from "@/components/ui";
 import { BuyerAvatar, useBz } from "@/components/common";
-import { useCreateProductReview, useProductReviewEligibility } from "@/hooks/use-catalog";
+import {
+  useCreateProductReview,
+  useProductReviewEligibility,
+  useProductReviews,
+  useRatingDistribution,
+} from "@/hooks/use-catalog";
 import { useUploadImage } from "@/hooks/use-media-upload";
 import { ApiRequestError } from "@/services/api/http";
-import type { ProductReview, RatingDistribution } from "@/types";
 
 const MAX_REVIEW_PHOTOS = 8;
 
@@ -24,9 +28,6 @@ interface ReviewsSectionProps {
   productId: string;
   rating: number;
   reviewCount: number;
-  reviews: ProductReview[];
-  ratingDist: RatingDistribution[];
-  loading: boolean;
 }
 
 function ReviewComposer({ productId, onDone }: { productId: string; onDone: () => void }) {
@@ -348,16 +349,12 @@ function ReviewComposer({ productId, onDone }: { productId: string; onDone: () =
  * reviews, collapses to a calm "be the first" prompt — no fake distribution
  * bars, no "0 reviews" (matches the home hide-when-empty approach).
  */
-export function ReviewsSection({
-  productId,
-  rating,
-  reviewCount,
-  reviews,
-  ratingDist,
-  loading,
-}: ReviewsSectionProps) {
+export function ReviewsSection({ productId, rating, reviewCount }: ReviewsSectionProps) {
   const { t } = useTranslation();
   const { authed } = useBz();
+  const { data: reviews = [], isLoading: reviewsLoading } = useProductReviews(productId);
+  const { data: ratingDist = [], isLoading: ratingLoading } = useRatingDistribution(productId);
+  const loading = reviewsLoading || ratingLoading;
   const { data: eligibility, isLoading: eligibilityLoading } = useProductReviewEligibility(
     productId,
     authed,

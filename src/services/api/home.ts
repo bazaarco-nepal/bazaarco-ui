@@ -1,6 +1,7 @@
-import type { Product } from "@/types";
+import type { Category, Product } from "@/types";
 import { getData } from "./http";
 import { mapProduct } from "./catalog";
+import type { PaginatedData } from "./types";
 
 export interface HeroSlide {
   eyebrow: string;
@@ -23,6 +24,18 @@ export interface HomeData {
   trendingProductIds: string[];
   trending: Product[];
   trustItems: TrustItem[];
+  categories: Category[];
+  newArrivals: PaginatedData<Product>;
+  topPicks: PaginatedData<Product>;
+  explore: PaginatedData<Product>;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapProductPage(raw: PaginatedData<any>): PaginatedData<Product> {
+  return {
+    ...raw,
+    items: (raw.items ?? []).map(mapProduct),
+  };
 }
 
 export const homeApi = {
@@ -32,6 +45,16 @@ export const homeApi = {
     return {
       ...raw,
       trending: (raw.trending ?? []).map(mapProduct),
+      categories: raw.categories ?? [],
+      newArrivals: mapProductPage(
+        raw.newArrivals ?? { items: [], total: 0, page: 1, limit: 12, totalPages: 0 },
+      ),
+      topPicks: mapProductPage(
+        raw.topPicks ?? { items: [], total: 0, page: 1, limit: 12, totalPages: 0 },
+      ),
+      explore: mapProductPage(
+        raw.explore ?? { items: [], total: 0, page: 1, limit: 20, totalPages: 0 },
+      ),
     };
   },
 };

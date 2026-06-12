@@ -28,15 +28,14 @@ import {
   usePaged,
   usePages,
   LoadMore,
-  PageBar,
   BackToTop,
   ApiState,
   AppLink,
 } from "@/components/ui";
 import { browsePath, pathFromScreen, searchPath } from "@/config/routes";
 import { ASSETS } from "@/config/assets";
-import { useCatalog } from "@/hooks/use-catalog";
 import { useHome } from "@/hooks/use-home";
+import { useHomeExploreFeed } from "@/hooks/use-home-explore";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { displayName } from "@/lib/display";
 import {
@@ -172,18 +171,13 @@ export function Home() {
   const user = useBazaarStore((s) => s.user);
   const [searchOpen, setSearchOpen] = useState(false);
   const { data: homeData, isLoading: homeLoading, isError: homeError, error: homeErr } = useHome();
-  const catalog = useCatalog();
-  const loading = homeLoading || catalog.isLoading;
-  const isError = homeError || catalog.isError;
-  const error = homeErr ?? catalog.error;
-  const { products, categories, byId, videoProducts, flashProducts } = catalog;
-  const trending = homeData?.trending?.length ? homeData.trending : [];
-  const madeInNepal = homeData?.trending?.length ? homeData.trending.slice(0, 5) : [];
+  const exploreFeed = useHomeExploreFeed(homeData?.explore);
+  const feedPaged = usePaged(exploreFeed.items, 20);
+  const loading = homeLoading;
+  const isError = homeError;
+  const error = homeErr;
+  const categories = homeData?.categories;
   const buyerGreeting = user ? displayName(user, "there") : null;
-  const feedPaged = usePaged(
-    products.filter((p) => !p.outOfStock),
-    20,
-  );
   const W = ({
     children,
     style,
@@ -203,7 +197,7 @@ export function Home() {
   // The static shell (hero, mobile header, category frame, banners) needs no API
   // data, so it paints immediately — no full-page spinner. Only the data-backed
   // sections (categories, picks, feed) show their own skeletons while loading.
-  const catalogLoading = catalog.isLoading;
+  const catalogLoading = homeLoading && !categories;
   return (
     <>
       <div style={{ paddingBottom: 8 }}>
@@ -407,7 +401,11 @@ export function Home() {
           </W>
         </div>
 
-        <PicksSections />
+        <PicksSections
+          newArrivals={homeData?.newArrivals}
+          topPicks={homeData?.topPicks}
+          homeLoading={homeLoading}
+        />
 
         {/* trending in Kathmandu — hyperlocal */}
         {/* <W style={{ paddingTop: 52 }}>
@@ -514,7 +512,7 @@ export function Home() {
         {/* Endless product feed — shown on both web and mobile */}
         <W className="bz-home-section" style={{ paddingTop: 36 }}>
           <SectionHead title={t("home.moreToExplore")} />
-          {isError && !catalogLoading ? (
+          {isError && !homeLoading ? (
             <EmptyState
               title={t("home.loadError")}
               message={t("home.loadErrorMessage")}
@@ -524,15 +522,30 @@ export function Home() {
           ) : (
             <>
               <div className="bz-picks-grid">
-                {catalogLoading
+                {homeLoading && exploreFeed.items.length === 0
                   ? Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
                   : feedPaged.visible.map((p) => (
                       <ProductCard key={p.id} p={p} onClick={openProduct} />
                     ))}
               </div>
-              {!catalogLoading && (
+              {!homeLoading && (
                 <LoadMore
-                  paged={feedPaged}
+                  paged={{
+                    ...feedPaged,
+                    hasMore: feedPaged.hasMore || exploreFeed.hasNextPage,
+                    nextBatch: feedPaged.hasMore
+                      ? feedPaged.nextBatch
+                      : exploreFeed.hasNextPage
+                        ? 20
+                        : 0,
+                    more: () => {
+                      if (feedPaged.hasMore) {
+                        feedPaged.more();
+                        return;
+                      }
+                      void exploreFeed.loadMore();
+                    },
+                  }}
                   noun="products"
                   size="sm"
                   style={{ paddingBottom: 12 }}

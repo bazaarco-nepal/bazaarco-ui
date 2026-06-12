@@ -2,21 +2,31 @@
 
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { Button, SectionHead, SkeletonCard } from "@/components/ui";
 import { ProductCard, useBz } from "@/components/common";
-import { useNewArrivals, useTopPicks } from "@/hooks/use-catalog";
+import { catalogApi } from "@/services/api/catalog";
+import type { PaginatedData } from "@/services/api/types";
 import type { Product } from "@/types";
 
-type PicksQuery = ReturnType<typeof useTopPicks>;
+const PICKS_PAGE_SIZE = 12;
 
 function ProductSection({
   title,
-  query,
+  items,
+  isLoading,
+  hasNextPage,
+  isFetchingNextPage,
+  onLoadMore,
   seeAllHref,
   hideWhenEmpty = false,
 }: {
   title: string;
-  query: PicksQuery;
+  items: Product[];
+  isLoading: boolean;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  onLoadMore: () => void;
   seeAllHref?: string;
   hideWhenEmpty?: boolean;
 }) {
@@ -24,12 +34,6 @@ function ProductSection({
   const { openProduct } = useBz();
   const router = useRouter();
 
-  const items: Product[] = (query.data?.pages ?? []).flatMap((p) => p.items);
-  const isLoading = query.isLoading;
-
-  // Hide section entirely whenever it has no items — including while loading, so a
-  // possibly-empty section never flashes a skeleton that then vanishes. It pops in
-  // only once items actually arrive; if none ever do, it stays invisible.
   if (hideWhenEmpty && items.length === 0) return null;
 
   return (
@@ -55,16 +59,16 @@ function ProductSection({
         </div>
       )}
 
-      {query.hasNextPage && (
+      {hasNextPage && (
         <div style={{ display: "flex", justifyContent: "center", marginTop: 28 }}>
           <Button
             variant="secondary"
             size="sm"
             iconRight="chevronDown"
-            disabled={query.isFetchingNextPage}
-            onClick={() => query.fetchNextPage()}
+            disabled={isFetchingNextPage}
+            onClick={onLoadMore}
           >
-            {query.isFetchingNextPage ? "…" : t("common.loadMore")}
+            {isFetchingNextPage ? "…" : t("common.loadMore")}
           </Button>
         </div>
       )}
@@ -72,17 +76,84 @@ function ProductSection({
   );
 }
 
-export function PicksSections() {
+function usePaginatedSection(initial?: PaginatedData<Product>) {
+  const [items, setItems] = useState<Product[]>(initial?.items ?? []);
+  const [page, setPage] = useState(initial?.page ?? 1);
+  const [hasNextPage, setHasNextPage] = useState(
+    Boolean(initial && initial.page < initial.totalPages),
+  );
+  const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
+
+  useEffect(() => {
+    if (!initial) return;
+    setItems(initial.items);
+    setPage(initial.page);
+    setHasNextPage(initial.page < initial.totalPages);
+  }, [initial]);
+
+  const loadMore = useCallback(
+    async (fetchPage: (page: number) => Promise<PaginatedData<Product>>) => {
+      if (!hasNextPage || isFetchingNextPage) return;
+      setIsFetchingNextPage(true);
+      try {
+        const next = await fetchPage(page + 1);
+        setItems((current) => [...current, ...next.items]);
+        setPage(next.page);
+        setHasNextPage(next.page < next.totalPages);
+      } finally {
+        setIsFetchingNextPage(false);
+      }
+    },
+    [hasNextPage, isFetchingNextPage, page],
+  );
+
+  return {
+    items,
+    hasNextPage,
+    isFetchingNextPage,
+    loadMore,
+    isLoading: !initial,
+  };
+}
+
+export function PicksSections({
+  newArrivals: newArrivalsInitial,
+  topPicks: topPicksInitial,
+  homeLoading,
+}: {
+  newArrivals?: PaginatedData<Product>;
+  topPicks?: PaginatedData<Product>;
+  homeLoading: boolean;
+}) {
   const { t } = useTranslation();
-  const topPicks = useTopPicks(7);
-  const newArrivals = useNewArrivals();
+  const newArrivals = usePaginatedSection(newArrivalsInitial);
+  const topPicks = usePaginatedSection(topPicksInitial);
 
   return (
     <>
-      <ProductSection title={t("home.newArrivals")} query={newArrivals} />
+      <ProductSection
+        title={t("home.newArrivals")}
+        items={newArrivals.items}
+        isLoading={homeLoading && newArrivals.items.length === 0}
+        hasNextPage={newArrivals.hasNextPage}
+        isFetchingNextPage={newArrivals.isFetchingNextPage}
+        onLoadMore={() =>
+          newArrivals.loadMore((page) =>
+            catalogApi.getNewArrivals({ page, limit: PICKS_PAGE_SIZE }),
+          )
+        }
+      />
       <ProductSection
         title={t("home.topPicks")}
-        query={topPicks}
+        items={topPicks.items}
+        isLoading={homeLoading && topPicks.items.length === 0}
+        hasNextPage={topPicks.hasNextPage}
+        isFetchingNextPage={topPicks.isFetchingNextPage}
+        onLoadMore={() =>
+          topPicks.loadMore((page) =>
+            catalogApi.getTopPicks({ days: 7, page, limit: PICKS_PAGE_SIZE }),
+          )
+        }
         seeAllHref="/browse?sort=popular"
         hideWhenEmpty
       />

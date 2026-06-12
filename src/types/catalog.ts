@@ -35,6 +35,8 @@ export interface StoreAddress {
 
 export interface Seller {
   id: string;
+  // Vanity handle for the public URL (/store/<slug>); falls back to id when absent.
+  slug?: string;
   name: string;
   rating: number;
   reviews: number;

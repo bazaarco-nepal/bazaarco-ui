@@ -388,7 +388,15 @@
       "storeLinkShareText": "BazaarCo मा {{shop}} किनमेल गर्नुहोस्",
       "storeLinkLive": "लाइभ",
       "storeLinkPending": "अझै लाइभ छैन",
-      "storeLinkOnBazaar": "BazaarCo मा"
+      "storeLinkOnBazaar": "BazaarCo मा",
+      "storeLinkEdit": "लिङ्क सम्पादन",
+      "storeLinkEditHint": "सानो अक्षर, अंक र हाइफन प्रयोग गर्नुहोस्। यो ठेगाना ग्राहकले देख्नेछन्।",
+      "storeLinkSave": "सेभ",
+      "storeLinkCancel": "रद्द",
+      "storeLinkSaved": "स्टोर लिङ्क अपडेट भयो",
+      "storeLinkTaken": "त्यो लिङ्क पहिले नै लिइएको छ — अर्को प्रयास गर्नुहोस्।",
+      "storeLinkInvalid": "त्यो लिङ्क मान्य छैन — ३-४८ सानो अक्षर, अंक वा हाइफन प्रयोग गर्नुहोस्।",
+      "storeLinkSaveError": "स्टोर लिङ्क अपडेट गर्न सकिएन"
     },
     "inbox": {
       "title": "अर्डर",

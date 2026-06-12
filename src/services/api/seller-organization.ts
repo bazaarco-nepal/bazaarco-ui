@@ -14,6 +14,7 @@ export interface SellerStoreSummary {
 export interface SellerOrganization {
   linked: boolean;
   sellerId: string | null;
+  slug: string | null;
   stores: SellerStoreSummary[];
   shopName: string | null;
   ownerName: string | null;

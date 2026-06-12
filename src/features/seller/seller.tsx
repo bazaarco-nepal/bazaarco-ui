@@ -93,6 +93,7 @@ import {
   useSubmitSellerVerification,
   useSellerStorefront,
   useUpdateStorefront,
+  useUpdateStoreHandle,
   useUploadStorefrontBanner,
   useUploadStorefrontLogo,
   useRemoveStorefrontLogo,
@@ -1657,8 +1658,11 @@ function StoreLinkCard() {
   const { t } = useTranslation();
   const { toast } = useBz();
   const { data: organization } = useSellerOrganization();
+  const updateHandle = useUpdateStoreHandle();
   const [origin, setOrigin] = useState("");
   const [copied, setCopied] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [draftHandle, setDraftHandle] = useState("");
 
   // window.location.origin is client-only; pass "" on the server render so the
   // first client render matches it (no hydration mismatch), then fill it in.
@@ -1669,11 +1673,40 @@ function StoreLinkCard() {
   const sellerId = organization?.sellerId;
   if (!sellerId) return null;
 
+  // The handle is the readable URL segment; older stores without one fall back
+  // to the UUID, which the public resolver still accepts.
+  const handle = organization?.slug ?? sellerId;
   const shopName = organization?.shopName?.trim() || "BazaarCo";
-  const fullUrl = storeShareUrl(sellerId, origin);
+  const fullUrl = storeShareUrl(handle, origin);
   const displayUrl = fullUrl.replace(/^https?:\/\//, "");
   const logoUrl = organization?.logoUrl;
   const isLive = organization?.verification?.canSell ?? false;
+
+  const startEditing = () => {
+    setDraftHandle(organization?.slug ?? "");
+    setIsEditing(true);
+  };
+
+  const saveHandle = () => {
+    const next = draftHandle.trim();
+    if (!next || next === organization?.slug) {
+      setIsEditing(false);
+      return;
+    }
+    updateHandle.mutate(next, {
+      onSuccess: () => {
+        setIsEditing(false);
+        toast(t("seller.dashboard.storeLinkSaved"));
+      },
+      onError: (err) => {
+        const token = (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message;
+        if (token === "STORE_HANDLE_TAKEN") toast(t("seller.dashboard.storeLinkTaken"));
+        else if (token === "INVALID_STORE_HANDLE") toast(t("seller.dashboard.storeLinkInvalid"));
+        else toast(t("seller.dashboard.storeLinkSaveError"));
+      },
+    });
+  };
 
   const copyLink = async () => {
     if (typeof navigator === "undefined" || !navigator.clipboard) {
@@ -1739,25 +1772,70 @@ function StoreLinkCard() {
 
       <hr className="bz-store-link__divider" />
 
-      <div className="bz-store-link__pill">
-        <a
-          className="bz-store-link__url"
-          href={fullUrl}
-          target="_blank"
-          rel="noreferrer noopener"
-          title={displayUrl}
-        >
-          {displayUrl}
-        </a>
-        <button
-          type="button"
-          className={"bz-store-link__copy" + (copied ? " is-copied" : "")}
-          onClick={copyLink}
-        >
-          <Icon name={copied ? "check" : "copy"} size={14} />
-          {copied ? t("seller.dashboard.storeLinkCopied") : t("seller.dashboard.storeLinkCopy")}
-        </button>
-      </div>
+      {isEditing ? (
+        <div className="bz-store-link__edit">
+          <div className="bz-store-link__edit-field">
+            <span className="bz-store-link__edit-prefix">
+              {origin.replace(/^https?:\/\//, "")}/store/
+            </span>
+            <input
+              className="bz-store-link__edit-input"
+              value={draftHandle}
+              onChange={(e) => setDraftHandle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") saveHandle();
+                if (e.key === "Escape") setIsEditing(false);
+              }}
+              autoFocus
+              spellCheck={false}
+              aria-label={t("seller.dashboard.storeLinkEdit")}
+            />
+          </div>
+          <p className="bz-store-link__edit-hint">{t("seller.dashboard.storeLinkEditHint")}</p>
+          <div className="bz-store-link__edit-actions">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={saveHandle}
+              disabled={updateHandle.isPending}
+            >
+              {t("seller.dashboard.storeLinkSave")}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsEditing(false)}
+              disabled={updateHandle.isPending}
+            >
+              {t("seller.dashboard.storeLinkCancel")}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="bz-store-link__pill">
+          <a
+            className="bz-store-link__url"
+            href={fullUrl}
+            target="_blank"
+            rel="noreferrer noopener"
+            title={displayUrl}
+          >
+            {displayUrl}
+          </a>
+          <button type="button" className="bz-store-link__edit-btn" onClick={startEditing}>
+            <Icon name="edit" size={14} />
+            {t("seller.dashboard.storeLinkEdit")}
+          </button>
+          <button
+            type="button"
+            className={"bz-store-link__copy" + (copied ? " is-copied" : "")}
+            onClick={copyLink}
+          >
+            <Icon name={copied ? "check" : "copy"} size={14} />
+            {copied ? t("seller.dashboard.storeLinkCopied") : t("seller.dashboard.storeLinkCopy")}
+          </button>
+        </div>
+      )}
     </section>
   );
 }

@@ -355,7 +355,15 @@
       "storeLinkShareText": "Shop {{shop}} on BazaarCo",
       "storeLinkLive": "Live",
       "storeLinkPending": "Not live yet",
-      "storeLinkOnBazaar": "on BazaarCo"
+      "storeLinkOnBazaar": "on BazaarCo",
+      "storeLinkEdit": "Edit link",
+      "storeLinkEditHint": "Use lowercase letters, numbers and hyphens. This is the address buyers will see.",
+      "storeLinkSave": "Save",
+      "storeLinkCancel": "Cancel",
+      "storeLinkSaved": "Store link updated",
+      "storeLinkTaken": "That link is already taken — try another.",
+      "storeLinkInvalid": "That link isn't allowed — use 3-48 lowercase letters, numbers or hyphens.",
+      "storeLinkSaveError": "Couldn't update your store link"
     },
     "inbox": {
       "title": "Orders",

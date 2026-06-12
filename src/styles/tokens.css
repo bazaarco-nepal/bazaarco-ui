@@ -2088,6 +2088,69 @@ body {
   color: var(--success);
 }
 
+.bz-store-link__edit-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 6px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink-500);
+  transition: color var(--dur-standard) var(--ease);
+}
+
+.bz-store-link__edit-btn:hover {
+  color: var(--ink-900);
+}
+
+/* Inline handle editor — replaces the pill while the seller renames their link. */
+.bz-store-link__edit-field {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--line-200);
+  border-radius: var(--r-md);
+  background: var(--page);
+}
+
+.bz-store-link__edit-prefix {
+  flex-shrink: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink-500);
+  white-space: nowrap;
+}
+
+.bz-store-link__edit-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: none;
+  outline: none;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink-900);
+}
+
+.bz-store-link__edit-hint {
+  margin: 8px 2px 0;
+  font-size: 0.75rem;
+  color: var(--ink-500);
+}
+
+.bz-store-link__edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 /* Phone: name truncates, "on BazaarCo" drops to save room, Share stays compact. */
 @media (max-width: 600px) {
   .bz-store-link {
@@ -2096,6 +2159,21 @@ body {
 
   .bz-store-link__on {
     display: none;
+  }
+
+  /* Stack the pill: full-width URL on its own line so it isn't crushed, with the
+     Edit/Copy actions dropping to the row below (edit left, copy right). */
+  .bz-store-link__pill {
+    flex-wrap: wrap;
+  }
+
+  .bz-store-link__url {
+    flex: 1 1 100%;
+  }
+
+  .bz-store-link__edit-btn {
+    margin-right: auto;
+    padding-left: 0;
   }
 }
 

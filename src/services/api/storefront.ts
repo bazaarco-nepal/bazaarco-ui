@@ -11,6 +11,7 @@ import type { StoreAddress } from "@/lib/store-address";
 
 export interface StorefrontData {
   shopName: string;
+  slug: string;
   logoUrl: string;
   bannerUrl: string | null;
   about: string;
@@ -34,6 +35,16 @@ export const storefrontApi = {
     const { data } = await apiClient.patch<ApiSuccessResponse<StorefrontData>>(
       "/seller/storefront",
       payload,
+    );
+    return data.data;
+  },
+
+  // The handle is normalized + validated server-side; the response carries the
+  // slug that was actually stored, which may differ from what the seller typed.
+  async updateHandle(handle: string): Promise<StorefrontData> {
+    const { data } = await apiClient.patch<ApiSuccessResponse<StorefrontData>>(
+      "/seller/storefront/handle",
+      { handle },
     );
     return data.data;
   },

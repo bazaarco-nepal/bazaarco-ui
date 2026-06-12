@@ -364,6 +364,18 @@ export function useUpdateStorefront() {
   });
 }
 
+export function useUpdateStoreHandle() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (handle: string) => storefrontApi.updateHandle(handle),
+    onSuccess: (data) => {
+      qc.setQueryData(queryKeys.seller.storefront, data);
+      // The store-link card reads the handle from the organization query.
+      void qc.invalidateQueries({ queryKey: queryKeys.seller.organization });
+    },
+  });
+}
+
 export function useUploadStorefrontLogo() {
   const qc = useQueryClient();
   return useMutation({

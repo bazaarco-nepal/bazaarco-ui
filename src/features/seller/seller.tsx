@@ -155,6 +155,11 @@ export type SellerInboxOrderItem = {
   awaitingOtherSellers?: boolean;
 };
 
+// Short walkthrough that plays on the seller onboarding hero. Hosted on Drive
+// rather than uploaded as an asset so the team can swap the clip without a deploy.
+const SELLER_ONBOARDING_GUIDE_URL =
+  "https://drive.google.com/file/d/1eoWLFEhF41YRdWcU1eWUNMNMwjn8K0B6/view?usp=drive_link";
+
 export const sellerOrderRef = { current: null as SellerInboxOrderItem | null };
 
 // Threads the inventory row a seller tapped "Edit" on through to the edit
@@ -895,7 +900,10 @@ export function SellerOnboarding() {
               Open your shop on <span style={{ color: "var(--red)" }}>BazaarCo</span>
             </h1>
 
-            <div
+            <AppLink
+              href={SELLER_ONBOARDING_GUIDE_URL}
+              target="_blank"
+              ariaLabel="Watch the 2-minute seller KYC setup guide (opens in a new tab)"
               style={{
                 background: "var(--tint-blue-50)",
                 borderRadius: "var(--r-md)",
@@ -905,14 +913,19 @@ export function SellerOnboarding() {
                 alignItems: "center",
                 gap: 12,
                 textAlign: "left",
+                textDecoration: "none",
+                color: "inherit",
+                cursor: "pointer",
               }}
             >
               <Icon name="play" size={26} color="var(--blue)" />
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 800, color: "var(--blue-deep)" }}>Watch 60-sec guide</div>
+                <div style={{ fontWeight: 800, color: "var(--blue-deep)" }}>
+                  Watch a 2-min seller KYC setup guide
+                </div>
               </div>
               <Icon name="chevronRight" size={20} color="var(--blue)" />
-            </div>
+            </AppLink>
 
             <div style={{ marginTop: 22, textAlign: "left", padding: "0 4px" }}>
               {[

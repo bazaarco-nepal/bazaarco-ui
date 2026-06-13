@@ -46,12 +46,6 @@ export interface SearchResponse {
 }
 
 export const searchApi = {
-  async search(params: SearchParams): Promise<SearchResponse> {
-    const { data } = await apiClient.post<ApiSuccessResponse<SearchResponse>>("/search", params);
-    const raw = data.data;
-    return { ...raw, items: (raw.items ?? []).map((h) => ({ ...mapProduct(h), score: h.score })) };
-  },
-
   async similar(id: string, limit = 10): Promise<SearchProductHit[]> {
     const { data } = await apiClient.get<ApiSuccessResponse<{ items: SearchProductHit[] }>>(
       `/search/similar/${encodeURIComponent(id)}`,

@@ -15,8 +15,26 @@ export class ApiRequestError extends Error {
   }
 }
 
+/** Same-origin API base for JSON calls (via Next.js /api/v1 rewrite). */
+export function getApiBaseUrl(): string {
+  return process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api/v1";
+}
+
+/**
+ * Direct Core API base for browser multipart uploads.
+ * Next.js dev rewrites buffer large bodies and often abort mid-upload; hit the
+ * API host directly when NEXT_PUBLIC_BACKEND_URL is set (local dev + prod).
+ */
+export function getUploadApiBaseUrl(): string {
+  const backend = process.env.NEXT_PUBLIC_BACKEND_URL?.trim();
+  if (backend) {
+    return `${backend.replace(/\/$/, "")}/api/v1`;
+  }
+  return getApiBaseUrl();
+}
+
 export const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3000/api/v1",
+  baseURL: getApiBaseUrl(),
   timeout: 30_000,
   withCredentials: true,
   headers: {
@@ -27,7 +45,24 @@ export const apiClient = axios.create({
   },
 });
 
+/** Multipart uploads — direct to Core API, long timeouts set per request. */
+export const uploadClient = axios.create({
+  baseURL: getUploadApiBaseUrl(),
+  withCredentials: true,
+  headers: {
+    "Accept-Language": "en",
+  },
+});
+
 apiClient.interceptors.request.use((config) => {
+  const token = getAccessToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+uploadClient.interceptors.request.use((config) => {
   const token = getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

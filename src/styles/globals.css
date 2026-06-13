@@ -204,7 +204,14 @@ a {
   .bz-mobile-hide {
     display: none !important;
   }
+  /* On mobile there is no footer, so we don't need flex:1 to push it down.
+     Letting <main> grow to fill 100vh creates blank scrollable space when
+     page content is shorter than the viewport. Let content define the height. */
+  #app-scroll {
+    min-height: 0;
+  }
   .bz-main {
+    flex: none;
     /* bottom nav + safe area + sticky buy bars */
     padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
   }

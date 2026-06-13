@@ -382,6 +382,7 @@ function ReelItem({
         label={false}
         thumb={p.videoThumb}
         src={p.videoUrl}
+        publicId={p.videoPublicId}
         externalMuted={muted}
         onMutedChange={onMutedChange}
         playbackRate={fastFwd ? 2.0 : 1.0}

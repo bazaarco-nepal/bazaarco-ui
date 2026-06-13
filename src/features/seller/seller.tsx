@@ -6837,7 +6837,11 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
             >
               Product Video
             </h3>
-            <VideoPlayer src={product.videoUrl} thumb={product.videoThumb} />
+            <VideoPlayer
+              src={product.videoUrl}
+              thumb={product.videoThumb}
+              publicId={product.videoPublicId}
+            />
           </div>
         )}
 

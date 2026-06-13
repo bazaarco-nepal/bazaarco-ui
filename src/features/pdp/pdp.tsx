@@ -897,7 +897,16 @@ export function PDP({ p: pProp }: PdpProps) {
   const media = [
     ...(variantHeroUrl ? [{ type: "photo" as const, src: variantHeroUrl }] : []),
     ...gallery.map((src) => ({ type: "photo" as const, src })),
-    ...(p.hasVideo ? [{ type: "video" as const, src: p.videoUrl, thumb: p.videoThumb }] : []),
+    ...(p.hasVideo
+      ? [
+          {
+            type: "video" as const,
+            src: p.videoUrl,
+            thumb: p.videoThumb,
+            publicId: p.videoPublicId,
+          },
+        ]
+      : []),
   ];
 
   // When variant changes and brings its own image, jump to slide 0 (the hero).
@@ -1324,6 +1333,7 @@ export function PDP({ p: pProp }: PdpProps) {
                             autoplay={mediaIdx === i}
                             thumb={m.thumb}
                             src={m.src}
+                            publicId={m.publicId}
                           />
                         )}
                       </div>
@@ -1778,6 +1788,7 @@ export function PDP({ p: pProp }: PdpProps) {
                           autoplay={mediaIdx === i}
                           thumb={m.thumb}
                           src={m.src}
+                          publicId={m.publicId}
                         />
                       )}
                     </div>

@@ -79,6 +79,7 @@ export interface Product {
   hasVideo?: boolean;
   videoThumb?: string;
   videoUrl?: string | null;
+  videoPublicId?: string | null;
   eta: string;
   img?: string;
   // Gallery, cover first. Sellers list with 3–5 images; `img` mirrors images[0].

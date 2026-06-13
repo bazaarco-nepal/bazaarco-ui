@@ -33,6 +33,7 @@ export interface VideoFeedItem {
   hasVideo: boolean;
   videoThumb: string | null;
   videoUrl: string | null;
+  videoPublicId?: string | null;
   eta: string | null;
   img: string | null;
   seller: VideoFeedSeller;

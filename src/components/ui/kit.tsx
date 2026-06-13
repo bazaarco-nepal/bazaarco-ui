@@ -10,6 +10,8 @@ import { reverseGeocode } from "@/lib/reverse-geocode";
 import { tintForName } from "@/lib/store-tint";
 import { MapPinPicker } from "@/components/ui/map-pin-picker";
 import { TOAST_VARIANT_META } from "@/lib/toast-variant";
+import { CLOUDINARY_CLOUD_NAME, publicIdFromVideoUrl } from "@/lib/cloudinary";
+import "cloudinary-video-player/cld-video-player.min.css";
 
 /* ============================================================
    BazaarCo — Component Kit
@@ -1290,6 +1292,7 @@ export function VideoPlayer({
   fill,
   thumb,
   src,
+  publicId,
   externalMuted,
   onMutedChange,
   onLongPressStart,
@@ -1308,6 +1311,7 @@ export function VideoPlayer({
   fill?: boolean;
   thumb?: string | null;
   src?: string | null;
+  publicId?: string | null;
   externalMuted?: boolean;
   onMutedChange?: (muted: boolean) => void;
   onLongPressStart?: () => void;
@@ -1316,6 +1320,8 @@ export function VideoPlayer({
   isActive?: boolean;
 }) {
   const videoRef = useRef(null);
+  const cloudinaryPlayerRef = useRef(null);
+  const [hlsReady, setHlsReady] = useState(false);
   const [playing, setPlaying] = useState(!!autoplay);
   const [t, setT] = useState(0);
   const [dur, setDur] = useState(18);
@@ -1328,10 +1334,76 @@ export function VideoPlayer({
     if (onMutedChange) onMutedChange(next);
     else setInternalMuted(next);
   };
-  const hasSrc = Boolean(src);
+  const streamPublicId = (publicId?.trim() || publicIdFromVideoUrl(src)) ?? null;
+  const useHls = Boolean(streamPublicId && CLOUDINARY_CLOUD_NAME);
+  const hasSrc = useHls || Boolean(src);
   // In a feed, only the active reel may play and be audible. When `isActive`
   // isn't passed (e.g. product-card players) the player behaves as a standalone.
   const active = isActive === undefined ? true : isActive;
+
+  useEffect(() => {
+    if (!useHls || !videoRef.current) return;
+
+    let disposed = false;
+    setHlsReady(false);
+
+    import("cloudinary-video-player").then((cloudinaryjs) => {
+      if (disposed || !videoRef.current) return;
+
+      if (cloudinaryPlayerRef.current?.dispose) {
+        cloudinaryPlayerRef.current.dispose();
+      }
+
+      const player = cloudinaryjs.videoPlayer(videoRef.current, {
+        cloudName: CLOUDINARY_CLOUD_NAME,
+        muted: true,
+        autoplay: false,
+        loop: true,
+        controls: false,
+        showLogo: false,
+      });
+
+      cloudinaryPlayerRef.current = player;
+
+      player.source(streamPublicId, {
+        sourceTypes: ["hls"],
+        transformation: { streaming_profile: "hd" },
+      });
+
+      // Cloudinary's lazy player is a deferred proxy — wait until the real
+      // VideoPlayer exists before calling play/mute (wrong names like .muted()
+      // throw "realPlayer[method] is not a function").
+      Promise.resolve(player)
+        .then(() => {
+          if (!disposed) setHlsReady(true);
+        })
+        .catch(() => {
+          if (!disposed) setPlaying(false);
+        });
+    });
+
+    return () => {
+      disposed = true;
+      setHlsReady(false);
+      if (cloudinaryPlayerRef.current?.dispose) {
+        cloudinaryPlayerRef.current.dispose();
+        cloudinaryPlayerRef.current = null;
+      }
+    };
+  }, [streamPublicId, useHls]);
+
+  useEffect(() => {
+    if (!useHls || !hlsReady || !videoRef.current) return;
+    const el = videoRef.current;
+    const onTime = () => setT(el.currentTime || 0);
+    const onMeta = () => setDur(el.duration || 18);
+    el.addEventListener("timeupdate", onTime);
+    el.addEventListener("loadedmetadata", onMeta);
+    return () => {
+      el.removeEventListener("timeupdate", onTime);
+      el.removeEventListener("loadedmetadata", onMeta);
+    };
+  }, [useHls, hlsReady, streamPublicId]);
 
   useEffect(() => {
     if (hasSrc || !playing) return;
@@ -1340,6 +1412,25 @@ export function VideoPlayer({
   }, [playing, dur, hasSrc]);
 
   useEffect(() => {
+    if (useHls) {
+      const player = cloudinaryPlayerRef.current;
+      if (!player || !hlsReady) return;
+      if (muted || !active) player.mute();
+      else player.unmute();
+      const rate = playbackRate || (fastForwarding ? 2.0 : 1.0);
+      if (videoRef.current) videoRef.current.playbackRate = rate;
+      if (playing && active) {
+        try {
+          player.play();
+        } catch {
+          setPlaying(false);
+        }
+      } else {
+        player.pause();
+      }
+      return;
+    }
+
     const el = videoRef.current;
     if (!el || !hasSrc) return;
     // Force-mute and pause any non-active reel so audio never mixes across the
@@ -1350,16 +1441,20 @@ export function VideoPlayer({
     } else {
       el.pause();
     }
-  }, [playing, muted, active, hasSrc, src]);
+  }, [playing, muted, active, hasSrc, src, useHls, hlsReady, playbackRate, fastForwarding]);
 
   useEffect(() => {
+    if (useHls) return;
+
     const el = videoRef.current;
     if (!el || !hasSrc) return;
     const rate = playbackRate || (fastForwarding ? 2.0 : 1.0);
     el.playbackRate = rate;
-  }, [fastForwarding, hasSrc, playbackRate]);
+  }, [fastForwarding, hasSrc, playbackRate, useHls]);
 
   useEffect(() => {
+    if (useHls) return;
+
     const el = videoRef.current;
     if (!el || !hasSrc) return;
     const onTime = () => setT(el.currentTime);
@@ -1370,7 +1465,7 @@ export function VideoPlayer({
       el.removeEventListener("timeupdate", onTime);
       el.removeEventListener("loadedmetadata", onMeta);
     };
-  }, [hasSrc, src]);
+  }, [hasSrc, src, useHls]);
 
   const handlePointerDown = (e) => {
     if (!hasSrc) return;
@@ -1394,6 +1489,14 @@ export function VideoPlayer({
   const c = TINTS[tint] || TINTS.blue;
   const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
   const togglePlay = () => setPlaying((p) => !p);
+  const seekTo = (next) => {
+    setT(next);
+    if (useHls && cloudinaryPlayerRef.current) {
+      cloudinaryPlayerRef.current.currentTime(next);
+      return;
+    }
+    if (videoRef.current) videoRef.current.currentTime = next;
+  };
 
   return (
     <div
@@ -1403,7 +1506,8 @@ export function VideoPlayer({
         ...(fill ? { height: "100%" } : { aspectRatio: ratio }),
         borderRadius: radius,
         overflow: "hidden",
-        background: thumb || src ? "#000" : `linear-gradient(160deg, ${c[1]}, ${c[0]})`,
+        background:
+          thumb || src || streamPublicId ? "#000" : `linear-gradient(160deg, ${c[1]}, ${c[0]})`,
         cursor: "pointer",
         touchAction: "pan-y",
       }}
@@ -1441,11 +1545,12 @@ export function VideoPlayer({
       {hasSrc ? (
         <video
           ref={videoRef}
-          src={src}
+          src={useHls ? undefined : src || undefined}
           poster={thumb || undefined}
           playsInline
           loop
           muted={muted}
+          className={useHls ? "cld-video-player cld-fluid" : undefined}
           style={{
             position: "absolute",
             inset: 0,
@@ -1576,9 +1681,7 @@ export function VideoPlayer({
           }}
           onClick={(e) => {
             const r = e.currentTarget.getBoundingClientRect();
-            const next = ((e.clientX - r.left) / r.width) * dur;
-            setT(next);
-            if (videoRef.current) videoRef.current.currentTime = next;
+            seekTo(((e.clientX - r.left) / r.width) * dur);
           }}
         >
           <div

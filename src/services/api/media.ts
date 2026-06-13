@@ -1,4 +1,4 @@
-import { apiClient } from "./http";
+import { apiClient, uploadClient } from "./http";
 import type { ApiSuccessResponse } from "./types";
 
 // Media uploads stream large files (a video can be up to 100 MB) and then wait
@@ -75,11 +75,10 @@ export const mediaApi = {
   async uploadImage(file: File, onProgress?: (pct: number) => void): Promise<MediaUploadResult> {
     const form = new FormData();
     form.append("file", file);
-    const { data } = await apiClient.post<ApiSuccessResponse<MediaUploadResult>>(
+    const { data } = await uploadClient.post<ApiSuccessResponse<MediaUploadResult>>(
       "/media/upload/image",
       form,
       {
-        headers: { "Content-Type": "multipart/form-data" },
         timeout: IMAGE_UPLOAD_TIMEOUT_MS,
         onUploadProgress: (event) => {
           if (!onProgress || !event.total) return;
@@ -93,11 +92,10 @@ export const mediaApi = {
   async uploadVideo(file: File, onProgress?: (pct: number) => void): Promise<MediaUploadResult> {
     const form = new FormData();
     form.append("file", file);
-    const { data } = await apiClient.post<ApiSuccessResponse<MediaUploadResult>>(
+    const { data } = await uploadClient.post<ApiSuccessResponse<MediaUploadResult>>(
       "/media/upload/video",
       form,
       {
-        headers: { "Content-Type": "multipart/form-data" },
         timeout: VIDEO_UPLOAD_TIMEOUT_MS,
         onUploadProgress: (event) => {
           if (!onProgress || !event.total) return;

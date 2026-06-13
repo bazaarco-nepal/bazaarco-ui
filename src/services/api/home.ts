@@ -3,14 +3,20 @@ import { getData } from "./http";
 import { mapProduct } from "./catalog";
 import type { PaginatedData } from "./types";
 
+// Buyer-facing projection of an admin-managed hero banner (see bazaarco-api
+// home.service `toBuyerHeroSlide`). Content-only — no lifecycle/audit fields.
 export interface HeroSlide {
-  eyebrow: string;
+  id: string;
   title: string;
-  accent: string;
-  sub: string;
-  icon: string;
-  tint: string;
-  cta: string;
+  accent: string | null;
+  subtitle: string | null;
+  ctaLabel: string;
+  ctaHref: string;
+  imageUrl: string;
+  imageAlt: string;
+  tint: "red" | "blue" | "saffron" | string;
+  sponsored: boolean;
+  campaignLabel: string | null;
 }
 
 export interface TrustItem {
@@ -44,6 +50,7 @@ export const homeApi = {
     const raw = await getData<any>("/home");
     return {
       ...raw,
+      heroSlides: raw.heroSlides ?? [],
       trending: (raw.trending ?? []).map(mapProduct),
       categories: raw.categories ?? [],
       newArrivals: mapProductPage(

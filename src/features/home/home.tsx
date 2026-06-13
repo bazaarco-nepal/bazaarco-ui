@@ -108,6 +108,7 @@ function VideoRailCard({ p, onOpen }: { p: Product; onOpen: (p: Product) => void
           label="WATCH"
           thumb={p.videoThumb}
           src={p.videoUrl}
+          publicId={p.videoPublicId}
         />
       </div>
       <div style={{ marginTop: 10 }}>
@@ -175,6 +176,7 @@ export function Home() {
   const isError = homeError;
   const error = homeErr;
   const categories = homeData?.categories;
+  const hasHeroBanners = (homeData?.heroSlides?.length ?? 0) > 0;
   const buyerGreeting = user ? displayName(user, "there") : null;
   const W = ({
     children,
@@ -200,12 +202,15 @@ export function Home() {
     <>
       <div style={{ paddingBottom: 8 }}>
         <BackToTop />
-        {/* Desktop hero — hidden on phones */}
-        <div className="bz-hide-mobile">
-          <W className="bz-home-hero" style={{ paddingTop: 22 }}>
-            <BestPicksHero />
-          </W>
-        </div>
+        {/* Desktop hero — admin-managed banners only, hidden on phones. The whole
+            section (and its spacing) is omitted when the API returns no banners. */}
+        {hasHeroBanners && (
+          <div className="bz-hide-mobile">
+            <W className="bz-home-hero" style={{ paddingTop: 22 }}>
+              <BestPicksHero slides={homeData?.heroSlides} />
+            </W>
+          </div>
+        )}
 
         {/* Mobile-only header — greeting + wishlist on top, search below.
             Sticky so the name row + search bar stay pinned while content scrolls. */}
@@ -392,12 +397,15 @@ export function Home() {
           </div>
         </W>
 
-        {/* Best Picks promo — mobile placement (after categories, per layout) */}
-        <div className="bz-show-mobile">
-          <W style={{ paddingTop: 32 }}>
-            <BestPicksBanner />
-          </W>
-        </div>
+        {/* Hero banner — mobile placement (after categories, per layout). Only
+            shown when the API returns admin-published banners. */}
+        {hasHeroBanners && (
+          <div className="bz-show-mobile">
+            <W style={{ paddingTop: 32 }}>
+              <BestPicksBanner slides={homeData?.heroSlides} />
+            </W>
+          </div>
+        )}
 
         <PicksSections
           newArrivals={homeData?.newArrivals}

@@ -1,4 +1,4 @@
-import { apiClient, getData } from "./http";
+import { apiClient, getData, uploadClient } from "./http";
 import type { ApiSuccessResponse } from "./types";
 
 export interface ChatQuickReply {
@@ -112,7 +112,7 @@ export const chatApi = {
   }> {
     const form = new FormData();
     form.append("file", file);
-    const { data } = await apiClient.post<
+    const { data } = await uploadClient.post<
       ApiSuccessResponse<{
         url: string;
         publicId: string;
@@ -121,7 +121,7 @@ export const chatApi = {
         bytes: number;
         format: string;
       }>
-    >("/chat/media/image", form, { headers: { "Content-Type": "multipart/form-data" } });
+    >("/chat/media/image", form, { timeout: 120_000 });
     return data.data;
   },
 
@@ -137,7 +137,7 @@ export const chatApi = {
   }> {
     const form = new FormData();
     form.append("file", file);
-    const { data } = await apiClient.post<
+    const { data } = await uploadClient.post<
       ApiSuccessResponse<{
         url: string;
         publicId: string;
@@ -148,7 +148,7 @@ export const chatApi = {
         bytes: number;
         format: string;
       }>
-    >("/chat/media/video", form, { headers: { "Content-Type": "multipart/form-data" } });
+    >("/chat/media/video", form, { timeout: 300_000 });
     return data.data;
   },
 };

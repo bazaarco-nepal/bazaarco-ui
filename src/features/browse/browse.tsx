@@ -54,7 +54,6 @@ import {
   Footer,
   DevViewSwitcher,
 } from "@/components/common";
-import { ASSETS } from "@/config/assets";
 import { displayCategoryLabel } from "@/lib/locale-display";
 import { useBazaarStore } from "@/store/bazaar-store";
 
@@ -71,84 +70,6 @@ function isAccessory(p: Product, q: string) {
     return true;
   if (ql.includes("earbud") && !name.includes("earbud")) return true;
   return false;
-}
-
-function DidYouMean({
-  q,
-  suggestions,
-  onPick,
-  onReset,
-}: {
-  q: string;
-  suggestions: string[];
-  onPick: (s: string) => void;
-  onReset: () => void;
-}) {
-  const main = suggestions[0] || "";
-  return (
-    <div style={{ maxWidth: 560, margin: "32px auto", textAlign: "center" }}>
-      <img
-        src={ASSETS.mascot}
-        alt=""
-        style={{ width: 160, height: 160, objectFit: "contain", marginBottom: 8 }}
-      />
-      <h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 800, color: "var(--ink-900)" }}>
-        No matches for "{q}"
-      </h3>
-      <p style={{ color: "var(--ink-500)", margin: "8px 0 4px" }}>
-        Did you mean{" "}
-        <button
-          onClick={() => onPick(main)}
-          style={{
-            background: "none",
-            border: "none",
-            color: "var(--blue)",
-            fontWeight: 800,
-            cursor: "pointer",
-            padding: 0,
-            font: "inherit",
-            textDecoration: "underline",
-          }}
-        >
-          "{main}"
-        </button>
-        ?
-      </p>
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          justifyContent: "center",
-          flexWrap: "wrap",
-          marginTop: 18,
-        }}
-      >
-        {suggestions.map((s) => (
-          <button
-            key={s}
-            onClick={() => onPick(s)}
-            style={{
-              padding: "8px 14px",
-              borderRadius: "var(--r-full)",
-              border: "1.5px solid var(--line-200)",
-              background: "#fff",
-              color: "var(--ink-700)",
-              fontWeight: 700,
-              fontSize: ".875rem",
-              cursor: "pointer",
-            }}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
-      <div style={{ marginTop: 18 }}>
-        <Button variant="secondary" onClick={onReset}>
-          Browse categories
-        </Button>
-      </div>
-    </div>
-  );
 }
 
 export function Browse() {
@@ -262,7 +183,6 @@ export function Browse() {
         price_min: priceActive ? effMin : undefined,
         price_max: priceActive && effMax < 1e9 ? effMax : undefined,
         rating4: quick.includes("rating4") || undefined,
-        free: quick.includes("free") || undefined,
         sort: SORT_MAP[sort] ?? "relevance",
         page: 1,
         limit: 50,
@@ -270,7 +190,6 @@ export function Browse() {
     : null;
 
   const { data: searchData, isLoading: searchLoading } = useSearch(searchParams);
-  const correctedQuery = searchData?.correction || effectiveQuery;
 
   useEffect(() => {
     if (catalogLoading || searchLoading) return;
@@ -343,7 +262,6 @@ export function Browse() {
   };
 
   const totalCount = strict.length + related.length;
-  const showDidYouMean = !loading && effectiveQuery && totalCount === 0;
 
   // Active filters — labeled chips with one-tap removal.
   const activeChips = [
@@ -705,37 +623,6 @@ export function Browse() {
             <span style={{ color: "var(--ink-700)" }}>{browseCrumb}</span>
           </div>
 
-          {/* corrected query banner */}
-          {correctedQuery !== effectiveQuery && (
-            <div
-              style={{
-                background: "var(--tint-blue-50)",
-                color: "var(--blue-deep)",
-                padding: "10px 14px",
-                borderRadius: "var(--r-md)",
-                marginBottom: 14,
-                fontSize: ".875rem",
-              }}
-            >
-              Showing results for <b>"{correctedQuery}"</b> ·{" "}
-              <button
-                onClick={() => setQuery(effectiveQuery)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "var(--blue)",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  padding: 0,
-                  textDecoration: "underline",
-                  font: "inherit",
-                }}
-              >
-                search instead for "{effectiveQuery}"
-              </button>
-            </div>
-          )}
-
           {showCategoryBrowser ? (
             <>
               <div style={{ marginBottom: 18 }}>
@@ -1054,16 +941,6 @@ export function Browse() {
                     <SkeletonCard key={i} />
                   ))}
                 </div>
-              ) : showDidYouMean ? (
-                <DidYouMean
-                  q={effectiveQuery}
-                  suggestions={[]}
-                  onPick={(s) => setQuery(s)}
-                  onReset={() => {
-                    setQuery("");
-                    clearAll();
-                  }}
-                />
               ) : totalCount === 0 ? (
                 <div style={{ maxWidth: 480, margin: "40px auto", textAlign: "center" }}>
                   <div
@@ -1074,10 +951,16 @@ export function Browse() {
                       marginBottom: 4,
                     }}
                   >
-                    No products match your filters
+                    {effectiveQuery
+                      ? `No matches for "${effectiveQuery}"`
+                      : "No products match your filters"}
                   </div>
                   <div style={{ color: "var(--ink-500)", fontSize: ".875rem", marginBottom: 14 }}>
-                    {hasActive ? "Try removing one of these filters:" : "Try browsing by category."}
+                    {effectiveQuery
+                      ? "Try a different search or browse by category."
+                      : hasActive
+                        ? "Try removing one of these filters:"
+                        : "Try browsing by category."}
                   </div>
                   {hasActive && (
                     <div

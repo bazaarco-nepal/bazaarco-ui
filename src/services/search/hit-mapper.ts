@@ -1,4 +1,4 @@
-import type { SearchProductHit } from "@/services/api/search";
+import type { Product } from "@/types";
 import type { Tint } from "@/types";
 
 type AlgoliaRecord = Record<string, unknown> & {
@@ -36,7 +36,7 @@ export function toSearchDocument(record: Record<string, unknown>): AlgoliaProduc
 }
 
 /** Map an Algolia hit to the UI search card shape (prices in rupees). */
-export function toSearchProductHit(record: AlgoliaRecord, score = 0): SearchProductHit {
+export function toSearchProductHit(record: AlgoliaRecord): Product {
   const document = toSearchDocument(record);
   const minorToRupees = (minor: number) => minor / 100;
 
@@ -54,6 +54,5 @@ export function toSearchProductHit(record: AlgoliaRecord, score = 0): SearchProd
     reviews: document.reviews_count,
     img: document.img || undefined,
     eta: "2–3 days",
-    score,
   };
 }

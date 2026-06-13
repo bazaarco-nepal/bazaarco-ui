@@ -15,7 +15,7 @@
     "test:e2e": "playwright test",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,json}\"",
     "sync:assets": "node scripts/sync-assets.mjs",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",

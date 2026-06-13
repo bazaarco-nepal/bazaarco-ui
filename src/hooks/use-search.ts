@@ -9,8 +9,6 @@ export function useSearch(params: SearchParams | null) {
   return useQuery({
     queryKey: ["search", params],
     queryFn: () => algoliaSearch(params!),
-    // Enabled whenever params are provided — an empty query browses everything
-    // (faceted /search page). Callers that want it idle pass null (e.g. /browse).
     enabled: params !== null,
     staleTime: 60_000,
   });

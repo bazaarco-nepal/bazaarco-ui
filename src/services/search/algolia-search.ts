@@ -53,7 +53,6 @@ export async function algoliaSearch(params: SearchParams): Promise<SearchRespons
 
   return {
     query: params.query,
-    correction: null,
     page: criteria.page,
     limit: criteria.perPage,
     total: envelope.found,

@@ -68,6 +68,5 @@ export function toSearchFacets(facetCounts: FacetCount[]): SearchFacets {
   return {
     categories: mapFacetList("category", facetCounts),
     sellers: mapFacetList("seller_name", facetCounts),
-    rating: mapFacetList("rating", facetCounts),
   };
 }

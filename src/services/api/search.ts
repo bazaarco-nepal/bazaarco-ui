@@ -11,14 +11,9 @@ export interface SearchParams {
   price_max?: number;
   rating?: number;
   rating4?: boolean;
-  free?: boolean;
   sort?: "relevance" | "price_low" | "price_high" | "rating";
   page?: number;
   limit?: number;
-}
-
-export interface SearchProductHit extends Product {
-  score: number;
 }
 
 export interface Facet {
@@ -29,28 +24,25 @@ export interface Facet {
 export interface SearchFacets {
   categories: Facet[];
   sellers: Facet[];
-  rating: Facet[];
-  price?: { min: number; max: number };
 }
 
 export interface SearchResponse {
   query: string;
-  correction?: string | null;
   page: number;
   limit: number;
   total: number;
   page_count: number;
   search_time_ms?: number;
   facets?: SearchFacets;
-  items: SearchProductHit[];
+  items: Product[];
 }
 
 export const searchApi = {
-  async similar(id: string, limit = 10): Promise<SearchProductHit[]> {
-    const { data } = await apiClient.get<ApiSuccessResponse<{ items: SearchProductHit[] }>>(
+  async similar(id: string, limit = 10): Promise<Product[]> {
+    const { data } = await apiClient.get<ApiSuccessResponse<{ items: Product[] }>>(
       `/search/similar/${encodeURIComponent(id)}`,
       { params: { limit } },
     );
-    return (data.data.items ?? []).map((h) => ({ ...mapProduct(h), score: h.score }));
+    return (data.data.items ?? []).map((h) => mapProduct(h));
   },
 };

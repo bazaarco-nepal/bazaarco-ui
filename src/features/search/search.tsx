@@ -564,8 +564,8 @@ const priceInput: React.CSSProperties = {
 
 const gridStyle: React.CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))",
-  gap: 16,
+  gridTemplateColumns: "repeat(auto-fill, minmax(172px, 1fr))",
+  gap: 14,
 };
 
 function FacetGroup({ title, children }: { title: string; children: React.ReactNode }) {

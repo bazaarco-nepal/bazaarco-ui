@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { Icon, RatingStars } from "@/components/ui";
 import { BuyerAvatar, useBz } from "@/components/common";
@@ -14,6 +15,29 @@ import { useUploadImage } from "@/hooks/use-media-upload";
 import { ApiRequestError } from "@/services/api/http";
 
 const MAX_REVIEW_PHOTOS = 8;
+
+type ReviewSort = "recent" | "highest" | "lowest" | "photos";
+
+// Fixed locale keeps server/client render identical (no hydration drift) and
+// matches the "15 Dec 2025" shape buyers expect.
+function formatReviewDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
+const CONTROL_SELECT_STYLE: CSSProperties = {
+  appearance: "none",
+  background: "#fff",
+  border: "1px solid var(--line-200)",
+  borderRadius: "var(--r-sm)",
+  color: "var(--ink-700)",
+  fontFamily: "var(--font-sans)",
+  fontSize: ".8125rem",
+  fontWeight: 600,
+  padding: "6px 26px 6px 10px",
+  cursor: "pointer",
+};
 
 type Attachment = {
   id: string;
@@ -345,9 +369,11 @@ function ReviewComposer({ productId, onDone }: { productId: string; onDone: () =
 }
 
 /**
- * Customer photos + ratings summary + review list. When the product has no
- * reviews, collapses to a calm "be the first" prompt — no fake distribution
- * bars, no "0 reviews" (matches the home hide-when-empty approach).
+ * Customer photos + ratings summary + review list. The ratings summary (average
+ * + the five-star distribution) always renders — showing all-zero counts before
+ * any rating exists — so buyers see the full breakdown structure even on a fresh
+ * product. The photo strip, sort/filter controls, and the list only appear once
+ * there are reviews; otherwise a calm "be the first" prompt sits below.
  */
 export function ReviewsSection({ productId, rating, reviewCount }: ReviewsSectionProps) {
   const { t } = useTranslation();
@@ -361,6 +387,26 @@ export function ReviewsSection({ productId, rating, reviewCount }: ReviewsSectio
   );
   const hasReviews = reviewCount > 0;
   const [composerOpen, setComposerOpen] = useState(false);
+  const [sort, setSort] = useState<ReviewSort>("recent");
+  const [starFilter, setStarFilter] = useState<number | null>(null);
+
+  // Sort/filter run over the already-loaded list — the endpoint returns the
+  // full set, so this stays instant and avoids a round-trip per control change.
+  const visibleReviews = useMemo(() => {
+    const filtered = starFilter ? reviews.filter((r) => r.rating === starFilter) : reviews;
+    const ordered = [...filtered];
+    if (sort === "highest") ordered.sort((a, b) => b.rating - a.rating);
+    else if (sort === "lowest") ordered.sort((a, b) => a.rating - b.rating);
+    else if (sort === "photos")
+      ordered.sort((a, b) => (b.photoUrls?.length ?? 0) - (a.photoUrls?.length ?? 0));
+    return ordered;
+  }, [reviews, sort, starFilter]);
+  // Always render all five rows — zeros included. The endpoint returns an
+  // all-zero set for review-less products; this fallback also covers the load
+  // frame so the breakdown never momentarily collapses to nothing.
+  const distRows = ratingDist.length
+    ? ratingDist
+    : [5, 4, 3, 2, 1].map((s) => ({ s, count: 0, pct: 0 }));
   const canWriteReview = authed && (eligibility?.canReview ?? false);
   const gateMessage = (() => {
     if (authed && eligibilityLoading) return null;
@@ -421,198 +467,325 @@ export function ReviewsSection({ productId, rating, reviewCount }: ReviewsSectio
         <ReviewComposer productId={productId} onDone={() => setComposerOpen(false)} />
       )}
 
-      {!loading && !hasReviews ? (
-        !composerOpen && (
+      {hasReviews && reviews.some((r) => r.photoUrls && r.photoUrls.length > 0) && (
+        <div style={{ marginBottom: 18 }}>
           <div
             style={{
-              background: "#fff",
-              border: "1px solid var(--line-200)",
-              borderRadius: "var(--r-lg)",
-              padding: "28px 20px",
-              textAlign: "center",
+              fontSize: ".8125rem",
+              fontWeight: 700,
+              color: "var(--ink-500)",
+              marginBottom: 8,
             }}
           >
-            <div style={{ fontSize: ".9375rem", color: "var(--ink-500)" }}>
-              {canWriteReview ? t("reviews.noReviewsYet") : t("reviews.noReviewsEmpty")}
-            </div>
+            Real photos from buyers
           </div>
-        )
-      ) : (
-        <>
-          {reviews.some((r) => r.photoUrls && r.photoUrls.length > 0) && (
-            <div style={{ marginBottom: 18 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {reviews.flatMap((r, ri) =>
+              (r.photoUrls ?? []).map((url, j) => (
+                <div
+                  key={`${ri}-${j}`}
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: "var(--r-sm)",
+                    overflow: "hidden",
+                    border: "1px solid var(--line-200)",
+                  }}
+                >
+                  <img
+                    src={url}
+                    alt=""
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      display: "block",
+                    }}
+                  />
+                </div>
+              )),
+            )}
+          </div>
+        </div>
+      )}
+
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 24,
+          padding: 18,
+          background: "#fff",
+          border: "1px solid var(--line-200)",
+          borderRadius: "var(--r-lg)",
+        }}
+      >
+        <div style={{ textAlign: "center", flexShrink: 0, minWidth: 120 }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center" }}>
+            <span
+              className="tnum bz-hero-h2"
+              style={{ fontWeight: 800, color: "var(--blue-deep)", lineHeight: 1 }}
+            >
+              {rating.toFixed(1)}
+            </span>
+            <span
+              className="tnum"
+              style={{ fontSize: "1rem", fontWeight: 700, color: "var(--ink-400)" }}
+            >
+              /5
+            </span>
+          </div>
+          <div style={{ marginTop: 6 }}>
+            <RatingStars value={rating} size={16} />
+          </div>
+          <div style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 6 }}>
+            {reviewCount} {t("reviews.ratings")}
+          </div>
+        </div>
+        <div style={{ flex: 1, minWidth: 220 }}>
+          {distRows.map((r) => (
+            <button
+              key={r.s}
+              type="button"
+              disabled={!hasReviews}
+              aria-pressed={starFilter === r.s}
+              onClick={() => setStarFilter((cur) => (cur === r.s ? null : r.s))}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 5,
+                width: "100%",
+                background: "none",
+                border: "none",
+                padding: "2px 0",
+                cursor: hasReviews ? "pointer" : "default",
+                opacity: starFilter && starFilter !== r.s ? 0.45 : 1,
+              }}
+            >
+              <span
+                className="tnum"
+                style={{ fontSize: ".75rem", color: "var(--ink-400)", width: 10 }}
+              >
+                {r.s}
+              </span>
+              <Icon name="star" size={11} color="var(--gold)" fill="var(--gold)" />
               <div
                 style={{
-                  fontSize: ".8125rem",
-                  fontWeight: 700,
-                  color: "var(--ink-500)",
-                  marginBottom: 8,
+                  flex: 1,
+                  maxWidth: 200,
+                  height: 6,
+                  background: "var(--line-100)",
+                  borderRadius: 3,
+                  overflow: "hidden",
                 }}
               >
-                Real photos from buyers
+                <div style={{ width: `${r.pct}%`, height: "100%", background: "var(--gold)" }} />
               </div>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {reviews.flatMap((r, ri) =>
-                  (r.photoUrls ?? []).map((url, j) => (
-                    <div
-                      key={`${ri}-${j}`}
-                      style={{
-                        width: 80,
-                        height: 80,
-                        borderRadius: "var(--r-sm)",
-                        overflow: "hidden",
-                        border: "1px solid var(--line-200)",
-                      }}
-                    >
-                      <img
-                        src={url}
-                        alt=""
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                          display: "block",
-                        }}
-                      />
-                    </div>
-                  )),
-                )}
-              </div>
-            </div>
-          )}
+              <span
+                className="tnum"
+                style={{ fontSize: ".75rem", color: "var(--ink-500)", minWidth: 16 }}
+              >
+                {r.count}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
 
+      {hasReviews ? (
+        <>
           <div
             style={{
+              marginTop: 18,
               display: "flex",
-              gap: 24,
-              padding: 18,
-              background: "#fff",
-              border: "1px solid var(--line-200)",
-              borderRadius: "var(--r-lg)",
+              flexWrap: "wrap",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+              paddingBottom: 12,
+              borderBottom: "1px solid var(--line-200)",
             }}
           >
-            <div style={{ textAlign: "center", flexShrink: 0 }}>
-              <div
-                className="tnum bz-hero-h2"
-                style={{ fontWeight: 800, color: "var(--blue-deep)", lineHeight: 1 }}
-              >
-                {rating.toFixed(1)}
-              </div>
-              <RatingStars value={rating} size={14} />
-              <div style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 4 }}>
-                {reviewCount} reviews
-              </div>
-            </div>
-            <div style={{ flex: 1 }}>
-              {ratingDist.map((r) => (
-                <div
-                  key={r.s}
-                  style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}
+            <h3
+              style={{
+                margin: 0,
+                fontSize: "1rem",
+                fontWeight: 800,
+                color: "var(--blue-deep)",
+              }}
+            >
+              {t("reviews.productReviews")}
+            </h3>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <label style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: ".75rem", fontWeight: 600, color: "var(--ink-400)" }}>
+                  {t("reviews.sort")}
+                </span>
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value as ReviewSort)}
+                  style={CONTROL_SELECT_STYLE}
                 >
-                  <span
-                    className="tnum"
-                    style={{ fontSize: ".75rem", color: "var(--ink-400)", width: 10 }}
-                  >
-                    {r.s}
-                  </span>
-                  <Icon name="star" size={11} color="var(--gold)" fill="var(--gold)" />
+                  <option value="recent">{t("reviews.sortRecent")}</option>
+                  <option value="highest">{t("reviews.sortHighest")}</option>
+                  <option value="lowest">{t("reviews.sortLowest")}</option>
+                  <option value="photos">{t("reviews.sortPhotos")}</option>
+                </select>
+              </label>
+              <label style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: ".75rem", fontWeight: 600, color: "var(--ink-400)" }}>
+                  {t("reviews.filter")}
+                </span>
+                <select
+                  value={starFilter ?? "all"}
+                  onChange={(e) =>
+                    setStarFilter(e.target.value === "all" ? null : Number(e.target.value))
+                  }
+                  style={CONTROL_SELECT_STYLE}
+                >
+                  <option value="all">{t("reviews.allStars")}</option>
+                  {[5, 4, 3, 2, 1].map((s) => (
+                    <option key={s} value={s}>
+                      {s}★
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </div>
+
+          {visibleReviews.length === 0 ? (
+            <div
+              style={{
+                marginTop: 16,
+                fontSize: ".875rem",
+                color: "var(--ink-400)",
+                textAlign: "center",
+                padding: "16px 0",
+              }}
+            >
+              {t("reviews.noMatch")}
+            </div>
+          ) : (
+            <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
+              {visibleReviews.map((r, i) => (
+                <div
+                  key={r.id}
+                  style={{
+                    paddingBottom: 14,
+                    borderBottom:
+                      i < visibleReviews.length - 1 ? "1px solid var(--line-200)" : "none",
+                  }}
+                >
                   <div
                     style={{
-                      flex: 1,
-                      height: 6,
-                      background: "var(--line-100)",
-                      borderRadius: 3,
-                      overflow: "hidden",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 8,
+                      marginBottom: 6,
                     }}
                   >
-                    <div
-                      style={{ width: `${r.pct}%`, height: "100%", background: "var(--gold)" }}
-                    />
+                    <RatingStars value={r.rating} size={13} />
+                    <span
+                      style={{
+                        marginLeft: "auto",
+                        fontSize: ".75rem",
+                        color: "var(--ink-400)",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {formatReviewDate(r.date)}
+                    </span>
                   </div>
-                  <span
-                    className="tnum"
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                    <BuyerAvatar
+                      src={r.avatar}
+                      name={r.name}
+                      size={34}
+                      fontSize=".875rem"
+                      border="1.5px solid var(--line-200)"
+                    />
+                    <div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          fontWeight: 700,
+                          fontSize: ".875rem",
+                        }}
+                      >
+                        {r.name}
+                        {r.verified && (
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 3,
+                              fontSize: ".6875rem",
+                              fontWeight: 700,
+                              color: "var(--success)",
+                            }}
+                          >
+                            <Icon name="shieldCheck" size={13} color="var(--success)" />
+                            {t("reviews.verifiedPurchase")}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: ".75rem", color: "var(--ink-400)" }}>{r.city}</div>
+                    </div>
+                  </div>
+                  <p
                     style={{
-                      fontSize: ".75rem",
-                      color: "var(--ink-400)",
-                      width: 28,
-                      textAlign: "right",
+                      margin: 0,
+                      color: "var(--ink-600)",
+                      fontSize: ".875rem",
+                      lineHeight: 1.6,
                     }}
                   >
-                    {r.pct}%
-                  </span>
+                    {r.text}
+                  </p>
+                  {r.photoUrls && r.photoUrls.length > 0 && (
+                    <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                      {r.photoUrls.map((url, j) => (
+                        <div
+                          key={j}
+                          style={{
+                            width: 56,
+                            height: 56,
+                            borderRadius: "var(--r-sm)",
+                            overflow: "hidden",
+                            border: "1px solid var(--line-200)",
+                          }}
+                        >
+                          <img
+                            src={url}
+                            alt=""
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                              display: "block",
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
-          </div>
-
-          <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
-            {reviews.map((r, i) => (
-              <div
-                key={i}
-                style={{
-                  paddingBottom: 14,
-                  borderBottom: i < reviews.length - 1 ? "1px solid var(--line-200)" : "none",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                  <BuyerAvatar
-                    src={r.avatar}
-                    name={r.name}
-                    size={34}
-                    fontSize=".875rem"
-                    border="1.5px solid var(--line-200)"
-                  />
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: ".875rem" }}>{r.name}</div>
-                    <div style={{ fontSize: ".75rem", color: "var(--ink-400)" }}>
-                      {r.city} · {r.date}
-                    </div>
-                  </div>
-                  <div style={{ marginLeft: "auto" }}>
-                    <RatingStars value={r.rating} size={12} />
-                  </div>
-                </div>
-                <p
-                  style={{
-                    margin: 0,
-                    color: "var(--ink-600)",
-                    fontSize: ".875rem",
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {r.text}
-                </p>
-                {r.photoUrls && r.photoUrls.length > 0 && (
-                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                    {r.photoUrls.map((url, j) => (
-                      <div
-                        key={j}
-                        style={{
-                          width: 56,
-                          height: 56,
-                          borderRadius: "var(--r-sm)",
-                          overflow: "hidden",
-                          border: "1px solid var(--line-200)",
-                        }}
-                      >
-                        <img
-                          src={url}
-                          alt=""
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                            display: "block",
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          )}
         </>
+      ) : (
+        !loading &&
+        !composerOpen && (
+          <div style={{ marginTop: 14, fontSize: ".9375rem", color: "var(--ink-500)" }}>
+            {canWriteReview ? t("reviews.noReviewsYet") : t("reviews.noReviewsEmpty")}
+          </div>
+        )
       )}
     </div>
   );

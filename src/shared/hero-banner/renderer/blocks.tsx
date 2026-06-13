@@ -1,6 +1,5 @@
 "use client";
 
-import type { CSSProperties } from "react";
 import { HERO_SIZE_STYLES, SPACER_HEIGHTS_PX } from "../constants";
 import { themeForTint, type HeroTheme } from "../themes";
 import type { HeroBannerContext, HeroBlock, HeroLayout, HeroTint } from "../types";
@@ -140,8 +139,14 @@ export function ButtonBlock({ block, theme, useCssVars, host, compact }: BlockPr
   );
 }
 
-export function SponsorPillBlock({ block: block_, context, host, useCssVars }: BlockProps) {
+export function SponsorPillBlock({
+  block: block_,
+  context,
+  host,
+  useCssVars: _useCssVars,
+}: BlockProps) {
   void block_;
+  void _useCssVars;
   const label = context.campaignLabel?.trim() || "Sponsored";
   if (!context.sponsored && !context.sponsorName && !context.campaignLabel) return null;
   return (
@@ -236,6 +241,8 @@ export function ImageBlock({ block, theme, useCssVars, host, compact, layout }: 
           filter: `blur(${compact ? 12 : 26}px)`,
         }}
       />
+      {/* Hero art URLs are admin-configured and vary by campaign; skip next/image domain allowlist. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
         alt={block.imageAlt ?? ""}

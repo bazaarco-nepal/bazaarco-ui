@@ -102,6 +102,50 @@ export interface Product {
    */
   variantGroups?: Array<{ name: string; options: string[] }> | null;
   createdAt?: string;
+  /** Manufacturer/brand label, when the seller provided one. */
+  brand?: string | null;
+  /** Seller-supplied stock keeping unit. */
+  sku?: string | null;
+  /** Short selling-point bullets shown above the description. */
+  highlights?: string[];
+  /** Server-computed availability so the UI never re-derives the rule. */
+  stockStatus?: StockStatus;
+  /** Total purchasable units (caps the quantity selector). */
+  availableStock?: number;
+  warranty?: ProductWarranty;
+  /** Return policy resolved server-side (product override or platform default). */
+  returns?: ProductReturns;
+}
+
+export type StockStatus = "in_stock" | "low_stock" | "out_of_stock" | "unavailable";
+
+export interface ProductWarranty {
+  available: boolean;
+  durationMonths: number | null;
+  type: string | null;
+  notes: string | null;
+}
+
+export interface ProductReturns {
+  eligible: boolean;
+  windowDays: number;
+  type: "free_return" | "paid_return" | "no_return";
+}
+
+/** Seller trust signals for the PDP seller card (GET /catalog/sellers/:id/trust). */
+export interface SellerTrust {
+  id: string;
+  slug?: string;
+  name: string;
+  avatar: string;
+  verified: boolean;
+  rating: number;
+  reviewsCount: number;
+  joinedAt: string;
+  ordersCompleted: number;
+  productsSold: number;
+  /** null when the store has no reviews yet — render "New seller" instead. */
+  positiveRatingPct: number | null;
 }
 
 export interface PricedVariant {
@@ -129,15 +173,18 @@ export interface CartLine extends Product {
 }
 
 export interface ProductReview {
+  id: string;
   name: string;
   city: string;
   rating: number;
+  /** ISO timestamp; formatted for display client-side. */
   date: string;
   text: string;
-  photos: number;
   photoUrls: string[];
   avatar: string | null;
   tint: Tint;
+  /** True when the review is tied to a real buyer who passed the purchase gate. */
+  verified: boolean;
 }
 
 export interface ProductReviewEligibility {
@@ -162,6 +209,7 @@ export interface SellerReview {
 
 export interface RatingDistribution {
   s: number;
+  count: number;
   pct: number;
 }
 

@@ -131,6 +131,7 @@ import {
   LanguageToggle,
 } from "@/components/common";
 import { ASSETS } from "@/config/assets";
+import { DEFAULT_RETURN } from "@/config/policies";
 import { pathFromScreen, storeShareUrl } from "@/config/routes";
 import { ApiRequestError } from "@/services/api/http";
 import { emptyStoreAddress, formatStoreAddress, type StoreAddress } from "@/lib/store-address";
@@ -4329,6 +4330,20 @@ export function SellerAddProduct({
   const [salePct, setSalePct] = useState("");
   const [attrs, setAttrs] = useState<Record<string, unknown>>({});
 
+  // Structured PDP fields — warranty, returns, highlights, brand, SKU. Shown on
+  // the product page as first-class info (not buried in spec metadata).
+  const [brand, setBrand] = useState("");
+  const [sku, setSku] = useState("");
+  const [highlightsText, setHighlightsText] = useState("");
+  const [warrantyAvailable, setWarrantyAvailable] = useState(false);
+  const [warrantyMonths, setWarrantyMonths] = useState("");
+  const [warrantyType, setWarrantyType] = useState("");
+  const [warrantyNotes, setWarrantyNotes] = useState("");
+  const [returnType, setReturnType] = useState<"free_return" | "paid_return" | "no_return">(
+    DEFAULT_RETURN.type,
+  );
+  const [returnWindowDays, setReturnWindowDays] = useState(String(DEFAULT_RETURN.windowDays));
+
   // Prefill once from the existing product when editing. The inventory row
   // (`editing`) carries the authoritative stock + variants; the fetched product
   // carries everything else. Strip a stray `stock` key out of metadata so it
@@ -4347,6 +4362,22 @@ export function SellerAddProduct({
     const meta = { ...((editingProduct.metadata as Record<string, unknown>) ?? {}) };
     delete meta.stock;
     setAttrs(meta);
+    // Structured PDP fields (warranty / returns / highlights / brand / SKU).
+    setBrand(editingProduct.brand ?? "");
+    setSku(editingProduct.sku ?? "");
+    setHighlightsText(
+      Array.isArray(editingProduct.highlights) ? editingProduct.highlights.join("\n") : "",
+    );
+    const warranty = editingProduct.warranty;
+    setWarrantyAvailable(Boolean(warranty?.available));
+    setWarrantyMonths(warranty?.durationMonths ? String(warranty.durationMonths) : "");
+    setWarrantyType(warranty?.type ?? "");
+    setWarrantyNotes(warranty?.notes ?? "");
+    const returns = editingProduct.returns;
+    if (returns) {
+      setReturnType(returns.type);
+      setReturnWindowDays(String(returns.windowDays));
+    }
     // Product-level bargaining settings come from the seller-only inventory row
     // (`editing`), not the public product — the floor is never sent to buyers.
     setBargainOk(editing?.allowBargaining ?? false);
@@ -4698,6 +4729,49 @@ export function SellerAddProduct({
           })
       : undefined;
 
+  // Structured PDP fields shared by create + update. Highlights come from the
+  // textarea (one per line), trimmed and capped at 6. Warranty details are
+  // cleared when warranty is off; "no returns" zeroes the window.
+  const buildPdpFields = () => {
+    const highlights = highlightsText
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .slice(0, 6);
+    return {
+      brand: brand.trim() || null,
+      sku: sku.trim() || null,
+      highlights,
+      warrantyAvailable,
+      warrantyDurationMonths: warrantyAvailable ? Number(warrantyMonths) || null : null,
+      warrantyType: warrantyAvailable ? warrantyType.trim() || null : null,
+      warrantyNotes: warrantyAvailable ? warrantyNotes.trim() || null : null,
+      returnType,
+      returnEligible: returnType !== "no_return",
+      returnWindowDays:
+        returnType === "no_return" ? 0 : Number(returnWindowDays) || DEFAULT_RETURN.windowDays,
+    };
+  };
+
+  const pdpFieldStyle: React.CSSProperties = {
+    width: "100%",
+    height: 48,
+    fontSize: ".9375rem",
+    border: "1.5px solid var(--line-200)",
+    borderRadius: "var(--r-md)",
+    padding: "0 14px",
+    outline: "none",
+    fontFamily: "var(--font-sans)",
+    background: "#fff",
+  };
+  const pdpLabelStyle: React.CSSProperties = {
+    display: "block",
+    fontSize: ".8125rem",
+    fontWeight: 700,
+    color: "var(--ink-700)",
+    marginBottom: 6,
+  };
+
   // Publish: upload every photo (3–5, cover first), then create the product.
   // Edit: upload any newly added photos, then PATCH the changed fields (category
   // is never sent). Postgres is the source of truth; the server re-indexes it
@@ -4732,6 +4806,7 @@ export function SellerAddProduct({
             : bargainOk && bargainMinPrice
               ? Math.round(Number(bargainMinPrice) * 100)
               : null,
+          ...buildPdpFields(),
         });
         toast("Product updated");
         nav("s-products");
@@ -4762,6 +4837,7 @@ export function SellerAddProduct({
           : bargainOk && bargainMinPrice
             ? Math.round(Number(bargainMinPrice) * 100)
             : null,
+        ...buildPdpFields(),
       });
       toast("Product published!");
       nav("s-products");
@@ -5147,6 +5223,190 @@ export function SellerAddProduct({
               </p>
 
               <CategoryAttrFields category={category} values={attrs} onChange={setAttrs} />
+            </div>
+          )}
+
+          {/* Warranty, returns & highlights — shown on the product page as
+              first-class trust info (backend-driven, not buried in specs). */}
+          {category && (
+            <div
+              style={{
+                background: "#fff",
+                border: "1.5px solid var(--line-200)",
+                borderRadius: "var(--r-lg)",
+                padding: 18,
+                marginBottom: 14,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                <span
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "50%",
+                    background: "var(--tint-blue-50)",
+                    color: "var(--blue)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Icon name="shieldCheck" size={18} color="var(--blue)" />
+                </span>
+                <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>
+                  Warranty, returns &amp; highlights
+                </h3>
+              </div>
+
+              {/* Brand + SKU */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 12,
+                  marginBottom: 14,
+                }}
+              >
+                <div>
+                  <label style={pdpLabelStyle}>Brand</label>
+                  <input
+                    value={brand}
+                    onChange={(e) => setBrand(e.target.value)}
+                    placeholder="e.g. Behringer"
+                    maxLength={128}
+                    style={pdpFieldStyle}
+                  />
+                </div>
+                <div>
+                  <label style={pdpLabelStyle}>SKU (optional)</label>
+                  <input
+                    value={sku}
+                    onChange={(e) => setSku(e.target.value)}
+                    placeholder="Your stock code"
+                    maxLength={64}
+                    style={pdpFieldStyle}
+                  />
+                </div>
+              </div>
+
+              {/* Highlights */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={pdpLabelStyle}>Highlights — one per line, up to 6</label>
+                <textarea
+                  value={highlightsText}
+                  onChange={(e) => setHighlightsText(e.target.value)}
+                  placeholder={
+                    "Portable 8-channel audio mixer\nRugged protective case\nGreat for live sound"
+                  }
+                  rows={4}
+                  style={{
+                    ...pdpFieldStyle,
+                    height: "auto",
+                    padding: "10px 14px",
+                    resize: "vertical",
+                  }}
+                />
+              </div>
+
+              {/* Warranty */}
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  cursor: "pointer",
+                  marginBottom: warrantyAvailable ? 12 : 14,
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={warrantyAvailable}
+                  onChange={(e) => setWarrantyAvailable(e.target.checked)}
+                />
+                <span style={{ fontSize: ".9375rem", fontWeight: 700, color: "var(--ink-800)" }}>
+                  Warranty available
+                </span>
+              </label>
+              {warrantyAvailable && (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 12,
+                    marginBottom: 14,
+                  }}
+                >
+                  <div>
+                    <label style={pdpLabelStyle}>Duration (months)</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={240}
+                      value={warrantyMonths}
+                      onChange={(e) => setWarrantyMonths(e.target.value)}
+                      placeholder="e.g. 12"
+                      style={pdpFieldStyle}
+                    />
+                  </div>
+                  <div>
+                    <label style={pdpLabelStyle}>Type (optional)</label>
+                    <input
+                      value={warrantyType}
+                      onChange={(e) => setWarrantyType(e.target.value)}
+                      placeholder="e.g. Manufacturer"
+                      maxLength={64}
+                      style={pdpFieldStyle}
+                    />
+                  </div>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <label style={pdpLabelStyle}>Notes (optional)</label>
+                    <input
+                      value={warrantyNotes}
+                      onChange={(e) => setWarrantyNotes(e.target.value)}
+                      placeholder="What the warranty covers"
+                      maxLength={2000}
+                      style={pdpFieldStyle}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Returns */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: returnType === "no_return" ? "1fr" : "1fr 1fr",
+                  gap: 12,
+                }}
+              >
+                <div>
+                  <label style={pdpLabelStyle}>Returns</label>
+                  <select
+                    value={returnType}
+                    onChange={(e) =>
+                      setReturnType(e.target.value as "free_return" | "paid_return" | "no_return")
+                    }
+                    style={pdpFieldStyle}
+                  >
+                    <option value="free_return">Free returns</option>
+                    <option value="paid_return">Paid returns</option>
+                    <option value="no_return">No returns</option>
+                  </select>
+                </div>
+                {returnType !== "no_return" && (
+                  <div>
+                    <label style={pdpLabelStyle}>Return window (days)</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={365}
+                      value={returnWindowDays}
+                      onChange={(e) => setReturnWindowDays(e.target.value)}
+                      style={pdpFieldStyle}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -8279,6 +8539,16 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
   const chatQuickReplies = useMemo(() => inbox?.quickReplies ?? [], [inbox?.quickReplies]);
   const [active, setActive] = useState<ChatThread | null>(null);
   const [mobileInThread, setMobileInThread] = useState(false);
+  // True while a chat opened from a product page is being created/fetched, so the
+  // buyer sees a clear "opening chat" state instead of a blank panel or the
+  // "no conversations yet" empty state during the 4–5s round-trip. Seeded from
+  // sessionStorage so the loading screen shows on the very first render.
+  const [openingChat, setOpeningChat] = useState(
+    () =>
+      buyerMode &&
+      typeof sessionStorage !== "undefined" &&
+      Boolean(sessionStorage.getItem("bz_open_chat_seller")),
+  );
   const [msg, setMsg] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [peerTyping, setPeerTyping] = useState(false);
@@ -8297,15 +8567,18 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
   } = useChatMessages(active?.id ?? null);
 
   useEffect(() => {
-    if (isMobile || !chatThreads.length || active) return;
+    // Don't auto-pick the first thread while a specific chat is being opened —
+    // it would briefly show the wrong conversation before the new one resolves.
+    if (isMobile || !chatThreads.length || active || openingChat) return;
     setActive(chatThreads[0] ?? null);
-  }, [chatThreads, active, isMobile]);
+  }, [chatThreads, active, isMobile, openingChat]);
 
   useEffect(() => {
     if (!buyerMode || typeof sessionStorage === "undefined") return;
     const sellerId = sessionStorage.getItem("bz_open_chat_seller");
     if (!sellerId) return;
     sessionStorage.removeItem("bz_open_chat_seller");
+    setOpeningChat(true);
     void chatApi
       .createConversation(sellerId)
       .then((thread) => {
@@ -8315,6 +8588,9 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
       })
       .catch((e) => {
         toast(e instanceof Error ? e.message : "Could not open chat");
+      })
+      .finally(() => {
+        setOpeningChat(false);
       });
   }, [buyerMode, invalidateInbox, toast]);
 
@@ -8503,6 +8779,37 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
     }
   };
 
+  // Opening a chat from a product page: show a clear preparing state while the
+  // conversation is created/fetched, rather than a blank panel or the empty
+  // "no conversations yet" screen. Takes precedence over the inbox states below.
+  if (openingChat && !active) {
+    return (
+      <div className="bz-chat-page">
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 14,
+            minHeight: "50vh",
+            textAlign: "center",
+          }}
+        >
+          <Spinner />
+          <div>
+            <div style={{ fontWeight: 700, color: "var(--ink-900)", fontSize: "1rem" }}>
+              Opening chat…
+            </div>
+            <div style={{ fontSize: ".875rem", color: "var(--ink-500)", marginTop: 4 }}>
+              Preparing your conversation with the seller.
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading || isError) {
     return (
       <ApiState isLoading={isLoading} isError={isError} error={error}>
@@ -8511,7 +8818,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
     );
   }
 
-  if (!chatThreads.length) {
+  if (!chatThreads.length && !active) {
     return (
       <div className="bz-chat-page">
         {!buyerMode ? <SellerHelpBar /> : null}
@@ -10209,7 +10516,6 @@ export function SellerVideos() {
   const canSell = verification?.canSell === true;
   const { data: videosData, isLoading, isError, error, refetch } = useSellerVideos();
   const videos = videosData?.items ?? [];
-  const videoAnalytics = videosData?.analytics;
   const [showUpload, setShowUpload] = useState(false);
 
   if (!canSell) {
@@ -10259,7 +10565,6 @@ export function SellerVideos() {
         <SellerHelpBar />
         <SellerVideoLibrary
           videos={videos}
-          analytics={videoAnalytics}
           showUpload={showUpload}
           onToggleUpload={() => setShowUpload((s) => !s)}
           onRefetch={() => void refetch()}

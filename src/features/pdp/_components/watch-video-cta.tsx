@@ -6,13 +6,15 @@ import { videoPath } from "@/config/routes";
 type PdpWatchVideoCtaProps = {
   productId: string;
   thumb?: string | null;
+  /** Render as a dark pill that floats over the gallery image (top of the media column). */
+  overlay?: boolean;
 };
 
-export function PdpWatchVideoCta({ productId, thumb }: PdpWatchVideoCtaProps) {
+export function PdpWatchVideoCta({ productId, thumb, overlay = false }: PdpWatchVideoCtaProps) {
   return (
     <AppLink
       href={videoPath(productId)}
-      className="bz-pdp-watch-video"
+      className={`bz-pdp-watch-video${overlay ? " bz-pdp-watch-video--overlay" : ""}`}
       aria-label="Watch video of this product"
     >
       <span className="bz-pdp-watch-video__thumb">

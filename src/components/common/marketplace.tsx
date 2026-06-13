@@ -319,7 +319,7 @@ export function ProductCard({
             style={{
               position: "relative",
               width: "100%",
-              aspectRatio: "1 / 1",
+              aspectRatio: "1 / 0.8",
               overflow: "hidden",
             }}
           >
@@ -330,7 +330,7 @@ export function ProductCard({
             />
           </div>
         ) : (
-          <Placeholder icon={p.icon} tint={p.tint} radius="0" ratio="1 / 1" />
+          <Placeholder icon={p.icon} tint={p.tint} radius="0" ratio="1 / 0.8" />
         )}
         {/* Single discount badge — only one platform-badge style allowed */}
         {disc > 0 && (
@@ -364,11 +364,11 @@ export function ProductCard({
             color: wished ? "var(--red)" : "var(--ink-500)",
           }}
         >
-          {/* 44px tap target per WCAG; visible circle kept smaller (34px) to lighten the image */}
+          {/* 44px tap target per WCAG; visible circle kept smaller (30px) to lighten the image */}
           <span
             style={{
-              width: 34,
-              height: 34,
+              width: 30,
+              height: 30,
               borderRadius: "50%",
               background: "rgba(255,255,255,.95)",
               boxShadow: "var(--sh-1)",
@@ -377,7 +377,7 @@ export function ProductCard({
               justifyContent: "center",
             }}
           >
-            <Icon name="heart" size={18} fill={wished ? "currentColor" : "none"} />
+            <Icon name="heart" size={16} fill={wished ? "currentColor" : "none"} />
           </span>
         </button>
         {/* Video — minimal icon-only chip, no label */}
@@ -411,17 +411,17 @@ export function ProductCard({
       <div
         className="bz-pcard__body"
         style={{
-          padding: "12px 14px 14px",
+          padding: "10px 12px 12px",
           display: "flex",
           flexDirection: "column",
-          gap: 6,
+          gap: 5,
           flex: 1,
         }}
       >
         <div
           className="bz-pcard__title"
           style={{
-            fontSize: ".9375rem",
+            fontSize: ".875rem",
             fontWeight: 600,
             color: "var(--ink-900)",
             lineHeight: 1.35,
@@ -442,11 +442,11 @@ export function ProductCard({
             gap: 5,
             flexWrap: "wrap",
             minHeight: "1.25rem",
-            fontSize: ".8125rem",
+            fontSize: ".75rem",
             color: "var(--ink-500)",
           }}
         >
-          <RatingStars value={p.rating ?? 0} size={13} count={p.reviews} />
+          <RatingStars value={p.rating ?? 0} size={12} count={p.reviews} />
           {sale && <span style={{ color: "var(--ink-400)" }}>· {soldLabel}</span>}
         </div>
         {/* Single price line: all-in price + strikethrough original — via Price primitive */}
@@ -1325,9 +1325,9 @@ export function Footer() {
         style={{
           position: "relative",
           zIndex: 2,
-          maxWidth: 1280,
+          maxWidth: "var(--container)",
           margin: "0 auto",
-          padding: "72px 28px 48px",
+          padding: "72px clamp(12px, 4vw, 28px) 48px",
           display: "grid",
           gridTemplateColumns: "1.6fr repeat(4, 1fr)",
           gap: 40,
@@ -1428,9 +1428,9 @@ export function Footer() {
         <div
           className="bz-row-4up"
           style={{
-            maxWidth: 1280,
+            maxWidth: "var(--container)",
             margin: "0 auto",
-            padding: "28px",
+            padding: "28px clamp(12px, 4vw, 28px)",
             display: "grid",
             gridTemplateColumns: "repeat(4, 1fr)",
             gap: 24,

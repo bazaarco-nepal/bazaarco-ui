@@ -151,6 +151,15 @@ export function useProduct(id: string | null) {
   });
 }
 
+export function useSellerTrust(id: string | null) {
+  return useQuery({
+    queryKey: queryKeys.catalog.sellerTrust(id ?? ""),
+    queryFn: () => catalogApi.getSellerTrust(id!),
+    enabled: Boolean(id),
+    staleTime: STALE_TIME,
+  });
+}
+
 export function useProductReviews(id: string | null) {
   return useQuery({
     queryKey: queryKeys.catalog.productReviews(id ?? ""),

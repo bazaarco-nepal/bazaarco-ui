@@ -8,6 +8,7 @@ import type {
   RatingDistribution,
   Seller,
   SellerReview,
+  SellerTrust,
 } from "@/types";
 import type { PaginatedData } from "./types";
 import { getData, postData } from "./http";
@@ -165,6 +166,10 @@ export const catalogApi = {
   async getSellerProducts(id: string): Promise<Product[]> {
     const items = await getData<Product[]>(`/catalog/sellers/${id}/products`);
     return items.map(mapProduct);
+  },
+
+  getSellerTrust(id: string): Promise<SellerTrust> {
+    return getData<SellerTrust>(`/catalog/sellers/${id}/trust`);
   },
 
   createSellerReview(id: string, payload: CreateSellerReviewPayload): Promise<SellerReview> {

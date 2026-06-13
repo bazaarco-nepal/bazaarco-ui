@@ -1315,10 +1315,13 @@ body {
  * actions right). On wider screens the container reflows into a multi-column
  * grid and each card stacks vertically (thumb on top, body below).
  */
+/* Mobile-first: single column. Cards stack video-on-top, info below — the
+   same shape used on desktop, just one per row. The 3-up grid kicks in on
+   wider screens (see the media queries below). */
 .bz-seller-video-library-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 12px;
+  gap: 16px;
   width: 100%;
 }
 
@@ -1327,63 +1330,54 @@ body {
   border: 1.5px solid var(--line-200);
   border-radius: var(--r-lg);
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   width: 100%;
   box-sizing: border-box;
   overflow: hidden;
 }
 
 .bz-seller-video-card__media {
-  width: 30%;
-  max-width: 104px;
-  flex-shrink: 0;
-  padding: 10px;
-  box-sizing: border-box;
+  width: 100%;
+  /* The VideoPlayer paints its own rounded corners; the card clips the top to
+     match, so the clip sits flush edge-to-edge like the watch feed. */
 }
 
 .bz-seller-video-card__body {
-  flex: 1;
-  min-width: 0;
-  padding: 10px 12px 10px 2px;
+  padding: 14px 16px 16px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 12px;
   box-sizing: border-box;
 }
 
-.bz-seller-video-card__title-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.bz-seller-video-card__title {
-  font-weight: 800;
+.bz-seller-video-card__for {
   font-size: 0.875rem;
-  line-height: 1.35;
+  font-weight: 600;
+  color: var(--ink-500);
   min-width: 0;
   overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.bz-seller-video-card__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  font-size: 0.7rem;
+.bz-seller-video-card__for span {
+  font-weight: 800;
+  color: var(--ink-900);
+}
+
+.bz-seller-video-card__views {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: var(--ink-500);
-  margin-top: 2px;
 }
 
 .bz-seller-video-card__actions {
   display: flex;
   flex-wrap: nowrap;
   gap: 8px;
-  margin-top: auto;
-  padding-top: 10px;
 }
 
 .bz-seller-video-card__actions > * {
@@ -1391,24 +1385,17 @@ body {
   min-width: 0;
 }
 
-@media (min-width: 700px) {
+/* Tablet: two across. */
+@media (min-width: 640px) {
   .bz-seller-video-library-grid {
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(2, 1fr);
   }
+}
 
-  .bz-seller-video-card {
-    flex-direction: column;
-  }
-
-  .bz-seller-video-card__media {
-    width: 100%;
-    max-width: none;
-    padding: 10px 10px 0;
-  }
-
-  .bz-seller-video-card__body {
-    padding: 10px 12px 12px;
+/* Desktop: the 3-column row from the design. */
+@media (min-width: 960px) {
+  .bz-seller-video-library-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -2316,22 +2303,16 @@ body {
   min-width: 0;
 }
 
-.bz-pdp-mobile__gallery:has(.bz-pdp-mobile__thumbs) {
-  border-radius: var(--r-lg);
-  overflow: hidden;
-}
-
-.bz-pdp-mobile__gallery:has(.bz-pdp-mobile__thumbs) .bz-pdp-mobile__viewport {
-  border-radius: 0;
-}
-
 .bz-pdp-mobile__viewport {
   position: relative;
-  width: 100%;
+  /* Break out of the PDP page padding so the hero image is edge-to-edge,
+     while the thumbnail strip and content below stay inset. */
+  width: auto;
+  margin: -12px -16px 0;
   aspect-ratio: 4 / 3;
   max-height: min(42vh, 340px);
   overflow: hidden;
-  border-radius: var(--r-lg);
+  border-radius: 0;
   background: var(--ink-50);
   touch-action: pan-y;
   user-select: none;
@@ -2375,38 +2356,39 @@ body {
 
 .bz-pdp-mobile__thumbs {
   display: flex;
-  gap: 0;
-  margin-top: 0;
+  gap: 8px;
+  margin-top: 12px;
   overflow-x: auto;
-  padding-bottom: 0;
+  padding-bottom: 2px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
 
 .bz-pdp-mobile__thumb {
   flex: 1 0 0;
-  min-width: 72px;
+  min-width: 64px;
   width: auto;
-  height: 56px;
+  height: 52px;
   padding: 0;
-  border-radius: 0;
+  border-radius: var(--r-md);
   overflow: hidden;
-  border: none;
-  background: var(--ink-50);
+  border: 1px solid var(--line-200);
+  background: var(--line-100);
   cursor: pointer;
   position: relative;
 }
 
-.bz-pdp-mobile__thumb[aria-pressed="true"]::after {
+.bz-pdp-mobile__thumb[aria-selected="true"] {
+  border-color: var(--blue-deep);
+}
+
+.bz-pdp-mobile__thumb[aria-selected="true"]::after {
   content: "";
   position: absolute;
   inset: 0;
-  box-shadow: inset 0 0 0 2px var(--blue);
+  border-radius: var(--r-md);
+  box-shadow: inset 0 0 0 2px var(--blue-deep);
   pointer-events: none;
-}
-
-.bz-pdp-mobile__thumb[aria-pressed="true"] {
-  border-color: transparent;
 }
 
 .bz-pdp-mobile__thumb img {
@@ -2528,6 +2510,32 @@ body {
   white-space: nowrap;
 }
 
+/* Overlay variant — a dark pill floating over the gallery image (top-left of media). */
+.bz-pdp-watch-video--overlay {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 2;
+  height: 2rem;
+  margin: 0;
+  padding: 0 12px 0 4px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #fff;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.bz-pdp-watch-video--overlay:hover {
+  background: rgba(15, 23, 42, 0.85);
+  border: none;
+}
+
+.bz-pdp-watch-video--overlay .bz-pdp-watch-video__text {
+  color: #fff;
+}
+
 .bz-pdp-seller-chip {
   display: flex;
   align-items: center;
@@ -2634,9 +2642,44 @@ body {
   margin-top: 52px;
 }
 
+/* Mobile PDP full-scroll sections — each block is separated by a thick neutral
+   bar (not a hairline), matching the native app layout. The block breaks out of
+   the page's 16px gutter so the divider runs edge-to-edge, then re-pads 16px so
+   its content lines up with every other block (and the homepage). */
+.bz-pdp-msec {
+  margin: 0 -16px;
+  padding: 16px;
+  border-top: 8px solid var(--line-100);
+}
+.bz-pdp-msec > h4 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink-900);
+}
+.bz-pdp-msec__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.bz-pdp-msec__head > h4 {
+  margin: 0;
+}
+/* Empty-state card inside a mobile section (no reviews / no questions yet). */
+.bz-pdp-mempty {
+  border: 1px solid var(--line-200);
+  border-radius: var(--r-lg);
+  padding: 18px 14px;
+  text-align: center;
+  background: var(--card);
+}
+
 @media (max-width: 768px) {
   .bz-pdp-similar {
-    margin-top: 32px;
+    margin: 0 -16px;
+    padding: 16px;
+    border-top: 8px solid var(--line-100);
   }
 }
 
@@ -2930,14 +2973,31 @@ body {
   }
 }
 
-/* Product / card grids — auto-fit pattern that always fills row */
+/* Product / card grids — fixed column counts so desktop lands on exactly 6 per
+   row, stepping down to 2 on phones. Explicit counts (not auto-fill) keep the
+   number predictable across widths. */
 .bz-grid-cards {
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
-  gap: 24px !important;
+  grid-template-columns: repeat(6, 1fr) !important;
+  gap: 14px !important;
 }
 .bz-grid-cards > * {
   min-width: 0;
   overflow: hidden;
+}
+@media (max-width: 1200px) {
+  .bz-grid-cards {
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+}
+@media (max-width: 992px) {
+  .bz-grid-cards {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+}
+@media (max-width: 768px) {
+  .bz-grid-cards {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
 }
 @media (max-width: 480px) {
   .bz-grid-cards {
@@ -3290,10 +3350,6 @@ body {
   .bz-pdp-root {
     padding: 12px 16px calc(88px + env(safe-area-inset-bottom, 0px)) !important;
   }
-
-  .bz-pdp-root.bz-pdp-root--bargain {
-    padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px)) !important;
-  }
 }
 
 @media print {
@@ -3426,4 +3482,40 @@ body {
 }
 .bz-link-hover:hover {
   text-decoration: underline;
+}
+
+/* Outlined buttons in the PDP seller card (Visit store / Chat) — fill softly on hover. */
+.bz-pdp-seller-btn {
+  padding: 10px 0;
+  background: transparent;
+  border: 1px solid var(--line-200);
+  border-radius: var(--r-md);
+  color: var(--ink-700);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition:
+    background var(--dur-micro) var(--ease),
+    border-color var(--dur-micro) var(--ease);
+}
+.bz-pdp-seller-btn:hover {
+  background: var(--line-100);
+  border-color: var(--ink-300);
+}
+
+/* Soft-red "Make an offer" button in the buy box — deepen the tint on hover. */
+.bz-pdp-offer-btn {
+  background: var(--tint-red-50);
+  border: 1px solid rgba(230, 57, 70, 0.28);
+  transition:
+    background var(--dur-micro) var(--ease),
+    border-color var(--dur-micro) var(--ease);
+}
+.bz-pdp-offer-btn:hover:not(:disabled) {
+  background: rgba(230, 57, 70, 0.13);
+  border-color: rgba(230, 57, 70, 0.5);
 }

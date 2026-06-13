@@ -25,8 +25,10 @@ export interface RegisterPayload {
   name: string;
   password: string;
   intent: AuthIntent;
-  /** Legal documents the user accepted at sign-up; logged by the Core API. */
+  /** Required legal documents the user accepted at sign-up; logged by the Core API. */
   acceptances?: LegalAcceptance[];
+  /** Optional, separate marketing consent — not bundled with the required legal consent. */
+  marketingOptIn?: boolean;
 }
 
 export interface PendingEmailVerification {

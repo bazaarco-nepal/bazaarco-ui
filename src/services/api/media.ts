@@ -58,12 +58,14 @@ export interface SellerVideosResponse {
 
 export interface SellerVideoItem {
   id: string;
-  title: string;
-  product: string;
+  // Denormalized product name snapshot the clip is labelled by ("For: …").
+  productLabel: string;
   videoUrl: string | null;
+  // Cloudinary public id — lets the player stream via HLS like the buyer feed.
+  videoPublicId?: string | null;
   thumb: string;
   views: number;
-  likes: number;
+  likesCount: number;
   tint: string;
   icon: string;
   productId?: string | null;

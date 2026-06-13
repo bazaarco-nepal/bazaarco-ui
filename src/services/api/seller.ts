@@ -32,7 +32,21 @@ export interface DiscountFields {
   discountPct?: number | null;
 }
 
-export interface UpdateProductPayload extends DiscountFields {
+/** Structured PDP fields the seller sets at upload/edit (validated server-side). */
+export interface PdpProductFields {
+  brand?: string | null;
+  sku?: string | null;
+  highlights?: string[];
+  warrantyAvailable?: boolean;
+  warrantyDurationMonths?: number | null;
+  warrantyType?: string | null;
+  warrantyNotes?: string | null;
+  returnEligible?: boolean;
+  returnWindowDays?: number | null;
+  returnType?: "free_return" | "paid_return" | "no_return" | null;
+}
+
+export interface UpdateProductPayload extends DiscountFields, PdpProductFields {
   name?: string;
   description?: string;
   price?: number;
@@ -47,7 +61,7 @@ export interface UpdateProductPayload extends DiscountFields {
   variantGroups?: Array<{ name: string; options: string[] }> | null;
 }
 
-export interface SellerInventoryItem {
+export interface SellerInventoryItem extends PdpProductFields {
   id: string;
   name: string;
   price: number;
@@ -88,7 +102,7 @@ export interface SellerOrder {
   awaitingOtherSellers?: boolean;
 }
 
-export interface CreateProductPayload extends DiscountFields {
+export interface CreateProductPayload extends DiscountFields, PdpProductFields {
   name: string;
   ne?: string;
   description?: string;

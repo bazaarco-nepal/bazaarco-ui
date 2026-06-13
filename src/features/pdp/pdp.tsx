@@ -20,7 +20,6 @@ import {
   Toast,
   SectionHead,
   TINTS,
-  DeliverToModal,
   OTPInput,
   MenuRow,
   ChipGroup,
@@ -38,9 +37,8 @@ import {
 } from "@/components/ui";
 import { pathFromScreen, productShareUrl, searchPath } from "@/config/routes";
 import { useBazaarStore } from "@/store/bazaar-store";
-import { formatDeliverToLabel } from "@/lib/delivery-location";
 import { displayCategoryLabel } from "@/lib/locale-display";
-import { useProduct, useCategories } from "@/hooks/use-catalog";
+import { useProduct, useCategories, useSellerTrust, useProductProfile } from "@/hooks/use-catalog";
 import {
   BazaarCtx,
   useBz,
@@ -51,7 +49,6 @@ import {
   Navbar,
   Footer,
   DevViewSwitcher,
-  SellerRow,
 } from "@/components/common";
 import { useSimilar } from "@/hooks/use-search";
 import {
@@ -62,76 +59,32 @@ import {
 import { bargainExpiryLabel } from "@/lib/bargain-expiry";
 import { matchSelectedVariants, toggleOption, variantBacksOption } from "@/lib/variant-selection";
 import { ApiRequestError } from "@/services/api/http";
-import { resolveDelivery, deliveryEstimate } from "@/lib/delivery-options";
 import type { PdpProps } from "@/types";
 import {
   ReviewsSection,
   QASection,
   ImageLightbox,
-  PdpZoomButton,
   PdpWatchVideoCta,
+  TrustChips,
+  SellerCard,
 } from "./_components";
 
-const DELIVERY_FEE = resolveDelivery([], "standard").fee;
-
-type TabItem = { key: string; label: string; content: React.ReactNode };
-
-function TabbedPair({ items }: { items: TabItem[] }) {
-  const [active, setActive] = useState(items[0]?.key ?? "");
-  return (
-    <div>
-      <div
-        className="bz-tab-bar"
-        role="tablist"
-        style={{
-          display: "flex",
-          gap: 18,
-          borderBottom: "1px solid var(--line-200)",
-          marginBottom: 18,
-        }}
-      >
-        {items.map((it) => {
-          const on = active === it.key;
-          return (
-            <button
-              key={it.key}
-              type="button"
-              role="tab"
-              aria-selected={on}
-              onClick={() => setActive(it.key)}
-              className={`bz-tab-btn${on ? " bz-tab-btn--active" : ""}`}
-            >
-              {it.label}
-            </button>
-          );
-        })}
-      </div>
-      {items.map((it) => {
-        const on = active === it.key;
-        return (
-          <section
-            key={it.key}
-            className={`bz-tab-pane${on ? " bz-tab-pane--active" : " bz-tab-pane--inactive"}`}
-            style={{ marginBottom: 32 }}
-          >
-            <h3
-              className="bz-tab-pane__title"
-              style={{
-                margin: "0 0 12px",
-                fontSize: "1.0625rem",
-                fontWeight: 700,
-                color: "var(--ink-800)",
-              }}
-            >
-              {it.label}
-            </h3>
-            {it.content}
-          </section>
-        );
-      })}
-    </div>
-  );
-}
+// Round, glassy control floated over the gallery image (wishlist / share).
+const imgOverlayBtn = (color: string): React.CSSProperties => ({
+  width: 36,
+  height: 36,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  border: "none",
+  borderRadius: "50%",
+  background: "rgba(255, 255, 255, 0.92)",
+  boxShadow: "0 1px 3px rgba(15, 23, 42, 0.18)",
+  backdropFilter: "blur(4px)",
+  WebkitBackdropFilter: "blur(4px)",
+  cursor: "pointer",
+  color,
+});
 
 /* ============================================================
    BazaarCo — Product Detail Page (video-led)
@@ -793,20 +746,23 @@ export function PDP({ p: pProp }: PdpProps) {
   const { data: productFromApi, isLoading, isError, error } = useProduct(productId);
   const { data: categories = [] } = useCategories();
   const locale = useBazaarStore((s) => s.locale);
-  const deliveryLocation = useBazaarStore((s) => s.deliveryLocation);
-  const setDeliveryLocation = useBazaarStore((s) => s.setDeliveryLocation);
-  const hasDeliveryLoc = Boolean(deliveryLocation?.city);
   const p = productFromApi ?? pProp;
   const s = p.sellerInfo ?? null;
+  // Seller trust signals for the seller card / verified chip (computed server-side).
+  const { data: sellerTrust, isLoading: trustLoading } = useSellerTrust(p.seller || null);
+  // Humanized [label, value] specs from the product profile (maps raw metadata
+  // keys to category-defined display labels). Falls back to raw metadata pairs
+  // only if the profile hasn't loaded yet.
+  const { data: profile } = useProductProfile(productId);
   // Algolia "find similar" for the recommendations rail.
   const { data: similarItems = [] } = useSimilar(productId, 10);
-  // Derive specs from product metadata key-value pairs.
   const specs: [string, string][] = useMemo(() => {
+    if (profile?.specs?.length) return profile.specs;
     if (!p.metadata || typeof p.metadata !== "object") return [];
     return Object.entries(p.metadata)
       .filter(([, v]) => v != null && String(v).trim() !== "")
-      .map(([k, v]) => [k, String(v)]);
-  }, [p.metadata]);
+      .map(([k, v]) => [k, String(v)] as [string, string]);
+  }, [profile, p.metadata]);
   const desc = useMemo(() => {
     return p.description?.trim() ?? "";
   }, [p.description]);
@@ -822,7 +778,10 @@ export function PDP({ p: pProp }: PdpProps) {
   const touchDeltaY = useRef<number>(0);
   const swipeDragging = useRef(false);
   // Gallery, cover first. Falls back to the single cover for older products.
-  const gallery = p.images?.length ? p.images : p.img ? [p.img] : [];
+  const gallery = useMemo(
+    () => (p.images?.length ? p.images : p.img ? [p.img] : []),
+    [p.images, p.img],
+  );
 
   // Share via the native share sheet when available, falling back to copying the link.
   const shareProduct = async () => {
@@ -850,7 +809,6 @@ export function PDP({ p: pProp }: PdpProps) {
   const [bargain, setBargain] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [descOpen, setDescOpen] = useState(false);
-  const [deliverOpen, setDeliverOpen] = useState(false);
   // Priced variants (the seller's real SKUs) drive the price a buyer pays and
   // what's added to the cart. The cosmetic template swatches below are suppressed
   // when these exist, so there's a single source of truth for the selection.
@@ -966,6 +924,29 @@ export function PDP({ p: pProp }: PdpProps) {
   const bargainingAvailable = selVariant
     ? Boolean(selVariant.allowBargaining ?? p.allowBargaining)
     : Boolean(p.allowBargaining);
+
+  // Buy controls are disabled when the listing can't be purchased. Stock comes
+  // from the server-computed status; wishlist stays active regardless.
+  const isOutOfStock =
+    p.stockStatus === "out_of_stock" || p.stockStatus === "unavailable" || p.outOfStock === true;
+  // Cap the quantity selector at the available stock the server reports.
+  const maxQty =
+    typeof p.availableStock === "number" && p.availableStock > 0
+      ? Math.min(p.availableStock, 99)
+      : 99;
+
+  // Shared styling for the desktop detail sections. They read directly on the
+  // page — separated by a hairline rule, not boxed in their own cards.
+  const detailCardStyle = {
+    borderTop: "1px solid var(--line-200)",
+    paddingTop: 28,
+  } as const;
+  const detailTitleStyle = {
+    margin: "0 0 14px",
+    fontSize: "1.375rem",
+    fontWeight: 700,
+    color: "var(--ink-900)",
+  } as const;
 
   const openBargain = () => {
     if (!authed) {
@@ -1219,7 +1200,6 @@ export function PDP({ p: pProp }: PdpProps) {
     setBargain(false);
     setBuyNowSheet(false);
     setLightboxOpen(false);
-    setDeliverOpen(false);
     // Scroll to top when product changes so the buyer always starts at the top.
     const scrollEl = document.getElementById("app-scroll");
     if (scrollEl) {
@@ -1234,7 +1214,7 @@ export function PDP({ p: pProp }: PdpProps) {
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
       <div
-        className={bargainingAvailable ? "bz-pdp-root bz-pdp-root--bargain" : "bz-pdp-root"}
+        className="bz-pdp-root"
         style={{
           maxWidth: "var(--container)",
           margin: "0 auto",
@@ -1315,8 +1295,7 @@ export function PDP({ p: pProp }: PdpProps) {
                         </button>
                       </div>
                     ))}
-                  </div>
-                  {gallery.length > 0 && <PdpZoomButton onClick={openPhotoLightbox} />}
+                  </div>{" "}
                   {/* Floating back */}
                   <button
                     type="button"
@@ -1353,6 +1332,8 @@ export function PDP({ p: pProp }: PdpProps) {
                   >
                     <Icon name="share" size={16} />
                   </button>
+                  {/* Watch video — floats over the image (borrowed from desktop). */}
+                  {p.hasVideo && <PdpWatchVideoCta productId={p.id} thumb={p.videoThumb} overlay />}
                   {/* Dots */}
                   {gallerySlides.length > 1 && (
                     <div
@@ -1408,23 +1389,25 @@ export function PDP({ p: pProp }: PdpProps) {
             )}
           </div>
 
-          {/* Product header */}
-          <div style={{ padding: "18px 4px 0" }}>
+          {/* Product header — no own L/R padding; it sits on the page's single
+              16px gutter (same as the homepage and every other block). */}
+          <div style={{ padding: "14px 0 16px" }}>
             <div
               style={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "flex-start",
-                gap: 12,
+                gap: 10,
               }}
             >
               <h1
                 style={{
                   margin: 0,
-                  fontSize: "1.25rem",
-                  fontWeight: 800,
+                  flex: 1,
+                  fontSize: "1.0625rem",
+                  fontWeight: 700,
                   color: "var(--ink-900)",
-                  lineHeight: 1.25,
+                  lineHeight: 1.32,
                 }}
               >
                 {p.name}
@@ -1452,312 +1435,69 @@ export function PDP({ p: pProp }: PdpProps) {
                 )}
                 <Price value={shownPrice} original={shownOriginal ?? undefined} size="lg" />
               </div>
-              {p.hasVideo && <PdpWatchVideoCta productId={p.id} thumb={p.videoThumb} />}
+            </div>
+
+            {/* Backend-driven trust signals — stock, returns, warranty, secure checkout */}
+            <div style={{ marginTop: 14 }}>
+              <TrustChips product={p} sellerVerified={sellerTrust?.verified} />
             </div>
 
             {variantPicker}
 
-            {/* Delivery fee — explicit (legal-safe) */}
-            <div
+            {/* Delivery — general info only; exact address + fee live in checkout */}
+            <p
               style={{
-                marginTop: 18,
-                padding: "12px 14px",
-                background: "var(--tint-blue-50)",
-                border: "1px solid var(--line-200)",
-                borderRadius: "var(--r-md)",
-                display: "flex",
+                marginTop: 14,
+                marginBottom: 0,
+                fontSize: ".8125rem",
+                color: "var(--ink-500)",
+                display: "inline-flex",
                 alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-                fontSize: ".875rem",
+                gap: 8,
               }}
             >
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <Icon name="truck" size={16} color="var(--blue-deep)" />
-                <span style={{ fontWeight: 700, color: "var(--ink-900)" }}>
-                  Rs. {DELIVERY_FEE} delivery fee
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setDeliverOpen(true)}
-                className="bz-link-hover"
-                style={{
-                  background: "none",
-                  border: "none",
-                  padding: 0,
-                  font: "inherit",
-                  color: hasDeliveryLoc ? "var(--ink-700)" : "var(--blue)",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  fontSize: ".8125rem",
-                }}
-              >
-                {hasDeliveryLoc ? `to ${formatDeliverToLabel(deliveryLocation)}` : "Set location"}
-              </button>
-            </div>
-
-            {/* Seller info */}
-            {s && (
-              <div className="bz-pdp-seller-chip">
-                <div className="bz-pdp-seller-chip__lead">
-                  <div className="bz-pdp-seller-chip__avatar">
-                    {s.avatar ? (
-                      <img src={s.avatar} alt={s.name} />
-                    ) : (
-                      <Icon name="store" size={17} color="var(--ink-500)" />
-                    )}
-                  </div>
-                  <div className="bz-pdp-seller-chip__name">{s.name}</div>
-                </div>
-                <div className="bz-pdp-seller-chip__actions">
-                  <button
-                    type="button"
-                    aria-label={`Chat with ${s?.name ?? "seller"}`}
-                    onClick={() => {
-                      if (!authed) {
-                        promptLogin("Please sign in to chat with this seller.");
-                        return;
-                      }
-                      if (typeof sessionStorage !== "undefined" && s) {
-                        sessionStorage.setItem("bz_open_chat_seller", s.id);
-                      }
-                      nav("messages");
-                    }}
-                    className="bz-link-hover"
-                  >
-                    <Icon name="messageDots" size={14} color="var(--blue)" />
-                    Chat
-                  </button>
-                  <AppLink href={pathFromScreen("store", s.id)} className="bz-link-hover">
-                    Visit store
-                  </AppLink>
-                </div>
-              </div>
-            )}
+              <Icon name="truck" size={15} color="var(--ink-400)" />
+              Standard delivery · fee calculated at checkout
+            </p>
           </div>
+
+          {/* Seller — slim one-line strip; trust signals computed server-side. */}
+          {(s || sellerTrust) && (
+            <SellerCard
+              sellerId={p.seller}
+              seller={s}
+              trust={sellerTrust}
+              loading={trustLoading}
+              slim
+            />
+          )}
         </div>
 
         <div
           className="bz-stack-900 bz-hide-mobile"
           style={{
             display: "grid",
-            gridTemplateColumns: "minmax(0, 0.6fr) minmax(380px, 1fr)",
-            gap: 56,
+            // Three columns, each with one job: gallery · what it is · buy box.
+            // Image rail (~440) and the sticky buy box (340) are fixed so the
+            // middle "what it is" column flexes without sprawling or leaving the
+            // right side dead.
+            gridTemplateColumns: "440px minmax(0, 1fr) 340px",
+            gap: 24,
             alignItems: "start",
           }}
         >
-          {/* MEDIA — photo carousel; video opens in Watch. */}
-          <div>
-            {gallerySlides.length > 0 ? (
-              <div
-                style={{
-                  position: "relative",
-                  width: "100%",
-                  aspectRatio: "4 / 5",
-                  borderRadius: "var(--r-lg)",
-                  overflow: "hidden",
-                  background: "var(--ink-50)",
-                  touchAction: "pan-y",
-                  userSelect: "none",
-                }}
-                onTouchStart={(e) => {
-                  touchStartX.current = e.touches[0].clientX;
-                  touchStartY.current = e.touches[0].clientY;
-                  touchDelta.current = 0;
-                  touchDeltaY.current = 0;
-                }}
-                onTouchMove={(e) => {
-                  if (touchStartX.current == null) return;
-                  touchDelta.current = e.touches[0].clientX - touchStartX.current;
-                  touchDeltaY.current = e.touches[0].clientY - (touchStartY.current ?? 0);
-                }}
-                onTouchEnd={() => {
-                  if (touchStartX.current == null) return;
-                  const dx = touchDelta.current;
-                  const dy = touchDeltaY.current;
-                  if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-                    setMediaIdx((i) =>
-                      Math.max(0, Math.min(gallerySlides.length - 1, i + (dx < 0 ? 1 : -1))),
-                    );
-                  }
-                  touchStartX.current = null;
-                  touchStartY.current = null;
-                  touchDelta.current = 0;
-                  touchDeltaY.current = 0;
-                }}
-                onPointerDown={(e) => {
-                  if (e.pointerType === "touch") return;
-                  if ((e.target as HTMLElement).closest("button, a")) return;
-                  swipeDragging.current = false;
-                  touchStartX.current = e.clientX;
-                  touchDelta.current = 0;
-                }}
-                onPointerMove={(e) => {
-                  if (e.pointerType === "touch" || touchStartX.current == null) return;
-                  touchDelta.current = e.clientX - touchStartX.current;
-                  if (!swipeDragging.current && Math.abs(touchDelta.current) > 8) {
-                    swipeDragging.current = true;
-                    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-                  }
-                }}
-                onPointerUp={(e) => {
-                  if (e.pointerType === "touch" || touchStartX.current == null) return;
-                  const dx = touchDelta.current;
-                  if (swipeDragging.current && Math.abs(dx) > 60) {
-                    setMediaIdx((i) =>
-                      Math.max(0, Math.min(gallerySlides.length - 1, i + (dx < 0 ? 1 : -1))),
-                    );
-                  }
-                  swipeDragging.current = false;
-                  touchStartX.current = null;
-                  touchDelta.current = 0;
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    width: "100%",
-                    height: "100%",
-                    transform: `translateX(-${mediaIdx * 100}%)`,
-                    transition: "transform .35s ease",
-                  }}
-                >
-                  {gallerySlides.map((src, i) => (
-                    <div
-                      key={`${src}-${i}`}
-                      style={{
-                        flex: "0 0 100%",
-                        width: "100%",
-                        height: "100%",
-                        position: "relative",
-                      }}
-                    >
-                      <button
-                        type="button"
-                        aria-label="Zoom photo"
-                        onClick={openPhotoLightbox}
-                        style={{
-                          display: "block",
-                          width: "100%",
-                          height: "100%",
-                          padding: 0,
-                          border: "none",
-                          background: "none",
-                          cursor: "zoom-in",
-                        }}
-                      >
-                        <img
-                          src={src}
-                          alt={p.name}
-                          draggable={false}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                            pointerEvents: "none",
-                          }}
-                        />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                {gallery.length > 0 && <PdpZoomButton onClick={openPhotoLightbox} />}
-                {gallerySlides.length > 1 && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setMediaIdx((i) => Math.max(0, i - 1))}
-                      disabled={mediaIdx === 0}
-                      aria-label="Previous photo"
-                      className="bz-hide-mobile"
-                      style={{
-                        position: "absolute",
-                        top: "50%",
-                        left: 12,
-                        transform: "translateY(-50%)",
-                        width: 40,
-                        height: 40,
-                        borderRadius: "50%",
-                        border: "none",
-                        background: "rgba(255,255,255,.92)",
-                        boxShadow: "var(--sh-2)",
-                        cursor: mediaIdx === 0 ? "not-allowed" : "pointer",
-                        opacity: mediaIdx === 0 ? 0.4 : 1,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: "var(--ink-700)",
-                      }}
-                    >
-                      <Icon name="chevronLeft" size={18} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setMediaIdx((i) => Math.min(gallerySlides.length - 1, i + 1))}
-                      disabled={mediaIdx === gallerySlides.length - 1}
-                      aria-label="Next photo"
-                      className="bz-hide-mobile"
-                      style={{
-                        position: "absolute",
-                        top: "50%",
-                        right: 12,
-                        transform: "translateY(-50%)",
-                        width: 40,
-                        height: 40,
-                        borderRadius: "50%",
-                        border: "none",
-                        background: "rgba(255,255,255,.92)",
-                        boxShadow: "var(--sh-2)",
-                        cursor: mediaIdx === gallerySlides.length - 1 ? "not-allowed" : "pointer",
-                        opacity: mediaIdx === gallerySlides.length - 1 ? 0.4 : 1,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: "var(--ink-700)",
-                      }}
-                    >
-                      <Icon name="chevronRight" size={18} />
-                    </button>
-                    <div
-                      style={{
-                        position: "absolute",
-                        bottom: 12,
-                        left: 0,
-                        right: 0,
-                        display: "flex",
-                        justifyContent: "center",
-                        gap: 6,
-                        pointerEvents: "none",
-                      }}
-                    >
-                      {gallerySlides.map((_, i) => (
-                        <span
-                          key={i}
-                          style={{
-                            width: i === mediaIdx ? 18 : 6,
-                            height: 6,
-                            borderRadius: 3,
-                            background: i === mediaIdx ? "var(--blue)" : "rgba(0,0,0,.25)",
-                            transition: "all .2s",
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            ) : (
-              <Placeholder icon={p.icon} tint={p.tint} ratio="4 / 5" radius="var(--r-lg)" />
-            )}
+          {/* MEDIA — vertical thumbnail rail + compact main image (Daraz/Amazon style) */}
+          <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
             {gallerySlides.filter((src) => src !== variantHeroUrl).length > 1 && (
               <div
                 style={{
                   display: "flex",
-                  gap: 10,
-                  marginTop: 12,
-                  overflowX: "auto",
-                  paddingBottom: 4,
+                  flexDirection: "column",
+                  gap: 8,
+                  width: 60,
+                  maxHeight: 440,
+                  overflowY: "auto",
+                  flex: "0 0 auto",
                 }}
               >
                 {gallerySlides.map((src, i) => {
@@ -1765,20 +1505,21 @@ export function PDP({ p: pProp }: PdpProps) {
                   return (
                     <button
                       key={i}
+                      type="button"
                       onClick={() => setMediaIdx(i)}
+                      onMouseEnter={() => setMediaIdx(i)}
                       aria-label={`View photo ${i + 1}`}
                       aria-pressed={mediaIdx === i}
                       style={{
                         flex: "0 0 auto",
-                        position: "relative",
-                        width: 72,
-                        height: 88,
+                        width: 56,
+                        height: 56,
                         borderRadius: "var(--r-md)",
                         overflow: "hidden",
-                        border: `2px solid ${mediaIdx === i ? "var(--blue)" : "transparent"}`,
+                        border: `2px solid ${mediaIdx === i ? "var(--blue)" : "var(--line-200)"}`,
                         cursor: "pointer",
                         padding: 0,
-                        background: "var(--ink-50)",
+                        background: "#fff",
                       }}
                     >
                       <img
@@ -1791,14 +1532,101 @@ export function PDP({ p: pProp }: PdpProps) {
                 })}
               </div>
             )}
+
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {gallerySlides.length > 0 ? (
+                <div
+                  style={{
+                    position: "relative",
+                    width: "100%",
+                    maxWidth: 420,
+                    height: 460,
+                    borderRadius: "var(--r-lg)",
+                    overflow: "hidden",
+                    background: "#fff",
+                    border: "1px solid var(--line-200)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <button
+                    type="button"
+                    aria-label="Zoom photo"
+                    onClick={openPhotoLightbox}
+                    style={{
+                      display: "block",
+                      width: "100%",
+                      height: "100%",
+                      padding: 0,
+                      border: "none",
+                      background: "none",
+                      cursor: "zoom-in",
+                    }}
+                  >
+                    <img
+                      src={gallerySlides[mediaIdx] ?? gallerySlides[0]}
+                      alt={p.name}
+                      draggable={false}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        // Fill the box (no top/bottom whitespace). The lightbox
+                        // shows the full uncropped image on zoom.
+                        objectFit: "cover",
+                        pointerEvents: "none",
+                      }}
+                    />
+                  </button>
+                  {/* Quiet overlays — every secondary action lives on the image,
+                      not floating beside the title. */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 12,
+                      right: 12,
+                      display: "flex",
+                      gap: 8,
+                      zIndex: 2,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      aria-label={wished ? "Remove from wishlist" : "Save to wishlist"}
+                      onClick={() => toggleWish(p.id)}
+                      style={imgOverlayBtn(wished ? "var(--red)" : "var(--ink-700)")}
+                    >
+                      <Icon name="heart" size={17} fill={wished ? "currentColor" : "none"} />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Share"
+                      onClick={shareProduct}
+                      style={imgOverlayBtn("var(--ink-700)")}
+                    >
+                      <Icon name="share" size={15} />
+                    </button>
+                  </div>
+                  {p.hasVideo && (
+                    <PdpWatchVideoCta productId={p.id} thumb={p.videoThumb} overlay />
+                  )}{" "}
+                </div>
+              ) : (
+                <div style={{ maxWidth: 420 }}>
+                  <Placeholder icon={p.icon} tint={p.tint} ratio="1 / 1" radius="var(--r-lg)" />
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* INFO */}
-          <div className="bz-pdp-info" style={{ position: "sticky", top: 102 }}>
+          {/* INFO — middle column: what the product is. Reads title → rating →
+              price → trust → choose → quantity. All purchase actions live in the
+              sticky buy box on the right. */}
+          <div className="bz-pdp-info">
             <h1
               style={{
                 margin: 0,
-                fontSize: "1.625rem",
+                fontSize: "1.375rem",
                 fontWeight: 700,
                 color: "var(--ink-900)",
                 lineHeight: 1.25,
@@ -1807,18 +1635,7 @@ export function PDP({ p: pProp }: PdpProps) {
               {p.name}
             </h1>
 
-            <div className="bz-pdp-price-row bz-pdp-price-row--desktop">
-              <div className="bz-pdp-price-row__main">
-                {isMultiDimVariant && selectedVariants.length === 0 && (
-                  <span style={{ fontSize: ".875rem", color: "var(--ink-500)" }}>From</span>
-                )}
-                <Price value={shownPrice} original={shownOriginal ?? undefined} size="lg" />
-                {disc > 0 && <Chip tone="red">-{disc}% OFF</Chip>}
-              </div>
-              {p.hasVideo && <PdpWatchVideoCta productId={p.id} thumb={p.videoThumb} />}
-            </div>
-
-            {/* Rating — small inline line under price */}
+            {/* Rating — directly under the title, above the price. */}
             <div
               style={{
                 display: "inline-flex",
@@ -1826,7 +1643,7 @@ export function PDP({ p: pProp }: PdpProps) {
                 gap: 6,
                 fontSize: ".8125rem",
                 color: "var(--ink-500)",
-                marginBottom: 12,
+                margin: "8px 0 12px",
               }}
             >
               <Icon name="star" size={13} color="var(--gold)" fill="var(--gold)" />
@@ -1836,407 +1653,335 @@ export function PDP({ p: pProp }: PdpProps) {
               <span>({p.reviews})</span>
             </div>
 
-            {/* Delivery — explicit fee block (legal-safe, never hidden) */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-                padding: "12px 14px",
-                marginBottom: 12,
-                background: "var(--tint-blue-50)",
-                border: "1px solid var(--line-200)",
-                borderRadius: "var(--r-md)",
-                fontSize: ".875rem",
-              }}
-            >
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  color: "var(--ink-700)",
-                }}
-              >
-                <Icon name="truck" size={16} color="var(--blue-deep)" />
-                <span style={{ fontWeight: 700, color: "var(--ink-900)" }}>
-                  Rs. {DELIVERY_FEE} delivery fee
-                </span>
+            <div className="bz-pdp-price-row bz-pdp-price-row--desktop">
+              <div className="bz-pdp-price-row__main">
+                {isMultiDimVariant && selectedVariants.length === 0 && (
+                  <span style={{ fontSize: ".875rem", color: "var(--ink-500)" }}>From</span>
+                )}
+                <Price value={shownPrice} original={shownOriginal ?? undefined} size="lg" />
+                {disc > 0 && <Chip tone="red">-{disc}% OFF</Chip>}
               </div>
-              {hasDeliveryLoc ? (
-                <button
-                  onClick={() => setDeliverOpen(true)}
-                  className="bz-link-hover"
-                  style={{
-                    background: "none",
-                    border: "none",
-                    padding: 0,
-                    font: "inherit",
-                    color: "var(--ink-700)",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    fontSize: ".8125rem",
-                  }}
-                >
-                  to {formatDeliverToLabel(deliveryLocation)}
-                </button>
-              ) : (
-                <button
-                  onClick={() => setDeliverOpen(true)}
-                  className="bz-link-hover"
-                  style={{
-                    background: "none",
-                    border: "none",
-                    padding: 0,
-                    font: "inherit",
-                    color: "var(--blue)",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    fontSize: ".8125rem",
-                  }}
-                >
-                  Set location
-                </button>
-              )}
             </div>
 
-            {/* Trust info — returns + COD only; delivery shown above */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: 14,
-                margin: "0 0 18px",
-                fontSize: ".8125rem",
-                color: "var(--ink-500)",
-              }}
-            >
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                <Icon name="returns" size={15} color="var(--ink-400)" /> 7-day returns
-              </span>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                <Icon name="lock" size={15} color="var(--ink-400)" /> Cash on delivery
-              </span>
+            {/* Backend-driven trust signals — one calm chip row, stock-coloured only. */}
+            <div style={{ margin: "12px 0 4px" }}>
+              <TrustChips product={p} sellerVerified={sellerTrust?.verified} />
             </div>
-            {p.lowStock && (
-              <div style={{ marginBottom: 14 }}>
-                <Chip tone="saffron" icon="zap">
-                  Hurry — only {p.lowStock} left in stock
-                </Chip>
-              </div>
-            )}
 
             {variantPicker}
 
-            {/* Quantity row */}
+            {/* Quantity ends the column — the last decision before the buy box. */}
             <div
               style={{
-                marginTop: 26,
-                paddingTop: 22,
-                borderTop: "1px solid var(--line-200)",
-                display: "flex",
+                marginTop: 18,
+                display: "inline-flex",
                 alignItems: "center",
-                justifyContent: "space-between",
-                gap: 16,
+                gap: 12,
               }}
             >
-              <span style={{ fontSize: ".9375rem", fontWeight: 700, color: "var(--ink-900)" }}>
+              <span style={{ fontSize: ".875rem", fontWeight: 700, color: "var(--ink-900)" }}>
                 Quantity
               </span>
-              <QtyStepper value={qty} onChange={setQty} />
+              <QtyStepper value={qty} onChange={setQty} max={maxQty} />
             </div>
+          </div>
 
-            {/* Primary CTAs — above the fold; mobile uses sticky MobileBuyBar */}
-            <div className="bz-hide-mobile" style={{ display: "flex", gap: 12, marginTop: 18 }}>
-              <Button
-                variant="secondary"
-                size="lg"
-                full
-                icon="cart"
-                onClick={() => {
-                  const sel = selectionToBuy();
-                  if (sel) void addToCart(p, qty, undefined, sel);
-                }}
-              >
-                Add to Cart
-              </Button>
-              <Button
-                variant="primary"
-                size="lg"
-                full
-                onClick={() => {
-                  const sel = selectionToBuy();
-                  if (sel) void buyNow(p, qty, sel);
-                }}
-              >
-                Buy Now
-              </Button>
-            </div>
-            {/* Bargaining — only when the seller enabled it for this product */}
-            <div style={{ marginTop: 12 }}>
-              {bargainingAvailable ? (
-                <Button variant="secondary" full icon="bargain" onClick={openBargain}>
-                  {t("pdp.makeOffer")}
-                </Button>
-              ) : (
-                <p
-                  style={{
-                    margin: "6px 0 0",
-                    textAlign: "center",
-                    color: "var(--ink-400)",
-                    fontSize: ".75rem",
-                  }}
-                >
-                  Bargaining not available for this product
-                </p>
-              )}
-            </div>
+          {/* BUY BOX — right column, sticky. The place you act: the three
+              actions in weight order, then the seller. */}
+          <aside style={{ position: "sticky", top: 102 }}>
             <div
               style={{
-                marginTop: 16,
+                border: "1px solid var(--line-200)",
+                borderRadius: "var(--r-lg)",
+                background: "var(--card)",
+                padding: 18,
                 display: "flex",
-                alignItems: "center",
-                gap: 20,
-                fontSize: ".875rem",
-                fontWeight: 600,
+                flexDirection: "column",
+                gap: 14,
               }}
             >
-              <button
-                type="button"
-                onClick={() => toggleWish(p.id)}
-                className="bz-link-hover"
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: wished ? "var(--red)" : "var(--ink-500)",
-                  fontWeight: 600,
-                  fontSize: ".875rem",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: 0,
-                }}
-              >
-                <Icon name="heart" size={16} fill={wished ? "currentColor" : "none"} />
-                {wished ? "Saved to wishlist" : "Save to wishlist"}
-              </button>
-              <button
-                type="button"
-                onClick={shareProduct}
-                className="bz-link-hover"
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "var(--ink-500)",
-                  fontWeight: 600,
-                  fontSize: ".875rem",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: 0,
-                }}
-              >
-                <Icon name="share" size={14} /> Share
-              </button>
-            </div>
-
-            {/* Seller info — below CTAs; no like/save button (only on store front) */}
-            <div style={{ marginTop: 24, paddingTop: 22, borderTop: "1px solid var(--line-200)" }}>
-              <div
-                style={{
-                  fontSize: ".75rem",
-                  fontWeight: 700,
-                  letterSpacing: ".08em",
-                  textTransform: "uppercase",
-                  color: "var(--ink-400)",
-                  marginBottom: 10,
-                }}
-              >
-                Sold by
-              </div>
-              <SellerRow seller={s} sellerId={p.seller} onVisit={openStore} />
-              <div
-                style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}
-              >
-                <button
-                  type="button"
-                  onClick={() => openStore(p.seller)}
-                  style={{
-                    padding: "10px 0",
-                    background: "transparent",
-                    border: "1px solid var(--line-200)",
-                    borderRadius: "var(--r-md)",
-                    color: "var(--ink-700)",
-                    fontWeight: 600,
-                    fontSize: ".8125rem",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 6,
-                  }}
-                >
-                  <Icon name="store" size={15} color="var(--ink-500)" />
-                  Visit store
-                </button>
-                <button
-                  type="button"
-                  aria-label={`Chat with ${s?.name ?? "seller"}`}
+              {/* Actions in weight order: Buy now → Add to cart → Make an offer.
+                  Price + stock already read in the middle column, so the buy box
+                  stays purely about acting. */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <Button
+                  variant="primary"
+                  full
+                  disabled={isOutOfStock}
                   onClick={() => {
-                    if (!authed) {
-                      promptLogin("Please sign in to chat with this seller.");
-                      return;
-                    }
-                    if (typeof sessionStorage !== "undefined" && s) {
-                      sessionStorage.setItem("bz_open_chat_seller", s.id);
-                    }
-                    nav("messages");
-                  }}
-                  style={{
-                    padding: "10px 0",
-                    background: "transparent",
-                    border: "1px solid var(--line-200)",
-                    borderRadius: "var(--r-md)",
-                    color: "var(--ink-700)",
-                    fontWeight: 600,
-                    fontSize: ".8125rem",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 6,
+                    const sel = selectionToBuy();
+                    if (sel) void buyNow(p, qty, sel);
                   }}
                 >
-                  <Icon name="messageDots" size={15} color="var(--ink-500)" />
-                  Chat
-                </button>
+                  {isOutOfStock ? "Unavailable" : "Buy now"}
+                </Button>
+                <Button
+                  variant="secondary"
+                  full
+                  icon="cart"
+                  disabled={isOutOfStock}
+                  onClick={() => {
+                    const sel = selectionToBuy();
+                    if (sel) void addToCart(p, qty, undefined, sel);
+                  }}
+                >
+                  Add to cart
+                </Button>
+
+                {/* Bargaining is BazaarCo's identity — promoted here, but tinted
+                    soft red so it never out-shouts Buy now. */}
+                {bargainingAvailable && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <button
+                      type="button"
+                      onClick={openBargain}
+                      disabled={isOutOfStock}
+                      className="bz-pdp-offer-btn"
+                      style={{
+                        height: 44,
+                        width: "100%",
+                        borderRadius: "var(--r-md)",
+                        color: "var(--red)",
+                        fontWeight: 700,
+                        fontSize: "1rem",
+                        cursor: isOutOfStock ? "not-allowed" : "pointer",
+                        opacity: isOutOfStock ? 0.5 : 1,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                      }}
+                    >
+                      <Icon name="bargain" size={16} /> {t("pdp.makeOffer")}
+                    </button>
+                    <p
+                      style={{
+                        margin: 0,
+                        textAlign: "center",
+                        fontSize: ".75rem",
+                        color: "var(--ink-500)",
+                      }}
+                    >
+                      Propose your price — this seller bargains
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Seller — embedded so the buy box reads as one card. */}
+              <div style={{ borderTop: "1px solid var(--line-200)", paddingTop: 14 }}>
+                <SellerCard
+                  sellerId={p.seller}
+                  seller={s}
+                  trust={sellerTrust}
+                  loading={trustLoading}
+                  embedded
+                />
               </div>
             </div>
-          </div>
+          </aside>
         </div>
 
-        {/* Detail sections — desktop: info (L) vs social proof (R); mobile: stacked */}
-        <div className="bz-pdp-details bz-stack-768">
-          {/* LEFT — product info */}
-          <div className="bz-pdp-details__col">
-            <TabbedPair
-              items={[
-                {
-                  key: "description",
-                  label: "Description",
-                  content: desc ? (
-                    <>
-                      <p
+        {/* Detail sections — MOBILE: full-scroll stacked sections, each split off
+            by a thick neutral bar (native-app layout). Desktop uses the sequential
+            hairline layout below. */}
+        <div className="bz-show-mobile">
+          <section className="bz-pdp-msec">
+            <h4>Description</h4>
+            {desc ? (
+              <>
+                <p
+                  style={{
+                    color: "var(--ink-600)",
+                    fontSize: ".84375rem",
+                    lineHeight: 1.6,
+                    margin: 0,
+                    whiteSpace: "pre-line",
+                    display: descOpen ? "block" : "-webkit-box",
+                    WebkitBoxOrient: "vertical",
+                    WebkitLineClamp: descOpen ? "unset" : 3,
+                    overflow: "hidden",
+                  }}
+                >
+                  {desc}
+                </p>
+                {desc.length > 160 && (
+                  <button
+                    onClick={() => setDescOpen((o) => !o)}
+                    style={{
+                      marginTop: 8,
+                      background: "none",
+                      border: "none",
+                      color: "var(--blue-deep)",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      padding: 0,
+                      fontSize: ".78125rem",
+                    }}
+                  >
+                    {descOpen ? "Read less" : "Read more"}
+                  </button>
+                )}
+              </>
+            ) : (
+              <p style={{ color: "var(--ink-400)", margin: 0, fontSize: ".84375rem" }}>
+                No product description has been added yet.
+              </p>
+            )}
+          </section>
+
+          <section className="bz-pdp-msec">
+            <h4>Specifications</h4>
+            {specs.length > 0 ? (
+              <div style={{ fontSize: ".8125rem" }}>
+                {specs.map(([k, v], i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex",
+                      gap: 12,
+                      padding: "8px 0",
+                      borderBottom: i === specs.length - 1 ? "none" : "1px solid var(--line-200)",
+                    }}
+                  >
+                    <span style={{ color: "var(--ink-500)", flex: "0 0 92px" }}>{k}</span>
+                    <span
+                      style={{ color: "var(--ink-900)", fontWeight: 500, wordBreak: "break-word" }}
+                    >
+                      {v}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ color: "var(--ink-400)", margin: 0, fontSize: ".84375rem" }}>
+                No specifications have been added for this product yet.
+              </p>
+            )}
+          </section>
+
+          <section className="bz-pdp-msec">
+            <h4>Reviews</h4>
+            <ReviewsSection productId={p.id} rating={p.rating} reviewCount={p.reviews} />
+          </section>
+
+          <section className="bz-pdp-msec">
+            <h4>Q&amp;A</h4>
+            <QASection productId={p.id} />
+          </section>
+        </div>
+
+        {/* Detail sections — DESKTOP: sequential, hairline-separated sections
+            sitting directly on the page (mobile uses the stacked card above). */}
+        <div
+          className="bz-hide-mobile"
+          style={{ marginTop: 36, display: "flex", flexDirection: "column", gap: 28 }}
+        >
+          {/* Product Description */}
+          <section style={detailCardStyle}>
+            <h2 style={detailTitleStyle}>Product Description</h2>
+            {desc ? (
+              <>
+                <p
+                  style={{
+                    color: "var(--ink-600)",
+                    lineHeight: 1.75,
+                    margin: 0,
+                    whiteSpace: "pre-line",
+                    display: descOpen ? "block" : "-webkit-box",
+                    WebkitBoxOrient: "vertical",
+                    WebkitLineClamp: descOpen ? "unset" : 6,
+                    overflow: "hidden",
+                  }}
+                >
+                  {desc}
+                </p>
+                {desc.length > 280 && (
+                  <button
+                    onClick={() => setDescOpen((o) => !o)}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "var(--blue)",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      padding: "10px 0 0",
+                      fontSize: ".875rem",
+                    }}
+                  >
+                    {descOpen ? "Read less" : "Read more"}
+                  </button>
+                )}
+              </>
+            ) : (
+              <p style={{ color: "var(--ink-400)", margin: 0, fontSize: ".875rem" }}>
+                No product description has been added yet.
+              </p>
+            )}
+          </section>
+
+          {/* Product Specifications */}
+          <section style={detailCardStyle}>
+            <h2 style={detailTitleStyle}>Product Specifications</h2>
+            {specs.length > 0 ? (
+              <table style={{ width: "100%", borderCollapse: "collapse", maxWidth: 640 }}>
+                <tbody>
+                  {specs.map(([k, v], i) => (
+                    <tr
+                      key={i}
+                      style={{ background: i % 2 === 1 ? "var(--line-100)" : "transparent" }}
+                    >
+                      <td
                         style={{
+                          padding: "10px 12px",
                           color: "var(--ink-500)",
-                          lineHeight: 1.7,
-                          margin: 0,
-                          display: descOpen ? "block" : "-webkit-box",
-                          WebkitBoxOrient: "vertical",
-                          WebkitLineClamp: descOpen ? "unset" : 4,
-                          overflow: "hidden",
+                          fontSize: ".875rem",
+                          width: 200,
+                          verticalAlign: "top",
                         }}
                       >
-                        {desc}
-                      </p>
-                      {desc.length > 240 && (
-                        <button
-                          onClick={() => setDescOpen((o) => !o)}
-                          style={{
-                            background: "none",
-                            border: "none",
-                            color: "var(--blue)",
-                            fontWeight: 700,
-                            cursor: "pointer",
-                            padding: "8px 0",
-                            fontSize: ".875rem",
-                          }}
-                        >
-                          {descOpen ? "Read less" : "Read more"}
-                        </button>
-                      )}
-                    </>
-                  ) : (
-                    <p style={{ color: "var(--ink-400)", margin: 0, fontSize: ".875rem" }}>
-                      No description provided.
-                    </p>
-                  ),
-                },
-                {
-                  key: "specs",
-                  label: "Specifications",
-                  content:
-                    specs.length > 0 ? (
-                      <table
-                        className="bz-spec-table"
-                        style={{ width: "100%", borderCollapse: "collapse" }}
+                        {k}
+                      </td>
+                      <td
+                        style={{
+                          padding: "10px 12px",
+                          color: "var(--ink-800)",
+                          fontSize: ".875rem",
+                          fontWeight: 500,
+                        }}
                       >
-                        <tbody>
-                          {specs.map(([k, v], i) => (
-                            <tr key={i} style={{ borderBottom: "1px solid var(--line-200)" }}>
-                              <td
-                                style={{
-                                  padding: "11px 0",
-                                  color: "var(--ink-400)",
-                                  fontSize: ".875rem",
-                                  width: 180,
-                                  verticalAlign: "top",
-                                }}
-                              >
-                                {k}
-                              </td>
-                              <td
-                                style={{
-                                  padding: "11px 0",
-                                  color: "var(--ink-800)",
-                                  fontSize: ".875rem",
-                                  fontWeight: 500,
-                                }}
-                              >
-                                {v}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    ) : (
-                      <p style={{ color: "var(--ink-400)", margin: 0, fontSize: ".875rem" }}>
-                        No specifications listed.
-                      </p>
-                    ),
-                },
-              ]}
-            />
-          </div>
+                        {v}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p style={{ color: "var(--ink-400)", margin: 0, fontSize: ".875rem" }}>
+                No specifications have been added for this product yet.
+              </p>
+            )}
+          </section>
 
-          {/* RIGHT — social proof */}
-          <div className="bz-pdp-details__col bz-pdp-details__col--right">
-            <TabbedPair
-              items={[
-                {
-                  key: "reviews",
-                  label: "Reviews",
-                  content: (
-                    <ReviewsSection productId={p.id} rating={p.rating} reviewCount={p.reviews} />
-                  ),
-                },
-                {
-                  key: "qa",
-                  label: "Q&A",
-                  content: <QASection productId={p.id} />,
-                },
-              ]}
-            />
-          </div>
+          {/* Customer Reviews */}
+          <section style={detailCardStyle}>
+            <h2 style={detailTitleStyle}>Customer Reviews</h2>
+            <ReviewsSection productId={p.id} rating={p.rating} reviewCount={p.reviews} />
+          </section>
+
+          {/* Questions & Answers */}
+          <section style={detailCardStyle}>
+            <h2 style={detailTitleStyle}>Questions &amp; Answers</h2>
+            <p style={{ margin: "-4px 0 16px", fontSize: ".8125rem", color: "var(--ink-500)" }}>
+              Ask questions about product details, warranty, delivery, or usage.
+            </p>
+            <QASection productId={p.id} />
+          </section>
         </div>
 
         {similarItems.length > 0 && (
           <div className="bz-pdp-similar">
-            <SectionHead title="Similar items to" accent={p.name} />
+            <SectionHead title="Similar items" />
             <div className="bz-picks-grid">
               {similarItems.map((rp) => (
                 <ProductCard key={rp.id} p={rp} onClick={openProduct} />
@@ -2280,6 +2025,7 @@ export function PDP({ p: pProp }: PdpProps) {
             if (sel) void buyNow(p, qty, sel);
           }}
           onBargain={bargainingAvailable ? openBargain : undefined}
+          disabled={isOutOfStock}
         />
 
         {buyNowSheet && (
@@ -2302,18 +2048,6 @@ export function PDP({ p: pProp }: PdpProps) {
             onClose={() => setBuyNowSheet(false)}
           />
         )}
-
-        {/* Delivery-location picker (opened from the delivery line) */}
-        <DeliverToModal
-          open={deliverOpen}
-          value={deliveryLocation}
-          onClose={() => setDeliverOpen(false)}
-          onSave={(loc) => {
-            setDeliveryLocation(loc);
-            setDeliverOpen(false);
-            toast(`Delivering to ${formatDeliverToLabel(loc)}`);
-          }}
-        />
       </div>
     </ApiState>
   );

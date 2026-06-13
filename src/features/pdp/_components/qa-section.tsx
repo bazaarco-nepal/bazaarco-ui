@@ -197,51 +197,44 @@ export function QASection({ productId }: { productId: string }) {
       {composerOpen && (
         <QuestionComposer productId={productId} onDone={() => setComposerOpen(false)} />
       )}
-      <div
-        style={{
-          background: "#fff",
-          border: "1px solid var(--line-200)",
-          borderRadius: "var(--r-lg)",
-          padding: 20,
-        }}
-      >
-        {isLoading ? (
-          <div style={{ color: "var(--ink-400)", fontSize: ".875rem", padding: "8px 0" }}>
-            Loading questions…
-          </div>
-        ) : questions.length === 0 ? (
-          <div
-            style={{
-              textAlign: "center",
-              color: "var(--ink-400)",
-              fontSize: ".9375rem",
-              padding: "20px 0 8px",
-            }}
-          >
-            No questions yet — be the first to ask.
-          </div>
-        ) : (
+      {isLoading ? (
+        <div style={{ color: "var(--ink-400)", fontSize: ".875rem", padding: "4px 0" }}>
+          Loading questions…
+        </div>
+      ) : questions.length === 0 ? (
+        <div style={{ color: "var(--ink-400)", fontSize: ".9375rem", padding: "4px 0" }}>
+          No questions yet — be the first to ask.
+        </div>
+      ) : (
+        <div
+          style={{
+            background: "#fff",
+            border: "1px solid var(--line-200)",
+            borderRadius: "var(--r-lg)",
+            padding: 20,
+          }}
+        >
           <div style={{ marginTop: -16 }}>
             {questions.map((q, i) => (
               <QuestionRow key={q.id} q={q} isLast={i === questions.length - 1} />
             ))}
           </div>
-        )}
 
-        {query.hasNextPage && (
-          <div style={{ display: "flex", justifyContent: "center", marginTop: 14 }}>
-            <Button
-              variant="ghost"
-              size="sm"
-              iconRight="chevronDown"
-              disabled={query.isFetchingNextPage}
-              onClick={() => void query.fetchNextPage()}
-            >
-              {query.isFetchingNextPage ? "Loading…" : "Show more questions"}
-            </Button>
-          </div>
-        )}
-      </div>
+          {query.hasNextPage && (
+            <div style={{ display: "flex", justifyContent: "center", marginTop: 14 }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                iconRight="chevronDown"
+                disabled={query.isFetchingNextPage}
+                onClick={() => void query.fetchNextPage()}
+              >
+                {query.isFetchingNextPage ? "Loading…" : "Show more questions"}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

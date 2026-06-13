@@ -131,6 +131,14 @@ export function Auth() {
     resendVerificationMutation.isPending;
 
   const startGoogle = () => {
+    // New accounts must consent before we hand off to Google — the redirect can't
+    // carry the checkbox, so the gate has to happen here (and again server-side).
+    if (mode === "register" && !acceptedLegal) {
+      setError(
+        "Please confirm you're 18 or older and agree to the Terms & Conditions and Privacy Policy to continue.",
+      );
+      return;
+    }
     const role = isSeller ? "seller" : "buyer";
     if (typeof window !== "undefined") {
       sessionStorage.setItem("bz_oauth_intent", role);
@@ -181,8 +189,8 @@ export function Auth() {
             { slug: "age-verification", version: "1.0" },
             { slug: "terms-and-conditions", version: "1.0" },
             { slug: "privacy-policy", version: "1.0" },
-            ...(acceptedMarketing ? [{ slug: "cookie-tracking-notice", version: "1.0" }] : []),
           ],
+          marketingOptIn: acceptedMarketing,
         });
         setPendingVerification(pending);
         setOtp("");
@@ -257,6 +265,9 @@ export function Auth() {
         isStrongPassword(password) &&
         acceptedLegal);
   const canVerify = /^\d{6}$/.test(otp.trim());
+  // Signal (but don't hard-disable) the Google button until consent is given, so a
+  // click still surfaces the warning rather than doing nothing.
+  const googleBlocked = mode === "register" && !acceptedLegal;
 
   const openForgotPassword = () => {
     setForgotMode(true);
@@ -480,6 +491,7 @@ export function Auth() {
                 <button
                   type="button"
                   onClick={startGoogle}
+                  aria-disabled={googleBlocked}
                   style={{
                     width: "100%",
                     height: 46,
@@ -494,6 +506,8 @@ export function Auth() {
                     fontWeight: 700,
                     fontSize: ".9375rem",
                     color: "var(--ink-900)",
+                    opacity: googleBlocked ? 0.55 : 1,
+                    transition: "opacity .15s",
                   }}
                 >
                   <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">

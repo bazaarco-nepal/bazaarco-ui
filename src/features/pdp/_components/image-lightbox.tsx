@@ -19,18 +19,22 @@ interface ImageLightboxProps {
   onClose: () => void;
 }
 
-const navBtn: React.CSSProperties = {
-  width: 44,
-  height: 44,
+// One control style for the whole viewer — close and the prev/next arrows are
+// the same size, colour, and layer so the chrome reads as a single set.
+const chromeBtn: React.CSSProperties = {
+  width: 42,
+  height: 42,
   borderRadius: "50%",
   border: "none",
-  background: "rgba(255,255,255,.92)",
-  color: "var(--ink-900)",
+  background: "rgba(255,255,255,.14)",
+  color: "#fff",
   cursor: "pointer",
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
   flexShrink: 0,
+  WebkitBackdropFilter: "blur(6px)",
+  backdropFilter: "blur(6px)",
 };
 
 const MIN_SCALE = 1;
@@ -98,17 +102,21 @@ function ZoomableImage({
   alt,
   scale,
   onScaleChange,
+  onSwipe,
 }: {
   src: string;
   alt: string;
   scale: number;
   onScaleChange: (next: number | ((s: number) => number)) => void;
+  /** Horizontal swipe to the previous (-1) / next (+1) image when not zoomed. */
+  onSwipe?: (dir: number) => void;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const metricsRef = useRef<FitMetrics | null>(null);
   const panRef = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
   const pinchRef = useRef<{ dist: number; scale: number } | null>(null);
+  const swipeRef = useRef<{ x: number; y: number } | null>(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -213,16 +221,18 @@ function ZoomableImage({
   const onTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 2) {
       pinchRef.current = { dist: pinchDistance(e.touches), scale };
-    } else if (e.touches.length === 1 && scale > 1) {
+      swipeRef.current = null;
+      return;
+    }
+    if (e.touches.length === 1) {
       const t = e.touches[0];
-      if (t) {
-        panRef.current = {
-          x: t.clientX,
-          y: t.clientY,
-          ox: offset.x,
-          oy: offset.y,
-        };
+      if (!t) return;
+      if (scale > 1) {
+        panRef.current = { x: t.clientX, y: t.clientY, ox: offset.x, oy: offset.y };
         setIsPanning(true);
+      } else if (onSwipe) {
+        // Not zoomed: track the touch so touchend can detect a horizontal swipe.
+        swipeRef.current = { x: t.clientX, y: t.clientY };
       }
     }
   };
@@ -246,6 +256,17 @@ function ZoomableImage({
 
   const onTouchEnd = (e: React.TouchEvent) => {
     if (e.touches.length < 2) pinchRef.current = null;
+    if (swipeRef.current && scale <= MIN_SCALE) {
+      const t = e.changedTouches[0];
+      if (t) {
+        const dx = t.clientX - swipeRef.current.x;
+        const dy = t.clientY - swipeRef.current.y;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+          onSwipe?.(dx < 0 ? 1 : -1);
+        }
+      }
+      swipeRef.current = null;
+    }
     if (e.touches.length === 0) {
       panRef.current = null;
       setIsPanning(false);
@@ -340,9 +361,6 @@ export function ImageLightbox({ images, index, alt, onIndex, onClose }: ImageLig
     };
   }, []);
 
-  const zoomIn = () => setScale((s) => Math.min(MAX_SCALE, s + 0.5));
-  const zoomOut = () => setScale((s) => Math.max(MIN_SCALE, s - 0.5));
-
   // Nothing to show without a source image (e.g. an empty gallery).
   if (!src) return null;
 
@@ -355,13 +373,13 @@ export function ImageLightbox({ images, index, alt, onIndex, onClose }: ImageLig
         position: "fixed",
         inset: 0,
         zIndex: 600,
-        background: "rgba(8,12,22,.92)",
+        background: "rgba(15,17,21,.97)",
         display: "flex",
         flexDirection: "column",
-        padding: 16,
       }}
       onClick={onClose}
     >
+      {/* Top bar — counter centered, close top-right. */}
       <div
         style={{
           display: "flex",
@@ -369,90 +387,98 @@ export function ImageLightbox({ images, index, alt, onIndex, onClose }: ImageLig
           justifyContent: "space-between",
           gap: 12,
           flexShrink: 0,
+          padding: "calc(env(safe-area-inset-top, 0px) + 12px) 16px 12px",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <button
-            type="button"
-            aria-label="Zoom out"
-            disabled={scale <= MIN_SCALE}
-            onClick={zoomOut}
-            style={{
-              ...navBtn,
-              background: "rgba(255,255,255,.16)",
-              color: "#fff",
-              opacity: scale <= MIN_SCALE ? 0.4 : 1,
-            }}
-          >
-            <Icon name="minus" size={20} />
-          </button>
-          <button
-            type="button"
-            aria-label="Zoom in"
-            disabled={scale >= MAX_SCALE}
-            onClick={zoomIn}
-            style={{
-              ...navBtn,
-              background: "rgba(255,255,255,.16)",
-              color: "#fff",
-              opacity: scale >= MAX_SCALE ? 0.4 : 1,
-            }}
-          >
-            <Icon name="zoomIn" size={20} />
-          </button>
-          <span style={{ color: "rgba(255,255,255,.75)", fontSize: ".8125rem", fontWeight: 600 }}>
-            Drag to explore · double-click to reset
-          </span>
-        </div>
-        <button
-          type="button"
-          aria-label="Close"
-          onClick={onClose}
-          style={{ ...navBtn, background: "rgba(255,255,255,.16)", color: "#fff" }}
+        <span style={{ width: 42, flexShrink: 0 }} aria-hidden="true" />
+        <span
+          style={{
+            color: "rgba(255,255,255,.85)",
+            fontSize: ".875rem",
+            fontWeight: 600,
+            letterSpacing: ".02em",
+          }}
         >
+          {count > 1 ? `${safeIndex + 1} / ${count}` : ""}
+        </span>
+        <button type="button" aria-label="Close" onClick={onClose} style={chromeBtn}>
           <Icon name="x" size={20} />
         </button>
       </div>
 
+      {/* One large image, centered; prev/next arrows on the same layer.
+          alignItems must stretch so the zoom viewport fills this area — its
+          image uses maxHeight:100%, which only resolves against a filled box;
+          centering instead lets a tall image overflow up over the close button. */}
       <div
         style={{
           flex: 1,
+          position: "relative",
           display: "flex",
           alignItems: "stretch",
           justifyContent: "center",
-          gap: 14,
           minHeight: 0,
           overflow: "hidden",
+          padding: "0 12px",
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        <ZoomableImage
+          key={src}
+          src={src}
+          alt={alt}
+          scale={scale}
+          onScaleChange={setScale}
+          onSwipe={count > 1 ? go : undefined}
+        />
         {count > 1 && (
           <button
             type="button"
             aria-label="Previous photo"
             onClick={() => go(-1)}
-            style={{ ...navBtn, alignSelf: "center" }}
+            style={{
+              ...chromeBtn,
+              position: "absolute",
+              left: 8,
+              top: "50%",
+              transform: "translateY(-50%)",
+            }}
           >
             <Icon name="chevronLeft" size={22} />
           </button>
         )}
-        <ZoomableImage key={src} src={src} alt={alt} scale={scale} onScaleChange={setScale} />
         {count > 1 && (
           <button
             type="button"
             aria-label="Next photo"
             onClick={() => go(1)}
-            style={{ ...navBtn, alignSelf: "center" }}
+            style={{
+              ...chromeBtn,
+              position: "absolute",
+              right: 8,
+              top: "50%",
+              transform: "translateY(-50%)",
+            }}
           >
             <Icon name="chevronRight" size={22} />
           </button>
         )}
       </div>
 
+      {/* Thumbnail strip — centered, pinned safely above the home indicator. */}
       {count > 1 && (
         <div
-          style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 14 }}
+          style={{
+            display: "flex",
+            gap: 8,
+            justifyContent: "center",
+            flexWrap: "nowrap",
+            overflowX: "auto",
+            flexShrink: 0,
+            padding: "14px 16px calc(env(safe-area-inset-bottom, 0px) + 16px)",
+            scrollbarWidth: "none",
+          }}
           onClick={(e) => e.stopPropagation()}
         >
           {images.map((thumb, i) => (
@@ -463,15 +489,17 @@ export function ImageLightbox({ images, index, alt, onIndex, onClose }: ImageLig
               aria-pressed={i === safeIndex}
               onClick={() => onIndex(i)}
               style={{
-                width: 52,
-                height: 64,
+                width: 48,
+                height: 48,
+                flexShrink: 0,
                 borderRadius: "var(--r-sm)",
                 overflow: "hidden",
                 border: `2px solid ${i === safeIndex ? "#fff" : "transparent"}`,
                 cursor: "pointer",
                 padding: 0,
                 background: "none",
-                opacity: i === safeIndex ? 1 : 0.6,
+                opacity: i === safeIndex ? 1 : 0.55,
+                transition: "opacity .15s ease",
               }}
             >
               <img
@@ -484,38 +512,5 @@ export function ImageLightbox({ images, index, alt, onIndex, onClose }: ImageLig
         </div>
       )}
     </div>
-  );
-}
-
-/** Floating zoom control on the PDP gallery (photos only). */
-export function PdpZoomButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      aria-label="Zoom photo"
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-      }}
-      style={{
-        position: "absolute",
-        bottom: 12,
-        right: 12,
-        zIndex: 3,
-        width: 40,
-        height: 40,
-        borderRadius: "50%",
-        border: "none",
-        background: "rgba(255,255,255,.92)",
-        boxShadow: "var(--sh-2)",
-        cursor: "pointer",
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "var(--ink-700)",
-      }}
-    >
-      <Icon name="zoomIn" size={18} />
-    </button>
   );
 }

@@ -22,8 +22,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "BazaarCo - Shop",
-  description: "Nepal's fair marketplace",
+  title: "BazaarCo - Home",
+  description: "Nepal's very own marketplace.",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

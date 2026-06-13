@@ -1,128 +1,12 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
-
 import { useEffect, useState } from "react";
 import { VideoUploadForm } from "@/components/common/video-upload-form";
-import { Button, Chip, EmptyState, Icon, Spinner } from "@/components/ui";
+import { Button, EmptyState, Icon, Spinner, VideoPlayer } from "@/components/ui";
 import { useDeleteSellerVideo, useUpdateSellerVideo } from "@/hooks/use-media-upload";
 import { useSellerInventory } from "@/hooks/use-seller";
-import {
-  SellerVideoAnalyticsPanel,
-  type SellerVideoAnalytics,
-} from "@/components/seller/seller-video-analytics";
+import { VideoDeleteConfirmModal } from "@/components/seller/video-delete-confirm-modal";
 import type { SellerVideoItem } from "@/services/api/media";
-
-const EMPTY_ANALYTICS: SellerVideoAnalytics = {
-  totals: {
-    views: 0,
-    likes: 0,
-    videos: 0,
-    published: 0,
-    drafts: 0,
-    engagementRate: 0,
-  },
-  viewsByDay: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label) => ({
-    label,
-    value: 0,
-  })),
-  topVideos: [],
-  statusBreakdown: [
-    { label: "Published", value: 0, color: "var(--success)" },
-    { label: "Draft", value: 0, color: "var(--saffron)" },
-  ],
-};
-
-function VideoThumb({
-  src,
-  thumb,
-  title,
-}: {
-  src: string | null | undefined;
-  thumb?: string;
-  title: string;
-}) {
-  const [playing, setPlaying] = useState(false);
-
-  // Clips are vertical 9:16 — same as the buyer watch stage — so we frame the
-  // thumbnail at the exact ratio buyers see, with no cropping.
-  return (
-    <button
-      type="button"
-      onClick={() => src && setPlaying((p) => !p)}
-      aria-label={playing ? `Pause ${title}` : `Play ${title}`}
-      style={{
-        position: "relative",
-        width: "100%",
-        aspectRatio: "9 / 16",
-        border: "none",
-        padding: 0,
-        borderRadius: "var(--r-md)",
-        overflow: "hidden",
-        background: "#111",
-        cursor: src ? "pointer" : "default",
-        display: "block",
-      }}
-    >
-      {src ? (
-        <video
-          src={src}
-          poster={thumb}
-          playsInline
-          muted
-          loop
-          autoPlay={playing}
-          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-        />
-      ) : thumb ? (
-        <img
-          src={thumb}
-          alt=""
-          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-        />
-      ) : (
-        <div
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "var(--ink-400)",
-          }}
-        >
-          <Icon name="video" size={28} />
-        </div>
-      )}
-      {!playing && src && (
-        <span
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "rgba(0,0,0,.25)",
-          }}
-        >
-          <span
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: "50%",
-              background: "rgba(255,255,255,.92)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Icon name="play" size={18} color="var(--blue-deep)" />
-          </span>
-        </span>
-      )}
-    </button>
-  );
-}
 
 function VideoEditModal({
   video,
@@ -147,10 +31,10 @@ function VideoEditModal({
   // Preselect the dropdown to the video's current product once the list loads.
   useEffect(() => {
     if (!productId && products) {
-      const match = products.find((p) => p.name === video.product);
+      const match = products.find((p) => p.name === video.productLabel);
       if (match) setProductId(match.id);
     }
-  }, [products, productId, video.product]);
+  }, [products, productId, video.productLabel]);
 
   const save = async () => {
     setError(null);
@@ -356,11 +240,12 @@ function VideoCard({
   onToast: (msg: string) => void;
 }) {
   const del = useDeleteSellerVideo();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const handleDelete = async () => {
-    if (!window.confirm(`Delete "${video.title}"? This cannot be undone.`)) return;
     try {
       await del.mutateAsync(video.id);
+      setConfirmingDelete(false);
       onToast("Video deleted");
       onDeleted();
     } catch (err) {
@@ -371,31 +256,28 @@ function VideoCard({
   return (
     <article className="bz-seller-video-card">
       <div className="bz-seller-video-card__media">
-        <VideoThumb src={video.videoUrl} thumb={video.thumb} title={video.title} />
+        {/* Same VideoPlayer the buyer watch feed uses, so tapping play streams
+            the clip over Cloudinary HLS exactly as buyers see it. deferStream
+            keeps the grid light — HLS only attaches once the seller hits play. */}
+        <VideoPlayer
+          ratio="4 / 5"
+          radius="0"
+          deferStream
+          label={false}
+          tint={video.tint}
+          icon={video.icon}
+          thumb={video.thumb}
+          src={video.videoUrl}
+          publicId={video.videoPublicId}
+        />
       </div>
       <div className="bz-seller-video-card__body">
-        <div className="bz-seller-video-card__title-row">
-          <div className="bz-seller-video-card__title">{video.title}</div>
-          <Chip tone={video.status === "draft" ? "saffron" : "success"} size="sm">
-            {video.status === "draft" ? "Draft" : "Live"}
-          </Chip>
+        <div className="bz-seller-video-card__for">
+          For: <span>{video.productLabel}</span>
         </div>
-        <div
-          style={{
-            fontSize: ".75rem",
-            color: "var(--ink-500)",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {video.product}
-        </div>
-        <div className="bz-seller-video-card__meta">
-          <span>
-            <Icon name="eye" size={12} style={{ verticalAlign: "middle", marginRight: 4 }} />
-            {video.views.toLocaleString("en-IN")} views
-          </span>
+        <div className="bz-seller-video-card__views">
+          <Icon name="eye" size={13} />
+          {video.views.toLocaleString("en-IN")} {video.views === 1 ? "view" : "views"}
         </div>
         <div className="bz-seller-video-card__actions">
           <Button variant="secondary" size="sm" icon="edit" full onClick={onEdit}>
@@ -407,43 +289,37 @@ function VideoCard({
             icon="trash"
             full
             disabled={del.isPending}
-            onClick={() => void handleDelete()}
+            onClick={() => setConfirmingDelete(true)}
           >
-            {del.isPending ? "…" : "Delete"}
+            Delete
           </Button>
         </div>
       </div>
+      <VideoDeleteConfirmModal
+        open={confirmingDelete}
+        pending={del.isPending}
+        productLabel={video.productLabel}
+        onConfirm={() => void handleDelete()}
+        onCancel={() => setConfirmingDelete(false)}
+      />
     </article>
   );
 }
 
 export function SellerVideoLibrary({
   videos,
-  analytics,
   showUpload,
   onToggleUpload,
   onRefetch,
   onToast,
 }: {
   videos: SellerVideoItem[];
-  analytics?: SellerVideoAnalytics;
   showUpload: boolean;
   onToggleUpload: () => void;
   onRefetch: () => void;
   onToast: (msg: string) => void;
 }) {
   const [editing, setEditing] = useState<SellerVideoItem | null>(null);
-  const stats = analytics ?? {
-    ...EMPTY_ANALYTICS,
-    totals: {
-      ...EMPTY_ANALYTICS.totals,
-      videos: videos.length,
-      published: videos.filter((v) => v.status === "published").length,
-      drafts: videos.filter((v) => v.status !== "published").length,
-      views: videos.reduce((s, v) => s + v.views, 0),
-      likes: videos.reduce((s, v) => s + v.likes, 0),
-    },
-  };
 
   return (
     <>
@@ -452,7 +328,7 @@ export function SellerVideoLibrary({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: 8,
+          marginBottom: 6,
           gap: 10,
         }}
       >
@@ -470,10 +346,8 @@ export function SellerVideoLibrary({
         </Button>
       </div>
       <p style={{ margin: "0 0 18px", fontSize: ".875rem", color: "var(--ink-500)" }}>
-        {videos.length} video{videos.length === 1 ? "" : "s"} · edit details, publish, or remove
+        Products with video sell 2× more. Keep videos under 30 seconds.
       </p>
-
-      <SellerVideoAnalyticsPanel analytics={stats} />
 
       {showUpload && (
         <div
@@ -495,17 +369,6 @@ export function SellerVideoLibrary({
           </div>
         </div>
       )}
-
-      <h2
-        style={{
-          margin: "0 0 12px",
-          fontSize: "1rem",
-          fontWeight: 800,
-          color: "var(--blue-deep)",
-        }}
-      >
-        Your library
-      </h2>
 
       {videos.length === 0 && !showUpload ? (
         <EmptyState

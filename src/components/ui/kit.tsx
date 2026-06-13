@@ -2481,15 +2481,19 @@ export function MobileBuyBar({
   onAdd,
   onBuy,
   onBargain,
+  disabled = false,
 }: {
   onAdd: () => void;
   onBuy: () => void;
   onBargain?: () => void;
+  /** Out-of-stock listings disable the buy actions; bargaining is hidden too. */
+  disabled?: boolean;
 }) {
   const { t } = useTranslation();
+  const showBargain = Boolean(onBargain) && !disabled;
   return (
     <div
-      className={`bz-mobile-only${onBargain ? " bz-mobile-buy-bar--with-bargain" : ""}`}
+      className="bz-mobile-only"
       style={{
         position: "fixed",
         left: 0,
@@ -2500,29 +2504,72 @@ export function MobileBuyBar({
         borderTop: "1px solid var(--line-200)",
         padding: "12px 14px calc(12px + env(safe-area-inset-bottom))",
         boxShadow: "0 -2px 12px rgba(15,23,42,.08)",
-        flexDirection: "column",
+        flexDirection: "row",
+        gap: 10,
+        alignItems: "center",
       }}
     >
-      {onBargain ? (
-        <Button
-          variant="secondary"
-          size="lg"
-          full
-          icon="bargain"
+      {/* Bargaining is BazaarCo's identity — leads the bar as a compact soft-red
+          square, tinted so it never out-shouts Buy now. */}
+      {showBargain ? (
+        <button
+          type="button"
+          aria-label={t("pdp.makeOffer")}
           onClick={onBargain}
-          style={{ marginBottom: 10 }}
+          className="bz-pdp-offer-btn"
+          style={{
+            flex: "0 0 46px",
+            height: 46,
+            borderRadius: "var(--r-md)",
+            color: "var(--red)",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+          }}
         >
-          {t("pdp.makeOffer")}
-        </Button>
+          <Icon name="bargain" size={20} />
+        </button>
       ) : null}
-      <div style={{ display: "flex", gap: 10, flex: 1, minWidth: 0 }}>
-        <Button variant="secondary" size="lg" full icon="cart" onClick={onAdd}>
-          {t("common.addToCart")}
-        </Button>
-        <Button variant="primary" size="lg" full onClick={onBuy}>
-          {t("common.buyNow")}
-        </Button>
-      </div>
+      {/* Add to cart — outlined navy, secondary to the solid Buy now. */}
+      <button
+        type="button"
+        onClick={onAdd}
+        disabled={disabled}
+        style={{
+          flex: 1,
+          minWidth: 0,
+          height: 46,
+          borderRadius: "var(--r-md)",
+          border: `1.5px solid ${disabled ? "var(--line-200)" : "var(--blue-deep)"}`,
+          background: "#fff",
+          color: disabled ? "var(--ink-300)" : "var(--blue-deep)",
+          fontWeight: 600,
+          fontSize: ".9375rem",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 7,
+          cursor: disabled ? "not-allowed" : "pointer",
+        }}
+      >
+        <Icon name="cart" size={18} /> {t("nav.cart")}
+      </button>
+      <Button
+        variant="primary"
+        icon="zap"
+        onClick={onBuy}
+        disabled={disabled}
+        style={{
+          flex: 1.4,
+          minWidth: 0,
+          height: 46,
+          padding: "0 12px",
+          fontSize: ".9375rem",
+        }}
+      >
+        {disabled ? "Unavailable" : t("common.buyNow")}
+      </Button>
     </div>
   );
 }

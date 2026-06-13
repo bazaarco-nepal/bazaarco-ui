@@ -229,7 +229,7 @@ export function Home() {
               </AppLink>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", fontWeight: 600 }}>
-                  {t("home.hello")} 👋
+                  {t("home.hello")} 🙏
                 </div>
                 <div
                   style={{

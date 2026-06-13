@@ -790,7 +790,7 @@ export function PDP({ p: pProp }: PdpProps) {
   const hasDeliveryLoc = Boolean(deliveryLocation?.city);
   const p = productFromApi ?? pProp;
   const s = p.sellerInfo ?? null;
-  // Vector "find similar" (Typesense) for the recommendations rail.
+  // Algolia "find similar" for the recommendations rail.
   const { data: similarItems = [] } = useSimilar(productId, 10);
   // Derive specs from product metadata key-value pairs.
   const specs: [string, string][] = useMemo(() => {
@@ -1943,16 +1943,6 @@ export function PDP({ p: pProp }: PdpProps) {
 
           {/* INFO */}
           <div className="bz-pdp-info" style={{ position: "sticky", top: 102 }}>
-            {p.tag && (
-              <div style={{ marginBottom: 10 }}>
-                <Chip
-                  tone={p.tag === "Flash" ? "saffron" : "blue"}
-                  icon={p.tag === "Flash" ? "zap" : undefined}
-                >
-                  {p.tag}
-                </Chip>
-              </div>
-            )}
             <h1
               style={{
                 margin: 0,

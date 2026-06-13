@@ -80,7 +80,6 @@ export interface Product {
   videoThumb?: string;
   videoUrl?: string | null;
   eta: string;
-  tag?: string;
   img?: string;
   // Gallery, cover first. Sellers list with 3–5 images; `img` mirrors images[0].
   images?: string[];

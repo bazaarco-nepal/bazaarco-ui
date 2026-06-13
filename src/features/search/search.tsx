@@ -18,7 +18,7 @@ import type { SearchParams } from "@/services/api/search";
 
 const PER_PAGE = 24;
 
-/** Faceted search results — left filter rail + results grid, Typesense-backed.
+/** Faceted search results — left filter rail + results grid, Algolia-backed.
  *  Mobile lays the same filters out in a bottom sheet so products come first. */
 export function Search() {
   const { t } = useTranslation();

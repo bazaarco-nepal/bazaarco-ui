@@ -38,6 +38,21 @@ function canWriteReview(authed: boolean, eligibility: Eligibility): boolean {
   return authed && (eligibility?.canReview ?? false);
 }
 
+function showWriteReviewButton(authed: boolean, eligibility: Eligibility): boolean {
+  return canWriteReview(authed, eligibility);
+}
+
+function showGateMessage(
+  authed: boolean,
+  eligibilityLoading: boolean,
+  eligibility: Eligibility,
+): boolean {
+  return (
+    !showWriteReviewButton(authed, eligibility) &&
+    gateMessage(authed, eligibilityLoading, eligibility) !== null
+  );
+}
+
 function emptyStateMessage(authed: boolean, eligibility: Eligibility): string {
   // After the fix: empty state NEVER repeats the gate message.
   // It shows noReviewsYet only to someone who CAN review; otherwise noReviewsEmpty.
@@ -110,6 +125,49 @@ describe("emptyStateMessage — no duplicate of gateMessage (fix regression)", (
       if (gate !== null) {
         expect(empty).not.toBe(gate);
       }
+    }
+  });
+});
+
+describe("write review CTA visibility", () => {
+  it("shows the button only when the buyer can review", () => {
+    expect(showWriteReviewButton(false, null)).toBe(false);
+    expect(
+      showWriteReviewButton(true, {
+        hasPurchased: false,
+        hasReviewed: false,
+        canReview: false,
+      }),
+    ).toBe(false);
+    expect(
+      showWriteReviewButton(true, {
+        hasPurchased: true,
+        hasReviewed: true,
+        canReview: false,
+      }),
+    ).toBe(false);
+    expect(
+      showWriteReviewButton(true, {
+        hasPurchased: true,
+        hasReviewed: false,
+        canReview: true,
+      }),
+    ).toBe(true);
+  });
+
+  it("never shows the button and gate message together", () => {
+    const cases: [boolean, boolean, Eligibility][] = [
+      [false, false, null],
+      [true, false, { hasPurchased: false, hasReviewed: false, canReview: false }],
+      [true, false, { hasPurchased: true, hasReviewed: true, canReview: false }],
+      [true, false, { hasPurchased: true, hasReviewed: false, canReview: true }],
+      [true, true, null],
+    ];
+
+    for (const [authed, loading, elig] of cases) {
+      const button = showWriteReviewButton(authed, elig);
+      const gate = showGateMessage(authed, loading, elig);
+      expect(button && gate).toBe(false);
     }
   });
 });

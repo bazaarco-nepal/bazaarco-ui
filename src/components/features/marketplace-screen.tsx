@@ -153,7 +153,13 @@ export function MarketplaceScreen() {
   }
   if (screen === "store") return <Store />;
   if (screen === "stores") return <Stores />;
-  if (screen === "video") return <VideoTheater />;
+  if (screen === "video") {
+    return (
+      <Suspense fallback={<ScreenLoader />}>
+        <VideoTheater />
+      </Suspense>
+    );
+  }
   if (screen === "cart") return <Cart />;
   if (screen === "checkout") return <Checkout />;
   if (screen === "success") return <OrderSuccess total={orderTotal} />;

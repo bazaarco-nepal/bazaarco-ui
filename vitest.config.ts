@@ -12,6 +12,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
+      "@bazaarco/hero-banner": fileURLToPath(new URL("./src/shared/hero-banner", import.meta.url)),
     },
   },
   test: {

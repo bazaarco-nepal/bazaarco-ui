@@ -14,7 +14,6 @@ import {
   StatusPill,
   Price,
   Placeholder,
-  VideoPlayer,
   SkeletonCard,
   EmptyState,
   QtyStepper,
@@ -40,7 +39,8 @@ import {
 import { pathFromScreen, productShareUrl, searchPath } from "@/config/routes";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { formatDeliverToLabel } from "@/lib/delivery-location";
-import { useProduct } from "@/hooks/use-catalog";
+import { displayCategoryLabel } from "@/lib/locale-display";
+import { useProduct, useCategories } from "@/hooks/use-catalog";
 import {
   BazaarCtx,
   useBz,
@@ -64,7 +64,13 @@ import { matchSelectedVariants, toggleOption, variantBacksOption } from "@/lib/v
 import { ApiRequestError } from "@/services/api/http";
 import { resolveDelivery, deliveryEstimate } from "@/lib/delivery-options";
 import type { PdpProps } from "@/types";
-import { ReviewsSection, QASection, ImageLightbox, PdpZoomButton } from "./_components";
+import {
+  ReviewsSection,
+  QASection,
+  ImageLightbox,
+  PdpZoomButton,
+  PdpWatchVideoCta,
+} from "./_components";
 
 const DELIVERY_FEE = resolveDelivery([], "standard").fee;
 
@@ -785,6 +791,8 @@ export function PDP({ p: pProp }: PdpProps) {
   } = useBz();
   const productId = pProp.id;
   const { data: productFromApi, isLoading, isError, error } = useProduct(productId);
+  const { data: categories = [] } = useCategories();
+  const locale = useBazaarStore((s) => s.locale);
   const deliveryLocation = useBazaarStore((s) => s.deliveryLocation);
   const setDeliveryLocation = useBazaarStore((s) => s.setDeliveryLocation);
   const hasDeliveryLoc = Boolean(deliveryLocation?.city);
@@ -802,6 +810,11 @@ export function PDP({ p: pProp }: PdpProps) {
   const desc = useMemo(() => {
     return p.description?.trim() ?? "";
   }, [p.description]);
+  const categoryLabel = useMemo(() => {
+    if (p.category?.en) return displayCategoryLabel(p.category, locale);
+    const fromCatalog = categories.find((c) => c.id === p.cat);
+    return fromCatalog ? displayCategoryLabel(fromCatalog, locale) : p.cat;
+  }, [p.cat, p.category, categories, locale]);
   const [mediaIdx, setMediaIdx] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
@@ -893,21 +906,13 @@ export function PDP({ p: pProp }: PdpProps) {
   const variantHeroUrl =
     selVariant?.imageUrl && !gallery.includes(selVariant.imageUrl) ? selVariant.imageUrl : null;
 
-  // Unified media list — variant hero first, then product gallery, then optional video.
-  const media = [
-    ...(variantHeroUrl ? [{ type: "photo" as const, src: variantHeroUrl }] : []),
-    ...gallery.map((src) => ({ type: "photo" as const, src })),
-    ...(p.hasVideo
-      ? [
-          {
-            type: "video" as const,
-            src: p.videoUrl,
-            thumb: p.videoThumb,
-            publicId: p.videoPublicId,
-          },
-        ]
-      : []),
-  ];
+  // Gallery slides only — video lives in Watch; PDP links out via PdpWatchVideoCta.
+  const gallerySlides = useMemo(() => {
+    const slides: string[] = [];
+    if (variantHeroUrl) slides.push(variantHeroUrl);
+    slides.push(...gallery);
+    return slides;
+  }, [variantHeroUrl, gallery]);
 
   // When variant changes and brings its own image, jump to slide 0 (the hero).
   useEffect(() => {
@@ -921,25 +926,23 @@ export function PDP({ p: pProp }: PdpProps) {
   const openPhotoLightbox = (startUrl?: string) => {
     if (lightboxImages.length === 0) return;
     if (startUrl) {
-      const i = lightboxImages.indexOf(startUrl);
-      if (i >= 0) setMediaIdx(media.findIndex((m) => m.type === "photo" && m.src === startUrl));
+      const mediaI = gallerySlides.indexOf(startUrl);
+      if (mediaI >= 0) setMediaIdx(mediaI);
     }
     setLightboxOpen(true);
   };
 
   const photoIndexFromMedia = (idx: number) => {
-    const item = media[idx];
-    if (item?.type === "photo") {
-      const i = lightboxImages.indexOf(item.src);
-      return i >= 0 ? i : 0;
-    }
-    return 0;
+    const src = gallerySlides[idx];
+    if (!src) return 0;
+    const i = lightboxImages.indexOf(src);
+    return i >= 0 ? i : 0;
   };
 
   const setMediaFromPhotoIndex = (photoIdx: number) => {
     const src = lightboxImages[photoIdx];
     if (!src) return;
-    const mediaI = media.findIndex((m) => m.type === "photo" && m.src === src);
+    const mediaI = gallerySlides.indexOf(src);
     setMediaIdx(mediaI >= 0 ? mediaI : photoIdx);
   };
   // Price reflects what's actually picked: one variant → its price; several
@@ -1255,23 +1258,16 @@ export function PDP({ p: pProp }: PdpProps) {
           </AppLink>
           <Icon name="chevronRight" size={13} color="var(--ink-300)" />
           <AppLink href={searchPath({ cat: p.cat })} className="bz-crumb">
-            {p.cat}
+            {categoryLabel}
           </AppLink>
           <Icon name="chevronRight" size={13} color="var(--ink-300)" />
           <span style={{ color: "var(--ink-700)" }}>{p.name}</span>
         </div>
 
         {/* MOBILE HERO — clean app-style layout */}
-        <div
-          className="bz-show-mobile bz-pdp-mobile"
-          style={{
-            paddingBottom: bargainingAvailable
-              ? "calc(152px + env(safe-area-inset-bottom, 0px))"
-              : "calc(84px + env(safe-area-inset-bottom, 0px))",
-          }}
-        >
+        <div className="bz-show-mobile bz-pdp-mobile">
           <div className="bz-pdp-mobile__gallery">
-            {media.length > 0 ? (
+            {gallerySlides.length > 0 ? (
               <>
                 <div
                   className="bz-pdp-mobile__viewport"
@@ -1290,18 +1286,11 @@ export function PDP({ p: pProp }: PdpProps) {
                     if (touchStartX.current == null) return;
                     const dx = touchDelta.current;
                     const dy = touchDeltaY.current;
-                    const maxIdx = Math.max(0, media.length - 1);
+                    const maxIdx = Math.max(0, gallerySlides.length - 1);
                     const onImage = (e.target as HTMLElement).closest(".bz-pdp-mobile__zoom-hit");
-                    // Only trigger a photo swipe when horizontal movement is dominant
-                    // (i.e. this is a genuine horizontal swipe, not a diagonal scroll).
                     if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
                       setMediaIdx((i) => Math.max(0, Math.min(maxIdx, i + (dx < 0 ? 1 : -1))));
-                    } else if (
-                      Math.abs(dx) <= 12 &&
-                      Math.abs(dy) <= 12 &&
-                      media[mediaIdx]?.type === "photo" &&
-                      onImage
-                    ) {
+                    } else if (Math.abs(dx) <= 12 && Math.abs(dy) <= 12 && onImage) {
                       openPhotoLightbox();
                     }
                     touchStartX.current = null;
@@ -1314,44 +1303,30 @@ export function PDP({ p: pProp }: PdpProps) {
                     className="bz-pdp-mobile__track"
                     style={{ transform: `translate3d(-${mediaIdx * 100}%, 0, 0)` }}
                   >
-                    {media.map((m, i) => (
-                      <div key={`${m.type}-${i}`} className="bz-pdp-mobile__slide">
-                        {m.type === "photo" ? (
-                          <button
-                            type="button"
-                            aria-label="Zoom photo"
-                            className="bz-pdp-mobile__zoom-hit"
-                            onClick={openPhotoLightbox}
-                          >
-                            <img src={m.src} alt={p.name} draggable={false} />
-                          </button>
-                        ) : (
-                          <VideoPlayer
-                            tint={p.tint}
-                            icon={p.icon}
-                            ratio="1 / 1"
-                            autoplay={mediaIdx === i}
-                            thumb={m.thumb}
-                            src={m.src}
-                            publicId={m.publicId}
-                          />
-                        )}
+                    {gallerySlides.map((src, i) => (
+                      <div key={`${src}-${i}`} className="bz-pdp-mobile__slide">
+                        <button
+                          type="button"
+                          aria-label="Zoom photo"
+                          className="bz-pdp-mobile__zoom-hit"
+                          onClick={openPhotoLightbox}
+                        >
+                          <img src={src} alt={p.name} draggable={false} />
+                        </button>
                       </div>
                     ))}
                   </div>
-                  {media[mediaIdx]?.type === "photo" && gallery.length > 0 && (
-                    <PdpZoomButton onClick={openPhotoLightbox} />
-                  )}
+                  {gallery.length > 0 && <PdpZoomButton onClick={openPhotoLightbox} />}
                   {/* Floating back */}
                   <button
                     type="button"
                     aria-label="Back"
                     onTouchStart={(e) => e.stopPropagation()}
                     onClick={() => window.history.back()}
-                    className="bz-pdp-m-fab"
-                    style={{ top: 12, left: 12 }}
+                    className="bz-pdp-m-fab bz-pdp-m-fab--back"
+                    style={{ top: 10, left: 10 }}
                   >
-                    <Icon name="chevronLeft" size={18} />
+                    <Icon name="chevronLeft" size={22} stroke={2.5} />
                   </button>
                   {/* Floating wishlist + share */}
                   <button
@@ -1379,7 +1354,7 @@ export function PDP({ p: pProp }: PdpProps) {
                     <Icon name="share" size={16} />
                   </button>
                   {/* Dots */}
-                  {media.length > 1 && (
+                  {gallerySlides.length > 1 && (
                     <div
                       style={{
                         position: "absolute",
@@ -1392,7 +1367,7 @@ export function PDP({ p: pProp }: PdpProps) {
                         pointerEvents: "none",
                       }}
                     >
-                      {media.map((_, i) => (
+                      {gallerySlides.map((_, i) => (
                         <span
                           key={i}
                           style={{
@@ -1407,42 +1382,21 @@ export function PDP({ p: pProp }: PdpProps) {
                     </div>
                   )}
                 </div>
-                {media.filter((m) => !(m.type === "photo" && m.src === variantHeroUrl)).length >
-                  1 && (
-                  <div className="bz-pdp-mobile__thumbs" role="tablist" aria-label="Product media">
-                    {media.map((m, i) => {
-                      if (m.type === "photo" && m.src === variantHeroUrl) return null;
+                {gallerySlides.filter((src) => src !== variantHeroUrl).length > 1 && (
+                  <div className="bz-pdp-mobile__thumbs" role="tablist" aria-label="Product photos">
+                    {gallerySlides.map((src, i) => {
+                      if (src === variantHeroUrl) return null;
                       return (
                         <button
                           key={i}
                           type="button"
                           role="tab"
-                          aria-label={
-                            m.type === "video" ? "Play product video" : "View product photo"
-                          }
+                          aria-label="View product photo"
                           aria-selected={i === mediaIdx}
                           className="bz-pdp-mobile__thumb"
                           onClick={() => setMediaIdx(i)}
                         >
-                          <img
-                            src={m.type === "video" ? (m.thumb ?? gallery[0] ?? "") : m.src}
-                            alt=""
-                          />
-                          {m.type === "video" && (
-                            <span
-                              style={{
-                                position: "absolute",
-                                inset: 0,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                background: "rgba(0,0,0,.35)",
-                                borderRadius: "inherit",
-                              }}
-                            >
-                              <Icon name="play" size={14} style={{ color: "#fff" }} />
-                            </span>
-                          )}
+                          <img src={src} alt="" />
                         </button>
                       );
                     })}
@@ -1491,11 +1445,14 @@ export function PDP({ p: pProp }: PdpProps) {
                 {p.rating.toFixed(1)} ({p.reviews})
               </div>
             </div>
-            <div style={{ marginTop: 8, display: "flex", alignItems: "baseline", gap: 8 }}>
-              {isMultiDimVariant && selectedVariants.length === 0 && (
-                <span style={{ fontSize: ".875rem", color: "var(--ink-500)" }}>From</span>
-              )}
-              <Price value={shownPrice} original={shownOriginal ?? undefined} size="lg" />
+            <div className="bz-pdp-price-row">
+              <div className="bz-pdp-price-row__main">
+                {isMultiDimVariant && selectedVariants.length === 0 && (
+                  <span style={{ fontSize: ".875rem", color: "var(--ink-500)" }}>From</span>
+                )}
+                <Price value={shownPrice} original={shownOriginal ?? undefined} size="lg" />
+              </div>
+              {p.hasVideo && <PdpWatchVideoCta productId={p.id} thumb={p.videoThumb} />}
             </div>
 
             {variantPicker}
@@ -1542,74 +1499,18 @@ export function PDP({ p: pProp }: PdpProps) {
 
             {/* Seller info */}
             {s && (
-              <div
-                style={{
-                  marginTop: 20,
-                  padding: 14,
-                  borderRadius: "var(--r-lg)",
-                  border: "1px solid var(--line-200)",
-                  background: "#fff",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                }}
-              >
-                <div
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: "50%",
-                    overflow: "hidden",
-                    flexShrink: 0,
-                    background: "var(--ink-50)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "1px solid var(--line-200)",
-                  }}
-                >
-                  {s.avatar ? (
-                    <img
-                      src={s.avatar}
-                      alt={s.name}
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    />
-                  ) : (
-                    <Icon name="store" size={17} color="var(--ink-500)" />
-                  )}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: ".9375rem",
-                      fontWeight: 700,
-                      color: "var(--ink-900)",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {s.name}
+              <div className="bz-pdp-seller-chip">
+                <div className="bz-pdp-seller-chip__lead">
+                  <div className="bz-pdp-seller-chip__avatar">
+                    {s.avatar ? (
+                      <img src={s.avatar} alt={s.name} />
+                    ) : (
+                      <Icon name="store" size={17} color="var(--ink-500)" />
+                    )}
                   </div>
-                  {/* Hide the rating until the seller has real reviews — a "0.0"
-                      reads as broken / untrustworthy to an older buyer. */}
-                  {(s.reviews ?? 0) > 0 && (
-                    <div
-                      style={{
-                        fontSize: ".75rem",
-                        color: "var(--ink-500)",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
-                        marginTop: 2,
-                      }}
-                    >
-                      <Icon name="star" size={11} color="var(--gold)" fill="var(--gold)" />
-                      {(s.rating ?? 0).toFixed(1)} · {s.reviews} reviews
-                    </div>
-                  )}
+                  <div className="bz-pdp-seller-chip__name">{s.name}</div>
                 </div>
-                <div style={{ display: "flex", gap: 12, alignItems: "center", flexShrink: 0 }}>
+                <div className="bz-pdp-seller-chip__actions">
                   <button
                     type="button"
                     aria-label={`Chat with ${s?.name ?? "seller"}`}
@@ -1624,32 +1525,11 @@ export function PDP({ p: pProp }: PdpProps) {
                       nav("messages");
                     }}
                     className="bz-link-hover"
-                    style={{
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      fontSize: ".8125rem",
-                      fontWeight: 700,
-                      color: "var(--blue)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                      padding: 0,
-                    }}
                   >
                     <Icon name="messageDots" size={14} color="var(--blue)" />
                     Chat
                   </button>
-                  <AppLink
-                    href={pathFromScreen("store", s.id)}
-                    className="bz-link-hover"
-                    style={{
-                      fontSize: ".8125rem",
-                      fontWeight: 700,
-                      color: "var(--blue)",
-                      textDecoration: "none",
-                    }}
-                  >
+                  <AppLink href={pathFromScreen("store", s.id)} className="bz-link-hover">
                     Visit store
                   </AppLink>
                 </div>
@@ -1667,9 +1547,9 @@ export function PDP({ p: pProp }: PdpProps) {
             alignItems: "start",
           }}
         >
-          {/* MEDIA — unified swipeable carousel: photos + optional video. */}
+          {/* MEDIA — photo carousel; video opens in Watch. */}
           <div>
-            {media.length > 0 ? (
+            {gallerySlides.length > 0 ? (
               <div
                 style={{
                   position: "relative",
@@ -1698,7 +1578,7 @@ export function PDP({ p: pProp }: PdpProps) {
                   const dy = touchDeltaY.current;
                   if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
                     setMediaIdx((i) =>
-                      Math.max(0, Math.min(media.length - 1, i + (dx < 0 ? 1 : -1))),
+                      Math.max(0, Math.min(gallerySlides.length - 1, i + (dx < 0 ? 1 : -1))),
                     );
                   }
                   touchStartX.current = null;
@@ -1726,7 +1606,7 @@ export function PDP({ p: pProp }: PdpProps) {
                   const dx = touchDelta.current;
                   if (swipeDragging.current && Math.abs(dx) > 60) {
                     setMediaIdx((i) =>
-                      Math.max(0, Math.min(media.length - 1, i + (dx < 0 ? 1 : -1))),
+                      Math.max(0, Math.min(gallerySlides.length - 1, i + (dx < 0 ? 1 : -1))),
                     );
                   }
                   swipeDragging.current = false;
@@ -1743,9 +1623,9 @@ export function PDP({ p: pProp }: PdpProps) {
                     transition: "transform .35s ease",
                   }}
                 >
-                  {media.map((m, i) => (
+                  {gallerySlides.map((src, i) => (
                     <div
-                      key={i}
+                      key={`${src}-${i}`}
                       style={{
                         flex: "0 0 100%",
                         width: "100%",
@@ -1753,57 +1633,43 @@ export function PDP({ p: pProp }: PdpProps) {
                         position: "relative",
                       }}
                     >
-                      {m.type === "photo" ? (
-                        <button
-                          type="button"
-                          aria-label="Zoom photo"
-                          onClick={openPhotoLightbox}
+                      <button
+                        type="button"
+                        aria-label="Zoom photo"
+                        onClick={openPhotoLightbox}
+                        style={{
+                          display: "block",
+                          width: "100%",
+                          height: "100%",
+                          padding: 0,
+                          border: "none",
+                          background: "none",
+                          cursor: "zoom-in",
+                        }}
+                      >
+                        <img
+                          src={src}
+                          alt={p.name}
+                          draggable={false}
                           style={{
-                            display: "block",
                             width: "100%",
                             height: "100%",
-                            padding: 0,
-                            border: "none",
-                            background: "none",
-                            cursor: "zoom-in",
+                            objectFit: "cover",
+                            pointerEvents: "none",
                           }}
-                        >
-                          <img
-                            src={m.src}
-                            alt={p.name}
-                            draggable={false}
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "cover",
-                              pointerEvents: "none",
-                            }}
-                          />
-                        </button>
-                      ) : (
-                        <VideoPlayer
-                          tint={p.tint}
-                          icon={p.icon}
-                          ratio="4 / 5"
-                          autoplay={mediaIdx === i}
-                          thumb={m.thumb}
-                          src={m.src}
-                          publicId={m.publicId}
                         />
-                      )}
+                      </button>
                     </div>
                   ))}
                 </div>
-                {media[mediaIdx]?.type === "photo" && gallery.length > 0 && (
-                  <PdpZoomButton onClick={openPhotoLightbox} />
-                )}
-                {media.length > 1 && (
+                {gallery.length > 0 && <PdpZoomButton onClick={openPhotoLightbox} />}
+                {gallerySlides.length > 1 && (
                   <>
                     <button
                       type="button"
                       onClick={() => setMediaIdx((i) => Math.max(0, i - 1))}
                       disabled={mediaIdx === 0}
-                      aria-label="Previous media"
+                      aria-label="Previous photo"
                       className="bz-hide-mobile"
                       style={{
                         position: "absolute",
@@ -1828,9 +1694,9 @@ export function PDP({ p: pProp }: PdpProps) {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setMediaIdx((i) => Math.min(media.length - 1, i + 1))}
-                      disabled={mediaIdx === media.length - 1}
-                      aria-label="Next media"
+                      onClick={() => setMediaIdx((i) => Math.min(gallerySlides.length - 1, i + 1))}
+                      disabled={mediaIdx === gallerySlides.length - 1}
+                      aria-label="Next photo"
                       className="bz-hide-mobile"
                       style={{
                         position: "absolute",
@@ -1843,8 +1709,8 @@ export function PDP({ p: pProp }: PdpProps) {
                         border: "none",
                         background: "rgba(255,255,255,.92)",
                         boxShadow: "var(--sh-2)",
-                        cursor: mediaIdx === media.length - 1 ? "not-allowed" : "pointer",
-                        opacity: mediaIdx === media.length - 1 ? 0.4 : 1,
+                        cursor: mediaIdx === gallerySlides.length - 1 ? "not-allowed" : "pointer",
+                        opacity: mediaIdx === gallerySlides.length - 1 ? 0.4 : 1,
                         display: "inline-flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -1865,7 +1731,7 @@ export function PDP({ p: pProp }: PdpProps) {
                         pointerEvents: "none",
                       }}
                     >
-                      {media.map((_, i) => (
+                      {gallerySlides.map((_, i) => (
                         <span
                           key={i}
                           style={{
@@ -1884,7 +1750,7 @@ export function PDP({ p: pProp }: PdpProps) {
             ) : (
               <Placeholder icon={p.icon} tint={p.tint} ratio="4 / 5" radius="var(--r-lg)" />
             )}
-            {media.filter((m) => !(m.type === "photo" && m.src === variantHeroUrl)).length > 1 && (
+            {gallerySlides.filter((src) => src !== variantHeroUrl).length > 1 && (
               <div
                 style={{
                   display: "flex",
@@ -1894,13 +1760,13 @@ export function PDP({ p: pProp }: PdpProps) {
                   paddingBottom: 4,
                 }}
               >
-                {media.map((m, i) => {
-                  if (m.type === "photo" && m.src === variantHeroUrl) return null;
+                {gallerySlides.map((src, i) => {
+                  if (src === variantHeroUrl) return null;
                   return (
                     <button
                       key={i}
                       onClick={() => setMediaIdx(i)}
-                      aria-label={`View media ${i + 1}`}
+                      aria-label={`View photo ${i + 1}`}
                       aria-pressed={mediaIdx === i}
                       style={{
                         flex: "0 0 auto",
@@ -1915,36 +1781,11 @@ export function PDP({ p: pProp }: PdpProps) {
                         background: "var(--ink-50)",
                       }}
                     >
-                      {m.type === "photo" ? (
-                        <img
-                          src={m.src}
-                          alt={`${p.name} view ${i + 1}`}
-                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                        />
-                      ) : (
-                        <>
-                          {m.thumb && (
-                            <img
-                              src={m.thumb}
-                              alt=""
-                              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                            />
-                          )}
-                          <span
-                            style={{
-                              position: "absolute",
-                              inset: 0,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              background: "rgba(0,0,0,.35)",
-                              color: "#fff",
-                            }}
-                          >
-                            <Icon name="video" size={20} color="#fff" />
-                          </span>
-                        </>
-                      )}
+                      <img
+                        src={src}
+                        alt={`${p.name} view ${i + 1}`}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
                     </button>
                   );
                 })}
@@ -1966,20 +1807,15 @@ export function PDP({ p: pProp }: PdpProps) {
               {p.name}
             </h1>
 
-            <div
-              style={{
-                display: "flex",
-                alignItems: "baseline",
-                gap: 12,
-                margin: "12px 0 6px",
-                flexWrap: "wrap",
-              }}
-            >
-              {isMultiDimVariant && selectedVariants.length === 0 && (
-                <span style={{ fontSize: ".875rem", color: "var(--ink-500)" }}>From</span>
-              )}
-              <Price value={shownPrice} original={shownOriginal ?? undefined} size="lg" />
-              {disc > 0 && <Chip tone="red">-{disc}% OFF</Chip>}
+            <div className="bz-pdp-price-row bz-pdp-price-row--desktop">
+              <div className="bz-pdp-price-row__main">
+                {isMultiDimVariant && selectedVariants.length === 0 && (
+                  <span style={{ fontSize: ".875rem", color: "var(--ink-500)" }}>From</span>
+                )}
+                <Price value={shownPrice} original={shownOriginal ?? undefined} size="lg" />
+                {disc > 0 && <Chip tone="red">-{disc}% OFF</Chip>}
+              </div>
+              {p.hasVideo && <PdpWatchVideoCta productId={p.id} thumb={p.videoThumb} />}
             </div>
 
             {/* Rating — small inline line under price */}
@@ -2284,17 +2120,7 @@ export function PDP({ p: pProp }: PdpProps) {
         </div>
 
         {/* Detail sections — desktop: info (L) vs social proof (R); mobile: stacked */}
-        <div
-          className="bz-pdp-details bz-stack-768"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 32,
-            marginTop: 40,
-            paddingTop: 28,
-            borderTop: "1px solid var(--line-200)",
-          }}
-        >
+        <div className="bz-pdp-details bz-stack-768">
           {/* LEFT — product info */}
           <div className="bz-pdp-details__col">
             <TabbedPair
@@ -2409,7 +2235,7 @@ export function PDP({ p: pProp }: PdpProps) {
         </div>
 
         {similarItems.length > 0 && (
-          <div style={{ marginTop: 52, paddingBottom: 100 }}>
+          <div className="bz-pdp-similar">
             <SectionHead title="Similar items to" accent={p.name} />
             <div className="bz-picks-grid">
               {similarItems.map((rp) => (

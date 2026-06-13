@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Icon,
   Logo,
@@ -712,6 +712,8 @@ function ReelItem({
 export function VideoTheater() {
   const { openProduct, addToCart, toggleWish, wish, toast, nav, authed, promptLogin } = useBz();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const startProductId = searchParams.get("product")?.trim() ?? null;
   const likeMutation = useVideoLike();
   const goBack = useCallback(() => {
     if (typeof window !== "undefined" && window.history.length > 1) router.back();
@@ -761,6 +763,7 @@ export function VideoTheater() {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const wheelLock = useRef(0);
   const programmaticScroll = useRef(false);
+  const initialProductScrollDone = useRef(false);
 
   const safeIndex = vids.length ? Math.min(activeIndex, vids.length - 1) : 0;
   const p = vids[safeIndex];
@@ -768,6 +771,25 @@ export function VideoTheater() {
   const tint = TINTS[p?.tint as keyof typeof TINTS] || TINTS.blue;
   const caption = p?.caption ?? "";
   const activeProductId = p?.id;
+
+  useEffect(() => {
+    initialProductScrollDone.current = false;
+  }, [startProductId]);
+
+  // Deep-link from PDP: open the requested product's reel, then user can scroll on.
+  useEffect(() => {
+    if (!startProductId || isLoading || vids.length === 0 || initialProductScrollDone.current) {
+      return;
+    }
+    const idx = vids.findIndex((v) => v.id === startProductId);
+    if (idx < 0) return;
+    initialProductScrollDone.current = true;
+    setActiveIndex(idx);
+    requestAnimationFrame(() => {
+      const el = scrollRef.current;
+      if (el) el.scrollTop = idx * el.clientHeight;
+    });
+  }, [startProductId, isLoading, vids]);
 
   useEffect(() => {
     if (vids.length > 0 && activeIndex >= vids.length) setActiveIndex(0);

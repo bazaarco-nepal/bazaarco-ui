@@ -87,6 +87,7 @@ export function mapProduct(raw: any): Product {
     lowStock: raw.lowStock ?? raw.lowStockThreshold ?? undefined,
     eta: raw.eta ?? "2–3 days",
     variants,
+    category: raw.category ?? undefined,
     // Inline seller snapshot from product detail endpoint
     sellerInfo: raw.store
       ? {

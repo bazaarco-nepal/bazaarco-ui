@@ -20,7 +20,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@bazaarco/hero-banner": ["./src/shared/hero-banner"],
+      "@bazaarco/hero-banner/*": ["./src/shared/hero-banner/*"]
     }
   },
   "include": [

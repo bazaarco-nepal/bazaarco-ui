@@ -1299,6 +1299,8 @@ export function VideoPlayer({
   onLongPressEnd,
   playbackRate,
   isActive,
+  deferStream,
+  streamProfile = "hd",
 }: {
   tint?: string;
   icon?: string;
@@ -1318,6 +1320,9 @@ export function VideoPlayer({
   onLongPressEnd?: () => void;
   playbackRate?: number;
   isActive?: boolean;
+  /** Wait for a play tap before attaching HLS / video src — keeps PDP light. */
+  deferStream?: boolean;
+  streamProfile?: "auto" | "hd" | "sd" | "full_hd" | "full_hd_wifi";
 }) {
   const videoRef = useRef(null);
   const cloudinaryPlayerRef = useRef(null);
@@ -1337,12 +1342,13 @@ export function VideoPlayer({
   const streamPublicId = (publicId?.trim() || publicIdFromVideoUrl(src)) ?? null;
   const useHls = Boolean(streamPublicId && CLOUDINARY_CLOUD_NAME);
   const hasSrc = useHls || Boolean(src);
+  const shouldAttachStream = hasSrc && (!deferStream || playing || hlsReady);
   // In a feed, only the active reel may play and be audible. When `isActive`
   // isn't passed (e.g. product-card players) the player behaves as a standalone.
   const active = isActive === undefined ? true : isActive;
 
   useEffect(() => {
-    if (!useHls || !videoRef.current) return;
+    if (!useHls || !videoRef.current || !shouldAttachStream) return;
 
     let disposed = false;
     setHlsReady(false);
@@ -1367,7 +1373,7 @@ export function VideoPlayer({
 
       player.source(streamPublicId, {
         sourceTypes: ["hls"],
-        transformation: { streaming_profile: "hd" },
+        transformation: { streaming_profile: streamProfile },
       });
 
       // Cloudinary's lazy player is a deferred proxy — wait until the real
@@ -1390,7 +1396,7 @@ export function VideoPlayer({
         cloudinaryPlayerRef.current = null;
       }
     };
-  }, [streamPublicId, useHls]);
+  }, [streamPublicId, streamProfile, useHls, shouldAttachStream]);
 
   useEffect(() => {
     if (!useHls || !hlsReady || !videoRef.current) return;
@@ -1542,7 +1548,7 @@ export function VideoPlayer({
           2x
         </div>
       )}
-      {hasSrc ? (
+      {shouldAttachStream ? (
         <video
           ref={videoRef}
           src={useHls ? undefined : src || undefined}
@@ -1550,7 +1556,10 @@ export function VideoPlayer({
           playsInline
           loop
           muted={muted}
-          className={useHls ? "cld-video-player cld-fluid" : undefined}
+          preload="none"
+          className={
+            useHls ? (fill ? "cld-video-player" : "cld-video-player cld-fluid") : undefined
+          }
           style={{
             position: "absolute",
             inset: 0,
@@ -1569,11 +1578,9 @@ export function VideoPlayer({
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            opacity: playing ? 0.7 : 1,
-            transition: "opacity 0.3s",
           }}
         />
-      ) : (
+      ) : hasSrc ? null : (
         <Icon
           name={icon}
           color={c[2]}

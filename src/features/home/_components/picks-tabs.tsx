@@ -39,7 +39,7 @@ function ProductSection({
   return (
     <section
       className="bz-container-pad bz-home-section"
-      style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px", paddingTop: 36 }}
+      style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px", paddingTop: 28 }}
     >
       <SectionHead
         title={title}

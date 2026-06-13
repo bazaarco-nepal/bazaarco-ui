@@ -1,22 +1,16 @@
 import type { Category, Product } from "@/types";
+import type { HeroBannerContent } from "@bazaarco/hero-banner/types";
 import { getData } from "./http";
 import { mapProduct } from "./catalog";
 import type { PaginatedData } from "./types";
 
-// Buyer-facing projection of an admin-managed hero banner (see bazaarco-api
-// home.service `toBuyerHeroSlide`). Content-only — no lifecycle/audit fields.
 export interface HeroSlide {
   id: string;
-  title: string;
-  accent: string | null;
-  subtitle: string | null;
-  ctaLabel: string;
-  ctaHref: string;
-  imageUrl: string;
-  imageAlt: string;
-  tint: "red" | "blue" | "saffron" | string;
+  content: HeroBannerContent;
   sponsored: boolean;
   campaignLabel: string | null;
+  sponsorName: string | null;
+  endsAt: string | null;
 }
 
 export interface TrustItem {

@@ -68,7 +68,10 @@ export interface Product {
   // null/absent = no discount; 'amount' = a discounted price; 'percent' = % off.
   discountType?: "amount" | "percent" | null;
   discountPct?: number | null;
+  /** Category id — used for filtering and URLs. */
   cat: string;
+  /** Display label from the categories catalog; present on API product payloads. */
+  category?: { id: string; en: string };
   seller: string;
   /** Inline seller info from the product detail endpoint. */
   sellerInfo?: ProductSeller;

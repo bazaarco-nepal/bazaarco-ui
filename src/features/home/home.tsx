@@ -356,7 +356,7 @@ export function Home() {
 
         {/* categories — desktop wraps header + grid in a card (.bz-cat-card);
             on mobile the card is `display:contents` so the layout is unchanged. */}
-        <W className="bz-home-section" style={{ paddingTop: 44 }}>
+        <W className="bz-home-section" style={{ paddingTop: 28 }}>
           <div className="bz-cat-card">
             <SectionHead
               title={t("home.shopByCategory")}
@@ -516,7 +516,7 @@ export function Home() {
         </W> */}
 
         {/* Endless product feed — shown on both web and mobile */}
-        <W className="bz-home-section" style={{ paddingTop: 36 }}>
+        <W className="bz-home-section" style={{ paddingTop: 28 }}>
           <SectionHead title={t("home.moreToExplore")} />
           {isError && !homeLoading ? (
             <EmptyState

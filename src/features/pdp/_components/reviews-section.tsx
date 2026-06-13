@@ -362,7 +362,6 @@ export function ReviewsSection({ productId, rating, reviewCount }: ReviewsSectio
   const hasReviews = reviewCount > 0;
   const [composerOpen, setComposerOpen] = useState(false);
   const canWriteReview = authed && (eligibility?.canReview ?? false);
-  const writeLocked = !canWriteReview;
   const gateMessage = (() => {
     if (authed && eligibilityLoading) return null;
     if (!authed) return t("reviews.signInPurchase");
@@ -378,40 +377,43 @@ export function ReviewsSection({ productId, rating, reviewCount }: ReviewsSectio
 
   return (
     <div>
-      {!composerOpen && (
+      {!composerOpen && canWriteReview && (
         <div
           style={{
             display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-end",
-            gap: 6,
+            justifyContent: "flex-end",
             marginBottom: 8,
-            opacity: writeLocked ? 0.55 : 1,
           }}
         >
           <button
             type="button"
             onClick={openComposer}
-            disabled={writeLocked}
-            aria-disabled={writeLocked}
             className="bz-link-hover"
             style={{
               background: "none",
               border: "none",
-              color: writeLocked ? "var(--ink-400)" : "var(--blue)",
+              color: "var(--blue)",
               fontSize: ".8125rem",
               fontWeight: 700,
-              cursor: writeLocked ? "not-allowed" : "pointer",
+              cursor: "pointer",
               padding: 0,
             }}
           >
             {t("reviews.writeReview")}
           </button>
-          {gateMessage && (
-            <div style={{ fontSize: ".75rem", color: "var(--ink-400)", textAlign: "right" }}>
-              {gateMessage}
-            </div>
-          )}
+        </div>
+      )}
+
+      {!composerOpen && !canWriteReview && gateMessage && (
+        <div
+          style={{
+            fontSize: ".75rem",
+            color: "var(--ink-400)",
+            textAlign: "right",
+            marginBottom: 8,
+          }}
+        >
+          {gateMessage}
         </div>
       )}
 
@@ -428,7 +430,6 @@ export function ReviewsSection({ productId, rating, reviewCount }: ReviewsSectio
               borderRadius: "var(--r-lg)",
               padding: "28px 20px",
               textAlign: "center",
-              opacity: writeLocked ? 0.55 : 1,
             }}
           >
             <div style={{ fontSize: ".9375rem", color: "var(--ink-500)" }}>

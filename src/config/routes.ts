@@ -135,6 +135,13 @@ const PATH_SCREEN: Record<string, string> = Object.fromEntries(
 PATH_SCREEN["/"] = "home";
 PATH_SCREEN["/product"] = "pdp";
 
+/** Watch feed — optional `product` opens that reel first; user can scroll to others. */
+export function videoPath(productId?: string): string {
+  const base = SCREEN_PATH.video;
+  if (!productId?.trim()) return base;
+  return `${base}?${new URLSearchParams({ product: productId.trim() }).toString()}`;
+}
+
 export function pathFromScreen(
   screen: string,
   productId?: string,

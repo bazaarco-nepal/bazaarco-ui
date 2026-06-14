@@ -4,7 +4,7 @@ import { fetchProductSeo, fetchTopProductIds, truncate } from "@/lib/seo/catalog
 import { JsonLd } from "@/components/seo/json-ld";
 import { breadcrumbSchema, productSchema } from "@/lib/seo/structured-data";
 
-export const revalidate = 3600;
+export const revalidate = 1800;
 
 export async function generateStaticParams() {
   try {

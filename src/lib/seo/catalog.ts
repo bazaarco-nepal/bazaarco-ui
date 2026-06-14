@@ -12,7 +12,7 @@
  */
 import type { PaginatedData } from "@/services/api/types";
 
-const REVALIDATE_SECONDS = 3600;
+const REVALIDATE_SECONDS = 1800;
 const REQUEST_TIMEOUT_MS = 8000;
 const PRODUCTS_PAGE_SIZE = 200;
 // Hard ceiling so a growing catalog can never blow past the 50k-URL sitemap

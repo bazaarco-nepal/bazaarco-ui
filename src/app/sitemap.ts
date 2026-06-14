@@ -4,7 +4,7 @@ import { fetchSitemapProducts, fetchSitemapSellers, type SitemapEntry } from "@/
 
 // Rebuild at most hourly — fresh enough for new products/sellers, cheap enough
 // not to hammer the catalog API on every crawl.
-export const revalidate = 3600;
+export const revalidate = 1800;
 
 type ChangeFrequency = MetadataRoute.Sitemap[number]["changeFrequency"];
 

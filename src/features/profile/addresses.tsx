@@ -472,7 +472,7 @@ export function AddressesPage() {
 
           <LandmarkAddress
             value={form.location}
-            onChange={(location) => setForm((f) => ({ ...f, location }))}
+            onChange={(location: DeliveryLocation) => setForm((f) => ({ ...f, location }))}
           />
 
           <div style={{ display: "flex", gap: 10, marginTop: 20 }}>

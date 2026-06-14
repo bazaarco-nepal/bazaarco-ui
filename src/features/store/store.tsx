@@ -194,7 +194,7 @@ export function Store() {
   const [tab, setTab] = useState<"products" | "reviews">("products");
   const [rating, setRating] = useState(false);
 
-  const tint = seller ? (TINTS[seller.tint] ?? TINTS.slate) : TINTS.slate;
+  const tint = seller ? (TINTS[seller.tint ?? "slate"] ?? TINTS.slate) : TINTS.slate;
 
   const openRate = () => {
     if (!authed) {

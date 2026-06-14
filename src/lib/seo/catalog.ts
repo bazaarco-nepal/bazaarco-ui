@@ -68,6 +68,15 @@ interface RawProduct {
   coverImageUrl?: string;
   img?: string;
   images?: string[];
+  priceMinor?: number;
+  price?: number;
+  outOfStock?: boolean;
+  brand?: string | null;
+  sku?: string | null;
+  category?: string | null;
+  rating?: number;
+  reviews?: number;
+  reviewsCount?: number;
   updatedAt?: string;
   createdAt?: string;
 }
@@ -77,6 +86,9 @@ interface RawSeller {
   slug?: string;
   name?: string;
   avatar?: string;
+  rating?: number;
+  reviews?: number;
+  reviewsCount?: number;
   updatedAt?: string;
 }
 
@@ -84,32 +96,70 @@ export interface ProductSeo {
   name: string;
   description?: string;
   image?: string;
+  /** Rupees (major units), converted from the backend's paisa. */
+  price?: number;
+  outOfStock?: boolean;
+  brand?: string | null;
+  sku?: string | null;
+  category?: string | null;
+  rating?: number;
+  reviewCount?: number;
 }
 
 export async function fetchProductSeo(id: string): Promise<ProductSeo | null> {
   const p = await fetchCatalog<RawProduct>(`/catalog/products/${encodeURIComponent(id)}`);
   if (!p?.name) return null;
+  const price =
+    typeof p.price === "number"
+      ? p.price
+      : typeof p.priceMinor === "number"
+        ? p.priceMinor / 100
+        : undefined;
   return {
     name: p.name,
     description: p.description,
     image: p.coverImageUrl ?? p.img ?? p.images?.[0],
+    price,
+    outOfStock: p.outOfStock,
+    brand: p.brand,
+    sku: p.sku,
+    category: p.category,
+    rating: p.rating,
+    reviewCount: p.reviews ?? p.reviewsCount,
   };
 }
 
 export interface SellerSeo {
   name: string;
   image?: string;
+  rating?: number;
+  reviewCount?: number;
 }
 
 export async function fetchSellerSeo(id: string): Promise<SellerSeo | null> {
   const s = await fetchCatalog<RawSeller>(`/catalog/sellers/${encodeURIComponent(id)}`);
   if (!s?.name) return null;
-  return { name: s.name, image: s.avatar };
+  return {
+    name: s.name,
+    image: s.avatar,
+    rating: s.rating,
+    reviewCount: s.reviews ?? s.reviewsCount,
+  };
 }
 
 export interface SitemapEntry {
   path: string;
   lastModified?: string;
+}
+
+const TOP_PRODUCTS_LIMIT = 100;
+
+export async function fetchTopProductIds(): Promise<string[]> {
+  const data = await fetchCatalog<PaginatedData<RawProduct>>(
+    `/catalog/products?page=1&limit=${TOP_PRODUCTS_LIMIT}&sort=popular`,
+  );
+  if (!data?.items?.length) return [];
+  return data.items.filter((p) => p?.id).map((p) => p.id);
 }
 
 export async function fetchSitemapProducts(): Promise<SitemapEntry[]> {

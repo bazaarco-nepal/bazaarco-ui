@@ -43,7 +43,7 @@ describe("toSearchEnvelope", () => {
     expect(envelope.found).toBe(42);
     expect(envelope.search_time_ms).toBe(7);
     expect(envelope.page).toBe(2);
-    expect(envelope.hits[0].highlight?.name?.snippet).toBe("Smart <mark>Phone</mark>");
+    expect(envelope.hits[0]!.highlight?.name?.snippet).toBe("Smart <mark>Phone</mark>");
 
     const categoryFacet = envelope.facet_counts.find((f) => f.field_name === "category");
     expect(categoryFacet?.counts[0]).toEqual({ value: "electronics", count: 30 });

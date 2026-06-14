@@ -16,6 +16,8 @@ import {
   SITE_TITLE,
   SITE_URL,
 } from "@/config/site";
+import { JsonLd } from "@/components/seo/json-ld";
+import { organizationSchema, websiteSchema } from "@/lib/seo/structured-data";
 import "@/styles/globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -75,6 +77,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           `cz-shortcut-listen` onto <body> before React hydrates. Suppress the
           resulting attribute-only mismatch — it's external and not a real bug. */}
       <body suppressHydrationWarning>
+        <JsonLd data={organizationSchema()} />
+        <JsonLd data={websiteSchema()} />
         <GoogleAnalytics />
         <MicrosoftClarity />
         <Suspense fallback={null}>

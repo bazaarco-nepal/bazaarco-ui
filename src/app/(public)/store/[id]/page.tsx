@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { OG_IMAGE, SITE_NAME, SITE_URL } from "@/config/site";
 import { fetchSellerSeo } from "@/lib/seo/catalog";
+import { JsonLd } from "@/components/seo/json-ld";
+import { breadcrumbSchema, storeSchema } from "@/lib/seo/structured-data";
+
+export const revalidate = 3600;
 
 interface StorePageProps {
   params: Promise<{ id: string }>;
@@ -34,8 +38,34 @@ export async function generateMetadata({ params }: StorePageProps): Promise<Meta
   };
 }
 
-// Body is rendered client-side by the marketplace shell in (public)/layout.tsx;
-// this route exists for server metadata + a crawlable URL.
-export default function StorePage() {
-  return null;
+// The storefront UI is rendered client-side by the marketplace shell; this route
+// contributes server-rendered Store JSON-LD and metadata. The fetch is memoized
+// with the one in generateMetadata, so it's a single call.
+export default async function StorePage({ params }: StorePageProps) {
+  const { id } = await params;
+  const seller = await fetchSellerSeo(id);
+  if (!seller) return null;
+
+  const url = `${SITE_URL}/store/${encodeURIComponent(id)}`;
+
+  return (
+    <>
+      <JsonLd
+        data={storeSchema({
+          name: seller.name,
+          url,
+          image: seller.image,
+          rating: seller.rating,
+          reviewCount: seller.reviewCount,
+        })}
+      />
+      <JsonLd
+        data={breadcrumbSchema([
+          { name: "Home", url: `${SITE_URL}/home` },
+          { name: "Stores", url: `${SITE_URL}/stores` },
+          { name: seller.name, url },
+        ])}
+      />
+    </>
+  );
 }

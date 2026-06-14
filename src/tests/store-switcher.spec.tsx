@@ -99,7 +99,7 @@ describe("StoreSwitcherChip", () => {
     openPanel();
     fireEvent.click(screen.getByRole("option", { name: /Branch Two/ }));
     expect(switchMutate).toHaveBeenCalledTimes(1);
-    expect(switchMutate.mock.calls[0][0]).toBe("shop_b");
+    expect(switchMutate.mock.calls[0]![0]).toBe("shop_b");
   });
 
   it("does not switch when the already-active store is tapped", () => {

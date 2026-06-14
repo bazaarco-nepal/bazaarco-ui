@@ -15,3 +15,18 @@ export const SITE_DESCRIPTION =
 export const OG_IMAGE = "/open-graph.png";
 export const OG_IMAGE_WIDTH = 1200;
 export const OG_IMAGE_HEIGHT = 630;
+
+/** Absolute logo URL — used by Organization structured data. */
+export const SITE_LOGO_URL = `${SITE_URL}/assets/bazaarco-logo.png`;
+
+/**
+ * Official social profiles. Single source of truth for the footer links and the
+ * Organization `sameAs` structured data (which is what links the site to its
+ * social accounts in Google's knowledge panel).
+ */
+export const SOCIAL_LINKS = {
+  instagram: "https://www.instagram.com/bazaar.co.nepal/",
+  tiktok: "https://www.tiktok.com/@bazaarco.nepal?_r=1&_t=ZS-973wPgozpKq",
+  facebook: "https://www.facebook.com/profile.php?id=61589936558399",
+  linkedin: "https://www.linkedin.com/company/bazaarco",
+} as const;

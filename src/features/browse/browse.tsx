@@ -587,7 +587,7 @@ export function Browse() {
               ) : (
                 <>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                    {mobilePaged.visible.map((p) => (
+                    {mobilePaged.visible.map((p: Product) => (
                       <ProductCard key={p.id} p={p} onClick={openProduct} />
                     ))}
                   </div>
@@ -1011,7 +1011,7 @@ export function Browse() {
                     className="bz-grid-cards"
                     style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 18 }}
                   >
-                    {strictPaged.visible.map((p) => (
+                    {strictPaged.visible.map((p: Product) => (
                       <ProductCard key={p.id} p={p} onClick={openProduct} />
                     ))}
                   </div>

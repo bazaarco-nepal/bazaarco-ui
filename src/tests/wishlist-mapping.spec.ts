@@ -44,28 +44,28 @@ describe("wishlistApi field mapping", () => {
     mockedGet.mockResolvedValue(rawResponse);
 
     const result = await wishlistApi.get();
-    const product = result.products[0];
+    const product = result.products[0]!;
 
     expect(product.price).toBe(2500); // priceMinor / 100
     expect(product.original).toBe(3000); // originalMinor / 100
     expect(product.img).toBe("https://cdn/img.jpg"); // coverImageUrl -> img
     expect(product.reviews).toBe(7); // reviewsCount -> reviews
-    expect(result.sellers[0].reviews).toBe(12); // seller reviewsCount -> reviews
+    expect(result.sellers[0]!.reviews).toBe(12); // seller reviewsCount -> reviews
   });
 
   it("maps products on addProduct() too (mutations return the full list)", async () => {
     mockedPost.mockResolvedValue(rawResponse);
 
     const result = await wishlistApi.addProduct("p1");
-    expect(result.products[0].price).toBe(2500);
-    expect(result.products[0].img).toBe("https://cdn/img.jpg");
+    expect(result.products[0]!.price).toBe(2500);
+    expect(result.products[0]!.img).toBe("https://cdn/img.jpg");
   });
 
   it("maps products on removeProduct() too", async () => {
     mockedDelete.mockResolvedValue(rawResponse);
 
     const result = await wishlistApi.removeProduct("p1");
-    expect(result.products[0].price).toBe(2500);
+    expect(result.products[0]!.price).toBe(2500);
   });
 
   it("tolerates an empty wishlist", async () => {

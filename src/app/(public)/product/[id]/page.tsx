@@ -1,6 +1,19 @@
 import type { Metadata } from "next";
 import { OG_IMAGE, SITE_NAME, SITE_URL } from "@/config/site";
-import { fetchProductSeo, truncate } from "@/lib/seo/catalog";
+import { fetchProductSeo, fetchTopProductIds, truncate } from "@/lib/seo/catalog";
+import { JsonLd } from "@/components/seo/json-ld";
+import { breadcrumbSchema, productSchema } from "@/lib/seo/structured-data";
+
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  try {
+    const ids = await fetchTopProductIds();
+    return ids.map((id) => ({ id }));
+  } catch {
+    return [];
+  }
+}
 
 interface ProductPageProps {
   params: Promise<{ id: string }>;
@@ -36,8 +49,46 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   };
 }
 
-// Body is rendered client-side by the marketplace shell in (public)/layout.tsx;
-// this route exists for server metadata + a crawlable URL.
-export default function ProductPage() {
-  return null;
+// The product UI is rendered client-side by the marketplace shell; this route
+// contributes server-rendered Product JSON-LD (rich results) and metadata. The
+// fetch is memoized with the one in generateMetadata, so it's a single call.
+export default async function ProductPage({ params }: ProductPageProps) {
+  const { id } = await params;
+  const product = await fetchProductSeo(id);
+  if (!product) return null;
+
+  const url = `${SITE_URL}/product/${encodeURIComponent(id)}`;
+
+  return (
+    <>
+      <JsonLd
+        data={productSchema({
+          name: product.name,
+          url,
+          description: product.description ? truncate(product.description, 300) : undefined,
+          image: product.image,
+          brand: product.brand,
+          sku: product.sku,
+          price: product.price,
+          outOfStock: product.outOfStock,
+          rating: product.rating,
+          reviewCount: product.reviewCount,
+        })}
+      />
+      <JsonLd
+        data={breadcrumbSchema([
+          { name: "Home", url: `${SITE_URL}/home` },
+          ...(product.category
+            ? [
+                {
+                  name: product.category,
+                  url: `${SITE_URL}/browse?category=${encodeURIComponent(product.category)}`,
+                },
+              ]
+            : []),
+          { name: product.name, url },
+        ])}
+      />
+    </>
+  );
 }

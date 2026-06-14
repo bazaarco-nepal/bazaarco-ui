@@ -39,7 +39,7 @@ describe("buildSearchRequests", () => {
     expect(requests).toHaveLength(3);
 
     const [hits, categoryFacets, sellerFacets] = requests;
-    expect(hits.indexName).toBe("products_price_asc");
+    expect(hits!.indexName).toBe("products_price_asc");
     expect((hits as { page?: number }).page).toBe(0);
     expect((hits as { hitsPerPage?: number }).hitsPerPage).toBe(9);
     expect((categoryFacets as { facets?: string[] }).facets).toEqual(["category"]);

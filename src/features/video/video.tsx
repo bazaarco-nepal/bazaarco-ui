@@ -1049,7 +1049,7 @@ export function VideoTheater() {
         {p.name}
       </h2>
       <div style={{ margin: "8px 0" }}>
-        <Price value={p.price} original={p.original} size="lg" />
+        <Price value={p.price} original={p.original ?? undefined} size="lg" />
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
         <RatingStars value={p.rating} size={14} showVal count={p.reviews} />

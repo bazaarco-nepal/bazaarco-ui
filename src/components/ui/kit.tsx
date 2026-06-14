@@ -628,7 +628,7 @@ export function Icon({
 }
 
 /* ---------- Logo ---------- */
-export function Logo({ height = 40, mono }) {
+export function Logo({ height = 40, mono = false }: { height?: number; mono?: boolean }) {
   return (
     <img
       src={ASSETS.logo}
@@ -1104,7 +1104,17 @@ export function StatusPill({ status }) {
 }
 
 /* ---------- Price ---------- */
-export function Price({ value, original = undefined, size = "md", color = "var(--blue-deep)" }) {
+export function Price({
+  value,
+  original,
+  size = "md",
+  color = "var(--blue-deep)",
+}: {
+  value?: number;
+  original?: number;
+  size?: "sm" | "md" | "lg";
+  color?: string;
+}) {
   const fs = size === "lg" ? "1.75rem" : size === "sm" ? "1rem" : "1.25rem";
   const safeValue = value ?? 0;
   const safeOriginal = original && original > safeValue ? original : null;
@@ -2224,7 +2234,17 @@ export function LoadMore({
   );
 }
 /* Cosmetic numbered bar (desktop control + sense of scale). Hidden on mobile by default. */
-export function PageBar({ page, pageCount, onPage, alwaysShow }) {
+export function PageBar({
+  page,
+  pageCount,
+  onPage,
+  alwaysShow = false,
+}: {
+  page: number;
+  pageCount: number;
+  onPage: (n: number) => void;
+  alwaysShow?: boolean;
+}) {
   if (pageCount <= 1) return null;
   const nums = [];
   for (let i = 1; i <= pageCount; i++) {

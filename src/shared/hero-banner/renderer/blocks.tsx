@@ -89,7 +89,6 @@ export function SubtitleBlock({ block, useCssVars, compact, layout }: BlockProps
       style={{
         margin: "10px 0 0",
         color: onOverlay ? "rgba(255,255,255,.82)" : useCssVars ? "var(--ink-500)" : "#4b5563",
-        lineHeight: 1.5,
         ...typeStyle,
         fontWeight: 400,
         ...alignStyle(block.align),

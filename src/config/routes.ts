@@ -137,7 +137,7 @@ PATH_SCREEN["/product"] = "pdp";
 
 /** Watch feed — optional `product` opens that reel first; user can scroll to others. */
 export function videoPath(productId?: string): string {
-  const base = SCREEN_PATH.video;
+  const base = SCREEN_PATH.video ?? "/video";
   if (!productId?.trim()) return base;
   return `${base}?${new URLSearchParams({ product: productId.trim() }).toString()}`;
 }
@@ -356,4 +356,11 @@ export function storeIdFromPath(pathname: string): string | null {
 export function orderIdFromPath(pathname: string): string | null {
   const match = pathname.match(/^\/orders\/tracking\/([^/]+)/);
   return match?.[1] ? decodeURIComponent(match[1]) : null;
+}
+
+const KNOWN_PATH_PREFIXES = Object.values(SCREEN_PATH);
+
+export function isKnownPublicPath(pathname: string): boolean {
+  const base = pathname.split("?")[0] ?? pathname;
+  return KNOWN_PATH_PREFIXES.some((prefix) => base === prefix || base.startsWith(`${prefix}/`));
 }

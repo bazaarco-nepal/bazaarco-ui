@@ -27,6 +27,7 @@ import { displayCategoryLabel, displayProductName } from "@/lib/locale-display";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { formatDeliverToLabel } from "@/lib/delivery-location";
 import { ASSETS } from "@/config/assets";
+import { SOCIAL_LINKS } from "@/config/site";
 import { BuyerAvatar } from "@/components/common/buyer-avatar";
 import { LogoutConfirmModal } from "@/components/common/logout-confirm-modal";
 
@@ -152,7 +153,7 @@ export function SellerRow({
     );
   }
 
-  const tint = TINTS[seller.tint] ?? TINTS.slate;
+  const tint = TINTS[seller.tint ?? "slate"] ?? TINTS.slate;
 
   return (
     <div
@@ -613,9 +614,6 @@ export function CategoryTile({
   const shortLabel = shortOnMobile ? CATEGORY_SHORT_NAME[c.id] : undefined;
   const iconName = CATEGORY_ICON[c.id] ?? "tag";
   const iconSrc = CATEGORY_ICON_SRC[c.id];
-  // Nav use (e.g. home → /browse) passes `href` and renders a real anchor so the
-  // browser can open it in a new tab. Filter use (browse page) omits href and
-  // stays a button toggling an in-page facet.
   const Tag: React.ElementType = href ? AppLink : "button";
   const tagProps = href ? { href, onNavigate: () => onClick(c) } : { onClick: () => onClick(c) };
   return (
@@ -1355,7 +1353,7 @@ export function Footer() {
             }}
           >
             <a
-              href="https://www.instagram.com/bazaar.co.nepal/"
+              href={SOCIAL_LINKS.instagram}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram"
@@ -1364,7 +1362,7 @@ export function Footer() {
               <Icon name="instagram" size={18} />
             </a>
             <a
-              href="https://www.tiktok.com/@bazaarco.nepal?_r=1&_t=ZS-973wPgozpKq"
+              href={SOCIAL_LINKS.tiktok}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="TikTok"
@@ -1373,7 +1371,7 @@ export function Footer() {
               <Icon name="tiktok" size={18} fill="currentColor" />
             </a>
             <a
-              href="https://www.facebook.com/profile.php?id=61589936558399"
+              href={SOCIAL_LINKS.facebook}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Facebook"
@@ -1382,7 +1380,7 @@ export function Footer() {
               <Icon name="facebook" size={18} />
             </a>
             <a
-              href="https://www.linkedin.com/company/bazaarco"
+              href={SOCIAL_LINKS.linkedin}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="LinkedIn"

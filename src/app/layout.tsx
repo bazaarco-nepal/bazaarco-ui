@@ -7,6 +7,15 @@ import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { GoogleAnalyticsPageView } from "@/components/analytics/google-analytics-page-view";
 import { MicrosoftClarity } from "@/components/analytics/microsoft-clarity";
 import { DEFAULT_LOCALE, isLocale, LOCALE_COOKIE_KEY, type Locale } from "@/i18n/locale-constants";
+import {
+  OG_IMAGE,
+  OG_IMAGE_HEIGHT,
+  OG_IMAGE_WIDTH,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_TITLE,
+  SITE_URL,
+} from "@/config/site";
 import "@/styles/globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -21,12 +30,6 @@ const inter = Inter({
   display: "swap",
 });
 
-const SITE_NAME = "BazaarCo";
-const SITE_TITLE = "BazaarCo - Nepal's Video-First Marketplace";
-const SITE_DESCRIPTION =
-  "Shop products through videos from verified sellers across Nepal on BazaarCo, Nepal's video-first marketplace.";
-const SITE_URL = "https://bazaarconepal.com";
-
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: SITE_TITLE,
@@ -40,10 +43,10 @@ export const metadata: Metadata = {
     locale: "en_NP",
     images: [
       {
-        url: "/open-graph.png",
-        width: 1200,
-        height: 630,
-        alt: "BazaarCo - Nepal's Video-First Marketplace",
+        url: OG_IMAGE,
+        width: OG_IMAGE_WIDTH,
+        height: OG_IMAGE_HEIGHT,
+        alt: SITE_TITLE,
       },
     ],
   },
@@ -51,7 +54,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    images: ["/open-graph.png"],
+    images: [OG_IMAGE],
   },
 };
 

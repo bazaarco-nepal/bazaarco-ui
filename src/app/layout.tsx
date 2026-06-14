@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { AppProviders } from "@/providers/app-providers";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { GoogleAnalyticsPageView } from "@/components/analytics/google-analytics-page-view";
 import { MicrosoftClarity } from "@/components/analytics/microsoft-clarity";
@@ -84,6 +85,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Suspense fallback={null}>
           <GoogleAnalyticsPageView />
         </Suspense>
+        <SpeedInsights />
         <AppProviders initialLocale={locale}>{children}</AppProviders>
       </body>
     </html>

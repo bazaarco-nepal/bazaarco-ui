@@ -157,8 +157,8 @@ export function Browse() {
 
   const band = priceBands.find((b) => b.id === priceBand);
   // Custom min/max take precedence over preset band.
-  const customMin = priceMin === "" ? null : Math.max(0, parseInt(priceMin, 10) || 0);
-  const customMax = priceMax === "" ? null : Math.max(0, parseInt(priceMax, 10) || 0);
+  const customMin = priceMin === "" ? null : Math.max(0, parseFloat(priceMin) || 0);
+  const customMax = priceMax === "" ? null : Math.max(0, parseFloat(priceMax) || 0);
   const usingCustomPrice = customMin !== null || customMax !== null;
   const effMin = usingCustomPrice ? (customMin ?? 0) : band ? band.min : 0;
   const effMax = usingCustomPrice ? (customMax ?? 1e9) : band ? band.max : 1e9;

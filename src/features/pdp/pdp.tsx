@@ -57,6 +57,7 @@ import {
   useCreateBargainOffer,
 } from "@/hooks/use-bargains";
 import { bargainExpiryLabel } from "@/lib/bargain-expiry";
+import { formatNPR } from "@/lib/money";
 import { matchSelectedVariants, toggleOption, variantBacksOption } from "@/lib/variant-selection";
 import { ApiRequestError } from "@/services/api/http";
 import type { PdpProps } from "@/types";
@@ -149,7 +150,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
       const result = await createOffer.mutateAsync({
         productId: p.id,
         variantId,
-        yourOffer: Math.round(offerValue * 100),
+        yourOffer: offerValue,
       });
       setOfferId(result.id);
       setOfferExpires(result.expires);
@@ -421,9 +422,8 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
             </div>
             <h3 style={{ margin: 0, fontSize: "1.25rem" }}>Offer sent!</h3>
             <p style={{ color: "var(--ink-500)", marginTop: 8 }}>
-              {sellerName} got your offer of{" "}
-              <b className="tnum">Rs. {offerValue.toLocaleString("en-IN")}</b>. They can accept,
-              counter, or decline — we'll show their reply in My Offers.
+              {sellerName} got your offer of <b className="tnum">{formatNPR(offerValue)}</b>. They
+              can accept, counter, or decline — we'll show their reply in My Offers.
             </p>
             <p style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 6 }}>
               Sellers usually reply within a few minutes.
@@ -464,8 +464,8 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
             </div>
             <h3 style={{ margin: 0, fontSize: "1.25rem" }}>Offer accepted! 🎉</h3>
             <p style={{ color: "var(--ink-500)", marginTop: 8 }}>
-              {sellerName} accepted <b className="tnum">Rs. {offerValue.toLocaleString("en-IN")}</b>
-              . Add it to your cart at this price.
+              {sellerName} accepted <b className="tnum">{formatNPR(offerValue)}</b>. Add it to your
+              cart at this price.
             </p>
             {bargainExpiryLabel(offerExpires) && (
               <p style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 6 }}>
@@ -485,7 +485,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
                   onClose();
                 }}
               >
-                Add to cart · Rs. {offerValue.toLocaleString("en-IN")}
+                Add to cart · {formatNPR(offerValue)}
               </Button>
             </div>
           </div>
@@ -512,8 +512,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
             </div>
             <h3 style={{ margin: 0, fontSize: "1.125rem" }}>Seller countered</h3>
             <p style={{ color: "var(--ink-500)", marginTop: 8 }}>
-              That's a little low. They can do{" "}
-              <b className="tnum">Rs. {counter.toLocaleString("en-IN")}</b>.
+              That's a little low. They can do <b className="tnum">{formatNPR(counter)}</b>.
             </p>
             <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
               <Button
@@ -550,7 +549,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
                   onClose();
                 }}
               >
-                Accept Rs. {counter.toLocaleString("en-IN")}
+                Accept {formatNPR(counter)}
               </Button>
             </div>
           </div>
@@ -708,7 +707,7 @@ function BuyNowSheet({
                     >
                       {v.name}
                       <span className="tnum" style={{ fontSize: ".875rem", opacity: 0.85 }}>
-                        Rs.&nbsp;{v.price.toLocaleString("en-IN")}
+                        {formatNPR(v.price)}
                       </span>
                     </button>
                   );
@@ -789,7 +788,7 @@ export function PDP({ p: pProp }: PdpProps) {
     const url = productShareUrl(p.id);
     try {
       if (navigator.share) {
-        await navigator.share({ title: p.name, text: `${p.name} · Rs. ${p.price}`, url });
+        await navigator.share({ title: p.name, text: `${p.name} · ${formatNPR(p.price)}`, url });
         return;
       }
       if (navigator.clipboard) {

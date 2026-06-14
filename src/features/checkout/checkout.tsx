@@ -38,6 +38,7 @@ import {
   BackToTop,
 } from "@/components/ui";
 import { useCatalog } from "@/hooks/use-catalog";
+import { formatNPR } from "@/lib/money";
 import { bargainExpiryLabel } from "@/lib/bargain-expiry";
 import { useAddresses, pickDefaultAddress } from "@/hooks/use-addresses";
 import { SavedAddressPicker } from "@/features/profile/addresses";
@@ -128,7 +129,7 @@ function Row({ label, value, strong, free, color }) {
           color: color || (strong ? "var(--blue-deep)" : "var(--ink-800)"),
         }}
       >
-        {free ? "Free" : `Rs. ${value.toLocaleString("en-IN")}`}
+        {free ? "Free" : formatNPR(value)}
       </span>
     </div>
   );
@@ -233,7 +234,7 @@ function DeliveryOptionPicker({ cart, tier, onChange }) {
                     className="tnum"
                     style={{ fontWeight: 800, color: "var(--blue-deep)", whiteSpace: "nowrap" }}
                   >
-                    Rs.&nbsp;{c.fee.toLocaleString("en-IN")}
+                    {formatNPR(c.fee)}
                   </span>
                 </div>
                 <div
@@ -722,7 +723,7 @@ export function Cart() {
             className="tnum"
             style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--blue-deep)" }}
           >
-            Rs. {bd.total.toLocaleString("en-IN")}
+            {formatNPR(bd.total)}
           </div>
         </div>
         <Button
@@ -1119,7 +1120,7 @@ export function Checkout() {
                             className="tnum"
                             style={{ fontSize: ".8125rem", color: "var(--ink-400)", marginTop: 2 }}
                           >
-                            Rs. {it.price.toLocaleString("en-IN")} each
+                            {formatNPR(it.price)} each
                             {it.bargained ? " · bargained" : ""}
                           </div>
                         </div>
@@ -1132,7 +1133,7 @@ export function Checkout() {
                             whiteSpace: "nowrap",
                           }}
                         >
-                          Rs. {(it.price * it.qty).toLocaleString("en-IN")}
+                          {formatNPR(it.price * it.qty)}
                         </div>
                       </div>
                       <div
@@ -1478,7 +1479,7 @@ export function Checkout() {
                     </Chip>
                   </div>
                   <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 2 }}>
-                    Pay Rs. {total.toLocaleString("en-IN")} when your order is delivered
+                    Pay {formatNPR(total)} when your order is delivered
                   </div>
                 </div>
               </div>
@@ -1739,7 +1740,7 @@ export function OrderSuccess({ total }) {
   const lineItems = order?.lineItems ?? [];
   const products = lineItems.map((li) => byId(li.productId)).filter(Boolean);
   const extraCount = Math.max(0, lineItems.length - 3);
-  const money = (n) => `Rs. ${Number(n).toLocaleString("en-IN")}`;
+  const money = (n: number) => formatNPR(n);
 
   return (
     <div

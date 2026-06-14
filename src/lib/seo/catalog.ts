@@ -60,7 +60,7 @@ export function truncate(text: string, max = 160): string {
 }
 
 // Backend raw shapes — only the fields SEO needs. The catalog API serves
-// `coverImageUrl`/`priceMinor` (see mapProduct), not the mapped client names.
+// `coverImageUrl`/`price` (see mapProduct), not the mapped client names.
 interface RawProduct {
   id: string;
   name?: string;
@@ -68,7 +68,6 @@ interface RawProduct {
   coverImageUrl?: string;
   img?: string;
   images?: string[];
-  priceMinor?: number;
   price?: number;
   outOfStock?: boolean;
   brand?: string | null;
@@ -96,7 +95,7 @@ export interface ProductSeo {
   name: string;
   description?: string;
   image?: string;
-  /** Rupees (major units), converted from the backend's paisa. */
+  /** Rupees. */
   price?: number;
   outOfStock?: boolean;
   brand?: string | null;
@@ -109,12 +108,7 @@ export interface ProductSeo {
 export async function fetchProductSeo(id: string): Promise<ProductSeo | null> {
   const p = await fetchCatalog<RawProduct>(`/catalog/products/${encodeURIComponent(id)}`);
   if (!p?.name) return null;
-  const price =
-    typeof p.price === "number"
-      ? p.price
-      : typeof p.priceMinor === "number"
-        ? p.priceMinor / 100
-        : undefined;
+  const price = typeof p.price === "number" ? p.price : undefined;
   return {
     name: p.name,
     description: p.description,

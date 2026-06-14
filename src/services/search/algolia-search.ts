@@ -17,20 +17,16 @@ const SORT_MAP: Record<NonNullable<SearchParams["sort"]>, AlgoliaSort> = {
   rating: "rating:desc",
 };
 
-/** UI price filters are in rupees; Algolia stores minor units (paise). */
-function toMinorUnits(rupees: number | undefined): number | undefined {
-  return rupees === undefined ? undefined : Math.round(rupees * 100);
-}
-
 function toCriteria(params: SearchParams) {
   const rating = params.rating ?? (params.rating4 ? 4 : undefined);
+  // Price filters and the Algolia `price` attribute are both in rupees — no conversion.
   return {
     query: params.query ?? "",
     sort: SORT_MAP[params.sort ?? "relevance"],
     categories: params.categories ?? [],
     sellers: params.sellers ?? [],
-    priceMin: toMinorUnits(params.price_min),
-    priceMax: toMinorUnits(params.price_max),
+    priceMin: params.price_min,
+    priceMax: params.price_max,
     rating,
     page: params.page ?? 1,
     perPage: params.limit ?? 24,

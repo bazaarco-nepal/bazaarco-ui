@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { formatNPR } from "@/lib/money";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Icon,
@@ -511,7 +512,7 @@ function ReelItem({
             className="tnum"
             style={{ fontSize: 12, fontWeight: 800, color: "var(--red)", lineHeight: 1.1 }}
           >
-            Rs.&nbsp;{p.price.toLocaleString("en-IN")}
+            {formatNPR(p.price)}
           </span>
         </span>
         <Icon name="arrowRight" size={14} color="var(--ink-500)" />
@@ -1165,7 +1166,7 @@ export function VideoTheater() {
             {p.name}
           </span>
           <span className="tnum" style={{ fontSize: 12, fontWeight: 800, color: "#fff" }}>
-            Rs.&nbsp;{p.price.toLocaleString("en-IN")}
+            {formatNPR(p.price)}
             {p.original && (
               <span
                 style={{
@@ -1175,7 +1176,7 @@ export function VideoTheater() {
                   fontWeight: 500,
                 }}
               >
-                Rs.&nbsp;{p.original.toLocaleString("en-IN")}
+                {formatNPR(p.original)}
               </span>
             )}
           </span>

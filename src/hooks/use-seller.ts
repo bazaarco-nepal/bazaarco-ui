@@ -106,25 +106,12 @@ export interface SellerBargainOffer {
   expiresAt?: string | null;
 }
 
-/** The API speaks minor units (paisa) and may serialize bigints as strings —
- *  coerce defensively before converting to the rupees the dashboard renders. */
-function minorToRs(value: unknown): number {
-  const n = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(n) ? n / 100 : 0;
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapSellerBargainOffer(raw: any): SellerBargainOffer {
+  // The API speaks rupees — pass amounts through, only normalising nullable counter.
   return {
     ...raw,
-    listed: typeof raw.listed === "number" ? raw.listed : minorToRs(raw.listedMinor),
-    offered: typeof raw.offered === "number" ? raw.offered : minorToRs(raw.offeredMinor),
-    sellerCounter:
-      raw.sellerCounter != null
-        ? raw.sellerCounter
-        : raw.sellerCounterMinor != null
-          ? minorToRs(raw.sellerCounterMinor)
-          : null,
+    sellerCounter: raw.sellerCounter ?? null,
   };
 }
 

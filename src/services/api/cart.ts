@@ -11,7 +11,6 @@ function mapCartResponse(raw: { items: unknown[] }): CartResponse {
     items: (raw.items ?? []).map((item) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const r = item as any;
-      const m2r = (v: unknown) => (typeof v === "number" ? v / 100 : 0);
       return {
         ...mapProduct(r),
         qty: r.qty,
@@ -19,14 +18,9 @@ function mapCartResponse(raw: { items: unknown[] }): CartResponse {
         variantName: r.variantName ?? null,
         bargained: r.bargained === true,
         bargainExpiresAt: r.bargainExpiresAt ?? null,
-        // unitPriceMinor is the server's line-level override — today that means
-        // a bound bargain — and wins over the listed price.
-        price:
-          typeof r.unitPriceMinor === "number"
-            ? m2r(r.unitPriceMinor)
-            : typeof r.price === "number"
-              ? r.price
-              : m2r(r.priceMinor),
+        // unitPrice is the server's line-level override — today that means a
+        // bound bargain — and wins over the listed price.
+        price: typeof r.unitPrice === "number" ? r.unitPrice : r.price,
       } as CartLine;
     }),
   };

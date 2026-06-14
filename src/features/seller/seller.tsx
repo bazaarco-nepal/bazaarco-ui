@@ -56,6 +56,7 @@ import { useBazaarStore } from "@/store/bazaar-store";
 import { bargainExpiryLabel } from "@/lib/bargain-expiry";
 import { displayName, userInitial } from "@/lib/display";
 import { saleEffective, saleValid as isSaleValid, buildPricing } from "@/lib/discount";
+import { formatNPR } from "@/lib/money";
 import { groupedVariantRows } from "@/lib/variant-selection";
 import {
   clearDeferredSellerOnboarding,
@@ -1435,18 +1436,18 @@ export function SellerBarChart({
         {[
           {
             label: summaryTotalLabel,
-            value: `Rs. ${total.toLocaleString("en-IN")}`,
+            value: formatNPR(total),
             tint: "var(--blue-deep)",
           },
           {
             label: "Daily average",
-            value: `Rs. ${avg.toLocaleString("en-IN")}`,
+            value: formatNPR(avg),
             tint: "var(--ink-700)",
           },
           {
             label: "Best day",
             value: data[peakIdx]?.value
-              ? `${data[peakIdx].label} · Rs. ${data[peakIdx].value.toLocaleString("en-IN")}`
+              ? `${data[peakIdx].label} · ${formatNPR(data[peakIdx].value)}`
               : "—",
             tint: "var(--saffron)",
           },
@@ -1521,11 +1522,11 @@ export function SellerBarChart({
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {d.value > 0 ? `Rs.${d.value.toLocaleString("en-IN")}` : "—"}
+                  {d.value > 0 ? formatNPR(d.value) : "—"}
                 </div>
               )}
               <div
-                title={`${d.label}: Rs. ${d.value.toLocaleString("en-IN")}`}
+                title={`${d.label}: ${formatNPR(d.value)}`}
                 style={{
                   width: "100%",
                   maxWidth: 64,
@@ -2653,7 +2654,7 @@ export function SellerDashboard() {
                     className="tnum"
                     style={{ fontWeight: 800, fontSize: "1rem", color: "var(--ink-900)" }}
                   >
-                    Rs. {bargainGlance.marginGiven.toLocaleString("en-IN")}
+                    {formatNPR(bargainGlance.marginGiven)}
                   </div>
                   <div style={{ fontSize: ".7rem", color: "var(--ink-500)" }}>
                     Margin given via bargain (this week)
@@ -2803,7 +2804,7 @@ export function SellerDashboard() {
                     className="tnum"
                     style={{ padding: "12px 8px", fontWeight: 800, color: "var(--success)" }}
                   >
-                    Rs. {p.rev.toLocaleString("en-IN")}
+                    {formatNPR(Number(p.rev))}
                   </td>
                   <td style={{ padding: "12px 8px", width: 120 }}>
                     <SellerSparkline data={p.spark ?? []} color="var(--blue)" height={24} />
@@ -3005,7 +3006,7 @@ export function OrderCard({
           className="tnum"
           style={{ fontSize: ".875rem", color: "var(--blue-deep)", fontWeight: 800, marginTop: 4 }}
         >
-          Rs. {o.price.toLocaleString("en-IN")}
+          {formatNPR(o.price)}
         </div>
       </div>
     </button>
@@ -3640,7 +3641,7 @@ export function SellerOrderDetail() {
               className="tnum"
               style={{ fontWeight: 800, fontSize: "1.25rem", color: "var(--blue-deep)" }}
             >
-              Rs. {o.price.toLocaleString("en-IN")}
+              {formatNPR(o.price)}
             </span>
           </div>
           <div
@@ -3657,7 +3658,7 @@ export function SellerOrderDetail() {
               className="tnum"
               style={{ fontWeight: 800, fontSize: "1.375rem", color: "var(--success)" }}
             >
-              Rs. {o.price.toLocaleString("en-IN")}
+              {formatNPR(o.price)}
             </span>
           </div>
           <div style={{ marginTop: 8, fontSize: ".75rem", color: "var(--ink-500)" }}>
@@ -4514,8 +4515,7 @@ export function SellerAddProduct({
     const floor = Number(raw);
     if (!Number.isInteger(floor) || floor <= 0) return "Enter a whole number above 0";
     const listed = variantListedPrice(v);
-    if (listed > 0 && floor >= listed)
-      return `Must be less than Rs. ${listed.toLocaleString("en-IN")}`;
+    if (listed > 0 && floor >= listed) return `Must be less than ${formatNPR(listed)}`;
     return null;
   };
   const bargainFloorOk = hasVariants
@@ -4681,13 +4681,8 @@ export function SellerAddProduct({
         discountPct: null,
       };
     }
-    const p = buildPricing(applyDiscount, saleInput);
-    // Backend stores prices as minor units (paisa); multiply rupees → paisa here.
-    return {
-      ...p,
-      price: Math.round(p.price * 100),
-      original: p.original != null ? Math.round(p.original * 100) : null,
-    };
+    // Prices are rupees end to end — the API stores exactly what's sent.
+    return buildPricing(applyDiscount, saleInput);
   };
 
   // Variants the seller actually filled, in the API's shape. Shared by create
@@ -4697,18 +4692,11 @@ export function SellerAddProduct({
       ? variants
           .filter((v) => v.name && v.price && v.stock)
           .map((v) => {
-            // All prices are entered in rupees; backend stores as paisa → multiply by 100.
+            // All prices are entered and stored in rupees — no conversion.
             const pricing = v.onSale
-              ? (() => {
-                  const p = buildPricing(true, variantSaleInput(v));
-                  return {
-                    ...p,
-                    price: Math.round(p.price * 100),
-                    original: p.original != null ? Math.round(p.original * 100) : null,
-                  };
-                })()
+              ? buildPricing(true, variantSaleInput(v))
               : {
-                  price: Math.round(Number(v.price) * 100),
+                  price: Number(v.price),
                   original: null,
                   discountType: null,
                   discountPct: null,
@@ -4719,10 +4707,7 @@ export function SellerAddProduct({
               stock: Number(v.stock),
               ...pricing,
               allowBargaining: v.allowBargaining ?? false,
-              minimumPrice:
-                v.allowBargaining && v.minimumPrice
-                  ? Math.round(Number(v.minimumPrice) * 100)
-                  : null,
+              minimumPrice: v.allowBargaining && v.minimumPrice ? Number(v.minimumPrice) : null,
               optionValues: v.optionValues ?? null,
               imageUrl: v.imageUrl ?? null,
             };
@@ -4804,7 +4789,7 @@ export function SellerAddProduct({
           minimumPrice: hasVariants
             ? null
             : bargainOk && bargainMinPrice
-              ? Math.round(Number(bargainMinPrice) * 100)
+              ? Number(bargainMinPrice)
               : null,
           ...buildPdpFields(),
         });
@@ -4835,7 +4820,7 @@ export function SellerAddProduct({
         minimumPrice: hasVariants
           ? null
           : bargainOk && bargainMinPrice
-            ? Math.round(Number(bargainMinPrice) * 100)
+            ? Number(bargainMinPrice)
             : null,
         ...buildPdpFields(),
       });
@@ -5494,7 +5479,7 @@ export function SellerAddProduct({
                     </label>
                     <input
                       value={price}
-                      onChange={(e) => setPrice(e.target.value.replace(/\D/g, ""))}
+                      onChange={(e) => setPrice(e.target.value.replace(/[^\d.]/g, ""))}
                       inputMode="numeric"
                       placeholder="1200"
                       className="tnum"
@@ -5654,7 +5639,7 @@ export function SellerAddProduct({
                           </label>
                           <input
                             value={salePrice}
-                            onChange={(e) => setSalePrice(e.target.value.replace(/\D/g, ""))}
+                            onChange={(e) => setSalePrice(e.target.value.replace(/[^\d.]/g, ""))}
                             inputMode="numeric"
                             placeholder="e.g. 960"
                             className="tnum"
@@ -5683,8 +5668,8 @@ export function SellerAddProduct({
                           ? saleMode === "percent"
                             ? "Enter a percentage between 1 and 99."
                             : "Sale price must be a positive number below the regular price."
-                          : `Buyers pay Rs. ${saleEffectivePrice.toLocaleString("en-IN")} ` +
-                            `(was Rs. ${baseNum.toLocaleString("en-IN")}, −${
+                          : `Buyers pay ${formatNPR(saleEffectivePrice)} ` +
+                            `(was ${formatNPR(baseNum)}, −${
                               baseNum > 0 ? Math.round((1 - saleEffectivePrice / baseNum) * 100) : 0
                             }%).`}
                       </p>
@@ -5778,7 +5763,7 @@ export function SellerAddProduct({
                             <input
                               value={v.price}
                               onChange={(e) =>
-                                updateVariant(v.id, "price", e.target.value.replace(/\D/g, ""))
+                                updateVariant(v.id, "price", e.target.value.replace(/[^\d.]/g, ""))
                               }
                               inputMode="numeric"
                               placeholder="Price"
@@ -5932,7 +5917,7 @@ export function SellerAddProduct({
                                 }}
                               >
                                 {isSaleValid(variantSaleInput(v))
-                                  ? `Buyers pay Rs. ${saleEffective(variantSaleInput(v)).toLocaleString("en-IN")}`
+                                  ? `Buyers pay ${formatNPR(saleEffective(variantSaleInput(v)))}`
                                   : "Enter a valid discount below the price"}
                               </span>
                             </div>
@@ -6368,7 +6353,11 @@ export function SellerAddProduct({
                                 <input
                                   value={v.price}
                                   onChange={(e) =>
-                                    updateVariant(v.id, "price", e.target.value.replace(/\D/g, ""))
+                                    updateVariant(
+                                      v.id,
+                                      "price",
+                                      e.target.value.replace(/[^\d.]/g, ""),
+                                    )
                                   }
                                   inputMode="numeric"
                                   placeholder="0"
@@ -6527,7 +6516,7 @@ export function SellerAddProduct({
                               className="tnum"
                               style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}
                             >
-                              Rs. {Number(v.price).toLocaleString("en-IN")}
+                              {formatNPR(Number(v.price))}
                             </span>
                           </label>
                           {v.allowBargaining && (
@@ -6569,7 +6558,7 @@ export function SellerAddProduct({
                                 }}
                               >
                                 {floorError ??
-                                  `Set a floor below Rs. ${variantListedPrice(v).toLocaleString("en-IN")}`}
+                                  `Set a floor below ${formatNPR(variantListedPrice(v))}`}
                               </span>
                             </div>
                           )}
@@ -6876,7 +6865,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
             className="tnum"
             style={{ fontSize: "1.25rem", fontWeight: 800, color: "var(--blue-deep)" }}
           >
-            Rs. {(product?.price ?? item.price).toLocaleString("en-IN")}
+            {formatNPR(product?.price ?? item.price)}
           </span>
           {product?.original && product.original > product.price && (
             <span
@@ -6887,7 +6876,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
                 textDecoration: "line-through",
               }}
             >
-              Rs. {product.original.toLocaleString("en-IN")}
+              {formatNPR(product.original)}
             </span>
           )}
           {product?.discountPct && (
@@ -6935,11 +6924,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
           <DetailTile
             label="Bargaining"
             value={item?.allowBargaining ? "Enabled" : "Disabled"}
-            sub={
-              item?.minimumPrice
-                ? `Min Rs. ${item.minimumPrice.toLocaleString("en-IN")}`
-                : undefined
-            }
+            sub={item?.minimumPrice ? `Min ${formatNPR(item.minimumPrice)}` : undefined}
           />
           {/* Category */}
           {product?.cat && <DetailTile label="Category" value={product.cat} />}
@@ -6984,7 +6969,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
                       color: i === 0 ? "#fff" : "var(--ink-600)",
                     }}
                   >
-                    Rs. {v.price.toLocaleString("en-IN")}
+                    {formatNPR(v.price)}
                   </span>
                 </div>
               ))}
@@ -7361,8 +7346,8 @@ export function SellerInventory() {
 
   const savePrice = async (id: string) => {
     const it = items.find((i) => i.id === id);
-    const raw = String(priceDraft[id] ?? it?.price ?? "").replace(/\D/g, "");
-    const nextRupees = parseInt(raw, 10);
+    const raw = String(priceDraft[id] ?? it?.price ?? "").replace(/[^\d.]/g, "");
+    const nextRupees = parseFloat(raw);
     if (!it || !Number.isFinite(nextRupees) || nextRupees <= 0) {
       toast("Enter a valid price (Rs.)");
       return;
@@ -7370,8 +7355,8 @@ export function SellerInventory() {
     if (nextRupees === it.price) return;
     setSavingId(id);
     try {
-      // Backend stores prices as minor units (paisa); convert rupees → paisa.
-      await updateProduct.mutateAsync({ id, price: Math.round(nextRupees * 100) });
+      // Prices are rupees end to end — send exactly what the seller typed.
+      await updateProduct.mutateAsync({ id, price: nextRupees });
       setItems((list) => list.map((i) => (i.id === id ? { ...i, price: nextRupees } : i)));
       toast("Price saved");
     } catch (err) {
@@ -7699,7 +7684,7 @@ export function SellerInventory() {
                               marginTop: 2,
                             }}
                           >
-                            Rs. {it.price.toLocaleString("en-IN")}
+                            {formatNPR(it.price)}
                           </div>
                           <div
                             style={{
@@ -8210,7 +8195,7 @@ export function SellerInventory() {
                                   onChange={(e) =>
                                     setPriceDraft((d) => ({
                                       ...d,
-                                      [it.id]: e.target.value.replace(/\D/g, ""),
+                                      [it.id]: e.target.value.replace(/[^\d.]/g, ""),
                                     }))
                                   }
                                   onKeyDown={(e) => {
@@ -8466,16 +8451,16 @@ export function SellerLedger() {
                   <tr key={i} style={{ borderTop: "1.5px solid var(--line-200)" }}>
                     <td style={{ padding: "14px 12px", fontWeight: 700 }}>{r.date}</td>
                     <td className="tnum" style={{ padding: "14px 12px" }}>
-                      Rs. {r.cash.toLocaleString("en-IN")}
+                      {formatNPR(Number(r.cash))}
                     </td>
                     <td className="tnum" style={{ padding: "14px 12px", color: "var(--danger)" }}>
-                      − Rs. {r.fee.toLocaleString("en-IN")}
+                      − {formatNPR(Number(r.fee))}
                     </td>
                     <td
                       className="tnum"
                       style={{ padding: "14px 12px", color: "var(--success)", fontWeight: 800 }}
                     >
-                      Rs. {r.net.toLocaleString("en-IN")}
+                      {formatNPR(Number(r.net))}
                     </td>
                     <td style={{ padding: "14px 12px" }}>
                       <span
@@ -9288,7 +9273,7 @@ function BargainOfferCard({
       return;
     }
     try {
-      await counterMutation.mutateAsync({ id: o.id, counter: Math.round(amount * 100) });
+      await counterMutation.mutateAsync({ id: o.id, counter: amount });
       toast("Counter offer sent");
       setCountering(false);
     } catch (error) {
@@ -9625,11 +9610,11 @@ export function SellerBargain() {
               { v: String(total), k: "Offers this week", c: "var(--blue)" },
               { v: total > 0 ? `${acceptPct}%` : "0%", k: "You accepted", c: "var(--success)" },
               {
-                v: `Rs. ${avgSaving.toLocaleString("en-IN")}`,
+                v: formatNPR(avgSaving),
                 k: "Average saving",
                 c: "var(--saffron)",
               },
-              { v: `Rs. ${margin.toLocaleString("en-IN")}`, k: "Margin given", c: "var(--danger)" },
+              { v: formatNPR(margin), k: "Margin given", c: "var(--danger)" },
             ];
           })().map((s) => (
             <div
@@ -11612,10 +11597,10 @@ export function SellerAnalytics() {
                 color: "var(--blue-deep)",
               }}
             >
-              Rs. {soldToday.toLocaleString("en-IN")}
+              {formatNPR(soldToday)}
             </div>
             <div style={{ fontSize: ".8125rem", color: "var(--ink-400)" }}>
-              Courier holding Rs. {withCourier.toLocaleString("en-IN")}
+              Courier holding {formatNPR(withCourier)}
             </div>
             <div
               style={{
@@ -11640,7 +11625,7 @@ export function SellerAnalytics() {
                     {b.en}
                   </span>
                   <span className="tnum" style={{ fontWeight: 700, color: "var(--ink-900)" }}>
-                    Rs. {b.v.toLocaleString("en-IN")}
+                    {formatNPR(b.v)}
                   </span>
                 </div>
               ))}
@@ -11692,7 +11677,7 @@ export function SellerAnalytics() {
               }}
             >
               {bestDay.value > 0
-                ? `${bestDay.label} was your strongest day — Rs. ${bestDay.value.toLocaleString("en-IN")} in sales.`
+                ? `${bestDay.label} was your strongest day — ${formatNPR(bestDay.value)} in sales.`
                 : "Sales will show here once you start receiving orders."}
             </p>
             <div
@@ -11701,11 +11686,15 @@ export function SellerAnalytics() {
               {[
                 {
                   label: "7-day total",
-                  value: `Rs. ${salesByDay.reduce((s, d) => s + d.value, 0).toLocaleString("en-IN")}`,
+                  value: formatNPR(salesByDay.reduce((s, d) => s + d.value, 0)),
                 },
                 {
                   label: "Daily average",
-                  value: `Rs. ${Math.round(salesByDay.reduce((s, d) => s + d.value, 0) / Math.max(salesByDay.length, 1)).toLocaleString("en-IN")}`,
+                  value: formatNPR(
+                    Math.round(
+                      salesByDay.reduce((s, d) => s + d.value, 0) / Math.max(salesByDay.length, 1),
+                    ),
+                  ),
                 },
                 { label: "Best day", value: bestDay.value > 0 ? bestDay.label : "—" },
               ].map((s) => (
@@ -11790,7 +11779,7 @@ export function SellerAnalytics() {
                         className="tnum"
                         style={{ fontWeight: 800, fontSize: "1.05rem", color: b.c }}
                       >
-                        Rs. {b.v.toLocaleString("en-IN")}
+                        {formatNPR(b.v)}
                       </span>
                     </div>
                     <div
@@ -11831,7 +11820,7 @@ export function SellerAnalytics() {
                 style={{ verticalAlign: "middle", marginRight: 6 }}
               />
               {withCourier > 0
-                ? `Rs. ${withCourier.toLocaleString("en-IN")} is with courier until delivery is confirmed.`
+                ? `${formatNPR(withCourier)} is with courier until delivery is confirmed.`
                 : "No payouts in transit right now."}
             </p>
           </div>
@@ -11900,7 +11889,7 @@ export function SellerAnalytics() {
                     className="tnum"
                     style={{ fontWeight: 800, color: "var(--success)", fontSize: "1rem" }}
                   >
-                    Rs. {p.rev.toLocaleString("en-IN")}
+                    {formatNPR(Number(p.rev))}
                   </div>
                 </div>
               ))}

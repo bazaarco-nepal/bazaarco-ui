@@ -13,16 +13,10 @@ export interface VideoViewResult {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapVideoItem(raw: any) {
-  const minorToRupees = (v: unknown) => (typeof v === "number" ? v / 100 : 0);
   return {
     ...raw,
-    price: typeof raw.price === "number" ? raw.price : minorToRupees(raw.priceMinor),
-    original:
-      typeof raw.original === "number"
-        ? raw.original
-        : raw.originalMinor != null
-          ? minorToRupees(raw.originalMinor)
-          : null,
+    price: raw.price,
+    original: raw.original ?? null,
     sellerId: raw.sellerId ?? raw.storeId ?? "",
     img: raw.img ?? raw.coverImageUrl ?? null,
     reviews: raw.reviews ?? raw.reviewsCount ?? 0,

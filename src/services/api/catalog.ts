@@ -34,60 +34,27 @@ export interface CreateProductQuestionPayload {
 /**
  * Normalize a raw v3 API product into the UI `Product` shape.
  *
- * The backend now stores monetary values in paise (minor units) and renamed
- * several fields. This function maps everything back to the UI's existing field
- * names so no component needs to change.
+ * Money arrives as rupees; this only maps a few backend field names (coverImageUrl,
+ * reviewsCount, …) onto the UI's existing names so no component needs to change.
  *
- * v3 → UI mappings:
- *   priceMinor / 100        → price
- *   originalMinor / 100     → original
+ * v3 → UI mappings (price/original already arrive as rupees):
  *   coverImageUrl            → img
  *   reviewsCount             → reviews
  *   storeId                  → seller  (also kept as storeId)
  *   lowStockThreshold        → lowStock
- *   variants[].priceMinor    → variants[].price
- *   variants[].originalMinor → variants[].original
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function mapProduct(raw: any): Product {
-  const minor = (v: unknown): number => (typeof v === "number" ? v : 0);
-  const minorToRupees = (v: unknown): number => minor(v) / 100;
-
-  const price = typeof raw.price === "number" ? raw.price : minorToRupees(raw.priceMinor);
-  const original =
-    typeof raw.original === "number"
-      ? raw.original
-      : raw.originalMinor != null
-        ? minorToRupees(raw.originalMinor)
-        : undefined;
-
-  const variants = Array.isArray(raw.variants)
-    ? raw.variants.map(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (v: any) => ({
-          ...v,
-          price: typeof v.price === "number" ? v.price : minorToRupees(v.priceMinor ?? 0),
-          original:
-            typeof v.original === "number"
-              ? v.original
-              : v.originalMinor != null
-                ? minorToRupees(v.originalMinor)
-                : undefined,
-        }),
-      )
-    : raw.variants;
-
   const product: Product = {
     ...raw,
-    price,
-    original,
+    price: raw.price,
+    original: raw.original ?? undefined,
     // field renames
     seller: raw.seller ?? raw.storeId ?? "",
     img: raw.img ?? raw.coverImageUrl ?? undefined,
     reviews: raw.reviews ?? raw.reviewsCount ?? 0,
     lowStock: raw.lowStock ?? raw.lowStockThreshold ?? undefined,
     eta: raw.eta ?? "2–3 days",
-    variants,
     category: raw.category ?? undefined,
     // Inline seller snapshot from product detail endpoint
     sellerInfo: raw.store

@@ -52,6 +52,7 @@ import { useCartQuery } from "@/hooks/use-cart";
 import { useWishlistQuery } from "@/hooks/use-wishlist";
 import { useCancelOrder, useOrders } from "@/hooks/use-orders";
 import { canCancelOrder } from "@/lib/order-utils";
+import { formatNPR } from "@/lib/money";
 import { ConfirmModal } from "@/features/checkout/checkout";
 import { useChatInbox } from "@/hooks/use-chat";
 import { useBazaarStore } from "@/store/bazaar-store";
@@ -254,7 +255,7 @@ export function Orders() {
                       className="tnum"
                       style={{ fontWeight: 800, color: "var(--blue-deep)", fontSize: "1.125rem" }}
                     >
-                      Rs. {o.total.toLocaleString("en-IN")}
+                      {formatNPR(o.total)}
                     </span>
                   </div>
 

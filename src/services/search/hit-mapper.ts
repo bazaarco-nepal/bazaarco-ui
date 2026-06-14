@@ -38,14 +38,13 @@ export function toSearchDocument(record: Record<string, unknown>): AlgoliaProduc
 /** Map an Algolia hit to the UI search card shape (prices in rupees). */
 export function toSearchProductHit(record: AlgoliaRecord): Product {
   const document = toSearchDocument(record);
-  const minorToRupees = (minor: number) => minor / 100;
 
   return {
     id: document.id,
     name: document.name,
     description: document.description,
-    price: minorToRupees(document.price),
-    original: document.original != null ? minorToRupees(document.original) : undefined,
+    price: document.price,
+    original: document.original ?? undefined,
     cat: document.category,
     seller: document.seller_name,
     icon: "box",

@@ -65,7 +65,7 @@ export interface ProductSchemaInput {
   image?: string;
   brand?: string | null;
   sku?: string | null;
-  /** Price in rupees (major units), already converted from paisa. */
+  /** Price in rupees. */
   price?: number;
   outOfStock?: boolean;
   rating?: number;

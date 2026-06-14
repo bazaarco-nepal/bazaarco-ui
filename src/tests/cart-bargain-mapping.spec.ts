@@ -9,7 +9,7 @@ vi.mock("@/services/api/http", () => ({
 }));
 vi.mock("@/services/api/catalog", () => ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  mapProduct: (r: any) => ({ id: r.id, name: r.name, price: r.priceMinor / 100 }),
+  mapProduct: (r: any) => ({ id: r.id, name: r.name, price: r.price }),
 }));
 
 import { getData, postData } from "@/services/api/http";
@@ -29,11 +29,11 @@ describe("cart line mapping — server bargain overlay", () => {
         {
           id: "p1",
           name: "Tee",
-          priceMinor: 100000,
+          price: 1000,
           qty: 1,
           variantId: "v1",
           variantName: "L",
-          unitPriceMinor: 80000,
+          unitPrice: 800,
           bargained: true,
           bargainExpiresAt: "2026-06-11T10:00:00.000Z",
         },
@@ -50,7 +50,7 @@ describe("cart line mapping — server bargain overlay", () => {
 
   it("falls back to the listed price on lines with no overlay", async () => {
     mockedGet.mockResolvedValue({
-      items: [{ id: "p1", name: "Tee", priceMinor: 100000, qty: 1 }],
+      items: [{ id: "p1", name: "Tee", price: 1000, qty: 1 }],
     });
 
     const cart = await cartApi.get();

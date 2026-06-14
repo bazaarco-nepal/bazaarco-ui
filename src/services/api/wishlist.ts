@@ -9,9 +9,9 @@ export interface WishlistResponse {
   sellers: Seller[];
 }
 
-// The API returns products/sellers in the raw v3 shape (priceMinor, coverImageUrl,
-// reviewsCount). Run them through the same mappers the catalog endpoints use so the
-// UI sees price/img/reviews — otherwise saved items render as Rs. 0 with no image.
+// The API returns products/sellers in the raw v3 shape (coverImageUrl, reviewsCount).
+// Run them through the same mappers the catalog endpoints use so the UI sees
+// price/img/reviews — otherwise saved items render with no image.
 function mapWishlist(raw: WishlistResponse): WishlistResponse {
   return {
     ...raw,

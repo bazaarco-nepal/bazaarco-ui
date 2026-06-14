@@ -19,9 +19,9 @@ const percent = (base: number, salePct: number): SaleInput => ({
 });
 
 describe("saleEffective", () => {
-  it("computes the discounted price for a percentage", () => {
+  it("computes the discounted price for a percentage (rupees, 2 dp)", () => {
     expect(saleEffective(percent(1000, 20))).toBe(800);
-    expect(saleEffective(percent(999, 10))).toBe(899); // rounds 899.1 -> 899
+    expect(saleEffective(percent(999, 10))).toBe(899.1); // keeps the decimal
   });
   it("returns the entered sale price for amount mode", () => {
     expect(saleEffective(amount(1000, 750))).toBe(750);
@@ -41,7 +41,7 @@ describe("saleValid", () => {
   });
 
   it("rejects a percentage so large the price would round to zero", () => {
-    expect(saleValid(percent(1, 99))).toBe(false); // round(0.01) = 0
+    expect(saleValid(percent(0.4, 99))).toBe(false); // Rs 0.40 → Rs 0.004 → Rs 0.00
   });
 
   it("rejects a sale price that is not below the regular price", () => {
@@ -55,9 +55,10 @@ describe("saleValid", () => {
     expect(saleValid(percent(0, 20))).toBe(false);
   });
 
-  it("rejects non-integer percentages and prices", () => {
+  it("rejects a non-integer percentage but accepts a decimal sale price", () => {
+    // Percent off is still a whole number; the rupee sale price may carry decimals.
     expect(saleValid(percent(1000, 10.5))).toBe(false);
-    expect(saleValid(amount(1000, 750.5))).toBe(false);
+    expect(saleValid(amount(1000, 750.5))).toBe(true);
   });
 });
 

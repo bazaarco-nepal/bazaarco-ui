@@ -8,6 +8,7 @@ import { ASSETS } from "@/config/assets";
 import { postalForCity, isDeliverableCity, DELIVERY_AREA_MESSAGE } from "@/lib/delivery-location";
 import { reverseGeocode } from "@/lib/reverse-geocode";
 import { tintForName } from "@/lib/store-tint";
+import { formatNPR } from "@/lib/money";
 import { MapPinPicker } from "@/components/ui/map-pin-picker";
 import { TOAST_VARIANT_META } from "@/lib/toast-variant";
 import { CLOUDINARY_CLOUD_NAME, publicIdFromVideoUrl } from "@/lib/cloudinary";
@@ -1124,7 +1125,7 @@ export function Price({
         className="tnum"
         style={{ fontSize: fs, fontWeight: 800, color, letterSpacing: "-.01em" }}
       >
-        Rs.&nbsp;{safeValue.toLocaleString("en-IN")}
+        {formatNPR(safeValue)}
       </span>
       {safeOriginal && (
         <span
@@ -1136,7 +1137,7 @@ export function Price({
             fontWeight: 500,
           }}
         >
-          Rs.&nbsp;{safeOriginal.toLocaleString("en-IN")}
+          {formatNPR(safeOriginal)}
         </span>
       )}
     </span>
@@ -2391,8 +2392,8 @@ export function AllInPriceCard({ price, delivery = 60, area = "Chabahil", onEdit
         </button>
       </div>
       <div className="tnum" style={{ fontSize: ".9375rem" }}>
-        Rs. {price.toLocaleString("en-IN")} for item + Rs. {delivery} delivery ={" "}
-        <b style={{ color: "var(--blue-deep)" }}>Rs. {total.toLocaleString("en-IN")} to pay</b>
+        {formatNPR(price)} for item + {formatNPR(delivery)} delivery ={" "}
+        <b style={{ color: "var(--blue-deep)" }}>{formatNPR(total)} to pay</b>
       </div>
     </div>
   );

@@ -30,30 +30,13 @@ export interface CreateBargainOfferPayload {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapOffer(raw: any): BargainOffer {
-  // The API speaks minor units (paisa) and may serialize bigints as strings —
-  // coerce defensively so an amount never silently renders as Rs. 0.
-  const m2r = (v: unknown) => {
-    const n = typeof v === "number" ? v : Number(v);
-    return Number.isFinite(n) ? n / 100 : 0;
-  };
+  // The API speaks rupees; only `p` (the product) needs the shared field-rename mapper.
   return {
     ...raw,
     variantId: raw.variantId ?? null,
     variantName: raw.variantName ?? null,
-    yourOffer: typeof raw.yourOffer === "number" ? raw.yourOffer : m2r(raw.yourOfferMinor),
-    listed: typeof raw.listed === "number" ? raw.listed : m2r(raw.listedMinor),
-    sellerCounter:
-      raw.sellerCounter != null
-        ? raw.sellerCounter
-        : raw.sellerCounterMinor != null
-          ? m2r(raw.sellerCounterMinor)
-          : null,
-    agreed:
-      raw.agreed != null
-        ? raw.agreed
-        : raw.agreedPriceMinor != null
-          ? m2r(raw.agreedPriceMinor)
-          : null,
+    sellerCounter: raw.sellerCounter ?? null,
+    agreed: raw.agreed ?? null,
     attemptsRemaining:
       typeof raw.attemptsRemaining === "number" ? raw.attemptsRemaining : undefined,
     p: raw.p ? mapProduct(raw.p) : raw.p,

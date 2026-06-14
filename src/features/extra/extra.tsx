@@ -40,6 +40,7 @@ import {
 import { usePathname } from "next/navigation";
 import { orderIdFromPath, pathFromScreen, searchPath } from "@/config/routes";
 import { deliveryTypeLabel } from "@/lib/delivery-options";
+import { formatNPR } from "@/lib/money";
 import { useCatalog } from "@/hooks/use-catalog";
 import { useTracking } from "@/hooks/use-tracking";
 import { useCancelOrder, useOrder } from "@/hooks/use-orders";
@@ -401,7 +402,7 @@ function TrackingSidebar({ nav, order }) {
                   className="tnum"
                   style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 3 }}
                 >
-                  Qty {qty} × Rs.&nbsp;{unitPrice.toLocaleString("en-IN")}
+                  Qty {qty} × {formatNPR(unitPrice)}
                 </div>
               </div>
               <span
@@ -413,7 +414,7 @@ function TrackingSidebar({ nav, order }) {
                   whiteSpace: "nowrap",
                 }}
               >
-                Rs.&nbsp;{lineTotal.toLocaleString("en-IN")}
+                {formatNPR(lineTotal)}
               </span>
             </div>
           ))}
@@ -437,7 +438,7 @@ function TrackingSidebar({ nav, order }) {
               }}
             >
               <span>Subtotal</span>
-              <span className="tnum">Rs.&nbsp;{subtotal.toLocaleString("en-IN")}</span>
+              <span className="tnum">{formatNPR(subtotal)}</span>
             </div>
             <div
               style={{
@@ -455,7 +456,7 @@ function TrackingSidebar({ nav, order }) {
                   ...(delivery === 0 ? { color: "var(--success)" } : {}),
                 }}
               >
-                {delivery === 0 ? "Free" : `Rs. ${delivery.toLocaleString("en-IN")}`}
+                {delivery === 0 ? "Free" : formatNPR(delivery)}
               </span>
             </div>
             <div
@@ -475,7 +476,7 @@ function TrackingSidebar({ nav, order }) {
                 className="tnum"
                 style={{ fontWeight: 800, fontSize: "1.0625rem", color: "var(--blue-deep)" }}
               >
-                Rs.&nbsp;{total.toLocaleString("en-IN")}
+                {formatNPR(total)}
               </span>
             </div>
           </div>
@@ -765,21 +766,17 @@ export function Bargains() {
                       <span>
                         <span style={{ color: "var(--ink-400)" }}>Listed:</span>{" "}
                         <span style={{ textDecoration: "line-through", color: "var(--ink-500)" }}>
-                          Rs. {o.listed.toLocaleString("en-IN")}
+                          {formatNPR(o.listed)}
                         </span>
                       </span>
                       <span>
                         <span style={{ color: "var(--ink-400)" }}>Your offer:</span>{" "}
-                        <b style={{ color: "var(--blue-deep)" }}>
-                          Rs. {o.yourOffer.toLocaleString("en-IN")}
-                        </b>
+                        <b style={{ color: "var(--blue-deep)" }}>{formatNPR(o.yourOffer)}</b>
                       </span>
                       {o.sellerCounter && (
                         <span>
                           <span style={{ color: "var(--ink-400)" }}>Counter:</span>{" "}
-                          <b style={{ color: "var(--red)" }}>
-                            Rs. {o.sellerCounter.toLocaleString("en-IN")}
-                          </b>
+                          <b style={{ color: "var(--red)" }}>{formatNPR(o.sellerCounter)}</b>
                         </span>
                       )}
                     </div>
@@ -813,7 +810,7 @@ export function Bargains() {
                         void addToCart(
                           o.p,
                           1,
-                          `Added at bargained price · Rs. ${(o.agreed ?? o.yourOffer).toLocaleString("en-IN")}`,
+                          `Added at bargained price · ${formatNPR(o.agreed ?? o.yourOffer)}`,
                           o.variantId,
                         )
                       }
@@ -841,7 +838,7 @@ export function Bargains() {
                           }
                         }}
                       >
-                        Accept Rs. {o.sellerCounter.toLocaleString("en-IN")}
+                        Accept {formatNPR(o.sellerCounter)}
                       </Button>
                       <Button
                         variant="secondary"

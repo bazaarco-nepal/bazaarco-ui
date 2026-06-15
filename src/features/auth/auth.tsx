@@ -861,7 +861,7 @@ export function Auth() {
                         autoComplete="name"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        placeholder="e.g. Sampada Poudel"
+                        placeholder="e.g. Rakshya Maharjan"
                         style={inputStyle}
                         minLength={2}
                         maxLength={255}

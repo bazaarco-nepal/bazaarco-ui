@@ -310,6 +310,7 @@ function ImageCropModal({
             type="button"
             onClick={onCancel}
             disabled={busy}
+            className="bz-hover-dim"
             style={{
               flex: 1,
               padding: "12px 16px",
@@ -327,6 +328,7 @@ function ImageCropModal({
             type="button"
             onClick={() => void handleUse()}
             disabled={!loaded || busy}
+            className="bz-hover-dim"
             style={{
               flex: 1,
               padding: "12px 16px",
@@ -585,6 +587,13 @@ export function ProductPhotoPicker({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                transition: "background var(--dur-micro, 120ms) ease",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.background = "rgba(11,18,32,.8)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.background = "rgba(11,18,32,.55)";
               }}
             >
               <Icon name="x" size={14} color="#fff" />

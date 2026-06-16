@@ -97,7 +97,14 @@ function VideoRailCard({ p, onOpen }: { p: Product; onOpen: (p: Product) => void
   return (
     <div
       onClick={() => onOpen(p)}
-      style={{ cursor: "pointer", flexShrink: 0, width: 188, position: "relative" }}
+      className="bz-hover-lift"
+      style={{
+        cursor: "pointer",
+        flexShrink: 0,
+        width: 188,
+        position: "relative",
+        borderRadius: "var(--r-md)",
+      }}
     >
       <div style={{ position: "relative" }}>
         <VideoPlayer
@@ -258,6 +265,7 @@ export function Home() {
               type="button"
               aria-label={t("home.searchAria")}
               onClick={() => setSearchOpen(true)}
+              className="bz-hover-border"
               style={{
                 width: "100%",
                 height: 50,

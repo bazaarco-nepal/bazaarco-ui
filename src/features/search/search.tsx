@@ -211,13 +211,15 @@ export function Search() {
             key={n}
             onClick={() => setRating(rating === n ? 0 : n)}
             aria-pressed={rating === n}
+            className="bz-hover-tint"
             style={{
               display: "flex",
               alignItems: "center",
               gap: 6,
               width: "100%",
-              padding: "4px 0",
+              padding: "4px 6px",
               border: "none",
+              borderRadius: "var(--r-sm)",
               background: "none",
               cursor: "pointer",
               color: rating === n ? "var(--blue)" : "var(--ink-700)",
@@ -237,6 +239,7 @@ export function Search() {
       {hasFilters ? (
         <button
           onClick={clearAll}
+          className="bz-hover-border"
           style={{
             marginTop: 8,
             width: "100%",
@@ -309,7 +312,7 @@ export function Search() {
         <button
           type="button"
           aria-label={t("search.filtersAria")}
-          className="bz-show-mobile bz-show-mobile--flex"
+          className="bz-show-mobile bz-show-mobile--flex bz-hover-border"
           onClick={() => setSheet(true)}
           style={{
             position: "relative",
@@ -402,6 +405,7 @@ export function Search() {
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value as NonNullable<SearchParams["sort"]>)}
+                className="bz-hover-border"
                 style={{
                   padding: "8px 12px",
                   border: "1.5px solid var(--line-200)",
@@ -514,6 +518,7 @@ export function Search() {
               <button
                 onClick={() => setSheet(false)}
                 aria-label={t("search.closeFilters")}
+                className="bz-hover-tint"
                 style={{
                   width: 36,
                   height: 36,

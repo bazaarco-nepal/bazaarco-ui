@@ -139,6 +139,7 @@ export function Stores() {
               type="button"
               aria-label="Clear search"
               onClick={() => setQ("")}
+              className="bz-hover-tint"
               style={{
                 position: "absolute",
                 right: 8,
@@ -160,7 +161,8 @@ export function Stores() {
           )}
         </div>
 
-        {/* count + sort */}
+        {/* Toolbar: result count on the left, Sort on the right — one aligned
+            row grouped directly under the store-search field above. */}
         <div
           style={{
             display: "flex",
@@ -168,9 +170,14 @@ export function Stores() {
             justifyContent: "space-between",
             gap: 12,
             marginBottom: 16,
+            paddingTop: 14,
+            borderTop: "1px solid var(--line-200)",
           }}
         >
-          <span className="tnum" style={{ color: "var(--ink-500)", fontSize: ".875rem" }}>
+          <span
+            className="tnum"
+            style={{ color: "var(--ink-700)", fontSize: ".875rem", fontWeight: 600 }}
+          >
             {filtered.length === 1
               ? "1 store"
               : `${filtered.length.toLocaleString("en-IN")} stores`}
@@ -191,6 +198,7 @@ export function Stores() {
               value={sort}
               onChange={(e) => setSort(e.target.value as SortKey)}
               aria-label="Sort stores"
+              className="bz-hover-border"
               style={{
                 padding: "8px 12px",
                 border: "1.5px solid var(--line-200)",
@@ -235,6 +243,7 @@ function StoreCard({ seller, onOpen }: { seller: Seller; onOpen: () => void }) {
       href={pathFromScreen("store", seller.id)}
       onNavigate={onOpen}
       className="bz-store-card"
+      ariaLabel={`Visit ${seller.name} store`}
     >
       <div className="bz-store-card__head">
         <StoreAvatar src={seller.avatar} name={seller.name} size={48} />
@@ -249,17 +258,18 @@ function StoreCard({ seller, onOpen }: { seller: Seller; onOpen: () => void }) {
         </div>
       </div>
 
-      {/* Only show the star row once a store has at least one review — empty
-          stars on 0 reviews made the whole directory read as inactive. */}
-      {hasReviews ? (
-        <div className="bz-store-card__rating">
+      {/* One meta line, fixed height in both states: gold stars + score + count
+          when reviewed, a muted "No reviews yet" otherwise. Same space either
+          way so the grid stays even and the rating reads honestly. */}
+      <div className="bz-store-card__meta">
+        {hasReviews ? (
           <RatingStars value={seller.rating} size={14} showVal count={seller.reviews} />
-        </div>
-      ) : (
-        <div className="bz-store-card__noreviews">No reviews yet</div>
-      )}
+        ) : (
+          <span className="bz-store-card__noreviews">No reviews yet</span>
+        )}
+      </div>
 
-      <span className="bz-store-card__cta">
+      <span className="bz-store-card__cta" aria-hidden="true">
         Visit store <Icon name="arrowRight" size={14} />
       </span>
     </AppLink>

@@ -315,6 +315,7 @@ export function SellerSettings() {
                 <button
                   key={r.id}
                   onClick={() => r.onAct?.()}
+                  className="bz-hover-tint"
                   style={{ ...rowStyle, border: "none", cursor: "pointer", textAlign: "left" }}
                 >
                   {content}

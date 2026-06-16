@@ -326,6 +326,7 @@ export function SellerOnboarding() {
               href={SELLER_ONBOARDING_GUIDE_URL}
               target="_blank"
               ariaLabel="Watch the 2-minute seller KYC setup guide (opens in a new tab)"
+              className="bz-hover-lift"
               style={{
                 background: "var(--tint-blue-50)",
                 borderRadius: "var(--r-md)",
@@ -409,15 +410,18 @@ export function SellerOnboarding() {
           <div>
             <button
               onClick={() => (forceReupload ? nav("s-verification") : setStage("hero"))}
+              className="bz-hover-tint"
               style={{
                 background: "none",
                 border: "none",
+                borderRadius: "var(--r-sm)",
                 color: "var(--ink-500)",
                 fontWeight: 600,
                 cursor: "pointer",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 6,
+                padding: "4px 8px",
                 marginBottom: 14,
               }}
             >
@@ -451,6 +455,7 @@ export function SellerOnboarding() {
               <button
                 key={d.id}
                 onClick={() => startDocUpload(d.id as "pan" | "nid")}
+                className="bz-hover-border"
                 style={{
                   width: "100%",
                   display: "flex",
@@ -494,14 +499,17 @@ export function SellerOnboarding() {
           <div>
             <button
               onClick={() => setStage("docPick")}
+              className="bz-hover-tint"
               style={{
                 background: "none",
                 border: "none",
+                borderRadius: "var(--r-sm)",
                 color: "var(--ink-500)",
                 fontWeight: 600,
                 cursor: "pointer",
                 display: "inline-flex",
                 alignItems: "center",
+                padding: "4px 8px",
                 gap: 6,
                 marginBottom: 14,
               }}

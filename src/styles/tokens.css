@@ -60,6 +60,10 @@
   --r-lg: 14px;
   --r-xl: 20px;
   --r-full: 999px;
+  /* Two semantic radii so pills and controls never drift apart:
+     --r-pill for badges/status pills, --r-control for inputs/chips/buttons. */
+  --r-pill: var(--r-full);
+  --r-control: var(--r-md);
 
   /* Shadow (flat) */
   --sh-1: 0 1px 2px rgba(15, 23, 42, 0.06);
@@ -132,6 +136,42 @@ body {
 :focus-visible {
   outline: 2px solid var(--blue);
   outline-offset: 2px;
+}
+
+/* ── Hover utilities ───────────────────────────────────────────────────────
+   Apply to inline-styled interactive elements that can't use :hover natively.
+   Each includes the transition so callers don't need to set it. */
+.bz-hover-tint {
+  transition:
+    background var(--dur-micro) var(--ease),
+    border-color var(--dur-micro) var(--ease),
+    color var(--dur-micro) var(--ease);
+}
+.bz-hover-tint:hover {
+  background: var(--line-100);
+}
+.bz-hover-border {
+  transition:
+    border-color var(--dur-micro) var(--ease),
+    box-shadow var(--dur-micro) var(--ease);
+}
+.bz-hover-border:hover {
+  border-color: var(--blue);
+}
+.bz-hover-lift {
+  transition:
+    box-shadow var(--dur-standard) var(--ease),
+    transform var(--dur-standard) var(--ease);
+}
+.bz-hover-lift:hover {
+  box-shadow: var(--sh-2);
+  transform: translateY(-1px);
+}
+.bz-hover-dim {
+  transition: opacity var(--dur-micro) var(--ease);
+}
+.bz-hover-dim:hover {
+  opacity: 0.75;
 }
 
 @keyframes bz-skel {
@@ -412,16 +452,16 @@ body {
 }
 
 .bz-navbar__search-input:focus {
-  border-color: var(--red);
+  border-color: var(--blue);
 }
 
 .bz-navbar__search-clear {
   position: absolute;
-  right: 8px;
+  right: 0;
   top: 50%;
   transform: translateY(-50%);
-  width: 28px;
-  height: 28px;
+  min-width: 44px;
+  min-height: 44px;
   border: none;
   border-radius: 50%;
   background: transparent;
@@ -655,7 +695,7 @@ body {
 }
 
 .bz-bnav__label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   max-width: 100%;
   overflow: hidden;
@@ -875,8 +915,8 @@ body {
     border-color 0.15s var(--ease);
 }
 .bz-side-toggle:hover {
-  background: var(--red);
-  border-color: var(--red);
+  background: var(--blue);
+  border-color: var(--blue);
   color: #fff;
 }
 .bz-side-toggle:hover svg {
@@ -2270,12 +2310,21 @@ body {
   }
 }
 
+/* Equal-weight browse grid: 1-up phone → 2-up small tablet → 3-up tablet →
+   4-up desktop. Even gutters at every step; cards stretch to a shared row
+   height (see .bz-store-card). */
 .bz-stores-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 12px;
 }
-@media (min-width: 640px) {
+@media (min-width: 480px) {
+  .bz-stores-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+}
+@media (min-width: 768px) {
   .bz-stores-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
@@ -2288,11 +2337,16 @@ body {
   }
 }
 
+/* Equal-weight card: fixed internal layout (head → single meta line → footer)
+   so every card is the same height with the CTA pinned to the bottom. No lift
+   or colour-fill on hover — this is a browse grid with no single primary card,
+   so nothing should read as "selected". */
 .bz-store-card {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 12px;
+  height: 100%;
+  padding: 14px;
   border-radius: var(--r-lg);
   border: 1px solid var(--line-200);
   background: var(--card);
@@ -2301,20 +2355,16 @@ body {
   color: inherit;
   transition:
     box-shadow var(--dur-standard) var(--ease),
-    border-color var(--dur-standard) var(--ease),
-    transform var(--dur-standard) var(--ease);
+    border-color var(--dur-standard) var(--ease);
 }
 .bz-store-card:hover {
   box-shadow: var(--sh-2);
-  border-color: var(--line-200);
-  transform: translateY(-2px);
+  border-color: var(--ink-300);
 }
 @media (min-width: 1024px) {
-  /* Desktop: tighter vertical rhythm than a default card so it isn't too tall
-     for the little content it holds. */
   .bz-store-card {
     gap: 10px;
-    padding: 14px 16px;
+    padding: 16px;
   }
 }
 
@@ -2352,39 +2402,42 @@ body {
   white-space: nowrap;
   overflow: hidden;
 }
+
+/* Single meta line — holds EITHER the rating OR "No reviews yet". Fixed height
+   so both states occupy identical space and the grid stays even. */
+.bz-store-card__meta {
+  display: flex;
+  align-items: center;
+  min-height: 20px;
+}
 .bz-store-card__noreviews {
-  font-size: 0.75rem;
-  color: var(--ink-300);
+  font-size: 0.8125rem;
+  color: var(--ink-400);
 }
 
-/* CTA: a small bold link on mobile (space is tight at 2-up), an outlined button
-   on desktop that fills on card hover so it's unmistakably clickable. */
+/* CTA: one quiet outlined (secondary) treatment on every card and at every
+   breakpoint — matches the shared Button `secondary` variant tokens. Pinned to
+   the card bottom via margin-top:auto. */
 .bz-store-card__cta {
   margin-top: auto;
-  align-self: flex-start;
+  align-self: stretch;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1.5px solid var(--btn-secondary-border, var(--ink-700));
+  border-radius: var(--r-md);
+  background: #fff;
+  color: var(--btn-secondary-fg, var(--ink-700));
   font-weight: 700;
   font-size: 0.8125rem;
-  color: var(--blue);
+  transition:
+    background var(--dur-standard) var(--ease),
+    border-color var(--dur-standard) var(--ease);
 }
-@media (min-width: 1024px) {
-  .bz-store-card__cta {
-    align-self: stretch;
-    justify-content: center;
-    padding: 8px 12px;
-    border: 1.5px solid var(--blue);
-    border-radius: var(--r-md);
-    background: #fff;
-    transition:
-      background var(--dur-standard) var(--ease),
-      color var(--dur-standard) var(--ease);
-  }
-  .bz-store-card:hover .bz-store-card__cta {
-    background: var(--blue);
-    color: #fff;
-  }
+.bz-store-card:hover .bz-store-card__cta {
+  background: var(--line-100);
 }
 
 /* PDP mobile gallery */
@@ -2894,17 +2947,6 @@ body {
   border-color: var(--blue);
 }
 
-.bz-chat-shell__quick {
-  flex-shrink: 0;
-  padding: 8px 12px;
-  border-top: 1px solid var(--line-200);
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  background: #fff;
-  -webkit-overflow-scrolling: touch;
-}
-
 @media (max-width: 720px) {
   .bz-chat-page {
     padding: 12px 12px calc(88px + env(safe-area-inset-bottom, 0px));
@@ -3407,8 +3449,8 @@ body {
 /* PDP mobile hero — floating round buttons over image */
 .bz-pdp-m-fab {
   position: absolute;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(6px);
@@ -3613,6 +3655,13 @@ body {
   border-color: rgba(230, 57, 70, 0.5);
 }
 
+/* Quiet "Make an offer" — the tertiary buy-box action. No fill at rest (red is
+   the accent on the text/icon only); a soft red tint appears on hover so it
+   never competes with the solid Buy now above it. */
+.bz-pdp-offer-quiet:hover:not(:disabled) {
+  background: var(--tint-red-50);
+}
+
 /* ── Language toggle — segmented switch with a sliding thumb ──────────────
    Shared by the buyer profile and seller settings. Token-based, so it adopts
    the buyer (BazaarCo) and seller (Fluent) skins automatically. Large, easy
@@ -3698,5 +3747,15 @@ body {
   .bz-lang-toggle__thumb,
   .bz-lang-toggle__opt {
     transition: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

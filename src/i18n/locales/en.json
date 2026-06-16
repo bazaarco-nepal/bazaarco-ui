@@ -22,7 +22,8 @@
     "homeAria": "BazaarCo home",
     "profileAria": "Your profile",
     "viewProfile": "View profile",
-    "bargains": "Bargains"
+    "bargains": "Bargains",
+    "messages": "Messages"
   },
   "trust": {
     "bargain": "Bargain freely with every seller",
@@ -362,7 +363,14 @@
       "storeLinkSaved": "Store link updated",
       "storeLinkTaken": "That link is already taken — try another.",
       "storeLinkInvalid": "That link isn't allowed — use 3-48 lowercase letters, numbers or hyphens.",
-      "storeLinkSaveError": "Couldn't update your store link"
+      "storeLinkSaveError": "Couldn't update your store link",
+      "earningsToday": "Earnings today",
+      "earningsRange": "Earnings · {{range}}",
+      "fromDashboard": "From your dashboard",
+      "orders": "Orders",
+      "toPack": "To pack",
+      "returns": "Returns",
+      "todaysTasks": "Today's tasks"
     },
     "inbox": {
       "title": "Orders",

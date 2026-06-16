@@ -22,7 +22,8 @@
     "homeAria": "बजारको होम",
     "profileAria": "तपाईंको प्रोफाइल",
     "viewProfile": "प्रोफाइल हेर्नुहोस्",
-    "bargains": "मोलमाल"
+    "bargains": "मोलमाल",
+    "messages": "सन्देशहरू"
   },
   "trust": {
     "bargain": "प्रत्येक विक्रेतासँग मोलमाल गर्नुहोस्",
@@ -395,7 +396,14 @@
       "storeLinkSaved": "स्टोर लिङ्क अपडेट भयो",
       "storeLinkTaken": "त्यो लिङ्क पहिले नै लिइएको छ — अर्को प्रयास गर्नुहोस्।",
       "storeLinkInvalid": "त्यो लिङ्क मान्य छैन — ३-४८ सानो अक्षर, अंक वा हाइफन प्रयोग गर्नुहोस्।",
-      "storeLinkSaveError": "स्टोर लिङ्क अपडेट गर्न सकिएन"
+      "storeLinkSaveError": "स्टोर लिङ्क अपडेट गर्न सकिएन",
+      "earningsToday": "आजको आम्दानी",
+      "earningsRange": "आम्दानी · {{range}}",
+      "fromDashboard": "तपाईंको ड्यासबोर्डबाट",
+      "orders": "अर्डरहरू",
+      "toPack": "प्याक गर्ने",
+      "returns": "फिर्ता",
+      "todaysTasks": "आजका कामहरू"
     },
     "inbox": {
       "title": "अर्डर",

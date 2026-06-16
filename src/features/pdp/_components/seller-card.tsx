@@ -205,7 +205,11 @@ export function SellerCard({
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 14 }}>
-        <button type="button" onClick={() => openStore(sellerId)} className="bz-pdp-seller-btn">
+        <button
+          type="button"
+          onClick={() => openStore(sellerId)}
+          className="bz-pdp-seller-btn bz-hover-tint"
+        >
           <Icon name="store" size={15} color="var(--ink-500)" />
           Visit store
         </button>
@@ -213,7 +217,7 @@ export function SellerCard({
           type="button"
           aria-label={`Chat with ${name}`}
           onClick={openChat}
-          className="bz-pdp-seller-btn"
+          className="bz-pdp-seller-btn bz-hover-tint"
         >
           <Icon name="messageDots" size={15} color="var(--ink-500)" />
           Chat

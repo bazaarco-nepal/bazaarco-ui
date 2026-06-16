@@ -380,6 +380,7 @@ export function SellerStorefront() {
               type="button"
               disabled={busy}
               onClick={() => bannerInputRef.current?.click()}
+              className="bz-hover-border"
               style={{
                 position: "absolute",
                 bottom: 10,
@@ -421,6 +422,7 @@ export function SellerStorefront() {
                     disabled={busy}
                     onClick={() => logoInputRef.current?.click()}
                     aria-label="Change logo"
+                    className="bz-hover-border"
                     style={{
                       position: "absolute",
                       bottom: -2,
@@ -475,6 +477,7 @@ export function SellerStorefront() {
                     type="button"
                     disabled={busy}
                     onClick={() => void handleRemoveLogo()}
+                    className="bz-hover-dim"
                     style={{
                       background: "none",
                       border: "none",

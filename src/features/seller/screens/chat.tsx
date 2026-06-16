@@ -26,7 +26,6 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
   const { data: inbox, isLoading, isError, error } = useChatInbox();
   const { invalidateInbox, invalidateMessages } = useInvalidateChat();
   const chatThreads = useMemo(() => inbox?.threads ?? [], [inbox?.threads]);
-  const chatQuickReplies = useMemo(() => inbox?.quickReplies ?? [], [inbox?.quickReplies]);
   const [active, setActive] = useState<ChatThread | null>(null);
   const [mobileInThread, setMobileInThread] = useState(false);
   // True while a chat opened from a product page is being created/fetched, so the
@@ -43,7 +42,6 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [peerTyping, setPeerTyping] = useState(false);
   const [sending, setSending] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
   // Composer focus is restored after each send so the keyboard stays up on mobile.
   const inputRef = useRef<HTMLInputElement>(null);
   const typingStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -183,25 +181,23 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
     }, 1500);
   }, [active?.id]);
 
-  const send = async (text: string, attachment?: ChatMessage["attachment"]) => {
+  const send = async (text: string) => {
     if (!active?.id) {
       toast("Select a conversation first");
       return;
     }
     if (sending) return;
     const trimmed = text.trim();
-    if (!trimmed && !attachment) return;
+    if (!trimmed) return;
 
     const clientMessageId =
       typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}`;
-    const messageType = attachment?.mediaType ?? "text";
     const optimistic: ChatMessage = {
       id: clientMessageId,
       from: "me",
-      text: trimmed || (messageType === "image" ? "Photo" : messageType === "video" ? "Video" : ""),
+      text: trimmed,
       t: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      messageType,
-      attachment,
+      messageType: "text",
       status: "sent",
       createdAt: new Date().toISOString(),
       senderUserId: "",
@@ -214,16 +210,8 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
 
     try {
       const sent = await sendChatMessage(active.id, {
-        body: trimmed || undefined,
+        body: trimmed,
         clientMessageId,
-        attachment: attachment
-          ? {
-              url: attachment.url,
-              thumbnailUrl: attachment.thumbnailUrl ?? undefined,
-              mimeType: attachment.mimeType,
-              mediaType: attachment.mediaType as "image" | "video",
-            }
-          : undefined,
       });
       setMessages((prev) => {
         const withoutSocketDup = prev.filter((m) => m.id !== sent.id);
@@ -236,36 +224,6 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
     } finally {
       setSending(false);
       requestAnimationFrame(() => inputRef.current?.focus());
-    }
-  };
-
-  const onPickMedia = async (file: File) => {
-    if (!active?.id) return;
-    const isVideo = file.type.startsWith("video/");
-    const allowedImage = ["image/jpeg", "image/png", "image/webp"];
-    const allowedVideo = ["video/mp4", "video/quicktime", "video/webm"];
-    if (!isVideo && !allowedImage.includes(file.type)) {
-      toast("Use JPEG, PNG, or WebP images");
-      return;
-    }
-    if (isVideo && !allowedVideo.includes(file.type)) {
-      toast("Use MP4, MOV, or WebM videos");
-      return;
-    }
-    setSending(true);
-    try {
-      const uploaded = isVideo ? await chatApi.uploadVideo(file) : await chatApi.uploadImage(file);
-      await send("", {
-        url: uploaded.url,
-        thumbnailUrl: "thumbnailUrl" in uploaded ? (uploaded.thumbnailUrl as string) : uploaded.url,
-        mediaType: isVideo ? "video" : "image",
-        mimeType: file.type,
-      });
-    } catch (e) {
-      toast(e instanceof Error ? e.message : "Upload failed");
-    } finally {
-      setSending(false);
-      if (fileRef.current) fileRef.current.value = "";
     }
   };
 
@@ -368,16 +326,6 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
             {buyerMode ? t("seller.chat.subtitleBuyer") : t("seller.chat.subtitleSeller")}
           </p>
         </div>
-        {!buyerMode ? (
-          <Button
-            variant="secondary"
-            icon="edit"
-            size="sm"
-            onClick={() => toast("Edit quick replies — coming soon")}
-          >
-            Edit quick replies
-          </Button>
-        ) : null}
       </div>
 
       <div className={`bz-chat-shell${showMobileThread ? " bz-chat-shell--in-thread" : ""}`}>
@@ -522,6 +470,35 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
             </div>
 
             <div className="bz-chat-shell__messages">
+              {/* Keeps buyers and sellers on-platform: off-app deals lose
+                  BazaarCo's protection (and our commission). Scrolls with the
+                  thread so it informs without blocking the conversation. */}
+              <div
+                style={{
+                  flexShrink: 0,
+                  display: "flex",
+                  gap: 8,
+                  alignItems: "flex-start",
+                  padding: "8px 10px",
+                  background: "rgba(247, 127, 0, 0.08)",
+                  border: "1px solid rgba(247, 127, 0, 0.22)",
+                  borderRadius: 10,
+                  fontSize: ".75rem",
+                  lineHeight: 1.4,
+                  color: "var(--ink-700)",
+                }}
+              >
+                <SellerIcon
+                  name="shieldCheck"
+                  size={16}
+                  color="var(--saffron)"
+                  style={{ flexShrink: 0, marginTop: 1 }}
+                />
+                <span>
+                  Keep chats and payments on BazaarCo. Orders settled outside the app aren&apos;t
+                  protected for buyers or sellers.
+                </span>
+              </div>
               {msgsLoading && !messages.length ? (
                 <div style={{ textAlign: "center", color: "var(--ink-400)", fontSize: ".8125rem" }}>
                   Loading messages...
@@ -580,27 +557,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
                       border: m.from === "me" ? "none" : "1px solid var(--line-200)",
                     }}
                   >
-                    {m.attachment?.mediaType === "image" ? (
-                      <a href={m.attachment.url} download target="_blank" rel="noopener noreferrer">
-                        <img
-                          src={m.attachment.thumbnailUrl || m.attachment.url}
-                          alt=""
-                          style={{ maxWidth: "100%", borderRadius: 8, display: "block" }}
-                        />
-                      </a>
-                    ) : m.attachment?.mediaType === "video" ? (
-                      <video
-                        src={m.attachment.url}
-                        controls
-                        style={{ maxWidth: "100%", borderRadius: 8, display: "block" }}
-                      />
-                    ) : null}
-                    {m.text && m.messageType === "text" ? m.text : null}
-                    {m.text && m.messageType !== "text" ? (
-                      <div style={{ marginTop: m.attachment ? 6 : 0, fontSize: ".8125rem" }}>
-                        {m.text}
-                      </div>
-                    ) : null}
+                    {m.text}
                   </div>
                   <div
                     style={{
@@ -628,61 +585,8 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
               ))}
             </div>
 
-            {/* Quick replies */}
-            <div className="bz-chat-shell__quick">
-              {chatQuickReplies.map((q) => (
-                <button
-                  key={q.en}
-                  onClick={() => void send(q.en)}
-                  style={{
-                    flexShrink: 0,
-                    padding: "6px 12px",
-                    background: "var(--tint-blue-50)",
-                    border: "1px solid var(--blue)",
-                    color: "var(--blue)",
-                    borderRadius: 999,
-                    fontSize: ".75rem",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {q.en}
-                </button>
-              ))}
-            </div>
-
             {/* Input */}
             <div className="bz-chat-shell__composer">
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
-                style={{ display: "none" }}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) void onPickMedia(file);
-                }}
-              />
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                disabled={sending}
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: "50%",
-                  background: "#fff",
-                  border: "1px solid var(--line-200)",
-                  cursor: sending ? "not-allowed" : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-                aria-label="Attach media"
-              >
-                <SellerIcon name="image" size={20} color="var(--ink-500)" />
-              </button>
               <input
                 ref={inputRef}
                 type="text"

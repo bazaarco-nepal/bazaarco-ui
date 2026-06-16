@@ -121,11 +121,11 @@ export function SellerAnalytics() {
               <div
                 style={{
                   padding: "8px 14px",
-                  background: "var(--tint-blue-50)",
+                  background: "var(--line-100)",
                   borderRadius: 999,
                   fontSize: ".75rem",
                   fontWeight: 600,
-                  color: "var(--ink-900)",
+                  color: "var(--ink-500)",
                 }}
               >
                 Last 7 days

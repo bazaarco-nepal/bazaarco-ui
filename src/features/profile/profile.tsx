@@ -327,7 +327,7 @@ export function Orders() {
                     )}
                     {canCancelOrder(o) && (
                       <Button
-                        variant="secondary"
+                        variant="danger"
                         disabled={cancelOrder.isPending}
                         onClick={() => setCancelTarget(o)}
                       >

@@ -69,6 +69,7 @@ export function SavedAddressPicker({
           <button
             type="button"
             onClick={onManage}
+            className="bz-hover-tint"
             style={{
               background: "none",
               border: "none",
@@ -76,6 +77,8 @@ export function SavedAddressPicker({
               fontWeight: 700,
               fontSize: ".8125rem",
               cursor: "pointer",
+              borderRadius: "var(--r-sm)",
+              padding: "4px 8px",
             }}
           >
             Manage
@@ -90,6 +93,7 @@ export function SavedAddressPicker({
               key={addr.id}
               type="button"
               onClick={() => onSelect(addr)}
+              className="bz-hover-border"
               style={{
                 width: "100%",
                 textAlign: "left",
@@ -132,6 +136,7 @@ export function SavedAddressPicker({
         <button
           type="button"
           onClick={onUseNew}
+          className="bz-hover-border"
           style={{
             width: "100%",
             textAlign: "left",
@@ -441,6 +446,7 @@ export function AddressesPage() {
                 key={preset}
                 type="button"
                 onClick={() => setForm((f) => ({ ...f, label: preset }))}
+                className="bz-hover-border"
                 style={{
                   padding: "8px 14px",
                   borderRadius: "var(--r-full)",

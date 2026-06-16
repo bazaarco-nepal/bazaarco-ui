@@ -402,7 +402,13 @@ export function ImageLightbox({ images, index, alt, onIndex, onClose }: ImageLig
         >
           {count > 1 ? `${safeIndex + 1} / ${count}` : ""}
         </span>
-        <button type="button" aria-label="Close" onClick={onClose} style={chromeBtn}>
+        <button
+          type="button"
+          aria-label="Close"
+          onClick={onClose}
+          className="bz-hover-tint"
+          style={chromeBtn}
+        >
           <Icon name="x" size={20} />
         </button>
       </div>
@@ -437,6 +443,7 @@ export function ImageLightbox({ images, index, alt, onIndex, onClose }: ImageLig
             type="button"
             aria-label="Previous photo"
             onClick={() => go(-1)}
+            className="bz-hover-tint"
             style={{
               ...chromeBtn,
               position: "absolute",
@@ -453,6 +460,7 @@ export function ImageLightbox({ images, index, alt, onIndex, onClose }: ImageLig
             type="button"
             aria-label="Next photo"
             onClick={() => go(1)}
+            className="bz-hover-tint"
             style={{
               ...chromeBtn,
               position: "absolute",
@@ -488,6 +496,7 @@ export function ImageLightbox({ images, index, alt, onIndex, onClose }: ImageLig
               aria-label={`View photo ${i + 1}`}
               aria-pressed={i === safeIndex}
               onClick={() => onIndex(i)}
+              className="bz-hover-dim"
               style={{
                 width: 48,
                 height: 48,

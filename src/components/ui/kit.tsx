@@ -781,7 +781,7 @@ export function Button({
     fontFamily: "var(--font-sans)",
     fontSize: fs,
     fontWeight: 600,
-    borderRadius: "var(--r-md)",
+    borderRadius: "var(--r-control)",
     border: "1.5px solid transparent",
     cursor: disabled ? "not-allowed" : "pointer",
     display: "inline-flex",
@@ -799,15 +799,15 @@ export function Button({
     textDecoration: "none",
     ...style,
   };
-  // Primary = recommended action (Continue, Submit, Buy). Secondary = alternate / cancel (red outline).
+  // Primary = recommended action (Continue, Submit, Buy). Secondary = alternate / neutral outline.
   const variants = {
     primary: { background: "var(--blue)", color: "#fff", borderColor: "var(--blue)" },
     // Secondary colors are themeable: a skin (e.g. Fluent) can remap them via
-    // --btn-secondary-*; with no override they fall back to the red outline.
+    // --btn-secondary-*; with no override they fall back to neutral ink outline.
     secondary: {
       background: "#fff",
-      color: "var(--btn-secondary-fg, var(--red))",
-      borderColor: "var(--btn-secondary-border, var(--red))",
+      color: "var(--btn-secondary-fg, var(--ink-700))",
+      borderColor: "var(--btn-secondary-border, var(--ink-700))",
     },
     ghost: { background: "transparent", color: "var(--ink-500)", borderColor: "transparent" },
     danger: { background: "#fff", color: "var(--danger)", borderColor: "var(--danger)" },
@@ -826,9 +826,9 @@ export function Button({
   if (hov && !disabled) {
     if (variant === "primary" || variant === "blue") merged.background = "var(--blue-hover)";
     else if (variant === "secondary") {
-      merged.background = "var(--btn-secondary-hover-bg, var(--red))";
+      merged.background = "var(--btn-secondary-hover-bg, var(--ink-700))";
       merged.color = "var(--btn-secondary-hover-fg, #fff)";
-      merged.borderColor = "var(--btn-secondary-border, var(--red))";
+      merged.borderColor = "var(--btn-secondary-border, var(--ink-700))";
     } else if (variant === "ghost") {
       merged.background = "var(--line-100)";
       merged.color = "var(--ink-700)";
@@ -1062,6 +1062,55 @@ export function RatingStars({
   );
 }
 
+/* ---------- Compact rating ----------
+   The single-line "★ 4.6 (128)" summary used beside a product title. Rating
+   honesty: with zero reviews it shows an OUTLINE star + "No reviews yet" rather
+   than a filled gold star against "(0)", which reads like a real score. */
+export function RatingInline({
+  rating,
+  count,
+  size = 14,
+}: {
+  rating: number;
+  count?: number | null;
+  size?: number;
+}) {
+  const reviewCount = toReviewCount(count) ?? 0;
+  if (reviewCount <= 0) {
+    return (
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          fontSize: ".8125rem",
+          color: "var(--ink-400)",
+        }}
+      >
+        <Icon name="star" size={size} color="var(--ink-300)" fill="none" />
+        No reviews yet
+      </span>
+    );
+  }
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        fontSize: ".8125rem",
+        color: "var(--ink-500)",
+      }}
+    >
+      <Icon name="star" size={size} color="var(--gold)" fill="var(--gold)" />
+      <span className="tnum" style={{ color: "var(--ink-700)", fontWeight: 700 }}>
+        {toRatingNumber(rating).toFixed(1)}
+      </span>
+      <span className="tnum">({reviewCount.toLocaleString("en-IN")})</span>
+    </span>
+  );
+}
+
 /* ---------- Chips / badges ---------- */
 export function Chip({
   children,
@@ -1106,6 +1155,64 @@ export function Chip({
     </span>
   );
 }
+
+/* ---------- Badge — the single pill system ----------
+   One shape for every status/discount/trust pill: a fully-rounded, borderless
+   pill at a fixed small height with consistent padding and medium-weight text.
+   Meaning comes through semantic colour ONLY — a soft tint fill + matching text —
+   so no badge ever reads as an outlined button or competes on shape. `dot` adds a
+   small solid status dot and `icon` a leading glyph: redundant, non-colour cues
+   so a badge still reads for colourblind users. */
+export function Badge({
+  children,
+  tone = "neutral",
+  dot = false,
+  icon,
+}: {
+  children: React.ReactNode;
+  tone?: "neutral" | "success" | "danger" | "saffron" | "blue";
+  dot?: boolean;
+  icon?: string;
+}) {
+  // Every tone is the same recipe — a soft tint fill + a matching foreground —
+  // so badges differ ONLY by colour, never by border or shape.
+  const tones = {
+    neutral: { bg: "var(--line-100)", fg: "var(--ink-700)" },
+    success: { bg: "rgba(22,163,74,.12)", fg: "var(--success)" },
+    danger: { bg: "rgba(185,28,28,.1)", fg: "var(--danger)" },
+    saffron: { bg: "rgba(247,127,0,.12)", fg: "#b85e00" },
+    blue: { bg: "var(--tint-blue-50)", fg: "var(--blue)" },
+  };
+  const tn = tones[tone] ?? tones.neutral;
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        height: 26,
+        padding: "0 11px",
+        borderRadius: "var(--r-pill)",
+        background: tn.bg,
+        color: tn.fg,
+        fontSize: ".75rem",
+        fontWeight: 600,
+        whiteSpace: "nowrap",
+        lineHeight: 1,
+      }}
+    >
+      {dot && (
+        <span
+          aria-hidden
+          style={{ width: 7, height: 7, borderRadius: "50%", background: tn.fg, flex: "0 0 auto" }}
+        />
+      )}
+      {icon && <Icon name={icon} size={14} />}
+      {children}
+    </span>
+  );
+}
+
 export function StatusPill({ status }) {
   const { t } = useTranslation();
   const map = {
@@ -1765,7 +1872,7 @@ export function VideoPlayer({
               top: 0,
               bottom: 0,
               width: `${(t / dur) * 100}%`,
-              background: "var(--red)",
+              background: "var(--blue)",
               borderRadius: 2,
             }}
           />
@@ -1773,6 +1880,7 @@ export function VideoPlayer({
         {!compact && (
           <div style={{ display: "flex", alignItems: "center", gap: 12, color: "#fff" }}>
             <button
+              aria-label={playing ? "Pause" : "Play"}
               onClick={() => setPlaying((p) => !p)}
               style={{
                 background: "none",
@@ -1786,6 +1894,7 @@ export function VideoPlayer({
               <Icon name={playing ? "pause" : "play"} size={18} fill="#fff" />
             </button>
             <button
+              aria-label={muted ? "Unmute" : "Mute"}
               onClick={() => setMuted((m) => !m)}
               style={{
                 background: "none",
@@ -2577,6 +2686,122 @@ export function ChipGroup({ options, value, onChange }) {
   );
 }
 
+/* ---------- OptionChip — one selectable variant option ----------
+   Shared by every variant picker (PDP colour/size groups, flat options, and the
+   buy-now sheet) so selection looks identical everywhere: ONE selected-state
+   treatment — filled blue tint + matching border + bolder text. Supports an
+   optional swatch image, an `unavailable` state (no SKU backs it → disabled,
+   dimmed) and a `soldOut` state (backed but out of stock → struck through with a
+   "sold out" tag). Colour is never the only signal: sold-out also carries the
+   strike-through and tag. */
+export function OptionChip({
+  label,
+  selected = false,
+  unavailable = false,
+  soldOut = false,
+  image,
+  imageAlt,
+  onImageClick,
+  trailing,
+  onClick,
+}: {
+  label: React.ReactNode;
+  selected?: boolean;
+  unavailable?: boolean;
+  soldOut?: boolean;
+  image?: string | null;
+  imageAlt?: string;
+  onImageClick?: () => void;
+  trailing?: React.ReactNode;
+  onClick?: () => void;
+}) {
+  const hasImg = Boolean(image);
+  const fg = unavailable
+    ? "var(--ink-300)"
+    : selected
+      ? "var(--blue)"
+      : soldOut
+        ? "var(--ink-400)"
+        : "var(--ink-700)";
+  return (
+    <button
+      type="button"
+      disabled={unavailable}
+      aria-pressed={selected}
+      onClick={onClick}
+      style={{
+        display: "inline-flex",
+        flexDirection: hasImg ? "column" : "row",
+        alignItems: "center",
+        gap: 6,
+        minHeight: 44,
+        padding: hasImg ? "8px 10px" : "0 16px",
+        borderRadius: "var(--r-control)",
+        cursor: unavailable ? "not-allowed" : "pointer",
+        border: `1.5px solid ${selected ? "var(--blue)" : "var(--line-200)"}`,
+        background: selected ? "var(--tint-blue-50)" : "#fff",
+        color: fg,
+        fontWeight: selected ? 700 : 500,
+        fontSize: ".875rem",
+        opacity: unavailable ? 0.45 : soldOut ? 0.7 : 1,
+        position: "relative",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {hasImg && (
+        <img
+          src={image!}
+          alt={imageAlt ?? ""}
+          onClick={
+            onImageClick
+              ? (e) => {
+                  e.stopPropagation();
+                  onImageClick();
+                }
+              : undefined
+          }
+          style={{
+            width: 48,
+            height: 48,
+            objectFit: "cover",
+            borderRadius: "var(--r-sm)",
+            display: "block",
+            filter: unavailable || soldOut ? "grayscale(1)" : "none",
+            cursor: onImageClick ? "zoom-in" : undefined,
+          }}
+        />
+      )}
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "baseline",
+          gap: 6,
+          textDecoration: soldOut ? "line-through" : "none",
+        }}
+      >
+        {label}
+        {trailing}
+      </span>
+      {soldOut && (
+        <span
+          style={{
+            position: "absolute",
+            bottom: -1,
+            right: -1,
+            fontSize: ".6rem",
+            background: "var(--ink-300)",
+            color: "#fff",
+            padding: "1px 4px",
+            borderRadius: "var(--r-sm)",
+          }}
+        >
+          sold out
+        </span>
+      )}
+    </button>
+  );
+}
+
 /* ---------- Mobile sticky buy bar (guide §3.6) ---------- */
 export function MobileBuyBar({
   onAdd,
@@ -2619,17 +2844,22 @@ export function MobileBuyBar({
           onClick={onBargain}
           className="bz-pdp-offer-btn"
           style={{
-            flex: "0 0 46px",
+            flex: "0 0 auto",
             height: 46,
+            padding: "0 12px",
             borderRadius: "var(--r-md)",
             color: "var(--red)",
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
+            gap: 4,
             cursor: "pointer",
+            fontSize: 11,
+            fontWeight: 700,
           }}
         >
-          <Icon name="bargain" size={20} />
+          <Icon name="bargain" size={18} />
+          <span>Offer</span>
         </button>
       ) : null}
       {/* Add to cart — outlined navy, secondary to the solid Buy now. */}
@@ -3274,7 +3504,7 @@ export function DeliverToModal({ open, value, onClose, onSave }) {
         </div>
 
         <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-          <Button variant="secondary" full onClick={onClose}>
+          <Button variant="ghost" full onClick={onClose}>
             Cancel
           </Button>
           <Button

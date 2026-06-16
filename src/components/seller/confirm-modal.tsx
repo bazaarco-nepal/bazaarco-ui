@@ -3,20 +3,28 @@
 import { useEffect } from "react";
 
 import { Button } from "@/components/ui";
+import { SellerIcon } from "@/features/seller/_shared/icons";
 
-// Destructive confirmation for a seller deleting one of their listings. Mirrors
-// LogoutConfirmModal so the seller console keeps one confirm-dialog look; the
-// only red affordance is the delete itself.
-export function ProductDeleteConfirmModal({
+export function ConfirmModal({
   open,
   pending,
-  productName,
+  title,
+  message,
+  confirmLabel,
+  confirmVariant = "danger",
+  cancelLabel = "Cancel",
+  icon,
   onConfirm,
   onCancel,
 }: {
   open: boolean;
-  pending: boolean;
-  productName: string;
+  pending?: boolean;
+  title: string;
+  message: React.ReactNode;
+  confirmLabel: string;
+  confirmVariant?: "danger" | "primary";
+  cancelLabel?: string;
+  icon?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
@@ -40,7 +48,7 @@ export function ProductDeleteConfirmModal({
     <div
       role="dialog"
       aria-modal="true"
-      aria-labelledby="product-delete-title"
+      aria-labelledby="bz-confirm-title"
       onClick={() => {
         if (!pending) onCancel();
       }}
@@ -56,9 +64,9 @@ export function ProductDeleteConfirmModal({
       }}
     >
       <style>{`
-        .bz-product-delete__actions { display: flex; gap: 10px; flex-direction: row; }
+        .bz-confirm__actions { display: flex; gap: 10px; flex-direction: row; }
         @media (max-width: 480px) {
-          .bz-product-delete__actions { flex-direction: column-reverse; }
+          .bz-confirm__actions { flex-direction: column-reverse; }
         }
       `}</style>
       <div
@@ -73,8 +81,17 @@ export function ProductDeleteConfirmModal({
           boxShadow: "var(--sh-3)",
         }}
       >
+        {icon && (
+          <div style={{ marginBottom: 12 }}>
+            <SellerIcon
+              name={icon}
+              size={28}
+              color={confirmVariant === "danger" ? "var(--danger)" : "var(--blue)"}
+            />
+          </div>
+        )}
         <h3
-          id="product-delete-title"
+          id="bz-confirm-title"
           style={{
             margin: "0 0 8px",
             fontSize: "1.125rem",
@@ -82,9 +99,9 @@ export function ProductDeleteConfirmModal({
             color: "var(--ink-900)",
           }}
         >
-          Delete this product?
+          {title}
         </h3>
-        <p
+        <div
           style={{
             margin: "0 0 22px",
             color: "var(--ink-500)",
@@ -92,16 +109,15 @@ export function ProductDeleteConfirmModal({
             lineHeight: 1.55,
           }}
         >
-          <strong>{productName}</strong> and its reviews, questions and ratings will be permanently
-          removed. This can&rsquo;t be undone.
-        </p>
+          {message}
+        </div>
 
-        <div className="bz-product-delete__actions">
+        <div className="bz-confirm__actions">
           <Button variant="ghost" full disabled={pending} onClick={onCancel}>
-            Cancel
+            {cancelLabel}
           </Button>
-          <Button variant="danger" full loading={pending} onClick={onConfirm}>
-            {pending ? "Deleting…" : "Delete product"}
+          <Button variant={confirmVariant} full loading={pending} onClick={onConfirm}>
+            {confirmLabel}
           </Button>
         </div>
       </div>

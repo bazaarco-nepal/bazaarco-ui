@@ -67,7 +67,7 @@ function BargainOfferCard({
     <div
       style={{
         background: "#fff",
-        border: `1.5px solid ${status === "pending" ? "var(--red)" : "var(--line-200)"}`,
+        border: `1.5px solid ${status === "pending" ? "var(--blue)" : "var(--line-200)"}`,
         borderRadius: "var(--r-lg)",
         padding: 14,
         display: "flex",
@@ -207,7 +207,7 @@ function BargainOfferCard({
         {status === "pending" && !countering && (
           <div style={{ marginTop: 10 }}>
             {/* One tap each: accept, counter at the suggested split, or reject. */}
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
               <Button
                 variant="primary"
                 size="sm"
@@ -230,9 +230,8 @@ function BargainOfferCard({
               >
                 Counter Rs {fmtRs(suggestion)}
               </Button>
-              <Button
-                variant="danger"
-                size="sm"
+              <button
+                type="button"
                 onClick={async () => {
                   try {
                     await rejectMutation.mutateAsync(o.id);
@@ -241,9 +240,20 @@ function BargainOfferCard({
                     toast("Could not reject offer");
                   }
                 }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: "4px 8px",
+                  cursor: "pointer",
+                  fontSize: ".75rem",
+                  fontWeight: 600,
+                  color: "var(--danger)",
+                  textDecoration: "underline",
+                  textUnderlineOffset: 2,
+                }}
               >
                 Reject
-              </Button>
+              </button>
             </div>
             <button
               type="button"
@@ -260,6 +270,8 @@ function BargainOfferCard({
                 fontSize: ".75rem",
                 fontWeight: 600,
                 color: "var(--blue)",
+                textDecoration: "underline",
+                textUnderlineOffset: 2,
               }}
             >
               Counter a different amount

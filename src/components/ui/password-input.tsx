@@ -25,6 +25,7 @@ export function PasswordInput({ inputStyle, style, ...props }: PasswordInputProp
         type="button"
         onClick={() => setVisible((v) => !v)}
         aria-label={visible ? "Hide password" : "Show password"}
+        className="bz-hover-tint"
         style={{
           position: "absolute",
           right: 10,

@@ -63,6 +63,7 @@ export function AskQuestionModal({ productId, onClose }: AskQuestionModalProps) 
             type="button"
             aria-label="Close"
             onClick={onClose}
+            className="bz-hover-tint"
             style={{
               marginLeft: "auto",
               width: 32,

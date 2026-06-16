@@ -302,6 +302,7 @@ export function SellerShell({ screen, children }: { screen: string; children: Re
             <button
               onClick={() => setOpenMobile(true)}
               aria-label={t("seller.menu")}
+              className="bz-hover-border"
               style={{
                 width: 40,
                 height: 40,

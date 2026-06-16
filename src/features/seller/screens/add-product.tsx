@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { Button, Spinner, Price, EmptyState, AppLink } from "@/components/ui";
 import { SellerIcon } from "../_shared/icons";
 import {
-  FormSectionNav,
   FormActionBar,
   MessageBar,
   InfoTip,
@@ -13,8 +12,6 @@ import {
   scrollToSection,
   ADD_PRODUCT_DRAFT_KEY,
   productDraftHasContent,
-  type FormSection,
-  type SectionState,
 } from "../_shared/form-workflow";
 import { ProductPhotoPicker, type ProductPhoto } from "@/components/seller/product-photo-picker";
 import { SellerVerificationBlocked } from "@/components/seller/seller-verification-banner";
@@ -476,6 +473,7 @@ export function CategoryAttrFields({
               type="button"
               onClick={addCustom}
               disabled={!newMetaLabel.trim() || !newMetaValue.trim()}
+              className="bz-hover-border"
               style={{
                 ...buttonStyle,
                 borderColor: "var(--blue)",
@@ -485,7 +483,12 @@ export function CategoryAttrFields({
             >
               Add
             </button>
-            <button type="button" onClick={cancelCustom} style={buttonStyle}>
+            <button
+              type="button"
+              onClick={cancelCustom}
+              className="bz-hover-border"
+              style={buttonStyle}
+            >
               Cancel
             </button>
           </div>
@@ -1079,12 +1082,6 @@ export function SellerAddProduct({
     variants: (hasVariants ? variantsOk : Boolean(price && stock)) && saleValid,
     bargain: bargainFloorOk,
   };
-  const sectionTouched = {
-    media: productPhotos.length > 0,
-    basics: Boolean(title || description || category),
-    variants: Boolean(price || stock || hasVariants || onSale),
-    bargain: !bargainOk || Boolean(bargainMinPrice),
-  };
   const SECTION_DEFS: Array<{ id: string; label: string; key: keyof typeof sectionDone }> = [
     { id: "sec-media", label: "Photos", key: "media" },
     { id: "sec-basics", label: "Product details", key: "basics" },
@@ -1093,10 +1090,8 @@ export function SellerAddProduct({
   ];
   const navIds = [...SECTION_DEFS.map((s) => s.id), "sec-review"];
   // Paged wizard: one step visible at a time. `step` is the index into navIds;
-  // the rail, Back/Next and the review "Fix" buttons all drive it. (Replaces the
-  // old single-scroll + scroll-spy behaviour.)
+  // Back/Next and the review "Fix" buttons drive it.
   const [step, setStep] = useState(0);
-  const activeSection = navIds[step] ?? navIds[0];
   const goToNav = (idx: number) => {
     const clamped = Math.max(0, Math.min(navIds.length - 1, idx));
     setStep(clamped);
@@ -1119,24 +1114,6 @@ export function SellerAddProduct({
     sectionDone.bargain,
   ];
   const canAdvance = step >= stepComplete.length || stepComplete[step];
-  const sections: FormSection[] = [
-    ...SECTION_DEFS.map((s): FormSection => {
-      // Paged wizard: the step you're on reads "In progress", finished steps get
-      // a green check, attempted-but-incomplete steps flag an error, the rest are
-      // "To do". (Only the current step is ever "active".)
-      let state: SectionState;
-      if (sectionDone[s.key]) state = "done";
-      else if (s.id === activeSection) state = "active";
-      else if (submitAttempted && sectionTouched[s.key]) state = "error";
-      else state = "todo";
-      return { id: s.id, label: s.label, state };
-    }),
-    {
-      id: "sec-review",
-      label: "Review & publish",
-      state: canPublish ? "done" : activeSection === "sec-review" ? "active" : "todo",
-    },
-  ];
 
   // Publish-readiness checklist — one source of truth, shared by the Review
   // step and the sticky live-preview panel so they can never drift apart.
@@ -1942,7 +1919,6 @@ export function SellerAddProduct({
   return (
     <div className="bz-seller-page bz-seller-page--wide">
       <div className="bz-seller-add-layout">
-        <FormSectionNav sections={sections} activeId={activeSection} onJump={goToSection} />
         <div className="bz-seller-add-form">
           <SellerHelpBar />
 
@@ -2778,7 +2754,11 @@ export function SellerAddProduct({
                                 }}
                                 placeholder="Add a choice"
                               />
-                              <button type="button" onClick={() => submitChoiceInput(group.id)}>
+                              <button
+                                type="button"
+                                onClick={() => submitChoiceInput(group.id)}
+                                className="bz-hover-border"
+                              >
                                 Add
                               </button>
                             </div>

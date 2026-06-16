@@ -87,7 +87,7 @@ export function SellerInbox() {
           actions={
             <button
               onClick={() => setView((v) => (v === "list" ? "kanban" : "list"))}
-              className="bz-mobile-hide"
+              className="bz-mobile-hide bz-hover-border"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -130,6 +130,7 @@ export function SellerInbox() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search order ID, buyer, or item"
+              aria-label="Search orders"
               style={{
                 width: "100%",
                 padding: "10px 12px 10px 36px",
@@ -146,6 +147,7 @@ export function SellerInbox() {
               <button
                 onClick={() => setSearch("")}
                 aria-label="Clear search"
+                className="bz-hover-tint"
                 style={{
                   position: "absolute",
                   right: 8,

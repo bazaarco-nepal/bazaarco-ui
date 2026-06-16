@@ -825,10 +825,10 @@ function AccountMenuPanel({
         onNavigate={() => goAndClose("wishlist")}
       />
       <NavMenuItem
-        icon="video"
-        label={t("nav.watch")}
-        href={pathFromScreen("video")}
-        onNavigate={() => goAndClose("video")}
+        icon="message"
+        label={t("nav.messages")}
+        href={pathFromScreen("messages")}
+        onNavigate={() => goAndClose("messages")}
       />
       <NavMenuItem
         icon="bargain"

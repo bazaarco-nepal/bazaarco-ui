@@ -1,12 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button, Chip, ChipGroup, ApiState } from "@/components/ui";
+import { Button, Chip, ApiState } from "@/components/ui";
 import { formatNPR } from "@/lib/money";
 import { useSellerLedger } from "@/hooks/use-seller";
 import { pathFromScreen } from "@/config/routes";
 import { SellerHelpBar, SellerPageHeader, Card } from "../_shared/components";
+import { SupportContactModal } from "@/components/seller/support-contact-modal";
 
 /* ---------- 4.6 Payouts Ledger ---------- */
 export function SellerLedger() {
@@ -19,22 +20,13 @@ export function SellerLedger() {
     "Seller payout support",
   )}&body=${encodeURIComponent("Hi BazaarCo team,\n\nI need help with my seller payouts.\n\n")}`;
   const supportWhatsapp = "https://wa.me/9779700053075";
+  const [supportOpen, setSupportOpen] = useState(false);
   const saveAsPdf = () => {
     if (typeof window === "undefined") return;
     window.print();
   };
   const talkToSupport = () => {
-    if (typeof window === "undefined") return;
-    const message = `Hi BazaarCo team,\n\nI need help with my seller payouts.`;
-    const whatsappUrl = `https://wa.me/9779700053075?text=${encodeURIComponent(message)}`;
-    const choice = window.confirm(
-      `Contact support via:\n\n[OK] WhatsApp: ${supportPhone}\n\n[Cancel] Email: ${supportEmail}`,
-    );
-    if (choice) {
-      window.open(whatsappUrl, "_blank");
-    } else {
-      window.location.href = supportMailto;
-    }
+    setSupportOpen(true);
   };
   const statusLabel = {
     received: {
@@ -73,18 +65,6 @@ export function SellerLedger() {
                 {t("seller.common.back")}
               </Button>
             }
-          />
-        </div>
-
-        <div className="bz-no-print" style={{ marginBottom: 14 }}>
-          <ChipGroup
-            options={[
-              { value: "week", label: "This week" },
-              { value: "month", label: "This month" },
-              { value: "all", label: "All time" },
-            ]}
-            value="week"
-            onChange={() => {}}
           />
         </div>
 
@@ -157,6 +137,15 @@ export function SellerLedger() {
             Talk to support
           </Button>
         </div>
+
+        <SupportContactModal
+          open={supportOpen}
+          onClose={() => setSupportOpen(false)}
+          whatsappUrl={supportWhatsapp}
+          emailUrl={supportMailto}
+          phone={supportPhone}
+          email={supportEmail}
+        />
       </div>
     </ApiState>
   );

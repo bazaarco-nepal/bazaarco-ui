@@ -71,6 +71,7 @@ export function SectionTabs({ sections, offset = 64 }: SectionTabsProps) {
             type="button"
             aria-pressed={on}
             onClick={() => jump(s.id)}
+            className="bz-hover-border"
             style={{
               flexShrink: 0,
               padding: "8px 16px",

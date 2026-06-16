@@ -5,18 +5,15 @@
    (Fluent in the seller panel today).
    ============================================================ */
 
-/* Add/Edit Product is a three-zone layout: a sticky step rail docked flush on
-   the left, the editable form column capped for readability, and the freed
-   right gutter holding a sticky live preview + publish checklist. Named grid
-   areas keep the source order (rail → form → preview) while letting the
-   responsive rules re-flow them. (Single column originally; see tokens.css.) */
+/* Add/Edit Product is a two-zone layout: the editable form column on the left
+   (grows to fill the freed space so there's no dead gutter), and a sticky live
+   preview + publish checklist pinned to the right, capped compact (~360px, ≤20%
+   of a wide screen) so it never dominates. (Single column originally; see
+   tokens.css.) */
 .bz-seller-add-layout {
-  grid-template-areas: "rail form preview";
-  grid-template-columns: 216px minmax(0, 680px) minmax(300px, 1fr);
+  grid-template-areas: "form preview";
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
   gap: 26px;
-}
-.bz-seller-add-layout > .bz-form-nav {
-  grid-area: rail;
 }
 .bz-seller-add-form {
   grid-area: form;
@@ -666,14 +663,14 @@
 }
 
 /* ── ≤1100: the live preview drops beneath the form ──────────── */
-/* Rail + capped form stay side by side, anchored left; the preview moves to a
-   full-width row under the form (matching add-product.html's reflow). */
+/* The capped form stays anchored left; the preview moves to a full-width row
+   under the form (matching add-product.html's reflow). */
 @media (max-width: 1100px) {
   .bz-seller-add-layout {
     grid-template-areas:
-      "rail form"
-      ".    preview";
-    grid-template-columns: 216px minmax(0, 680px);
+      "form"
+      "preview";
+    grid-template-columns: minmax(0, 680px);
     justify-content: start;
   }
   .bz-seller-add-preview {
@@ -682,11 +679,10 @@
   }
 }
 
-/* ── ≤980: rail collapses to a horizontal strip on top ───────── */
+/* ── ≤980: form and preview stack full-width ─────────────────── */
 @media (max-width: 980px) {
   .bz-seller-add-layout {
     grid-template-areas:
-      "rail"
       "form"
       "preview";
     grid-template-columns: minmax(0, 1fr);

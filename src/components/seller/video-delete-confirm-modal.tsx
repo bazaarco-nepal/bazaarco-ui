@@ -58,7 +58,7 @@ export function VideoDeleteConfirmModal({
       <style>{`
         .bz-video-delete__actions { display: flex; gap: 10px; flex-direction: row; }
         @media (max-width: 480px) {
-          .bz-video-delete__actions { flex-direction: column; }
+          .bz-video-delete__actions { flex-direction: column-reverse; }
         }
       `}</style>
       <div

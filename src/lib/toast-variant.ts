@@ -23,7 +23,6 @@ const INFO_PATTERNS = [
   /^use jpeg/i,
   /^use mp4/i,
   /^coming soon/i,
-  /^edit quick replies/i,
 ];
 
 const WARNING_PATTERNS = [/\bwarning\b/i, /\bcaution\b/i, /^max \d+/i, /^only \d+ left/i];

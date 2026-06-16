@@ -344,7 +344,7 @@ function StoreSheetPortal({
         <div className="bz-store-sheet-handle" />
         <div className="bz-store-sheet-head">
           <span>{title}</span>
-          <button type="button" onClick={onClose} aria-label={title}>
+          <button type="button" onClick={onClose} aria-label={title} className="bz-hover-tint">
             <SellerIcon name="x" size={18} color="var(--ink-500)" />
           </button>
         </div>

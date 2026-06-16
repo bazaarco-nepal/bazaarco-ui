@@ -674,7 +674,9 @@ export function SellerDashboard() {
             }}
           >
             <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", fontWeight: 600 }}>
-              {range === "today" ? "Earnings today" : `Earnings · ${rangeLabel}`}
+              {range === "today"
+                ? t("seller.dashboard.earningsToday")
+                : t("seller.dashboard.earningsRange", { range: rangeLabel })}
             </div>
             <div
               className="tnum bz-stat-xl"
@@ -696,7 +698,8 @@ export function SellerDashboard() {
                 gap: 6,
               }}
             >
-              <SellerIcon name="wallet" size={14} color="var(--success)" /> From your dashboard
+              <SellerIcon name="wallet" size={14} color="var(--success)" />{" "}
+              {t("seller.dashboard.fromDashboard")}
             </div>
             <div
               style={{
@@ -707,9 +710,9 @@ export function SellerDashboard() {
               }}
             >
               {[
-                { k: "Orders", v: String(ordersPlaced) },
-                { k: "To pack", v: String(kpis[1]?.value ?? "0") },
-                { k: "Returns", v: "0" },
+                { k: t("seller.dashboard.orders"), v: String(ordersPlaced) },
+                { k: t("seller.dashboard.toPack"), v: String(kpis[1]?.value ?? "0") },
+                { k: t("seller.dashboard.returns"), v: "0" },
               ].map((s) => (
                 <div
                   key={s.k}
@@ -751,7 +754,7 @@ export function SellerDashboard() {
               }}
             >
               <div style={{ fontWeight: 600, fontSize: ".9375rem", color: "var(--ink-900)" }}>
-                Today's tasks
+                {t("seller.dashboard.todaysTasks")}
               </div>
               {tasks.length > 0 ? (
                 <Chip tone="red" size="sm">
@@ -840,15 +843,16 @@ export function SellerDashboard() {
                       e.stopPropagation();
                       t.action.onAct();
                     }}
+                    className="bz-hover-dim"
                     style={{
                       position: "relative",
                       zIndex: 2,
                       flexShrink: 0,
                       height: 32,
                       padding: "0 12px",
-                      background: t.urgent ? "var(--red)" : "#fff",
+                      background: t.urgent ? "var(--blue)" : "#fff",
                       color: t.urgent ? "#fff" : "var(--blue)",
-                      border: t.urgent ? "1.5px solid var(--red)" : "1.5px solid var(--blue)",
+                      border: t.urgent ? "1.5px solid var(--blue)" : "1.5px solid var(--blue)",
                       borderRadius: "var(--r-md)",
                       fontWeight: 600,
                       fontSize: ".75rem",

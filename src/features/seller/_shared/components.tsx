@@ -47,7 +47,7 @@ export function SellerPageHeader({
                   </span>
                 )}
                 {c.onClick && !last ? (
-                  <button type="button" onClick={c.onClick}>
+                  <button type="button" onClick={c.onClick} className="bz-hover-tint">
                     {c.label}
                   </button>
                 ) : (
@@ -191,6 +191,7 @@ export function SelectMenu({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={ariaLabel}
+        className="bz-hover-border"
         style={{
           display: "inline-flex",
           alignItems: "center",
@@ -288,9 +289,10 @@ export function OrderCard({
   return (
     <button
       onClick={() => onOpen(o)}
+      className="bz-hover-lift"
       style={{
         background: "#fff",
-        border: `1.5px solid ${o.status === "placed" ? "var(--danger)" : "var(--line-200)"}`,
+        border: `1.5px solid ${o.status === "placed" ? "var(--blue)" : "var(--line-200)"}`,
         borderRadius: "var(--r-lg)",
         padding: 12,
         textAlign: "left",
@@ -675,6 +677,7 @@ export function ChecklistRow({
         <button
           type="button"
           onClick={onFix}
+          className="bz-hover-border"
           style={{
             fontSize: ".8125rem",
             color: "var(--blue)",

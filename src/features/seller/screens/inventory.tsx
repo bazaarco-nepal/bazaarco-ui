@@ -33,6 +33,7 @@ import {
 } from "../_shared/form-workflow";
 import { useIsNarrow } from "../_shared/hooks";
 import { editProductRef, viewProductRef } from "../_shared/refs";
+import { ConfirmModal } from "@/components/seller/confirm-modal";
 
 /* ---------- 4.5 Inventory — swipe-to-sell ---------- */
 const EMPTY_INVENTORY: SellerInventoryItem[] = [];
@@ -95,9 +96,11 @@ export function SellerInventory() {
     // `productDraft.read` is stable (keyed on a constant) — wire listeners once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
   const discardDraft = () => {
     productDraft.clear();
     setDraftPreview(null);
+    setDiscardConfirmOpen(false);
     toast("Draft discarded");
   };
   // Keep the add-product action compact on phones so it stays inline with the
@@ -406,9 +409,23 @@ export function SellerInventory() {
                 <Button variant="primary" size="sm" icon="arrowRight" onClick={() => nav("s-add")}>
                   Continue
                 </Button>
-                <Button variant="secondary" size="sm" onClick={discardDraft}>
+                <button
+                  type="button"
+                  onClick={() => setDiscardConfirmOpen(true)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: "4px 8px",
+                    cursor: "pointer",
+                    fontSize: ".8125rem",
+                    fontWeight: 600,
+                    color: "var(--danger)",
+                    textDecoration: "underline",
+                    textUnderlineOffset: 2,
+                  }}
+                >
                   Discard
-                </Button>
+                </button>
               </div>
             </div>
           )}
@@ -432,6 +449,7 @@ export function SellerInventory() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search products by name"
+                aria-label="Search products"
                 style={{
                   width: "100%",
                   padding: "10px 12px 10px 36px",
@@ -448,6 +466,7 @@ export function SellerInventory() {
                 <button
                   onClick={() => setSearch("")}
                   aria-label="Clear search"
+                  className="bz-hover-tint"
                   style={{
                     position: "absolute",
                     right: 8,
@@ -1244,6 +1263,15 @@ export function SellerInventory() {
         productName={deleteTarget?.name ?? ""}
         onConfirm={() => void confirmDelete()}
         onCancel={() => setDeleteTarget(null)}
+      />
+      <ConfirmModal
+        open={discardConfirmOpen}
+        title="Discard this draft?"
+        message="Your unsaved product listing will be permanently deleted. This cannot be undone."
+        confirmLabel="Discard draft"
+        cancelLabel="Keep editing"
+        onConfirm={discardDraft}
+        onCancel={() => setDiscardConfirmOpen(false)}
       />
     </>
   );

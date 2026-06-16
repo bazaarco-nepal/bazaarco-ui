@@ -9,8 +9,9 @@ import {
   Button,
   Spinner,
   IconButton,
-  RatingStars,
-  Chip,
+  RatingInline,
+  Badge,
+  OptionChip,
   StatusPill,
   Price,
   Placeholder,
@@ -59,6 +60,7 @@ import {
 import { bargainExpiryLabel } from "@/lib/bargain-expiry";
 import { formatNPR } from "@/lib/money";
 import { matchSelectedVariants, toggleOption, variantBacksOption } from "@/lib/variant-selection";
+import { optionImageFor, selectionHeroImage, variantSwatchImage } from "@/lib/variant-images";
 import { ApiRequestError } from "@/services/api/http";
 import type { PdpProps } from "@/types";
 import {
@@ -680,38 +682,20 @@ function BuyNowSheet({
                 Choose an option
               </div>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                {pricedVariants.map((v) => {
-                  const active = v.id === selVariantId;
-                  const out = (v.stock ?? 0) <= 0;
-                  return (
-                    <button
-                      key={v.id}
-                      type="button"
-                      disabled={out}
-                      onClick={() => onPickVariant(v.id)}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "baseline",
-                        gap: 6,
-                        minHeight: 50,
-                        padding: "0 18px",
-                        borderRadius: "var(--r-md)",
-                        cursor: out ? "not-allowed" : "pointer",
-                        border: `2px solid ${active ? "var(--ink-900)" : "var(--line-200)"}`,
-                        background: active ? "var(--ink-900)" : "#fff",
-                        color: out ? "var(--ink-300)" : active ? "#fff" : "var(--ink-800)",
-                        fontWeight: 700,
-                        fontSize: "1rem",
-                        textDecoration: out ? "line-through" : "none",
-                      }}
-                    >
-                      {v.name}
-                      <span className="tnum" style={{ fontSize: ".875rem", opacity: 0.85 }}>
+                {pricedVariants.map((v) => (
+                  <OptionChip
+                    key={v.id}
+                    label={v.name}
+                    selected={v.id === selVariantId}
+                    soldOut={(v.stock ?? 0) <= 0}
+                    trailing={
+                      <span className="tnum" style={{ fontSize: ".8125rem", opacity: 0.85 }}>
                         {formatNPR(v.price)}
                       </span>
-                    </button>
-                  );
-                })}
+                    }
+                    onClick={() => onPickVariant(v.id)}
+                  />
+                ))}
               </div>
             </div>
           )
@@ -858,10 +842,13 @@ export function PDP({ p: pProp }: PdpProps) {
     ? (pricedVariants.find((v) => v.id === resolvedVariantId) ?? null)
     : null;
 
-  // If the selected variant has its own image that isn't already in the main gallery,
-  // prepend it so it always appears as the first (hero) slide — Daraz style.
+  // The photo to feature for the current selection, resolved through the seller's
+  // option-level images when a SKU has no image of its own (see variant-images).
+  // If it isn't already in the main gallery, prepend it so it always appears as the
+  // first (hero) slide — Daraz style.
+  const selectionImage = selectionHeroImage(selVariant, selDimensions, p.optionImages);
   const variantHeroUrl =
-    selVariant?.imageUrl && !gallery.includes(selVariant.imageUrl) ? selVariant.imageUrl : null;
+    selectionImage && !gallery.includes(selectionImage) ? selectionImage : null;
 
   // Gallery slides only — video lives in Watch; PDP links out via PdpWatchVideoCta.
   const gallerySlides = useMemo(() => {
@@ -871,11 +858,10 @@ export function PDP({ p: pProp }: PdpProps) {
     return slides;
   }, [variantHeroUrl, gallery]);
 
-  // When variant changes and brings its own image, jump to slide 0 (the hero).
+  // When the selection brings its own featured image, jump to slide 0 (the hero).
   useEffect(() => {
-    if (selVariant?.imageUrl) setMediaIdx(0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resolvedVariantId]);
+    if (variantHeroUrl) setMediaIdx(0);
+  }, [variantHeroUrl]);
 
   // Full lightbox image list: variant hero first (if not already in gallery), then gallery.
   const lightboxImages = variantHeroUrl ? [variantHeroUrl, ...gallery] : gallery;
@@ -919,6 +905,11 @@ export function PDP({ p: pProp }: PdpProps) {
         ? (selVariant.original ?? null)
         : p.original;
   const disc = shownOriginal ? Math.round((1 - shownPrice / shownOriginal) * 100) : 0;
+  // A trivial discount (< 5%) reads like a bug — "-1% OFF" with a near-identical
+  // strikethrough. Below the threshold we hide both the badge AND the original
+  // price everywhere it's shown, so the price simply reads as the price.
+  const showDiscount = disc >= 5;
+  const displayOriginal = showDiscount ? shownOriginal : null;
   // Per-variant bargaining: check the selected variant's flag, falling back to product-level.
   const bargainingAvailable = selVariant
     ? Boolean(selVariant.allowBargaining ?? p.allowBargaining)
@@ -943,6 +934,18 @@ export function PDP({ p: pProp }: PdpProps) {
   const detailTitleStyle = {
     margin: "0 0 14px",
     fontSize: "1.375rem",
+    fontWeight: 700,
+    color: "var(--ink-900)",
+  } as const;
+  // One scale for every in-column section label (Colour, Size, Quantity) so they
+  // read as the same level — no jump between a muted option label and a bold
+  // "Quantity". The selected value is the only emphasis, via `fieldValueStyle`.
+  const fieldLabelStyle = {
+    fontSize: ".875rem",
+    fontWeight: 600,
+    color: "var(--ink-700)",
+  } as const;
+  const fieldValueStyle = {
     fontWeight: 700,
     color: "var(--ink-900)",
   } as const;
@@ -1003,119 +1006,50 @@ export function PDP({ p: pProp }: PdpProps) {
   const variantPicker = hasPricedVariants ? (
     <div style={{ marginTop: 18 }}>
       {isMultiDimVariant ? (
-        /* Multi-dimensional picker */
+        /* Multi-dimensional picker — one group per dimension (Colour, Size, …) */
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {variantGroups!.map((group) => {
             const selectedOpt = selDimensions[group.name];
             return (
               <div key={group.name}>
-                <div style={{ fontSize: ".875rem", color: "var(--ink-500)", marginBottom: 8 }}>
-                  {group.name}:{" "}
+                <div style={{ ...fieldLabelStyle, marginBottom: 8 }}>
+                  {group.name}
                   {selectedOpt && (
-                    <span style={{ color: "var(--ink-900)", fontWeight: 700 }}>{selectedOpt}</span>
+                    <>
+                      : <span style={fieldValueStyle}>{selectedOpt}</span>
+                    </>
                   )}
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {group.options.map((opt) => {
-                    const active = selectedOpt === opt;
                     const available = isOptionAvailable(group.name, opt);
                     const inStock = isOptionInStock(group.name, opt);
-                    const out = available && !inStock;
-                    // Find a swatch image from any SKU that has this option value
+                    // Swatch for this option: a SKU's exact image for it, else the
+                    // option-level image (e.g. the "Red" colour photo).
                     const swatchImg =
                       pricedVariants.find((v) => v.optionValues?.[group.name] === opt && v.imageUrl)
-                        ?.imageUrl ?? null;
-                    const hasImg = Boolean(swatchImg);
+                        ?.imageUrl ?? optionImageFor(p.optionImages, group.name, opt);
                     return (
-                      <button
+                      <OptionChip
                         key={opt}
-                        type="button"
-                        disabled={!available}
-                        onClick={() => {
-                          // Tapping the active option unselects it — nothing is forced.
-                          setSelDimensions((prev) => toggleOption(prev, group.name, opt));
-                        }}
-                        style={{
-                          display: "inline-flex",
-                          flexDirection: hasImg ? "column" : "row",
-                          alignItems: "center",
-                          gap: hasImg ? 6 : 0,
-                          minHeight: 40,
-                          padding: hasImg ? "8px 10px" : "8px 16px",
-                          borderRadius: "var(--r-md)",
-                          cursor: !available ? "not-allowed" : "pointer",
-                          border: `1.5px solid ${active ? "var(--blue-deep)" : "var(--line-200)"}`,
-                          background: active ? "var(--tint-blue-50)" : "#fff",
-                          color: !available
-                            ? "var(--ink-200)"
-                            : out
-                              ? "var(--ink-400)"
-                              : active
-                                ? "var(--blue-deep)"
-                                : "var(--ink-700)",
-                          fontWeight: active ? 700 : 500,
-                          fontSize: ".8125rem",
-                          opacity: !available ? 0.4 : out ? 0.6 : 1,
-                          position: "relative",
-                        }}
-                      >
-                        {hasImg && (
-                          <img
-                            src={swatchImg!}
-                            alt={opt}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openPhotoLightbox(swatchImg!);
-                            }}
-                            style={{
-                              width: 48,
-                              height: 48,
-                              objectFit: "cover",
-                              borderRadius: "var(--r-sm)",
-                              display: "block",
-                              filter: !available || out ? "grayscale(1)" : "none",
-                              cursor: "zoom-in",
-                            }}
-                          />
-                        )}
-                        <span style={{ textDecoration: out ? "line-through" : "none" }}>{opt}</span>
-                        {out && (
-                          <span
-                            style={{
-                              position: "absolute",
-                              bottom: -1,
-                              right: -1,
-                              fontSize: ".6rem",
-                              background: "var(--ink-300)",
-                              color: "#fff",
-                              padding: "1px 4px",
-                              borderRadius: "var(--r-sm)",
-                            }}
-                          >
-                            sold out
-                          </span>
-                        )}
-                      </button>
+                        label={opt}
+                        selected={selectedOpt === opt}
+                        unavailable={!available}
+                        soldOut={available && !inStock}
+                        image={swatchImg}
+                        imageAlt={opt}
+                        onImageClick={swatchImg ? () => openPhotoLightbox(swatchImg) : undefined}
+                        // Tapping the active option unselects it — nothing is forced.
+                        onClick={() =>
+                          setSelDimensions((prev) => toggleOption(prev, group.name, opt))
+                        }
+                      />
                     );
                   })}
                 </div>
               </div>
             );
           })}
-          {selectedVariants.length > 0 && (
-            <div style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}>
-              Selected:{" "}
-              {selectedVariants.map((v, i) => (
-                <span key={v.id}>
-                  {i > 0 && ", "}
-                  <span style={{ fontWeight: 700, color: "var(--ink-800)" }}>{v.name}</span>
-                  {(v.stock ?? 0) <= 0 && (
-                    <span style={{ color: "var(--danger)" }}> (out of stock)</span>
-                  )}
-                </span>
-              ))}
-            </div>
-          )}
           {selectedVariants.length === 0 &&
             Object.keys(selDimensions).length > 0 &&
             variantGroups!.every((g) => selDimensions[g.name]) && (
@@ -1127,63 +1061,23 @@ export function PDP({ p: pProp }: PdpProps) {
       ) : (
         /* Flat single-dimension picker */
         <>
-          <div style={{ fontSize: ".875rem", color: "var(--ink-500)", marginBottom: 10 }}>
-            Option:{" "}
-            <span style={{ color: "var(--ink-900)", fontWeight: 700 }}>{selVariant?.name}</span>
+          <div style={{ ...fieldLabelStyle, marginBottom: 10 }}>
+            Option: <span style={fieldValueStyle}>{selVariant?.name}</span>
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             {pricedVariants.map((v) => {
-              const active = v.id === selVariantId;
-              const out = (v.stock ?? 0) <= 0;
-              const hasImg = Boolean(v.imageUrl);
+              const swatchImg = variantSwatchImage(v, p.optionImages);
               return (
-                <button
+                <OptionChip
                   key={v.id}
-                  type="button"
-                  disabled={out}
+                  label={v.name}
+                  selected={v.id === selVariantId}
+                  soldOut={(v.stock ?? 0) <= 0}
+                  image={swatchImg}
+                  imageAlt={v.name}
+                  onImageClick={swatchImg ? () => openPhotoLightbox(swatchImg) : undefined}
                   onClick={() => setSelVariantId(v.id)}
-                  style={{
-                    display: "inline-flex",
-                    flexDirection: hasImg ? "column" : "row",
-                    alignItems: "center",
-                    gap: hasImg ? 6 : 0,
-                    padding: hasImg ? "8px 10px" : "10px 20px",
-                    minHeight: 48,
-                    borderRadius: "var(--r-md)",
-                    cursor: out ? "not-allowed" : "pointer",
-                    border: `1.5px solid ${active ? "var(--blue-deep)" : "var(--line-200)"}`,
-                    background: active ? "var(--tint-blue-50)" : "#fff",
-                    color: out ? "var(--ink-300)" : active ? "var(--blue-deep)" : "var(--ink-700)",
-                    fontWeight: 700,
-                    fontSize: ".8125rem",
-                    textDecoration: out ? "line-through" : "none",
-                    opacity: out ? 0.5 : 1,
-                  }}
-                >
-                  {hasImg && (
-                    <img
-                      src={v.imageUrl!}
-                      alt={v.name}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openPhotoLightbox(v.imageUrl!);
-                      }}
-                      style={{
-                        width: 52,
-                        height: 52,
-                        objectFit: "cover",
-                        borderRadius: "var(--r-sm)",
-                        display: "block",
-                        filter: out ? "grayscale(1)" : "none",
-                        cursor: "zoom-in",
-                      }}
-                    />
-                  )}
-                  <span>{v.name}</span>
-                  {out && hasImg && (
-                    <span style={{ fontSize: ".6rem", color: "var(--ink-400)" }}>sold out</span>
-                  )}
-                </button>
+                />
               );
             })}
           </div>
@@ -1411,20 +1305,8 @@ export function PDP({ p: pProp }: PdpProps) {
               >
                 {p.name}
               </h1>
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 4,
-                  fontSize: ".8125rem",
-                  color: "var(--ink-600)",
-                  fontWeight: 600,
-                  whiteSpace: "nowrap",
-                  marginTop: 4,
-                }}
-              >
-                <Icon name="star" size={14} color="var(--gold)" fill="var(--gold)" />
-                {p.rating.toFixed(1)} ({p.reviews})
+              <div style={{ marginTop: 4, whiteSpace: "nowrap" }}>
+                <RatingInline rating={p.rating} count={p.reviews} size={14} />
               </div>
             </div>
             <div className="bz-pdp-price-row">
@@ -1432,13 +1314,14 @@ export function PDP({ p: pProp }: PdpProps) {
                 {isMultiDimVariant && selectedVariants.length === 0 && (
                   <span style={{ fontSize: ".875rem", color: "var(--ink-500)" }}>From</span>
                 )}
-                <Price value={shownPrice} original={shownOriginal ?? undefined} size="lg" />
+                <Price value={shownPrice} original={displayOriginal ?? undefined} size="lg" />
+                {showDiscount && <Badge tone="saffron">-{disc}% OFF</Badge>}
               </div>
             </div>
 
             {/* Backend-driven trust signals — stock, returns, warranty, secure checkout */}
             <div style={{ marginTop: 14 }}>
-              <TrustChips product={p} sellerVerified={sellerTrust?.verified} />
+              <TrustChips product={p} />
             </div>
 
             {variantPicker}
@@ -1635,21 +1518,8 @@ export function PDP({ p: pProp }: PdpProps) {
             </h1>
 
             {/* Rating — directly under the title, above the price. */}
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                fontSize: ".8125rem",
-                color: "var(--ink-500)",
-                margin: "8px 0 12px",
-              }}
-            >
-              <Icon name="star" size={13} color="var(--gold)" fill="var(--gold)" />
-              <span style={{ color: "var(--ink-700)", fontWeight: 600 }}>
-                {p.rating.toFixed(1)}
-              </span>
-              <span>({p.reviews})</span>
+            <div style={{ margin: "8px 0 12px" }}>
+              <RatingInline rating={p.rating} count={p.reviews} size={14} />
             </div>
 
             <div className="bz-pdp-price-row bz-pdp-price-row--desktop">
@@ -1657,14 +1527,14 @@ export function PDP({ p: pProp }: PdpProps) {
                 {isMultiDimVariant && selectedVariants.length === 0 && (
                   <span style={{ fontSize: ".875rem", color: "var(--ink-500)" }}>From</span>
                 )}
-                <Price value={shownPrice} original={shownOriginal ?? undefined} size="lg" />
-                {disc > 0 && <Chip tone="red">-{disc}% OFF</Chip>}
+                <Price value={shownPrice} original={displayOriginal ?? undefined} size="lg" />
+                {showDiscount && <Badge tone="saffron">-{disc}% OFF</Badge>}
               </div>
             </div>
 
             {/* Backend-driven trust signals — one calm chip row, stock-coloured only. */}
             <div style={{ margin: "12px 0 4px" }}>
-              <TrustChips product={p} sellerVerified={sellerTrust?.verified} />
+              <TrustChips product={p} />
             </div>
 
             {variantPicker}
@@ -1678,9 +1548,7 @@ export function PDP({ p: pProp }: PdpProps) {
                 gap: 12,
               }}
             >
-              <span style={{ fontSize: ".875rem", fontWeight: 700, color: "var(--ink-900)" }}>
-                Quantity
-              </span>
+              <span style={fieldLabelStyle}>Quantity</span>
               <QtyStepper value={qty} onChange={setQty} max={maxQty} />
             </div>
           </div>
@@ -1727,19 +1595,23 @@ export function PDP({ p: pProp }: PdpProps) {
                   Add to cart
                 </Button>
 
-                {/* Bargaining is BazaarCo's identity — promoted here, but tinted
-                    soft red so it never out-shouts Buy now. */}
+                {/* Bargaining is BazaarCo's identity, but it's the tertiary action:
+                    a quiet text + icon button. Red is the accent (text/icon) only —
+                    never a fill — so it never out-shouts Buy now and red keeps its
+                    single meaning (bargaining) across the app. */}
                 {bargainingAvailable && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     <button
                       type="button"
                       onClick={openBargain}
                       disabled={isOutOfStock}
-                      className="bz-pdp-offer-btn"
+                      className="bz-pdp-offer-quiet"
                       style={{
                         height: 44,
                         width: "100%",
-                        borderRadius: "var(--r-md)",
+                        borderRadius: "var(--r-control)",
+                        background: "transparent",
+                        border: "none",
                         color: "var(--red)",
                         fontWeight: 700,
                         fontSize: "1rem",
@@ -1994,7 +1866,7 @@ export function PDP({ p: pProp }: PdpProps) {
             p={p}
             variantId={resolvedVariantId}
             listedPrice={shownPrice}
-            original={shownOriginal}
+            original={displayOriginal}
             onClose={() => setBargain(false)}
           />
         )}
@@ -2031,7 +1903,7 @@ export function PDP({ p: pProp }: PdpProps) {
           <BuyNowSheet
             p={p}
             price={shownPrice}
-            original={shownOriginal}
+            original={displayOriginal}
             pricedVariants={pricedVariants}
             selVariantId={resolvedVariantId}
             onPickVariant={setSelVariantId}

@@ -1,7 +1,7 @@
 // @ts-nocheck — legacy design prototype; typed incrementally
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -180,6 +180,7 @@ function DeliveryOptionPicker({ cart, tier, onChange }) {
               key={c.tier}
               type="button"
               onClick={() => onChange(c.tier)}
+              className="bz-hover-border"
               style={{
                 textAlign: "left",
                 display: "flex",
@@ -467,6 +468,7 @@ export function Cart() {
             <button
               type="button"
               onClick={toggleEvery}
+              className="bz-hover-dim"
               style={{
                 background: "none",
                 border: "none",
@@ -751,8 +753,43 @@ export function Cart() {
 }
 
 export function ConfirmModal({ title, message, confirmLabel, onConfirm, onCancel }) {
+  const dialogRef = useRef(null);
+
+  const trapFocus = useCallback((e) => {
+    if (e.key !== "Tab") return;
+    const el = dialogRef.current;
+    if (!el) return;
+    const focusable = el.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape") onCancel();
+      trapFocus(e);
+    };
+    document.addEventListener("keydown", onKey);
+    const firstBtn = dialogRef.current?.querySelector("button");
+    firstBtn?.focus();
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onCancel, trapFocus]);
+
   return (
     <div
+      ref={dialogRef}
+      role="dialog"
+      aria-modal="true"
       style={{
         position: "fixed",
         inset: 0,
@@ -775,10 +812,10 @@ export function ConfirmModal({ title, message, confirmLabel, onConfirm, onCancel
           {message}
         </p>
         <div style={{ display: "flex", gap: 12 }}>
-          <Button variant="secondary" full onClick={onCancel}>
+          <Button variant="primary" full onClick={onCancel} style={{ flex: 2 }}>
             Keep
           </Button>
-          <Button variant="danger" full onClick={onConfirm}>
+          <Button variant="danger" onClick={onConfirm} style={{ flex: 1 }}>
             {confirmLabel}
           </Button>
         </div>
@@ -1152,6 +1189,7 @@ export function Checkout() {
                         <button
                           type="button"
                           onClick={() => removeFromOrder(cartLineKey(it))}
+                          className="bz-hover-dim"
                           style={{
                             background: "none",
                             border: "none",
@@ -1337,6 +1375,7 @@ export function Checkout() {
                                     key={label}
                                     type="button"
                                     onClick={() => setNewAddressLabel(label)}
+                                    className="bz-hover-border"
                                     style={{
                                       border: `1.5px solid ${
                                         active ? "var(--blue)" : "var(--line-200)"

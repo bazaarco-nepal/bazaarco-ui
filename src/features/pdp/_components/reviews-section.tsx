@@ -258,6 +258,7 @@ function ReviewComposer({ productId, onDone }: { productId: string; onDone: () =
                 type="button"
                 aria-label="Remove photo"
                 onClick={() => removeAttachment(a.id)}
+                className="bz-hover-tint"
                 style={{
                   position: "absolute",
                   top: 2,
@@ -551,6 +552,7 @@ export function ReviewsSection({ productId, rating, reviewCount }: ReviewsSectio
               disabled={!hasReviews}
               aria-pressed={starFilter === r.s}
               onClick={() => setStarFilter((cur) => (cur === r.s ? null : r.s))}
+              className="bz-hover-tint"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -560,6 +562,7 @@ export function ReviewsSection({ productId, rating, reviewCount }: ReviewsSectio
                 background: "none",
                 border: "none",
                 padding: "2px 0",
+                borderRadius: "var(--r-sm)",
                 cursor: hasReviews ? "pointer" : "default",
                 opacity: starFilter && starFilter !== r.s ? 0.45 : 1,
               }}

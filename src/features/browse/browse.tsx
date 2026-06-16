@@ -580,7 +580,7 @@ export function Browse() {
                       </button>
                     ))}
                   </div>
-                  <Button variant="secondary" onClick={clearAll}>
+                  <Button variant="ghost" onClick={clearAll}>
                     Clear all filters
                   </Button>
                 </div>
@@ -997,7 +997,7 @@ export function Browse() {
                     </div>
                   )}
                   <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-                    <Button variant="secondary" onClick={clearAll}>
+                    <Button variant="ghost" onClick={clearAll}>
                       Clear all filters
                     </Button>
                     <Button variant="ghost" href={pathFromScreen("home")}>

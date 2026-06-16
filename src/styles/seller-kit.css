@@ -252,8 +252,8 @@ textarea.bz-input {
   position: absolute;
   top: 5px;
   right: 5px;
-  width: 22px;
-  height: 22px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: rgba(27, 26, 25, 0.7);
   color: #fff;
@@ -265,6 +265,9 @@ textarea.bz-input {
 }
 .bz-tile.is-filled .bz-tile__rm {
   display: flex;
+}
+.bz-tile__rm:hover {
+  background: rgba(27, 26, 25, 0.9);
 }
 .bz-tile--main {
   width: 190px;

@@ -76,6 +76,7 @@ function Dots({
           aria-label={`Show banner ${i + 1} of ${count}`}
           aria-current={i === index}
           onClick={() => onSelect(i)}
+          className="bz-hover-dim"
           style={{
             width: i === index ? 22 : 8,
             height: 8,

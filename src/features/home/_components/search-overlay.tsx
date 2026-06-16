@@ -71,10 +71,12 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
           type="button"
           aria-label="Back"
           onClick={onClose}
+          className="bz-hover-tint"
           style={{
             width: 40,
             height: 40,
             border: "none",
+            borderRadius: "var(--r-md)",
             background: "transparent",
             cursor: "pointer",
             display: "flex",
@@ -125,6 +127,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                 clearSearch();
                 inputRef.current?.focus();
               }}
+              className="bz-hover-tint"
               style={{
                 position: "absolute",
                 right: 8,
@@ -133,6 +136,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
                 width: 28,
                 height: 28,
                 border: "none",
+                borderRadius: "var(--r-full)",
                 background: "transparent",
                 cursor: "pointer",
                 display: "flex",
@@ -164,6 +168,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
               key={term}
               type="button"
               onClick={() => run(term)}
+              className="bz-hover-border"
               style={{
                 border: "1px solid var(--line-200)",
                 background: "#fff",

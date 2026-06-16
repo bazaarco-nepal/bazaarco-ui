@@ -1,82 +1,43 @@
 "use client";
 
+import React from "react";
+import { Badge } from "@/components/ui";
 import type { Product } from "@/types";
 
 type TrustChipsProps = {
   product: Product;
-  /** From the seller-trust endpoint; omit the verified chip when unknown. */
-  sellerVerified?: boolean;
 };
 
 /**
- * Compact, backend-driven trust signals shown near the price. One calm, consistent
- * chip style — a hairline-outlined pill — so the row reads as a quiet group rather
- * than four competing badges. Only stock state carries colour (the one signal a
- * buyer scans for first); everything else is neutral. Every value comes from the
- * product (or the seller-trust query).
+ * Compact, backend-driven trust signals shown near the price. Every pill is the
+ * shared {@link Badge}, so the row reads as one calm group differentiated only by
+ * semantic colour — never by shape. Stock is the one signal a buyer scans for
+ * first, so it carries a coloured dot + tint; everything else stays neutral.
+ *
+ * The "Verified seller" fact is intentionally NOT shown here — the seller card
+ * already states it, and surfacing the same fact twice is noise.
  */
-export function TrustChips({ product, sellerVerified }: TrustChipsProps) {
+export function TrustChips({ product }: TrustChipsProps) {
   const status = product.stockStatus ?? (product.outOfStock ? "out_of_stock" : "in_stock");
 
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
       {status === "in_stock" && (
-        <CalmChip dot="var(--success)" fg="var(--success)">
+        <Badge tone="success" dot>
           In stock
-        </CalmChip>
+        </Badge>
       )}
       {status === "out_of_stock" && (
-        <CalmChip dot="var(--red)" fg="var(--red)">
+        <Badge tone="danger" dot>
           Out of stock
-        </CalmChip>
+        </Badge>
       )}
-      {status === "unavailable" && <CalmChip>Currently unavailable</CalmChip>}
-
-      {sellerVerified && <CalmChip>Verified seller</CalmChip>}
+      {status === "unavailable" && <Badge>Currently unavailable</Badge>}
 
       {product.warranty?.available && (
-        <CalmChip>{warrantyLabel(product.warranty.durationMonths)}</CalmChip>
+        <Badge>{warrantyLabel(product.warranty.durationMonths)}</Badge>
       )}
     </div>
-  );
-}
-
-/** A single hairline-outlined trust pill. An optional leading dot + text colour
- *  is the only place colour enters the row — reserved for stock state. */
-function CalmChip({
-  children,
-  dot,
-  fg = "var(--ink-700)",
-}: {
-  children: React.ReactNode;
-  dot?: string;
-  fg?: string;
-}) {
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        height: 28,
-        padding: "0 12px",
-        borderRadius: 999,
-        border: "1px solid var(--line-200)",
-        background: "#fff",
-        color: fg,
-        fontSize: ".75rem",
-        fontWeight: 600,
-        whiteSpace: "nowrap",
-      }}
-    >
-      {dot && (
-        <span
-          aria-hidden
-          style={{ width: 7, height: 7, borderRadius: "50%", background: dot, flex: "0 0 auto" }}
-        />
-      )}
-      {children}
-    </span>
   );
 }
 

@@ -145,3 +145,20 @@ it("clicking a store opens that store by id", () => {
   fireEvent.click(within(card).getByText("Pokhara Crafts"));
   expect(openStore).toHaveBeenCalledWith("s2");
 });
+
+it("gives every card a store-specific accessible name", () => {
+  render(<Harness />);
+  // Each card is one link with an aria-label tied to its store, so screen
+  // readers announce which shop they're about to visit.
+  expect(screen.getByLabelText("Visit Pokhara Crafts store")).toHaveAttribute("href", "/store/s2");
+  expect(screen.getByLabelText("Visit Bhimsen Naturals store")).toBeInTheDocument();
+});
+
+it("renders one identical CTA on every card, regardless of review state", () => {
+  render(<Harness />);
+  // Same single "Visit store" affordance on the reviewed and the zero-review
+  // stores alike — no card is emphasised over another.
+  const ctas = screen.getAllByText("Visit store");
+  expect(ctas).toHaveLength(SELLERS.length);
+  ctas.forEach((cta) => expect(cta).toHaveClass("bz-store-card__cta"));
+});

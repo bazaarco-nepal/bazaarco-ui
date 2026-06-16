@@ -1,9 +1,5 @@
-import { apiClient, getData, uploadClient } from "./http";
+import { apiClient, getData } from "./http";
 import type { ApiSuccessResponse } from "./types";
-
-export interface ChatQuickReply {
-  en: string;
-}
 
 export interface ChatThread {
   id: string;
@@ -21,15 +17,7 @@ export interface ChatThread {
 }
 
 export interface ChatInbox {
-  quickReplies: ChatQuickReply[];
   threads: ChatThread[];
-}
-
-export interface ChatMessageAttachment {
-  url: string;
-  thumbnailUrl?: string | null;
-  mediaType: string;
-  mimeType: string;
 }
 
 export interface ChatMessage {
@@ -38,7 +26,6 @@ export interface ChatMessage {
   text: string;
   t: string;
   messageType: string;
-  attachment?: ChatMessageAttachment;
   status?: "sent" | "delivered" | "read";
   createdAt: string;
   senderUserId: string;
@@ -50,19 +37,8 @@ export interface ChatMessagesPage {
 }
 
 export interface SendChatMessagePayload {
-  body?: string;
+  body: string;
   clientMessageId?: string;
-  attachment?: {
-    url: string;
-    thumbnailUrl?: string;
-    mimeType: string;
-    mediaType: "image" | "video";
-    sizeBytes?: number;
-    width?: number;
-    height?: number;
-    durationSec?: number;
-    publicId?: string;
-  };
 }
 
 export const chatApi = {
@@ -100,55 +76,5 @@ export const chatApi = {
         ApiSuccessResponse<{ messageIds: string[]; readAt: string }>
       >(`/chat/conversations/${conversationId}/read`, { messageIds })
       .then((r) => r.data.data);
-  },
-
-  async uploadImage(file: File): Promise<{
-    url: string;
-    publicId: string;
-    width?: number;
-    height?: number;
-    bytes: number;
-    format: string;
-  }> {
-    const form = new FormData();
-    form.append("file", file);
-    const { data } = await uploadClient.post<
-      ApiSuccessResponse<{
-        url: string;
-        publicId: string;
-        width?: number;
-        height?: number;
-        bytes: number;
-        format: string;
-      }>
-    >("/chat/media/image", form, { timeout: 120_000 });
-    return data.data;
-  },
-
-  async uploadVideo(file: File): Promise<{
-    url: string;
-    publicId: string;
-    thumbnailUrl?: string;
-    width?: number;
-    height?: number;
-    duration?: number;
-    bytes: number;
-    format: string;
-  }> {
-    const form = new FormData();
-    form.append("file", file);
-    const { data } = await uploadClient.post<
-      ApiSuccessResponse<{
-        url: string;
-        publicId: string;
-        thumbnailUrl?: string;
-        width?: number;
-        height?: number;
-        duration?: number;
-        bytes: number;
-        format: string;
-      }>
-    >("/chat/media/video", form, { timeout: 300_000 });
-    return data.data;
   },
 };

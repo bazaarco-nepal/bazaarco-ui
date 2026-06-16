@@ -4340,6 +4340,7 @@ export function SellerAddProduct({
   // page as first-class info (not buried in spec metadata).
   const [brand, setBrand] = useState("");
   const [sku, setSku] = useState("");
+  const [keywords, setKeywords] = useState("");
   const [warrantyAvailable, setWarrantyAvailable] = useState(false);
   const [warrantyMonths, setWarrantyMonths] = useState("");
   const [warrantyType, setWarrantyType] = useState("");
@@ -4373,6 +4374,7 @@ export function SellerAddProduct({
     // Structured PDP fields (warranty / returns / brand / SKU).
     setBrand(editingProduct.brand ?? "");
     setSku(editingProduct.sku ?? "");
+    setKeywords(editingProduct.keywords ?? "");
     const warranty = editingProduct.warranty;
     setWarrantyAvailable(Boolean(warranty?.available));
     setWarrantyMonths(warranty?.durationMonths ? String(warranty.durationMonths) : "");
@@ -4723,6 +4725,7 @@ export function SellerAddProduct({
     return {
       brand: brand.trim() || null,
       sku: sku.trim() || null,
+      keywords: keywords.trim() || null,
       warrantyAvailable,
       warrantyDurationMonths: warrantyAvailable ? Number(warrantyMonths) || null : null,
       warrantyType: warrantyAvailable ? warrantyType.trim() || null : null,
@@ -5306,6 +5309,21 @@ export function SellerAddProduct({
                     style={pdpFieldStyle}
                   />
                 </div>
+              </div>
+
+              {/* Search keywords (SEO) */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={pdpLabelStyle}>Search keywords (optional)</label>
+                <input
+                  value={keywords}
+                  onChange={(e) => setKeywords(e.target.value)}
+                  placeholder="e.g. iphone, smartphone, mobile, apple"
+                  maxLength={1024}
+                  style={pdpFieldStyle}
+                />
+                <p style={{ margin: "4px 0 0", fontSize: ".75rem", color: "var(--ink-500)" }}>
+                  Comma-separated terms shoppers might search for. Helps buyers find this product.
+                </p>
               </div>
 
               {/* Warranty */}

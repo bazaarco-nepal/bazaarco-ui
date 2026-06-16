@@ -106,6 +106,8 @@ export interface Product {
   brand?: string | null;
   /** Seller-supplied stock keeping unit. */
   sku?: string | null;
+  /** Seller-entered search keywords (SEO). */
+  keywords?: string | null;
   /** Server-computed availability so the UI never re-derives the rule. */
   stockStatus?: StockStatus;
   /** Total purchasable units (caps the quantity selector). */

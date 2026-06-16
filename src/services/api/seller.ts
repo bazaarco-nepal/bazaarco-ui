@@ -48,6 +48,8 @@ export interface DiscountFields {
 export interface PdpProductFields {
   brand?: string | null;
   sku?: string | null;
+  /** Seller-entered search keywords (SEO). */
+  keywords?: string | null;
   warrantyAvailable?: boolean;
   warrantyDurationMonths?: number | null;
   warrantyType?: string | null;

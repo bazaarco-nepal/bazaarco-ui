@@ -3,7 +3,6 @@
 import { type SellerInventoryItem } from "@/services/api/seller";
 import { type SellerInboxOrderItem } from "./types";
 
-
 export const sellerOrderRef = { current: null as SellerInboxOrderItem | null };
 
 // Threads the inventory row a seller tapped "Edit" on through to the edit

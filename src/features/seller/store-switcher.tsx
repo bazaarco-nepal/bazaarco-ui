@@ -4,7 +4,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 
-import { Icon, StoreAvatar, Button, LandmarkAddress } from "@/components/ui";
+import { StoreAvatar, Button, LandmarkAddress } from "@/components/ui";
+import { SellerIcon } from "./_shared/icons";
 import { useBz } from "@/components/common";
 import { useCreateSellerStore, useSwitchActiveStore } from "@/hooks/use-seller";
 import type { SellerStoreSummary } from "@/services/api/seller-organization";
@@ -44,10 +45,18 @@ function useIsMobileViewport(): boolean {
 function useBodyScrollLock(active: boolean) {
   useEffect(() => {
     if (!active) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const { body } = document;
+    const previousOverflow = body.style.overflow;
+    const previousPaddingRight = body.style.paddingRight;
+    // Reserve the width the page scrollbar leaves behind once we hide overflow,
+    // otherwise the content reflows sideways and the sticky top store bar visibly
+    // jumps the moment the sheet opens.
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    body.style.overflow = "hidden";
+    if (scrollbarWidth > 0) body.style.paddingRight = `${scrollbarWidth}px`;
     return () => {
-      document.body.style.overflow = previousOverflow;
+      body.style.overflow = previousOverflow;
+      body.style.paddingRight = previousPaddingRight;
     };
   }, [active]);
 }
@@ -247,7 +256,7 @@ function StoreSwitcherTrigger({
         </span>
         {variant === "sidebar" && <span className="bz-store-chip-role">{t("seller.role")}</span>}
       </span>
-      <Icon name="chevronDown" size={14} color="var(--ink-500)" />
+      <SellerIcon name="chevronDown" size={14} color="var(--ink-500)" />
     </button>
   );
 }
@@ -288,13 +297,13 @@ function StoreSwitcherPanelBody({
                 <span className="bz-store-row-name">{store.shopName}</span>
                 <StoreStatusPill verified={store.verified} city={store.city} />
               </span>
-              {isActive && <Icon name="check" size={18} color="var(--blue)" />}
+              {isActive && <SellerIcon name="check" size={18} color="var(--blue)" />}
             </button>
           );
         })}
       </div>
       <button type="button" className="bz-store-add" onClick={onAddStore}>
-        <Icon name="plus" size={16} color="var(--blue)" />
+        <SellerIcon name="plus" size={16} color="var(--blue)" />
         {t("seller.addStore")}
       </button>
     </>
@@ -326,19 +335,22 @@ function StoreSheetPortal({
 }) {
   if (typeof document === "undefined") return null;
   return createPortal(
-    <>
+    // The portal mounts on document.body, outside the seller shell's
+    // data-skin="fluent" scope, so re-assert the skin here — otherwise the
+    // token-driven controls inside fall back to the buyer theme.
+    <div data-skin="fluent">
       <div className="bz-store-sheet-overlay" onClick={onClose} />
       <div className="bz-store-sheet" role="dialog" aria-modal="true" aria-label={title}>
         <div className="bz-store-sheet-handle" />
         <div className="bz-store-sheet-head">
           <span>{title}</span>
           <button type="button" onClick={onClose} aria-label={title}>
-            <Icon name="x" size={18} color="var(--ink-500)" />
+            <SellerIcon name="x" size={18} color="var(--ink-500)" />
           </button>
         </div>
         {children}
       </div>
-    </>,
+    </div>,
     document.body,
   );
 }
@@ -365,7 +377,16 @@ function AddStoreModalPortal({
   const { t } = useTranslation();
   if (typeof document === "undefined") return null;
   return createPortal(
-    <div className="bz-store-modal-scrim" role="dialog" aria-modal="true" onClick={onCancel}>
+    // Re-assert the Fluent skin: this portal mounts on document.body, outside the
+    // seller shell scope, so its inputs and buttons would otherwise render with the
+    // buyer theme instead of Fluent.
+    <div
+      data-skin="fluent"
+      className="bz-store-modal-scrim"
+      role="dialog"
+      aria-modal="true"
+      onClick={onCancel}
+    >
       <div className="bz-store-modal" onClick={(e) => e.stopPropagation()}>
         <h3 className="bz-store-modal-title">{t("seller.addStore")}</h3>
         <label className="bz-store-field">

@@ -92,7 +92,11 @@ export function SellerVerificationBlocked({
           marginBottom: 16,
         }}
       >
-        <Icon name={isPending ? "clock" : isRejected ? "flag" : "shieldCheck"} size={26} color={accent} />
+        <Icon
+          name={isPending ? "clock" : isRejected ? "flag" : "shieldCheck"}
+          size={26}
+          color={accent}
+        />
       </span>
       <h2
         style={{

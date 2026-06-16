@@ -18,6 +18,7 @@
     "prepare": "husky || true"
   },
   "dependencies": {
+    "@fluentui/react-icons": "^2.0.330",
     "@hookform/resolvers": "^5.0.1",
     "@tanstack/react-query": "^5.80.7",
     "@vercel/speed-insights": "^2.0.0",

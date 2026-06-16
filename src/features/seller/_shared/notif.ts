@@ -1,7 +1,5 @@
 "use client";
 
-
-
 /* Reports/KYC/Notifications removed — merged into Analytics/Profile/Settings */
 
 /* ---------- 4.17 Settings (includes Notifications) ---------- */

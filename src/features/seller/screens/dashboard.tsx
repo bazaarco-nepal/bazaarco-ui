@@ -2,18 +2,41 @@
 
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Icon, Button, Chip, Placeholder, TINTS, ChipGroup, ApiState, AppLink, StoreAvatar } from "@/components/ui";
+import {
+  Button,
+  Chip,
+  Placeholder,
+  TINTS,
+  ChipGroup,
+  ApiState,
+  AppLink,
+  StoreAvatar,
+} from "@/components/ui";
+import { SellerIcon } from "../_shared/icons";
 import { useCompleteOnboarding } from "@/hooks/use-auth";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { displayName } from "@/lib/display";
 import { formatNPR } from "@/lib/money";
-import { useSellerDashboard, useSellerInbox, useSellerInventory, useSellerOrganization, useUpdateStoreHandle } from "@/hooks/use-seller";
+import {
+  useSellerDashboard,
+  useSellerInbox,
+  useSellerInventory,
+  useSellerOrganization,
+  useUpdateStoreHandle,
+} from "@/hooks/use-seller";
 import { useBz } from "@/components/common";
 import { pathFromScreen, storeShareUrl } from "@/config/routes";
 import { SellerBarChart, SellerSparkline } from "../_shared/charts";
-import { SellerHelpBar, SelectMenu, SellerEmptyState, SellerPage, Card, MetricGrid, Metric } from "../_shared/components";
+import {
+  SellerHelpBar,
+  SelectMenu,
+  SellerEmptyState,
+  SellerPage,
+  Card,
+  MetricGrid,
+  Metric,
+} from "../_shared/components";
 import { type SellerInboxOrderItem } from "../_shared/types";
-
 
 /**
  * Seller's public storefront link — the one thing a seller most wants to hand
@@ -189,7 +212,7 @@ function StoreLinkCard() {
             {displayUrl}
           </a>
           <button type="button" className="bz-store-link__edit-btn" onClick={startEditing}>
-            <Icon name="edit" size={14} />
+            <SellerIcon name="edit" size={14} />
             {t("seller.dashboard.storeLinkEdit")}
           </button>
           <button
@@ -197,7 +220,7 @@ function StoreLinkCard() {
             className={"bz-store-link__copy" + (copied ? " is-copied" : "")}
             onClick={copyLink}
           >
-            <Icon name={copied ? "check" : "copy"} size={14} />
+            <SellerIcon name={copied ? "check" : "copy"} size={14} />
             {copied ? t("seller.dashboard.storeLinkCopied") : t("seller.dashboard.storeLinkCopy")}
           </button>
         </div>
@@ -389,7 +412,7 @@ export function SellerDashboard() {
                 marginBottom: 10,
               }}
             >
-              <Icon name="lock" size={20} color="var(--red)" style={{ flexShrink: 0 }} />
+              <SellerIcon name="lock" size={20} color="var(--red)" style={{ flexShrink: 0 }} />
               <div style={{ fontWeight: 600, fontSize: "1rem", color: "var(--red)" }}>
                 {frozenListings.length === 1
                   ? t("seller.dashboard.frozenTitle", { count: frozenListings.length })
@@ -420,7 +443,7 @@ export function SellerDashboard() {
                 >
                   <div
                     style={{
-                      fontWeight: 700,
+                      fontWeight: 600,
                       fontSize: ".8125rem",
                       color: "var(--ink-900)",
                       marginBottom: 4,
@@ -527,7 +550,7 @@ export function SellerDashboard() {
                     color: k.color ?? "var(--blue)",
                   }}
                 >
-                  <Icon name="trendingUp" size={18} />
+                  <SellerIcon name="trendingUp" size={18} />
                 </span>
                 <div
                   style={{
@@ -547,7 +570,7 @@ export function SellerDashboard() {
                       alignItems: "center",
                       gap: 3,
                       fontSize: ".6875rem",
-                      fontWeight: 700,
+                      fontWeight: 600,
                       whiteSpace: "nowrap",
                       padding: "2px 7px",
                       borderRadius: 999,
@@ -557,7 +580,7 @@ export function SellerDashboard() {
                         : "color-mix(in srgb, var(--danger) 12%, #fff)",
                     }}
                   >
-                    <Icon name={k.up ? "trendingUp" : "trendingDown"} size={11} />
+                    <SellerIcon name={k.up ? "trendingUp" : "trendingDown"} size={11} />
                     {k.delta}
                   </span>
                 )}
@@ -566,7 +589,7 @@ export function SellerDashboard() {
                 className="tnum"
                 style={{
                   fontSize: "1.75rem",
-                  fontWeight: 700,
+                  fontWeight: 600,
                   color: "var(--ink-900)",
                   lineHeight: 1.1,
                   marginBottom: 8,
@@ -610,11 +633,11 @@ export function SellerDashboard() {
                           alignItems: "center",
                           gap: 6,
                           fontSize: ".75rem",
-                          fontWeight: 700,
+                          fontWeight: 600,
                           color: "var(--ink-700)",
                         }}
                       >
-                        <Icon name="truck" size={14} color="var(--blue)" />
+                        <SellerIcon name="truck" size={14} color="var(--blue)" />
                         {c.name}
                       </span>
                       <span
@@ -673,7 +696,7 @@ export function SellerDashboard() {
                 gap: 6,
               }}
             >
-              <Icon name="wallet" size={14} color="var(--success)" /> From your dashboard
+              <SellerIcon name="wallet" size={14} color="var(--success)" /> From your dashboard
             </div>
             <div
               style={{
@@ -788,7 +811,11 @@ export function SellerDashboard() {
                     flexShrink: 0,
                   }}
                 >
-                  <Icon name={t.icon} size={20} color={TINTS[t.tint as keyof typeof TINTS][2]} />
+                  <SellerIcon
+                    name={t.icon}
+                    size={20}
+                    color={TINTS[t.tint as keyof typeof TINTS][2]}
+                  />
                   {t.urgent && (
                     <span
                       style={{
@@ -805,7 +832,7 @@ export function SellerDashboard() {
                   )}
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: ".875rem" }}>{t.label}</div>
+                  <div style={{ fontWeight: 600, fontSize: ".875rem" }}>{t.label}</div>
                 </div>
                 {t.action ? (
                   <button
@@ -832,7 +859,7 @@ export function SellerDashboard() {
                     {t.action.label}
                   </button>
                 ) : (
-                  <Icon name="chevronRight" size={18} color="var(--ink-400)" />
+                  <SellerIcon name="chevronRight" size={18} color="var(--ink-400)" />
                 )}
               </div>
             ))}
@@ -882,7 +909,7 @@ export function SellerDashboard() {
                   display: "flex",
                   gap: 14,
                   fontSize: ".75rem",
-                  fontWeight: 700,
+                  fontWeight: 600,
                   color: "var(--ink-500)",
                 }}
               >
@@ -900,8 +927,7 @@ export function SellerDashboard() {
                 </span>
               </div>
             </div>
-            {salesByDay.length === 0 ||
-            salesByDay.every((d: { value?: number }) => !d.value) ? (
+            {salesByDay.length === 0 || salesByDay.every((d: { value?: number }) => !d.value) ? (
               <SellerEmptyState
                 style={{ minHeight: 200, padding: "24px" }}
                 icon="trendingUp"
@@ -939,9 +965,7 @@ export function SellerDashboard() {
                 marginBottom: 12,
               }}
             >
-              <h3
-                style={{ margin: 0, fontSize: "1rem", fontWeight: 600, color: "var(--ink-900)" }}
-              >
+              <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 600, color: "var(--ink-900)" }}>
                 Bargaining
               </h3>
               <Button
@@ -971,13 +995,13 @@ export function SellerDashboard() {
                   textDecoration: "none",
                 }}
               >
-                <Icon name="bargain" size={22} color="var(--red)" />
+                <SellerIcon name="bargain" size={22} color="var(--red)" />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 600, color: "var(--red)", fontSize: ".875rem" }}>
                     {bargainGlance.pending} offer waiting
                   </div>
                 </div>
-                <Icon name="chevronRight" size={18} color="var(--red)" />
+                <SellerIcon name="chevronRight" size={18} color="var(--red)" />
               </AppLink>
             )}
             {bargainGlance && (
@@ -1087,7 +1111,7 @@ export function SellerDashboard() {
                     flexShrink: 0,
                   }}
                 >
-                  <Icon name={a.icon} size={16} color={a.color} />
+                  <SellerIcon name={a.icon} size={16} color={a.color} />
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: ".875rem", color: "var(--ink-900)", lineHeight: 1.4 }}>
@@ -1216,7 +1240,11 @@ export function SellerDashboard() {
                   justifyContent: "center",
                 }}
               >
-                <Icon name={a.icon} size={22} color={TINTS[a.tint as keyof typeof TINTS][2]} />
+                <SellerIcon
+                  name={a.icon}
+                  size={22}
+                  color={TINTS[a.tint as keyof typeof TINTS][2]}
+                />
               </span>
               <div style={{ flex: 1, textAlign: "left" }}>
                 <div style={{ fontWeight: 600, fontSize: ".9375rem" }}>{a.label}</div>

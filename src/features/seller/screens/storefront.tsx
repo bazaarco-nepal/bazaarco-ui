@@ -2,26 +2,24 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Icon, Logo, Button, LandmarkAddress, ApiState, AppLink } from "@/components/ui";
-import { useSellerStorefront, useUpdateStorefront, useUploadStorefrontBanner, useUploadStorefrontLogo, useRemoveStorefrontLogo } from "@/hooks/use-seller";
+import { Logo, Button, LandmarkAddress, ApiState, AppLink, StoreAvatar } from "@/components/ui";
+import { SellerIcon } from "../_shared/icons";
+import {
+  useSellerStorefront,
+  useUpdateStorefront,
+  useUploadStorefrontBanner,
+  useUploadStorefrontLogo,
+  useRemoveStorefrontLogo,
+} from "@/hooks/use-seller";
 import { ImageCropModal } from "@/components/common/image-crop-modal";
 import { useBz } from "@/components/common";
 import { pathFromScreen } from "@/config/routes";
 import { ApiRequestError } from "@/services/api/http";
 import { emptyStoreAddress, formatStoreAddress, type StoreAddress } from "@/lib/store-address";
-import { SellerHelpBar, SellerPageHeader } from "../_shared/components";
+import { SellerHelpBar, SellerPageHeader, Card, Field } from "../_shared/components";
 import { useIsNarrow } from "../_shared/hooks";
 
-
 /* ---------- 4.11 Storefront builder ---------- */
-const fieldLabelStyle: React.CSSProperties = {
-  display: "block",
-  fontSize: ".8125rem",
-  fontWeight: 700,
-  color: "var(--ink-600)",
-  marginBottom: 8,
-};
-
 export function SellerStorefront() {
   const { t } = useTranslation();
   const { toast } = useBz();
@@ -223,7 +221,7 @@ export function SellerStorefront() {
             style={{
               margin: 0,
               fontSize: "1.125rem",
-              fontWeight: 700,
+              fontWeight: 600,
               color: "var(--ink-900)",
             }}
           >
@@ -250,7 +248,7 @@ export function SellerStorefront() {
               background: "var(--brand)",
               color: "#fff",
               borderRadius: "var(--r-md)",
-              fontWeight: 700,
+              fontWeight: 600,
               fontSize: ".9375rem",
               textDecoration: "none",
             }}
@@ -299,7 +297,7 @@ export function SellerStorefront() {
       <div
         className="bz-container-pad"
         style={{
-          maxWidth: "var(--container)",
+          maxWidth: "var(--seller-max, var(--container))",
           margin: "0 auto",
           // Reserve room for the sticky save bar so it never covers the last card.
           padding: `20px clamp(14px, 4vw, 28px) ${isMobile && isDirty ? 172 : 100}px`,
@@ -375,7 +373,7 @@ export function SellerStorefront() {
                   justifyContent: "center",
                 }}
               >
-                <Icon name="image" size={32} color="var(--ink-300)" />
+                <SellerIcon name="image" size={32} color="var(--ink-300)" />
               </div>
             )}
             <button
@@ -393,13 +391,13 @@ export function SellerStorefront() {
                 borderRadius: "var(--r-md)",
                 background: "rgba(255,255,255,.9)",
                 border: "1px solid var(--line-200)",
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: ".75rem",
                 cursor: "pointer",
                 color: "var(--ink-700)",
               }}
             >
-              <Icon name="image" size={14} color="var(--ink-600)" />
+              <SellerIcon name="image" size={14} color="var(--ink-600)" />
               {uploadBanner.isPending ? "Uploading…" : "Change banner"}
             </button>
           </div>
@@ -409,37 +407,15 @@ export function SellerStorefront() {
             <div style={{ position: "relative", minHeight: 40 }}>
               <div style={{ position: "absolute", left: 0, top: -36, zIndex: 1 }}>
                 <div style={{ position: "relative", width: 72, height: 72, flexShrink: 0 }}>
-                  {logoUrl ? (
-                    <img
-                      src={logoUrl}
-                      alt=""
-                      style={{
-                        width: 72,
-                        height: 72,
-                        borderRadius: "50%",
-                        objectFit: "cover",
-                        border: "3px solid #fff",
-                        boxShadow: "0 2px 8px rgba(0,0,0,.1)",
-                        display: "block",
-                      }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: 72,
-                        height: 72,
-                        borderRadius: "50%",
-                        background: "var(--line-100)",
-                        border: "3px solid #fff",
-                        boxShadow: "0 2px 8px rgba(0,0,0,.1)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Icon name="store" size={28} color="var(--ink-300)" />
-                    </div>
-                  )}
+                  {/* White ring + drop shadow keep the mark lifted off the banner */}
+                  <div
+                    style={{
+                      borderRadius: "30%",
+                      boxShadow: "0 0 0 3px #fff, 0 2px 8px rgba(0,0,0,.1)",
+                    }}
+                  >
+                    <StoreAvatar src={logoUrl} name={shopName} size={72} />
+                  </div>
                   <button
                     type="button"
                     disabled={busy}
@@ -460,7 +436,7 @@ export function SellerStorefront() {
                       cursor: "pointer",
                     }}
                   >
-                    <Icon name="edit" size={13} color="var(--ink-600)" />
+                    <SellerIcon name="edit" size={13} color="var(--ink-600)" />
                   </button>
                 </div>
               </div>
@@ -478,7 +454,7 @@ export function SellerStorefront() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div
                     style={{
-                      fontWeight: 800,
+                      fontWeight: 600,
                       fontSize: "1.125rem",
                       color: "var(--ink-900)",
                       overflow: "hidden",
@@ -529,16 +505,9 @@ export function SellerStorefront() {
           }}
         >
           {/* Store info: identity + description live together */}
-          <div
-            style={{
-              background: "#fff",
-              border: "1px solid var(--line-200)",
-              borderRadius: "var(--r-lg)",
-              padding: "clamp(18px, 2.4vw, 24px)",
-            }}
-          >
+          <Card style={{ marginBottom: 0 }}>
             <div style={{ marginBottom: 18 }}>
-              <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 800, color: "var(--ink-900)" }}>
+              <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 600, color: "var(--ink-900)" }}>
                 Store info
               </h2>
               <p style={{ margin: "2px 0 0", fontSize: ".75rem", color: "var(--ink-500)" }}>
@@ -546,61 +515,38 @@ export function SellerStorefront() {
               </p>
             </div>
 
-            <label style={fieldLabelStyle}>Store name</label>
-            <input
-              value={shopName}
-              onChange={(e) => setShopName(e.target.value)}
-              placeholder="e.g. Bhaktapur Handicraft"
-              maxLength={256}
-              style={{
-                width: "100%",
-                height: 44,
-                padding: "0 12px",
-                border: "1px solid var(--line-200)",
-                borderRadius: "var(--r-md)",
-                fontFamily: "var(--font-sans)",
-                fontSize: ".9375rem",
-                outline: "none",
-              }}
-            />
-            <p style={{ margin: "8px 0 0", fontSize: ".75rem", color: "var(--ink-400)" }}>
-              Visible to buyers on your store page and product listings.
-            </p>
+            <Field
+              label="Store name"
+              width="name"
+              hint="Visible to buyers on your store page and product listings."
+            >
+              <input
+                className="bz-input"
+                value={shopName}
+                onChange={(e) => setShopName(e.target.value)}
+                placeholder="e.g. Bhaktapur Handicraft"
+                maxLength={256}
+              />
+            </Field>
 
-            <label style={{ ...fieldLabelStyle, marginTop: 20 }}>About your store</label>
-            <textarea
-              value={about}
-              onChange={(e) => setAbout(e.target.value)}
-              placeholder="What do you sell, and why should buyers trust you? e.g. “Handwoven pashmina from a family workshop in Bhaktapur since 1998 — genuine, fairly priced, free delivery inside the valley.”"
-              style={{
-                width: "100%",
-                minHeight: 150,
-                padding: 12,
-                border: "1px solid var(--line-200)",
-                borderRadius: "var(--r-md)",
-                fontFamily: "var(--font-sans)",
-                fontSize: ".875rem",
-                lineHeight: 1.5,
-                outline: "none",
-                resize: "vertical",
-              }}
-            />
-            <p style={{ margin: "8px 0 0", fontSize: ".75rem", color: "var(--ink-400)" }}>
-              A short, honest intro converts browsers into buyers.
-            </p>
-          </div>
+            <Field
+              label="About your store"
+              hint="A short, honest intro converts browsers into buyers."
+            >
+              <textarea
+                className="bz-input"
+                value={about}
+                onChange={(e) => setAbout(e.target.value)}
+                placeholder="What do you sell, and why should buyers trust you? e.g. “Handwoven pashmina from a family workshop in Bhaktapur since 1998 — genuine, fairly priced, free delivery inside the valley.”"
+                style={{ minHeight: 150 }}
+              />
+            </Field>
+          </Card>
 
           {/* Store location: wider column gives the map real room to work */}
-          <div
-            style={{
-              background: "#fff",
-              border: "1px solid var(--line-200)",
-              borderRadius: "var(--r-lg)",
-              padding: "clamp(18px, 2.4vw, 24px)",
-            }}
-          >
+          <Card style={{ marginBottom: 0 }}>
             <div style={{ marginBottom: 14 }}>
-              <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 800, color: "var(--ink-900)" }}>
+              <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 600, color: "var(--ink-900)" }}>
                 {t("seller.storeAddress")}
               </h2>
               <p style={{ margin: "2px 0 0", fontSize: ".75rem", color: "var(--ink-500)" }}>
@@ -608,7 +554,7 @@ export function SellerStorefront() {
               </p>
             </div>
             <LandmarkAddress value={storeAddress} onChange={setStoreAddress} />
-          </div>
+          </Card>
         </div>
       </div>
 

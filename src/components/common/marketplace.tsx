@@ -14,7 +14,7 @@ import {
   Price,
   Placeholder,
   RatingStars,
-  TINTS,
+  StoreAvatar,
   DeliverToModal,
   AppLink,
 } from "@/components/ui";
@@ -153,8 +153,6 @@ export function SellerRow({
     );
   }
 
-  const tint = TINTS[seller.tint ?? "slate"] ?? TINTS.slate;
-
   return (
     <div
       style={{
@@ -165,39 +163,7 @@ export function SellerRow({
         width: "100%",
       }}
     >
-      <div
-        style={{
-          width: compact ? 40 : 48,
-          height: compact ? 40 : 48,
-          borderRadius: "50%",
-          overflow: "hidden",
-          border: "1.5px solid var(--line-200)",
-          flexShrink: 0,
-          background: tint[0],
-        }}
-      >
-        {seller.avatar ? (
-          <img
-            src={seller.avatar}
-            alt={seller.name}
-            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-          />
-        ) : (
-          <div
-            style={{
-              width: "100%",
-              height: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: 800,
-              color: tint[2],
-            }}
-          >
-            {seller.name?.[0] ?? "?"}
-          </div>
-        )}
-      </div>
+      <StoreAvatar src={seller.avatar} name={seller.name} size={compact ? 40 : 48} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
           <span
@@ -268,10 +234,14 @@ export function ProductCard({
   p,
   onClick,
   sale = false,
+  preview = false,
 }: {
   p: Product;
   onClick: (p: Product) => void;
   sale?: boolean;
+  /** Static, non-interactive render (no PDP link, no wishlist toggle) — used by
+      the Add Product live preview so sellers see the exact buyer card. */
+  preview?: boolean;
 }) {
   const { toggleWish, wish } = useBz();
   const locale = useBazaarStore((s) => s.locale);
@@ -295,7 +265,7 @@ export function ProductCard({
         border: `1px solid ${hov ? "var(--ink-300)" : "var(--line-200)"}`,
         borderRadius: "var(--r-lg)",
         overflow: "hidden",
-        cursor: "pointer",
+        cursor: preview ? "default" : "pointer",
         transition:
           "border-color var(--dur-standard) var(--ease), box-shadow var(--dur-standard) var(--ease)",
         boxShadow: hov ? "var(--sh-1)" : "none",
@@ -306,13 +276,16 @@ export function ProductCard({
       {/* Stretched link: a real <a> covering the card so the browser can open
           the product in a new tab (⌘/Ctrl/middle/right-click). Left-click runs
           the app's openProduct via onNavigate. Interactive controls below sit
-          above this overlay with their own z-index. */}
-      <AppLink
-        href={pathFromScreen("pdp", p.id)}
-        onNavigate={() => onClick(p)}
-        ariaLabel={productName}
-        style={{ position: "absolute", inset: 0, zIndex: 1 }}
-      />
+          above this overlay with their own z-index. Omitted in preview mode —
+          there's no live product to open yet. */}
+      {!preview && (
+        <AppLink
+          href={pathFromScreen("pdp", p.id)}
+          onNavigate={() => onClick(p)}
+          ariaLabel={productName}
+          style={{ position: "absolute", inset: 0, zIndex: 1 }}
+        />
+      )}
       <div style={{ position: "relative" }}>
         {p.img ? (
           <div
@@ -343,11 +316,17 @@ export function ProductCard({
         )}
         {/* wishlist — 44×44 per WCAG / Material touch target */}
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            void toggleWish(p.id);
-          }}
+          onClick={
+            preview
+              ? undefined
+              : (e) => {
+                  e.stopPropagation();
+                  void toggleWish(p.id);
+                }
+          }
           aria-label="Add to wishlist"
+          aria-hidden={preview || undefined}
+          tabIndex={preview ? -1 : undefined}
           style={{
             position: "absolute",
             top: 2,
@@ -358,7 +337,8 @@ export function ProductCard({
             borderRadius: "50%",
             background: "transparent",
             border: "none",
-            cursor: "pointer",
+            cursor: preview ? "default" : "pointer",
+            pointerEvents: preview ? "none" : undefined,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

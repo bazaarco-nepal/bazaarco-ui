@@ -5,7 +5,6 @@ import { Button } from "@/components/ui";
 import { useCurrentUser } from "@/hooks/use-auth";
 import { usePendingSellerVerifications, useReviewSellerVerification } from "@/hooks/use-admin";
 
-
 /* ---------- Admin: seller verification queue ---------- */
 
 function isAdminUser(email: string | undefined): boolean {
@@ -43,8 +42,8 @@ export function AdminSellerVerifications() {
         style={{
           margin: "0 0 8px",
           fontSize: "1.5rem",
-          fontWeight: 800,
-          color: "var(--blue-deep)",
+          fontWeight: 600,
+          color: "var(--ink-900)",
         }}
       >
         Seller verifications
@@ -89,7 +88,7 @@ export function AdminSellerVerifications() {
                 </a>
               )}
               <div style={{ flex: 1, minWidth: 200 }}>
-                <div style={{ fontWeight: 800, fontSize: "1.05rem" }}>{row.shopName}</div>
+                <div style={{ fontWeight: 600, fontSize: "1.05rem" }}>{row.shopName}</div>
                 <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 4 }}>
                   {row.userEmail} · {row.verification.docType?.toUpperCase()}
                   {row.verification.docIdNumber ? ` · ${row.verification.docIdNumber}` : ""}

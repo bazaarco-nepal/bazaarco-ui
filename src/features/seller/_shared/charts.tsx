@@ -3,7 +3,6 @@
 import React from "react";
 import { formatNPR } from "@/lib/money";
 
-
 /* ---------- 4.2 Seller Dashboard ---------- */
 
 /* Inline SVG charts (no deps) */
@@ -68,7 +67,7 @@ export function SellerBarChart({
             <div
               style={{
                 fontSize: ".7rem",
-                fontWeight: 700,
+                fontWeight: 600,
                 color: "var(--ink-500)",
                 textTransform: "uppercase",
                 letterSpacing: ".04em",
@@ -78,7 +77,7 @@ export function SellerBarChart({
             </div>
             <div
               className="tnum"
-              style={{ fontSize: "1rem", fontWeight: 800, color: s.tint, marginTop: 4 }}
+              style={{ fontSize: "1rem", fontWeight: 600, color: s.tint, marginTop: 4 }}
             >
               {s.value}
             </div>
@@ -119,7 +118,7 @@ export function SellerBarChart({
                   className="tnum"
                   style={{
                     fontSize: ".68rem",
-                    fontWeight: 700,
+                    fontWeight: 600,
                     color: d.value > 0 ? "var(--ink-700)" : "var(--ink-400)",
                     marginBottom: 6,
                     whiteSpace: "nowrap",
@@ -139,11 +138,11 @@ export function SellerBarChart({
                   background: isPeak
                     ? "linear-gradient(180deg, #fbbf24 0%, #f77f00 45%, #e63946 100%)"
                     : d.value > 0
-                      ? "linear-gradient(180deg, #60a5fa 0%, #1d4ed8 100%)"
+                      ? "linear-gradient(180deg, color-mix(in srgb, var(--blue) 55%, #fff) 0%, var(--blue) 100%)"
                       : "var(--line-200)",
                   boxShadow: isPeak
                     ? "0 4px 14px rgba(230,57,70,.25)"
-                    : "0 2px 8px rgba(29,78,216,.15)",
+                    : "0 2px 8px color-mix(in srgb, var(--blue) 16%, transparent)",
                   transition: "height .2s ease",
                 }}
               />
@@ -257,7 +256,7 @@ export function SellerDonut({
               <span style={{ width: 10, height: 10, borderRadius: 3, background: s.color }} />
               <span style={{ fontWeight: 600 }}>{s.label}</span>
             </span>
-            <span className="tnum" style={{ fontWeight: 800, fontSize: ".875rem" }}>
+            <span className="tnum" style={{ fontWeight: 600, fontSize: ".875rem" }}>
               {Math.round((s.value / total) * 100)}%
             </span>
           </div>

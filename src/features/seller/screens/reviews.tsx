@@ -5,8 +5,14 @@ import { useTranslation } from "react-i18next";
 import { Button, RatingStars, ChipGroup, ApiState } from "@/components/ui";
 import { useSellerReviews } from "@/hooks/use-seller";
 import { useBz, BuyerAvatar } from "@/components/common";
-import { SellerHelpBar, SellerPageHeader, SellerEmptyState } from "../_shared/components";
-
+import {
+  SellerHelpBar,
+  SellerPageHeader,
+  SellerEmptyState,
+  SellerPage,
+  MetricGrid,
+  Metric,
+} from "../_shared/components";
 
 /* ---------- 4.10 Reviews ---------- */
 export function SellerReviews() {
@@ -26,49 +32,24 @@ export function SellerReviews() {
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
-      <div
-        className="bz-container-pad"
-        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
-      >
+      <SellerPage>
         <SellerHelpBar />
         <SellerPageHeader
           title={t("seller.reviews.title")}
           subtitle={t("seller.reviews.subtitle")}
         />
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-            gap: 12,
-            marginBottom: 18,
-          }}
-        >
-          {[
-            { v: `${avg} ★`, k: "Average", c: "var(--gold)" },
-            { v: REVIEWS_DATA.length, k: "Total", c: "var(--blue)" },
-            { v: REVIEWS_DATA.filter((r) => !r.replied).length, k: "Needs reply", c: "var(--red)" },
-            {
-              v: REVIEWS_DATA.filter((r) => r.stars <= 3).length,
-              k: "Low ratings",
-              c: "var(--danger)",
-            },
-          ].map((s) => (
-            <div
-              key={s.k}
-              style={{
-                background: "#fff",
-                border: "1px solid var(--line-200)",
-                borderRadius: "var(--r-lg)",
-                padding: 14,
-              }}
-            >
-              <div className="tnum" style={{ fontSize: "1.375rem", fontWeight: 800, color: s.c }}>
-                {s.v}
-              </div>
-              <div style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>{s.k}</div>
-            </div>
-          ))}
+        <div style={{ marginBottom: 18 }}>
+          <MetricGrid>
+            {[
+              { v: `${avg} ★`, k: "Average" },
+              { v: REVIEWS_DATA.length, k: "Total" },
+              { v: REVIEWS_DATA.filter((r) => !r.replied).length, k: "Needs reply" },
+              { v: REVIEWS_DATA.filter((r) => r.stars <= 3).length, k: "Low ratings" },
+            ].map((s) => (
+              <Metric key={s.k} label={s.k} value={s.v} />
+            ))}
+          </MetricGrid>
         </div>
 
         <div style={{ marginBottom: 14 }}>
@@ -110,7 +91,7 @@ export function SellerReviews() {
                   style={{ background: "var(--tint-blue-50)", color: "var(--blue)" }}
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 800 }}>{r.buyer}</div>
+                  <div style={{ fontWeight: 600 }}>{r.buyer}</div>
                   <div style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
                     {r.product} · {r.time}
                   </div>
@@ -134,7 +115,7 @@ export function SellerReviews() {
                     style={{
                       fontSize: ".7rem",
                       color: "var(--blue)",
-                      fontWeight: 800,
+                      fontWeight: 600,
                       marginBottom: 2,
                     }}
                   >
@@ -160,7 +141,7 @@ export function SellerReviews() {
             </div>
           ))}
         </div>
-      </div>
+      </SellerPage>
     </ApiState>
   );
 }

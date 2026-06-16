@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Chip, Icon } from "@/components/ui";
+import { Chip } from "@/components/ui";
+import { SellerIcon } from "./icons";
 import { formatNPR } from "@/lib/money";
 import { BuyerAvatar } from "@/components/common";
 import { INBOX_LABEL, INBOX_TONE } from "./inbox";
 import { type SellerInboxOrderItem } from "./types";
-
 
 /* ---------- Shared seller chrome ---------- */
 
@@ -119,7 +119,7 @@ export function SellerEmptyState({
             marginBottom: 14,
           }}
         >
-          <Icon name={icon} size={24} color="var(--blue)" />
+          <SellerIcon name={icon} size={24} color="var(--blue)" />
         </span>
       )}
       <div style={{ fontWeight: 600, fontSize: "1rem", color: "var(--ink-900)", marginBottom: 4 }}>
@@ -208,9 +208,9 @@ export function SelectMenu({
           whiteSpace: "nowrap",
         }}
       >
-        {icon && <Icon name={icon} size={15} color="var(--ink-500)" />}
+        {icon && <SellerIcon name={icon} size={15} color="var(--ink-500)" />}
         {current?.label}
-        <Icon name={open ? "chevronUp" : "chevronDown"} size={14} color="var(--ink-400)" />
+        <SellerIcon name={open ? "chevronUp" : "chevronDown"} size={14} color="var(--ink-400)" />
       </button>
       {open && (
         <div
@@ -266,7 +266,7 @@ export function SelectMenu({
                 }}
               >
                 {o.label}
-                {selected && <Icon name="check" size={14} color="var(--blue)" />}
+                {selected && <SellerIcon name="check" size={14} color="var(--blue)" />}
               </button>
             );
           })}
@@ -318,7 +318,7 @@ export function OrderCard({
         </div>
         <div
           style={{
-            fontWeight: 800,
+            fontWeight: 600,
             color: "var(--ink-900)",
             fontSize: ".875rem",
             overflow: "hidden",
@@ -333,7 +333,7 @@ export function OrderCard({
         </div>
         <div
           className="tnum"
-          style={{ fontSize: ".875rem", color: "var(--blue-deep)", fontWeight: 800, marginTop: 4 }}
+          style={{ fontSize: ".875rem", color: "var(--ink-900)", fontWeight: 600, marginTop: 4 }}
         >
           {formatNPR(o.price)}
         </div>
@@ -405,9 +405,7 @@ export function Card({
       }
       style={style}
     >
-      {title != null && (
-        <CardHead title={title} label={label} action={action} />
-      )}
+      {title != null && <CardHead title={title} label={label} action={action} />}
       {children}
     </section>
   );
@@ -505,7 +503,7 @@ export function SegToggle({
             onClick={() => onChange(o.value)}
           >
             <span className="bz-seg__t">
-              {o.icon && <Icon name={o.icon} size={18} />}
+              {o.icon && <SellerIcon name={o.icon} size={18} />}
               {o.title}
             </span>
             {o.sub != null && <span className="bz-seg__s">{o.sub}</span>}
@@ -551,7 +549,7 @@ export function RadioCardGroup({
           >
             {o.icon && (
               <span className="bz-radio-card__ic">
-                <Icon name={o.icon} size={20} />
+                <SellerIcon name={o.icon} size={20} />
               </span>
             )}
             <span>
@@ -589,9 +587,13 @@ export function PhotoTile({
   return (
     <button
       type="button"
-      aria-label={ariaLabel || (filled ? "Change photo" : typeof caption === "string" ? caption : "Add photo")}
+      aria-label={
+        ariaLabel || (filled ? "Change photo" : typeof caption === "string" ? caption : "Add photo")
+      }
       className={
-        "bz-tile " + (variant === "main" ? "bz-tile--main" : "bz-tile--gallery") + (filled ? " is-filled" : "")
+        "bz-tile " +
+        (variant === "main" ? "bz-tile--main" : "bz-tile--gallery") +
+        (filled ? " is-filled" : "")
       }
       style={filled ? { backgroundImage: `url(${url})` } : undefined}
       onClick={onPick}
@@ -613,12 +615,12 @@ export function PhotoTile({
             }
           }}
         >
-          <Icon name="x" size={12} />
+          <SellerIcon name="x" size={12} />
         </span>
       )}
       {!filled && (
         <>
-          <Icon name="image" size={variant === "main" ? 22 : 20} />
+          <SellerIcon name="image" size={variant === "main" ? 22 : 20} />
           <span className="bz-tile__cap">{caption}</span>
         </>
       )}
@@ -665,7 +667,7 @@ export function ChecklistRow({
     <div className="bz-check">
       <span className="bz-check__label">
         <span className={done ? "bz-check__ok" : "bz-check__todo"}>
-          <Icon name={done ? "badgeCheck" : "flag"} size={19} />
+          <SellerIcon name={done ? "badgeCheck" : "flag"} size={19} />
         </span>
         {label}
       </span>
@@ -722,7 +724,7 @@ function DetailTile({
       <div
         style={{
           fontSize: ".75rem",
-          fontWeight: 700,
+          fontWeight: 600,
           color: "var(--ink-500)",
           marginBottom: 4,
           textTransform: "uppercase",
@@ -731,7 +733,7 @@ function DetailTile({
       >
         {label}
       </div>
-      <div className="tnum" style={{ fontSize: "1.125rem", fontWeight: 800, color }}>
+      <div className="tnum" style={{ fontSize: "1.125rem", fontWeight: 600, color }}>
         {value}
       </div>
       {sub && (

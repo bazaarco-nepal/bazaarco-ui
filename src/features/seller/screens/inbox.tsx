@@ -2,7 +2,8 @@
 
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Icon, ChipGroup, usePages, PageBar, ApiState } from "@/components/ui";
+import { ChipGroup, usePages, PageBar, ApiState } from "@/components/ui";
+import { SellerIcon } from "../_shared/icons";
 import { type OrderStatus } from "@/lib/order-utils";
 import { useSellerInbox } from "@/hooks/use-seller";
 import { useBz } from "@/components/common";
@@ -12,11 +13,11 @@ import {
   SellerPageHeader,
   SelectMenu,
   SellerEmptyState,
+  SellerPage,
 } from "../_shared/components";
 import { INBOX_DATE_RANGES, INBOX_LABEL, INBOX_TONE, inDateRange } from "../_shared/inbox";
 import { sellerOrderRef } from "../_shared/refs";
 import { type SellerInboxOrderItem } from "../_shared/types";
-
 
 export function SellerInbox() {
   const { t } = useTranslation();
@@ -77,10 +78,7 @@ export function SellerInbox() {
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
-      <div
-        className="bz-container-pad"
-        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
-      >
+      <SellerPage>
         <SellerHelpBar />
 
         <SellerPageHeader
@@ -98,13 +96,13 @@ export function SellerInbox() {
                 background: "#fff",
                 border: "1px solid var(--line-200)",
                 borderRadius: "var(--r-md)",
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: ".8125rem",
                 cursor: "pointer",
                 color: "var(--ink-700)",
               }}
             >
-              <Icon name={view === "list" ? "kanban" : "layout"} size={16} />
+              <SellerIcon name={view === "list" ? "kanban" : "layout"} size={16} />
               {view === "list" ? "Board view" : "List view"}
             </button>
           }
@@ -121,7 +119,7 @@ export function SellerInbox() {
           }}
         >
           <div style={{ flex: "1 1 240px", position: "relative", minWidth: 200 }}>
-            <Icon
+            <SellerIcon
               name="search"
               size={16}
               color="var(--ink-400)"
@@ -165,7 +163,7 @@ export function SellerInbox() {
                   justifyContent: "center",
                 }}
               >
-                <Icon name="x" size={12} color="var(--ink-700)" />
+                <SellerIcon name="x" size={12} color="var(--ink-700)" />
               </button>
             )}
           </div>
@@ -185,7 +183,7 @@ export function SellerInbox() {
                 border: "none",
                 background: "none",
                 color: "var(--ink-500)",
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: ".8125rem",
                 cursor: "pointer",
                 textDecoration: "underline",
@@ -248,12 +246,12 @@ export function SellerInbox() {
                         display: "inline-flex",
                         alignItems: "center",
                         gap: 6,
-                        fontWeight: 800,
+                        fontWeight: 600,
                         fontSize: ".875rem",
                         color: "var(--ink-900)",
                       }}
                     >
-                      <Icon
+                      <SellerIcon
                         name={lbl.icon}
                         size={16}
                         color={`var(--${tone === "success" ? "success" : tone})`}
@@ -267,7 +265,7 @@ export function SellerInbox() {
                         padding: "2px 8px",
                         borderRadius: 999,
                         fontSize: ".7rem",
-                        fontWeight: 800,
+                        fontWeight: 600,
                       }}
                     >
                       {items.length}
@@ -334,7 +332,7 @@ export function SellerInbox() {
             )}
           </>
         )}
-      </div>
+      </SellerPage>
     </ApiState>
   );
 }

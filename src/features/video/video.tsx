@@ -36,6 +36,7 @@ import {
   BackToTop,
   ApiState,
   AppLink,
+  StoreAvatar,
 } from "@/components/ui";
 import { pathFromScreen, productShareUrl, searchPath } from "@/config/routes";
 import { useVideoFeed } from "@/hooks/use-video-feed";
@@ -540,33 +541,19 @@ function ReelItem({
             onNavigate={() => openProduct(asProduct(p))}
             ariaLabel={`Visit ${s.name}`}
             style={{
-              width: 38,
-              height: 38,
-              borderRadius: "50%",
               padding: 0,
+              borderRadius: "30%",
               border: "2px solid #fff",
-              background: tint[2],
-              color: "#fff",
-              fontWeight: 800,
-              fontSize: 14,
+              overflow: "hidden",
+              lineHeight: 0,
               cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              display: "inline-flex",
               flexShrink: 0,
               position: "relative",
               textDecoration: "none",
             }}
           >
-            {s.avatar ? (
-              <img
-                src={s.avatar}
-                alt=""
-                style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
-              />
-            ) : (
-              s.name[0]
-            )}
+            <StoreAvatar src={s.avatar} name={s.name} size={34} />
           </AppLink>
           <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
             <span

@@ -1250,6 +1250,21 @@ body {
   box-sizing: border-box;
 }
 
+/* Page-type-aware width. Data-dense pages (dashboards, tables, charts, the
+   three-zone Add Product layout) opt into the wider container so columns fill
+   the space rather than wasting both gutters. */
+.bz-seller-page--wide {
+  max-width: var(--seller-max-wide, var(--container));
+}
+
+/* Editing pages keep a readable, capped editable column (~680px) inside the
+   centered page instead of stretching inputs edge to edge. Anchor the column
+   with `.bz-seller-form-col`; the wider page chrome (headers, banners) can
+   still span full width above it. */
+.bz-seller-form-col {
+  max-width: 680px;
+}
+
 /* Seller page header — one shared pattern across every seller screen: a blue
    accent rail beside a dark title, a helper line, optional breadcrumb, and a
    right-aligned actions slot. Colors come from tokens so it follows the skin. */
@@ -1342,7 +1357,7 @@ body {
   .bz-kyc-actions > button,
   .bz-kyc-actions > a {
     width: auto !important;
-    min-width: 200px;
+    min-width: 150px;
   }
 }
 
@@ -1800,17 +1815,8 @@ body {
   }
 }
 
-@media (max-width: 960px) {
-  .bz-seller-add-layout {
-    display: flex;
-    flex-direction: column;
-    grid-template-columns: 1fr;
-  }
-  .bz-seller-add-form {
-    order: 0;
-    min-width: 0;
-  }
-}
+/* The Add Product layout owns its own responsive behaviour in
+   form-workflow.css (three-zone → stacked); no override needed here. */
 
 /* Seller photo grid — reliable thumbnails on narrow screens */
 .bz-photo-grid {
@@ -2806,7 +2812,10 @@ body {
 
 /* Chat shell */
 .bz-chat-page {
-  max-width: var(--container);
+  /* Match every other seller screen's reading column (--seller-max, 1160px in
+     Fluent) so Messages lines up with them instead of spanning the wider buyer
+     --container and sitting further left. */
+  max-width: var(--seller-max, var(--container));
   margin: 0 auto;
   padding: 20px 28px 100px;
 }
@@ -3602,4 +3611,92 @@ body {
 .bz-pdp-offer-btn:hover:not(:disabled) {
   background: rgba(230, 57, 70, 0.13);
   border-color: rgba(230, 57, 70, 0.5);
+}
+
+/* ── Language toggle — segmented switch with a sliding thumb ──────────────
+   Shared by the buyer profile and seller settings. Token-based, so it adopts
+   the buyer (BazaarCo) and seller (Fluent) skins automatically. Large, easy
+   tap targets; the active language slides under a soft elevated thumb. */
+.bz-lang-toggle {
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  gap: 0;
+  padding: 3px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--line-200);
+  background: var(--line-100);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  box-sizing: border-box;
+  min-height: 44px;
+}
+.bz-lang-toggle--compact {
+  min-height: 40px;
+}
+
+/* The elevated pill that sits under the active option. Width is one half of the
+   inner track; it slides by its own width when the second option is active.
+   `--bz-lang-active` (0 or 1) is set inline by the component. */
+.bz-lang-toggle__thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  border-radius: var(--r-full);
+  background: #fff;
+  box-shadow: var(--sh-1, 0 1px 2px rgba(0, 0, 0, 0.08));
+  transform: translateX(calc(var(--bz-lang-active, 0) * 100%));
+  transition: transform var(--dur-standard, 200ms) var(--ease, ease);
+  pointer-events: none;
+}
+
+.bz-lang-toggle__opt {
+  position: relative;
+  z-index: 1;
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 76px;
+  padding: 0 18px;
+  border-radius: var(--r-full);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink-500);
+  transition: color var(--dur-standard, 200ms) var(--ease, ease);
+}
+.bz-lang-toggle--compact .bz-lang-toggle__opt {
+  min-width: 60px;
+  padding: 0 14px;
+  font-size: 0.8125rem;
+}
+.bz-lang-toggle__opt[aria-pressed="true"] {
+  color: var(--blue-deep, var(--blue));
+}
+.bz-lang-toggle__opt[aria-pressed="false"]:hover {
+  color: var(--ink-700);
+}
+.bz-lang-toggle__opt:active {
+  transform: scale(0.97);
+}
+.bz-lang-toggle__opt:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bz-lang-toggle__thumb,
+  .bz-lang-toggle__opt {
+    transition: none;
+  }
 }

@@ -2,7 +2,6 @@
 
 import { type OrderStatus } from "@/lib/order-utils";
 
-
 /* ---------- 4.3 Orders Inbox (Viber-style feed) ---------- */
 export const INBOX_TONE: Record<OrderStatus, string> = {
   placed: "red",

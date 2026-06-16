@@ -2,17 +2,37 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Icon, Button, Chip, Price, Placeholder, ChipGroup, usePages, PageBar, ApiState } from "@/components/ui";
+import {
+  Button,
+  Chip,
+  Price,
+  Placeholder,
+  ChipGroup,
+  usePages,
+  PageBar,
+  ApiState,
+} from "@/components/ui";
+import { SellerIcon } from "../_shared/icons";
 import { ProductDeleteConfirmModal } from "@/components/seller/product-delete-confirm-modal";
 import { formatNPR } from "@/lib/money";
 import { type CreateProductVariantPayload, type SellerInventoryItem } from "@/services/api/seller";
-import { useUpdateProduct, useDeleteProduct, useSellerInventory, useAcknowledgeProductModeration } from "@/hooks/use-seller";
+import {
+  useUpdateProduct,
+  useDeleteProduct,
+  useSellerInventory,
+  useAcknowledgeProductModeration,
+} from "@/hooks/use-seller";
 import { useBz } from "@/components/common";
 import { pathFromScreen } from "@/config/routes";
 import { SellerHelpBar, SellerPageHeader, SellerEmptyState } from "../_shared/components";
+import {
+  useLocalDraft,
+  ADD_PRODUCT_DRAFT_KEY,
+  productDraftHasContent,
+  type ProductDraftPreview,
+} from "../_shared/form-workflow";
 import { useIsNarrow } from "../_shared/hooks";
 import { editProductRef, viewProductRef } from "../_shared/refs";
-
 
 /* ---------- 4.5 Inventory — swipe-to-sell ---------- */
 const EMPTY_INVENTORY: SellerInventoryItem[] = [];
@@ -50,6 +70,36 @@ export function SellerInventory() {
   const [status, setStatus] = useState("all"); // all | active | low | oos
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("added");
+
+  // The device-local "Add product" draft, surfaced here so a half-finished
+  // listing is findable again (it autosaves but lives only in this browser).
+  // Read in an effect to avoid an SSR/client hydration mismatch on localStorage.
+  const productDraft = useLocalDraft<ProductDraftPreview>(ADD_PRODUCT_DRAFT_KEY);
+  const [draftPreview, setDraftPreview] = useState<ProductDraftPreview | null>(null);
+  useEffect(() => {
+    const refresh = () => {
+      const saved = productDraft.read();
+      setDraftPreview(productDraftHasContent(saved) ? saved : null);
+    };
+    refresh();
+    // Re-read when the seller comes back to this view (it may have stayed mounted
+    // while they saved a draft on Add Product) or saved it in another tab.
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("storage", refresh);
+    };
+    // `productDraft.read` is stable (keyed on a constant) — wire listeners once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const discardDraft = () => {
+    productDraft.clear();
+    setDraftPreview(null);
+    toast("Draft discarded");
+  };
   // Keep the add-product action compact on phones so it stays inline with the
   // title instead of wrapping into an orphaned button above the search bar.
   const isMobile = useIsNarrow(768);
@@ -277,7 +327,7 @@ export function SellerInventory() {
         <div
           className="bz-container-pad"
           style={{
-            maxWidth: "var(--container)",
+            maxWidth: "var(--seller-max, var(--container))",
             margin: "0 auto",
             padding: "20px clamp(14px, 4vw, 28px) 100px",
           }}
@@ -300,10 +350,73 @@ export function SellerInventory() {
             }
           />
 
+          {draftPreview && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 14,
+                padding: 14,
+                marginBottom: 14,
+                borderRadius: "var(--r-lg)",
+                border: "1px solid var(--line-200)",
+                borderInlineStart: "3px solid var(--blue)",
+                background: "var(--card, #fff)",
+                boxShadow: "var(--sh-1)",
+                flexWrap: "wrap",
+              }}
+            >
+              <div
+                style={{
+                  width: 48,
+                  height: 48,
+                  flexShrink: 0,
+                  borderRadius: "var(--r-md)",
+                  background: "var(--tint-blue-50)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <SellerIcon name="edit" size={20} color="var(--blue)" />
+              </div>
+              <div style={{ flex: "1 1 200px", minWidth: 0 }}>
+                <Chip tone="blue" size="sm">
+                  Draft
+                </Chip>
+                <div
+                  style={{
+                    fontWeight: 600,
+                    fontSize: "1rem",
+                    marginTop: 4,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {draftPreview.title?.trim() || "Untitled product"}
+                </div>
+                <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 2 }}>
+                  {Number(draftPreview.price) > 0
+                    ? `${formatNPR(Number(draftPreview.price))} · Not published yet`
+                    : "Not published yet"}
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <Button variant="primary" size="sm" icon="arrowRight" onClick={() => nav("s-add")}>
+                  Continue
+                </Button>
+                <Button variant="secondary" size="sm" onClick={discardDraft}>
+                  Discard
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Search + sort row */}
           <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
             <div style={{ flex: "1 1 220px", position: "relative", minWidth: 200 }}>
-              <Icon
+              <SellerIcon
                 name="search"
                 size={16}
                 color="var(--ink-400)"
@@ -352,7 +465,7 @@ export function SellerInventory() {
                     justifyContent: "center",
                   }}
                 >
-                  <Icon name="x" size={12} color="var(--ink-700)" />
+                  <SellerIcon name="x" size={12} color="var(--ink-700)" />
                 </button>
               )}
             </div>
@@ -367,7 +480,7 @@ export function SellerInventory() {
                 fontSize: ".8125rem",
                 background: "#fff",
                 color: "var(--ink-900)",
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: "pointer",
               }}
             >
@@ -386,7 +499,7 @@ export function SellerInventory() {
                   border: "none",
                   background: "none",
                   color: "var(--ink-500)",
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: ".8125rem",
                   cursor: "pointer",
                   textDecoration: "underline",
@@ -493,7 +606,7 @@ export function SellerInventory() {
                           />
                         )}
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 700, fontSize: "1rem" }}>{it.name}</div>
+                          <div style={{ fontWeight: 600, fontSize: "1rem" }}>{it.name}</div>
                           {(isFrozen || pendingReview) && (
                             <div style={{ marginTop: 4 }}>
                               <Chip tone={isFrozen ? "red" : "saffron"} size="sm">
@@ -505,8 +618,8 @@ export function SellerInventory() {
                             className="tnum"
                             style={{
                               fontSize: ".875rem",
-                              color: "var(--blue-deep)",
-                              fontWeight: 800,
+                              color: "var(--ink-900)",
+                              fontWeight: 600,
                               marginTop: 2,
                             }}
                           >
@@ -521,7 +634,7 @@ export function SellerInventory() {
                                   ? "var(--saffron)"
                                   : "var(--ink-500)",
                               marginTop: 2,
-                              fontWeight: 700,
+                              fontWeight: 600,
                               display: "inline-flex",
                               alignItems: "center",
                               gap: 4,
@@ -529,19 +642,20 @@ export function SellerInventory() {
                           >
                             {oos ? (
                               <>
-                                <Icon name="zap" size={14} color="var(--danger)" /> Out of stock
+                                <SellerIcon name="zap" size={14} color="var(--danger)" /> Out of
+                                stock
                               </>
                             ) : low ? (
                               <>
-                                <Icon name="zap" size={14} color="var(--saffron)" /> Only {it.stock}{" "}
-                                left
+                                <SellerIcon name="zap" size={14} color="var(--saffron)" /> Only{" "}
+                                {it.stock} left
                               </>
                             ) : (
                               <>Stock: {it.stock}</>
                             )}
                           </div>
                         </div>
-                        <Icon
+                        <SellerIcon
                           name={isOpen ? "chevronDown" : "chevronRight"}
                           size={22}
                           color="var(--ink-400)"
@@ -569,9 +683,9 @@ export function SellerInventory() {
                             >
                               <div
                                 style={{
-                                  fontWeight: 800,
+                                  fontWeight: 600,
                                   fontSize: ".8125rem",
-                                  color: "var(--blue-deep)",
+                                  color: "var(--ink-900)",
                                   marginBottom: 6,
                                 }}
                               >
@@ -644,7 +758,7 @@ export function SellerInventory() {
                             <>
                               <div
                                 style={{
-                                  fontWeight: 700,
+                                  fontWeight: 600,
                                   fontSize: ".875rem",
                                   margin: "14px 0 10px",
                                 }}
@@ -741,7 +855,7 @@ export function SellerInventory() {
                                             justifyContent: "center",
                                           }}
                                         >
-                                          <Icon name="minus" size={14} />
+                                          <SellerIcon name="minus" size={14} />
                                         </button>
                                         <input
                                           type="text"
@@ -756,7 +870,7 @@ export function SellerInventory() {
                                             width: 44,
                                             height: 40,
                                             textAlign: "center",
-                                            fontWeight: 800,
+                                            fontWeight: 600,
                                             fontSize: ".9375rem",
                                             border: "none",
                                             outline: "none",
@@ -783,7 +897,7 @@ export function SellerInventory() {
                                             justifyContent: "center",
                                           }}
                                         >
-                                          <Icon name="plus" size={14} />
+                                          <SellerIcon name="plus" size={14} />
                                         </button>
                                       </div>
                                       {!vOos && (
@@ -802,7 +916,7 @@ export function SellerInventory() {
                                             background: "#fff",
                                             color: "var(--ink-600)",
                                             fontSize: ".75rem",
-                                            fontWeight: 700,
+                                            fontWeight: 600,
                                             cursor: savingId === it.id ? "not-allowed" : "pointer",
                                             whiteSpace: "nowrap",
                                           }}
@@ -866,7 +980,7 @@ export function SellerInventory() {
                                   flexWrap: "wrap",
                                 }}
                               >
-                                <div style={{ fontWeight: 700, fontSize: ".875rem" }}>
+                                <div style={{ fontWeight: 600, fontSize: ".875rem" }}>
                                   Change stock
                                   {savingId === it.id && (
                                     <span
@@ -911,7 +1025,7 @@ export function SellerInventory() {
                                       color: "var(--ink-700)",
                                     }}
                                   >
-                                    <Icon name="minus" size={18} />
+                                    <SellerIcon name="minus" size={18} />
                                   </button>
                                   <input
                                     type="text"
@@ -926,7 +1040,7 @@ export function SellerInventory() {
                                       width: 56,
                                       height: 48,
                                       textAlign: "center",
-                                      fontWeight: 800,
+                                      fontWeight: 600,
                                       fontSize: "1.125rem",
                                       border: "none",
                                       outline: "none",
@@ -950,7 +1064,7 @@ export function SellerInventory() {
                                       color: "var(--ink-700)",
                                     }}
                                   >
-                                    <Icon name="plus" size={18} />
+                                    <SellerIcon name="plus" size={18} />
                                   </button>
                                 </div>
                               </div>
@@ -991,7 +1105,7 @@ export function SellerInventory() {
                           <div style={{ marginTop: 14 }}>
                             <div
                               style={{
-                                fontWeight: 700,
+                                fontWeight: 600,
                                 fontSize: ".875rem",
                                 marginBottom: 8,
                               }}
@@ -1007,7 +1121,7 @@ export function SellerInventory() {
                                 }}
                               >
                                 Price is set per variant — use{" "}
-                                <span style={{ fontWeight: 700, color: "var(--blue-deep)" }}>
+                                <span style={{ fontWeight: 600, color: "var(--ink-900)" }}>
                                   Edit
                                 </span>{" "}
                                 below to update variant prices.
@@ -1037,7 +1151,7 @@ export function SellerInventory() {
                                     border: "1px solid var(--line-200)",
                                     borderRadius: "var(--r-md)",
                                     fontSize: "1rem",
-                                    fontWeight: 700,
+                                    fontWeight: 600,
                                     outline: "none",
                                   }}
                                 />

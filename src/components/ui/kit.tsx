@@ -1,13 +1,13 @@
 // @ts-nocheck — legacy design prototype; typed incrementally
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext, createContext } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { ASSETS } from "@/config/assets";
 import { postalForCity, isDeliverableCity, DELIVERY_AREA_MESSAGE } from "@/lib/delivery-location";
 import { reverseGeocode } from "@/lib/reverse-geocode";
-import { tintForName } from "@/lib/store-tint";
+import { tintForName, STORE_TINTS } from "@/lib/store-tint";
 import { formatNPR } from "@/lib/money";
 import { MapPinPicker } from "@/components/ui/map-pin-picker";
 import { TOAST_VARIANT_META } from "@/lib/toast-variant";
@@ -171,6 +171,12 @@ export const ICON_PATHS = {
       <rect x="3" y="3" width="18" height="18" rx="2" />
       <circle cx="9" cy="9" r="2" />
       <path d="m21 16-5-5-9 9" />
+    </>
+  ),
+  camera: (
+    <>
+      <path d="M14.5 5 13 3H9L7.5 5H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-4.5Z" />
+      <circle cx="12" cy="12.5" r="3.5" />
     </>
   ),
   sliders: (
@@ -590,6 +596,15 @@ export const ICON_PATHS = {
     <path d="M16 3c.4 2.2 1.9 3.9 4 4.3v3.1a7 7 0 0 1-4-1.4V15a6 6 0 1 1-6-6c.35 0 .7.03 1 .1v3.2a3 3 0 1 0 2 2.8V3h3Z" />
   ),
 };
+type IconRenderer = (props: {
+  name: string;
+  size?: number;
+  color?: string;
+  style?: React.CSSProperties;
+  className?: string;
+}) => React.ReactNode;
+export const IconOverrideContext = createContext<IconRenderer | null>(null);
+
 export function Icon({
   name,
   size = 22,
@@ -607,6 +622,8 @@ export function Icon({
   className?: string;
   style?: React.CSSProperties;
 }) {
+  const override = useContext(IconOverrideContext);
+  if (override) return <>{override({ name, size, color, style, className })}</>;
   const p = ICON_PATHS[name];
   if (!p) return null;
   return (
@@ -1164,15 +1181,37 @@ export const TINTS = {
   teal: ["#F0FDFA", "#99F6E4", "#0D9488"],
 };
 
+// First grapheme of a name, Unicode-safe and locale-uppercased, so non-Latin
+// scripts (e.g. Devanagari "मेरो" → "म") yield a sensible monogram instead of a
+// broken half-character. Prefers Intl.Segmenter for true grapheme clusters and
+// falls back to a code-point spread where it's unavailable. "?" when empty.
+function storeMonogram(name?: string | null): string {
+  const trimmed = (name ?? "").trim();
+  if (!trimmed) return "?";
+  let first: string | undefined;
+  if (typeof Intl !== "undefined" && "Segmenter" in Intl) {
+    const seg = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+    first = seg.segment(trimmed)[Symbol.iterator]().next().value?.segment;
+  } else {
+    first = [...trimmed][0];
+  }
+  return (first ?? "?").toLocaleUpperCase();
+}
+
 /**
- * A store's brand mark as rendered across BazaarCo: a rounded SQUARE tile (a
- * brand identity, not a personal/profile circle) holding the shop logo, falling
- * back to the first letter of the name on a deterministic tint. The tint is
- * hashed from the store name (see `tintForName`) so the same shop is always the
- * same colour and a grid of them never looks like a random crayon box. Single
- * source of truth for the /stores cards, the seller sidebar, and the store-link
- * preview. Corner radius stays in the 10–12px brand-tile range across sizes; the
- * fallback letter scales with `size` (1.25rem at 56px).
+ * A store's brand mark as rendered across BazaarCo: a soft SQUIRCLE tile (a brand
+ * identity, not a personal/profile circle) holding the shop logo, falling back to
+ * the first letter of the name on a deterministic brand tint. The tint is hashed
+ * from the store name (see `tintForName`) so the same shop is always the same
+ * colour and a grid of them never looks like a random crayon box. Single source
+ * of truth for every store/seller mark — /stores cards, store page header, seller
+ * sidebar, video seller chip, PDP store card, store-link preview. The 30% radius
+ * gives the same squircle from 28px (sidebar) to 72px (store page); the monogram
+ * sits optically centred and scales to ~46% of the tile.
+ *
+ * `src` is the uploaded store logo (logoUrl) — when present it wins and the
+ * monogram is skipped. The monogram letter is decorative; the tile carries an
+ * aria-label of the store name.
  */
 export function StoreAvatar({
   src,
@@ -1183,18 +1222,19 @@ export function StoreAvatar({
   name?: string | null;
   size?: number;
 }) {
-  const t = TINTS[tintForName(name)] ?? TINTS.slate;
-  const radius = Math.min(12, Math.max(10, Math.round(size * 0.2)));
+  const t = STORE_TINTS[tintForName(name)] ?? STORE_TINTS.slate;
   return (
     <div
+      role="img"
+      aria-label={name?.trim() || "Store"}
       style={{
         width: size,
         height: size,
-        borderRadius: radius,
+        borderRadius: "30%",
         overflow: "hidden",
-        border: `1px solid ${t[1]}`,
         flexShrink: 0,
-        background: t[0],
+        border: `1px solid ${src ? "var(--line-200)" : t.border}`,
+        background: src ? "var(--line-100)" : t.bg,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -1203,12 +1243,20 @@ export function StoreAvatar({
       {src ? (
         <img
           src={src}
-          alt={name ?? ""}
+          alt=""
           style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
         />
       ) : (
-        <span style={{ fontWeight: 800, fontSize: `${(size / 56) * 1.25}rem`, color: t[2] }}>
-          {name?.[0]?.toUpperCase() ?? "?"}
+        <span
+          aria-hidden
+          style={{
+            lineHeight: 1,
+            fontWeight: 500,
+            fontSize: Math.round(size * 0.46),
+            color: t.ink,
+          }}
+        >
+          {storeMonogram(name)}
         </span>
       )}
     </div>

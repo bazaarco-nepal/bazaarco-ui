@@ -2,23 +2,7 @@ import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, waitFor, cleanup } from "@testing-library/react";
 
-// The component relies on the automatic JSX runtime (no `import React`), but the
-// vitest transform compiles its JSX to classic `React.createElement`. Expose
-// React on the global so the unqualified reference resolves during the test.
 (globalThis as unknown as { React: typeof React }).React = React;
-
-// REGRESSION: Leaflet map bleeding over the mobile chrome.
-//
-// The map container was a plain in-flow box, so Leaflet's own panes/controls
-// (z-index 200–1000) escaped to the page root and painted OVER the fixed bottom
-// nav (z 100) and the seller drawer + backdrop (z 90/80) — the tiles and pin
-// showing through "My products" / "Messages" with the drawer open, and a
-// half-cut map strip wedged behind the bottom-nav icons.
-//
-// The fix gives the container its OWN stacking context (position + z-index:0,
-// isolation) so those internal layers can never climb above the chrome. This
-// test pins that contract at the component boundary — it's the cheapest way to
-// catch someone accidentally stripping the trap later.
 
 vi.mock("leaflet/dist/leaflet.css", () => ({}));
 
@@ -55,8 +39,6 @@ describe("MapPinPicker stacking context", () => {
     const container = getByLabelText("Map — tap to place your delivery pin") as HTMLElement;
     await waitFor(() => expect(container).toBeTruthy());
 
-    // position + z-index:0 establishes the stacking context and keeps the map
-    // below the fixed chrome; isolation:isolate is the belt-and-suspenders.
     expect(container.style.position).toBe("relative");
     expect(container.style.zIndex).toBe("0");
     expect(container.style.isolation).toBe("isolate");

@@ -1,14 +1,14 @@
 "use client";
 
 import React from "react";
-import { Icon, Button, Placeholder, VideoPlayer, EmptyState, ApiState } from "@/components/ui";
+import { Button, Placeholder, VideoPlayer, EmptyState, ApiState } from "@/components/ui";
+import { SellerIcon } from "../_shared/icons";
 import { formatNPR } from "@/lib/money";
 import { useProduct } from "@/hooks/use-catalog";
 import { type SellerInventoryItem } from "@/services/api/seller";
 import { useBz, Footer } from "@/components/common";
 import { DetailTile, SellerHelpBar } from "../_shared/components";
 import { editProductRef } from "../_shared/refs";
-
 
 /* ---------- 4.4b Product View (read-only) ---------- */
 export function SellerProductView({ item }: { item: SellerInventoryItem | null }) {
@@ -20,7 +20,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
       <div
         className="bz-container-pad"
         style={{
-          maxWidth: "var(--container)",
+          maxWidth: "var(--seller-max, var(--container))",
           margin: "0 auto",
           padding: "20px clamp(14px, 4vw, 28px) 100px",
         }}
@@ -42,7 +42,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
       <div
         className="bz-container-pad"
         style={{
-          maxWidth: "var(--container)",
+          maxWidth: "var(--seller-max, var(--container))",
           margin: "0 auto",
           padding: "20px clamp(14px, 4vw, 28px) 100px",
         }}
@@ -70,12 +70,12 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
               border: "none",
               cursor: "pointer",
               color: "var(--blue)",
-              fontWeight: 700,
+              fontWeight: 600,
               fontSize: ".875rem",
               padding: 0,
             }}
           >
-            <Icon name="chevronLeft" size={18} color="var(--blue)" />
+            <SellerIcon name="chevronLeft" size={18} color="var(--blue)" />
             Back to products
           </button>
           <div style={{ flex: 1 }} />
@@ -106,7 +106,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
             >
               <div
                 style={{
-                  fontWeight: 800,
+                  fontWeight: 600,
                   fontSize: ".8125rem",
                   color: "var(--danger)",
                   marginBottom: 6,
@@ -134,8 +134,8 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
                     color: "var(--ink-500)",
                   }}
                 >
-                  Edit this product to address the feedback, then acknowledge from My Products so
-                  our team can restore it.
+                  Edit this product to address the feedback, then acknowledge from Inventory so our
+                  team can restore it.
                 </p>
               )}
               {item.listingStatus === "pending_reinstatement" && (
@@ -213,7 +213,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
           style={{
             margin: "0 0 4px",
             fontSize: "clamp(1.25rem, 4vw, 1.5rem)",
-            fontWeight: 800,
+            fontWeight: 600,
             color: "var(--ink-900)",
           }}
         >
@@ -231,7 +231,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
         >
           <span
             className="tnum"
-            style={{ fontSize: "1.25rem", fontWeight: 800, color: "var(--blue-deep)" }}
+            style={{ fontSize: "1.25rem", fontWeight: 600, color: "var(--ink-900)" }}
           >
             {formatNPR(product?.price ?? item.price)}
           </span>
@@ -251,9 +251,9 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
             <span
               style={{
                 fontSize: ".8125rem",
-                fontWeight: 700,
+                fontWeight: 600,
                 color: "var(--success)",
-                background: "rgba(22,163,74,.08)",
+                background: "color-mix(in srgb, var(--success) 8%, transparent)",
                 padding: "2px 8px",
                 borderRadius: 999,
               }}
@@ -305,7 +305,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
               style={{
                 margin: "0 0 10px",
                 fontSize: ".875rem",
-                fontWeight: 700,
+                fontWeight: 600,
                 color: "var(--ink-700)",
               }}
             >
@@ -327,11 +327,11 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
                     minHeight: 52,
                   }}
                 >
-                  <span style={{ fontWeight: 700, fontSize: ".9375rem" }}>{v.name}</span>
+                  <span style={{ fontWeight: 600, fontSize: ".9375rem" }}>{v.name}</span>
                   <span
                     className="tnum"
                     style={{
-                      fontWeight: 700,
+                      fontWeight: 600,
                       fontSize: ".875rem",
                       opacity: i === 0 ? 0.85 : 1,
                       color: i === 0 ? "#fff" : "var(--ink-600)",
@@ -350,7 +350,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
                   className="tnum"
                   style={{
                     fontSize: ".75rem",
-                    fontWeight: 700,
+                    fontWeight: 600,
                     padding: "4px 10px",
                     borderRadius: 999,
                     background:
@@ -371,8 +371,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
                 </span>
               ))}
             </div>
-            {/* Tracking codes — the immutable platform SKU + barcode per SKU, for
-                pickup, hub verification, packing and dispatch. */}
+            {/* Tracking codes — immutable backend-generated SKUs for operations. */}
             {product.variants.some((v) => v.platformSku) && (
               <div style={{ marginTop: 14, display: "grid", gap: 6 }}>
                 {product.variants.map((v) =>
@@ -388,7 +387,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
                         color: "var(--ink-500)",
                       }}
                     >
-                      <span style={{ fontWeight: 700, color: "var(--ink-700)" }}>{v.name}</span>
+                      <span style={{ fontWeight: 600, color: "var(--ink-700)" }}>{v.name}</span>
                       <code style={{ fontFamily: "monospace" }}>{v.platformSku}</code>
                       {v.sellerSku ? <span>· your code: {v.sellerSku}</span> : null}
                     </div>
@@ -406,7 +405,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
               style={{
                 margin: "0 0 8px",
                 fontSize: ".875rem",
-                fontWeight: 700,
+                fontWeight: 600,
                 color: "var(--ink-700)",
               }}
             >
@@ -433,7 +432,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
               style={{
                 margin: "0 0 8px",
                 fontSize: ".875rem",
-                fontWeight: 700,
+                fontWeight: 600,
                 color: "var(--ink-700)",
               }}
             >
@@ -452,7 +451,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
                     fontSize: ".8125rem",
                   }}
                 >
-                  <span style={{ fontWeight: 700, color: "var(--ink-600)", minWidth: 100 }}>
+                  <span style={{ fontWeight: 600, color: "var(--ink-600)", minWidth: 100 }}>
                     {key}
                   </span>
                   <span style={{ color: "var(--ink-800)" }}>{String(val)}</span>
@@ -469,7 +468,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
               style={{
                 margin: "0 0 8px",
                 fontSize: ".875rem",
-                fontWeight: 700,
+                fontWeight: 600,
                 color: "var(--ink-700)",
               }}
             >

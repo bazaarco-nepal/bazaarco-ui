@@ -5,13 +5,16 @@ import { useTranslation } from "react-i18next";
 import { Button, Chip, ApiState } from "@/components/ui";
 import { bargainExpiryLabel } from "@/lib/bargain-expiry";
 import { formatNPR } from "@/lib/money";
-import { useAcceptBargainOffer, useRejectBargainOffer, useCounterBargainOffer } from "@/hooks/use-bargains";
+import {
+  useAcceptBargainOffer,
+  useRejectBargainOffer,
+  useCounterBargainOffer,
+} from "@/hooks/use-bargains";
 import { useSellerBargains, type SellerBargainOffer } from "@/hooks/use-seller";
 import { useBz, BuyerAvatar } from "@/components/common";
 import { ApiRequestError } from "@/services/api/http";
 import { bargainStatus } from "../_shared/bargain";
 import { SellerHelpBar, SellerPageHeader, SellerEmptyState } from "../_shared/components";
-
 
 function fmtRs(value: unknown): string {
   const n = Number(value);
@@ -154,7 +157,7 @@ function BargainOfferCard({
               );
             return null;
           })()}
-        <div style={{ fontWeight: 800 }}>
+        <div style={{ fontWeight: 600 }}>
           {o.buyer} · {o.city}
         </div>
         <div style={{ fontSize: ".8125rem", color: "var(--ink-700)", marginTop: 2 }}>
@@ -180,11 +183,11 @@ function BargainOfferCard({
           </span>
           <span>
             Offer:{" "}
-            <span className="tnum" style={{ fontWeight: 800, color: "var(--blue-deep)" }}>
+            <span className="tnum" style={{ fontWeight: 600, color: "var(--ink-900)" }}>
               Rs. {fmtRs(offered)}
             </span>
           </span>
-          <span className="tnum" style={{ color: "var(--saffron)", fontWeight: 700 }}>
+          <span className="tnum" style={{ color: "var(--saffron)", fontWeight: 600 }}>
             −Rs. {fmtRs(saving)}
           </span>
         </div>
@@ -194,7 +197,7 @@ function BargainOfferCard({
         {status === "countered" && o.sellerCounter != null && (
           <div style={{ marginTop: 8, fontSize: ".8125rem", color: "var(--ink-600)" }}>
             You countered at{" "}
-            <span className="tnum" style={{ fontWeight: 800, color: "var(--blue-deep)" }}>
+            <span className="tnum" style={{ fontWeight: 600, color: "var(--ink-900)" }}>
               Rs. {fmtRs(o.sellerCounter)}
             </span>{" "}
             · waiting for the buyer.
@@ -270,7 +273,7 @@ function BargainOfferCard({
               style={{
                 display: "block",
                 fontSize: ".75rem",
-                fontWeight: 700,
+                fontWeight: 600,
                 color: "var(--ink-600)",
                 marginBottom: 6,
               }}
@@ -279,7 +282,7 @@ function BargainOfferCard({
             </label>
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontWeight: 800, color: "var(--blue-deep)" }}>Rs.</span>
+                <span style={{ fontWeight: 600, color: "var(--ink-900)" }}>Rs.</span>
                 <input
                   type="number"
                   value={counterText}
@@ -298,8 +301,8 @@ function BargainOfferCard({
                     borderRadius: "var(--r-md)",
                     padding: "0 12px",
                     fontSize: "1rem",
-                    fontWeight: 800,
-                    color: "var(--blue-deep)",
+                    fontWeight: 600,
+                    color: "var(--ink-900)",
                     fontFamily: "var(--font-sans)",
                   }}
                 />
@@ -339,7 +342,11 @@ export function SellerBargain() {
     <ApiState isLoading={isLoading} isError={isError} error={error}>
       <div
         className="bz-container-pad"
-        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
+        style={{
+          maxWidth: "var(--seller-max, var(--container))",
+          margin: "0 auto",
+          padding: "20px 28px 100px",
+        }}
       >
         <SellerHelpBar />
         <SellerPageHeader
@@ -403,7 +410,7 @@ export function SellerBargain() {
                 padding: 14,
               }}
             >
-              <div className="tnum" style={{ fontSize: "1.375rem", fontWeight: 800, color: s.c }}>
+              <div className="tnum" style={{ fontSize: "1.375rem", fontWeight: 600, color: s.c }}>
                 {s.v}
               </div>
               <div style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 2 }}>{s.k}</div>
@@ -416,8 +423,8 @@ export function SellerBargain() {
           style={{
             margin: "0 0 10px",
             fontSize: "1.125rem",
-            fontWeight: 800,
-            color: "var(--blue-deep)",
+            fontWeight: 600,
+            color: "var(--ink-900)",
           }}
         >
           Offers

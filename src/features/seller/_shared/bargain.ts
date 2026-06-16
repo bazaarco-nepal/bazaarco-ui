@@ -1,7 +1,5 @@
 "use client";
 
-
-
 function bargainStatus(o: {
   status?: string;
   accepted?: boolean;

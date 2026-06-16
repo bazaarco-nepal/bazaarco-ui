@@ -785,7 +785,13 @@ export function Button({
   // Primary = recommended action (Continue, Submit, Buy). Secondary = alternate / cancel (red outline).
   const variants = {
     primary: { background: "var(--blue)", color: "#fff", borderColor: "var(--blue)" },
-    secondary: { background: "#fff", color: "var(--red)", borderColor: "var(--red)" },
+    // Secondary colors are themeable: a skin (e.g. Fluent) can remap them via
+    // --btn-secondary-*; with no override they fall back to the red outline.
+    secondary: {
+      background: "#fff",
+      color: "var(--btn-secondary-fg, var(--red))",
+      borderColor: "var(--btn-secondary-border, var(--red))",
+    },
     ghost: { background: "transparent", color: "var(--ink-500)", borderColor: "transparent" },
     danger: { background: "#fff", color: "var(--danger)", borderColor: "var(--danger)" },
     blue: { background: "var(--blue)", color: "#fff", borderColor: "var(--blue)" },
@@ -803,9 +809,9 @@ export function Button({
   if (hov && !disabled) {
     if (variant === "primary" || variant === "blue") merged.background = "var(--blue-hover)";
     else if (variant === "secondary") {
-      merged.background = "var(--red)";
-      merged.color = "#fff";
-      merged.borderColor = "var(--red)";
+      merged.background = "var(--btn-secondary-hover-bg, var(--red))";
+      merged.color = "var(--btn-secondary-hover-fg, #fff)";
+      merged.borderColor = "var(--btn-secondary-border, var(--red))";
     } else if (variant === "ghost") {
       merged.background = "var(--line-100)";
       merged.color = "var(--ink-700)";
@@ -1070,8 +1076,10 @@ export function Chip({
         color: t.fg,
         fontSize: size === "sm" ? ".6875rem" : ".75rem",
         fontWeight: 700,
-        padding: size === "sm" ? "3px 8px" : "5px 10px",
-        borderRadius: "var(--r-sm)",
+        padding: size === "sm" ? "3px 10px" : "5px 12px",
+        // Skinnable shape: a skin can make status chips rounded pills (Fluent
+        // seller) via --chip-radius; buyer falls back to the squared --r-sm.
+        borderRadius: "var(--chip-radius, var(--r-sm))",
         lineHeight: 1.1,
         whiteSpace: "nowrap",
       }}
@@ -1787,6 +1795,7 @@ export function EmptyState({
   onSecondary,
   secondaryHref,
   dark,
+  icon,
 }: {
   title: React.ReactNode;
   message?: React.ReactNode;
@@ -1797,6 +1806,8 @@ export function EmptyState({
   onSecondary?: () => void;
   secondaryHref?: string;
   dark?: boolean;
+  /** When set, a soft icon tile replaces the illustration (enterprise empty state). */
+  icon?: string;
 }) {
   return (
     <div
@@ -1808,11 +1819,30 @@ export function EmptyState({
         padding: "48px 24px",
       }}
     >
-      <img
-        src={ASSETS.mascot}
-        alt=""
-        style={{ width: 150, height: "auto", objectFit: "contain", marginBottom: 24 }}
-      />
+      {icon ? (
+        <span
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: "var(--r-lg)",
+            background: "var(--tint-blue-50)",
+            color: "var(--blue)",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: 14,
+          }}
+        >
+          <Icon name={icon} size={24} color="var(--blue)" />
+        </span>
+      ) : (
+        <img
+          className="bz-emptystate-art"
+          src={ASSETS.mascot}
+          alt=""
+          style={{ width: 150, height: "auto", objectFit: "contain", marginBottom: 24 }}
+        />
+      )}
       <h3
         style={{
           margin: 0,
@@ -2478,13 +2508,15 @@ export function ChipGroup({ options, value, onChange }) {
           onClick={() => onChange(o.value)}
           aria-pressed={value === o.value}
           style={{
-            height: 40,
-            padding: "0 18px",
-            borderRadius: "var(--r-full)",
+            height: "var(--chip-group-h, 40px)",
+            padding: "0 var(--chip-group-px, 18px)",
+            // Skinnable shape: Fluent seller uses a subtle 6px radius + hairline
+            // border + denser sizing; buyer falls back to the full pill untouched.
+            borderRadius: "var(--chip-radius, var(--r-full))",
             cursor: "pointer",
             fontWeight: 700,
-            fontSize: ".9375rem",
-            border: `1.5px solid ${value === o.value ? "var(--blue)" : "var(--line-200)"}`,
+            fontSize: "var(--chip-group-fs, .9375rem)",
+            border: `var(--chip-border-w, 1.5px) solid ${value === o.value ? "var(--blue)" : "var(--line-200)"}`,
             background: value === o.value ? "var(--tint-blue-50)" : "#fff",
             color: value === o.value ? "var(--blue)" : "var(--ink-500)",
             whiteSpace: "nowrap",

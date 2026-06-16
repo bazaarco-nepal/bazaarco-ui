@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 
 import {
+  cartesianVariantRows,
   groupedVariantRows,
   matchSelectedVariants,
   toggleOption,
@@ -169,5 +170,30 @@ describe("groupedVariantRows", () => {
     ]);
     expect(rows.map((r) => r.name)).toEqual(["Black / S", "Black / M"]);
     expect(rows.map((r) => r.optionValues)).toEqual([{ Black: "S" }, { Black: "M" }]);
+  });
+});
+
+describe("cartesianVariantRows", () => {
+  it("builds one SKU per combination across all dimensions", () => {
+    const rows = cartesianVariantRows([
+      { name: "Color", options: ["Black", "Blue"] },
+      { name: "Storage", options: ["128GB", "256GB"] },
+    ]);
+    expect(rows).toHaveLength(4);
+    expect(rows.map((r) => r.name)).toEqual([
+      "Color: Black / Storage: 128GB",
+      "Color: Black / Storage: 256GB",
+      "Color: Blue / Storage: 128GB",
+      "Color: Blue / Storage: 256GB",
+    ]);
+    expect(rows[0]?.optionValues).toEqual({ Color: "Black", Storage: "128GB" });
+    expect(rows[3]?.optionValues).toEqual({ Color: "Blue", Storage: "256GB" });
+  });
+
+  it("trims, drops empty dimensions, and returns [] when nothing is valid", () => {
+    expect(cartesianVariantRows([{ name: " Color ", options: [" Red ", ""] }])).toEqual([
+      { name: "Color: Red", optionValues: { Color: "Red" } },
+    ]);
+    expect(cartesianVariantRows([{ name: "", options: ["X"] }])).toEqual([]);
   });
 });

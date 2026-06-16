@@ -1,9 +1,6 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
-
 import { Icon, Button } from "@/components/ui";
-import { ASSETS } from "@/config/assets";
 import type { SellerVerificationStatus } from "@/services/api/seller-verification";
 
 export function SellerVerificationBanner({
@@ -16,28 +13,32 @@ export function SellerVerificationBanner({
 
   const isRejected = status === "rejected";
   const isNone = status === "none";
+  const accent = isRejected ? "var(--danger)" : "var(--warning)";
 
   return (
     <div
       role="alert"
       style={{
         margin: "0 0 16px",
-        padding: "10px 14px",
+        padding: "12px 14px",
         borderRadius: "var(--r-md)",
-        border: `1.5px solid ${isRejected ? "var(--red)" : "var(--saffron)"}`,
-        background: isRejected ? "rgba(220,38,38,.06)" : "rgba(247,127,0,.06)",
+        border: "1px solid var(--line-200)",
+        borderInlineStart: `3px solid ${accent}`,
+        background: "var(--card)",
+        boxShadow: "var(--sh-1)",
         display: "flex",
         gap: 10,
         alignItems: "center",
       }}
     >
-      <img
-        src={ASSETS.mascot}
-        alt=""
-        style={{ width: 32, height: 32, objectFit: "contain", flexShrink: 0 }}
+      <Icon
+        name={isRejected ? "flag" : "clock"}
+        size={18}
+        color={accent}
+        style={{ flexShrink: 0 }}
       />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ fontWeight: 700, fontSize: ".875rem", color: "var(--blue-deep)" }}>
+        <span style={{ fontWeight: 700, fontSize: ".875rem", color: "var(--ink-900)" }}>
           {isRejected
             ? "Verification not approved"
             : isNone
@@ -45,12 +46,6 @@ export function SellerVerificationBanner({
               : "Your KYC is being reviewed"}
         </span>
       </div>
-      <Icon
-        name={isRejected ? "bell" : "clock"}
-        size={18}
-        color={isRejected ? "var(--red)" : "var(--saffron)"}
-        style={{ flexShrink: 0 }}
-      />
     </div>
   );
 }
@@ -70,29 +65,41 @@ export function SellerVerificationBlocked({
   const isRejected = status === "rejected";
 
   const showAction = !isPending && !!onAction;
+  const accent = isRejected ? "var(--danger)" : isPending ? "var(--warning)" : "var(--blue)";
 
   return (
     <div
       style={{
         background: "#fff",
-        border: "1.5px solid var(--line-200)",
+        border: "1px solid var(--line-200)",
         borderRadius: "var(--r-lg)",
+        boxShadow: "var(--sh-2)",
         padding: "32px 24px",
         textAlign: "center",
         marginBottom: 18,
       }}
     >
-      <img
-        src={ASSETS.mascot}
-        alt=""
-        style={{ width: 72, height: 72, objectFit: "contain", marginBottom: 16 }}
-      />
+      <span
+        style={{
+          width: 56,
+          height: 56,
+          borderRadius: "var(--r-lg)",
+          background: `color-mix(in srgb, ${accent} 14%, #fff)`,
+          color: accent,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: 16,
+        }}
+      >
+        <Icon name={isPending ? "clock" : isRejected ? "flag" : "shieldCheck"} size={26} color={accent} />
+      </span>
       <h2
         style={{
           margin: "0 0 6px",
           fontSize: "1.125rem",
           fontWeight: 800,
-          color: "var(--blue-deep)",
+          color: "var(--ink-900)",
         }}
       >
         {isPending

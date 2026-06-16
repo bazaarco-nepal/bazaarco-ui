@@ -1,6 +1,5 @@
 "use client";
 
-import { returnPolicyLabel } from "@/config/policies";
 import type { Product } from "@/types";
 
 type TrustChipsProps = {
@@ -18,7 +17,6 @@ type TrustChipsProps = {
  */
 export function TrustChips({ product, sellerVerified }: TrustChipsProps) {
   const status = product.stockStatus ?? (product.outOfStock ? "out_of_stock" : "in_stock");
-  const left = product.availableStock ?? product.lowStock;
 
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -27,21 +25,12 @@ export function TrustChips({ product, sellerVerified }: TrustChipsProps) {
           In stock
         </CalmChip>
       )}
-      {status === "low_stock" && (
-        <CalmChip dot="var(--saffron, #f77f00)" fg="#b85e00">
-          {left ? `Only ${left} left` : "Low stock"}
-        </CalmChip>
-      )}
       {status === "out_of_stock" && (
         <CalmChip dot="var(--red)" fg="var(--red)">
           Out of stock
         </CalmChip>
       )}
       {status === "unavailable" && <CalmChip>Currently unavailable</CalmChip>}
-
-      {product.returns?.eligible !== false && (
-        <CalmChip>{returnPolicyLabel(product.returns)}</CalmChip>
-      )}
 
       {sellerVerified && <CalmChip>Verified seller</CalmChip>}
 

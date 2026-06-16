@@ -46,7 +46,7 @@ vi.mock("@/hooks/use-catalog", () => ({
   useProduct: () => ({ data: undefined }),
 }));
 
-import { CategoryAttrFields } from "@/features/seller/seller";
+import { CategoryAttrFields } from "@/features/seller";
 
 // CategoryAttrFields is controlled, so a static `values` prop wouldn't update
 // after onChange — but the real Add Product form holds the values in state and

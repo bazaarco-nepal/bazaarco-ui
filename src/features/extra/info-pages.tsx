@@ -17,6 +17,7 @@ function InfoPageShell({ title, children }: InfoPageProps) {
     >
       <AppLink
         href={pathFromScreen("profile")}
+        className="bz-back-link"
         style={{
           display: "inline-flex",
           alignItems: "center",

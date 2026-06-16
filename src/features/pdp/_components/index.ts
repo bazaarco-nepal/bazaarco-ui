@@ -6,5 +6,4 @@ export { WriteReviewModal } from "./write-review-modal";
 export { ImageLightbox } from "./image-lightbox";
 export { PdpWatchVideoCta } from "./watch-video-cta";
 export { TrustChips } from "./trust-chips";
-export { ProductHighlights } from "./product-highlights";
 export { SellerCard } from "./seller-card";

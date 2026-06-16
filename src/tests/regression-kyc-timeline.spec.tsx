@@ -54,7 +54,7 @@ vi.mock("@/hooks/use-seller", () => ({
 }));
 
 import { BazaarProvider } from "@/providers/bazaar-provider";
-import { SellerVerificationTimeline } from "@/features/seller/seller";
+import { SellerVerificationTimeline } from "@/features/seller";
 import { useBazaarStore } from "@/store/bazaar-store";
 
 function renderPage() {

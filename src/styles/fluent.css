@@ -1,0 +1,211 @@
+/* ============================================================
+   BazaarCo — Microsoft Fluent 2 / Microsoft 365 skin
+   ------------------------------------------------------------
+   Reusable, opt-in theme. Any subtree adopts the look by setting
+   `data-skin="fluent"` on a wrapping element; today that is the
+   seller panel shell + onboarding.
+
+   It REMAPS the shared design tokens inside the scope. Every
+   primitive in components/ui/kit.tsx styles itself from
+   `var(--token)` inline, so it re-skins automatically here while
+   the buyer UI (outside the scope) keeps the global tokens.
+
+   Aesthetic: a premium SaaS operations dashboard (Microsoft 365 /
+   Teams Admin / Stripe polish) — soft surfaces, hairline borders,
+   subtle depth, generous spacing. NOT the hard-bordered Azure
+   Portal form look.
+
+   Color is restrained: blue is reserved for primary actions,
+   active navigation, selected states, focus rings and links.
+   Red / green / amber stay reserved for real status meaning, so
+   `--red` is intentionally NOT remapped (delete/cancel stay red).
+   ============================================================ */
+
+[data-skin="fluent"] {
+  /* Type */
+  --font-sans: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+
+  /* Content width — the seller console reads as a calm centered column rather
+     than spanning the full buyer --container. Every seller page (.bz-seller-page
+     / SellerPage) and the KYC banner share this so they line up. */
+  --seller-max: 1160px;
+
+  /* Accent blue — primary actions, links, active/selected, focus */
+  --blue: #0078d4;
+  --blue-hover: #106ebe;
+  --blue-deep: #005a9e; /* pressed / strong */
+  --tint-blue-50: #eff6fc; /* selected light blue background */
+
+  /* Surface — calm neutral page, clean white cards */
+  --page: #faf9f8;
+  --card: #ffffff;
+  --line-200: #e5e7eb; /* default hairline border */
+  --line-100: #f0f1f3; /* faint divider / inset fill */
+
+  /* Ink */
+  --ink-900: #1b1a19; /* primary text / values */
+  --ink-700: #323130; /* body */
+  --ink-500: #605e5c; /* muted / labels */
+  --ink-400: #797775; /* secondary muted */
+  --ink-300: #a19f9d; /* disabled / placeholder */
+
+  /* Status — Fluent values (kept reserved for real meaning) */
+  --danger: #a4262c;
+  --success: #107c10;
+  --warning: #f7a300;
+
+  /* Geometry — modern Fluent 2 rounding (small / control / card) */
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 8px;
+
+  /* Status chips + filter pills use a subtle enterprise radius (not bubbly
+     full-pills) across every seller page. kit.tsx falls back per-component for
+     buyers (Chip → --r-sm, ChipGroup → --r-full), so the buyer UI is untouched. */
+  --chip-radius: 6px;
+  /* Denser, lighter filter chips for the seller workspace (buyer keeps defaults). */
+  --chip-border-w: 1px;
+  --chip-group-h: 36px;
+  --chip-group-px: 14px;
+  --chip-group-fs: 0.875rem;
+
+  /* Depth — subtle layered Fluent shadows (never heavy) */
+  --sh-1: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --sh-2: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.06);
+  --sh-3: 0 2px 6px rgba(0, 0, 0, 0.06), 0 12px 32px rgba(0, 0, 0, 0.1);
+
+  /* Secondary button — Fluent uses a neutral outline, not the buyer red.
+     (kit.tsx falls back to red when these are unset, so the buyer UI is
+     unaffected.) */
+  --btn-secondary-fg: var(--ink-700);
+  --btn-secondary-border: var(--line-200);
+  --btn-secondary-hover-bg: var(--line-100);
+  --btn-secondary-hover-fg: var(--ink-900);
+}
+
+/* Visible keyboard focus ring (outline isn't set inline, so this applies cleanly). */
+[data-skin="fluent"] :is(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+}
+
+/* ── Shell ──────────────────────────────────────────────────────────── */
+.bz-seller-shell[data-skin="fluent"] {
+  background: var(--page);
+}
+
+/* No mascot/HIRO art in the seller workspace — empty states stay enterprise
+   (title + message + action only). The buyer keeps its illustration. */
+[data-skin="fluent"] .bz-emptystate-art {
+  display: none;
+}
+
+/* ── Sidebar — Microsoft 365 navigation ─────────────────────────────── */
+[data-skin="fluent"] .bz-seller-side {
+  background: var(--card);
+  border-right: 1px solid var(--line-200);
+}
+[data-skin="fluent"] .bz-side-item {
+  min-height: 44px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: var(--r-md);
+  color: var(--ink-700);
+}
+[data-skin="fluent"] .bz-side-item:hover {
+  background: var(--line-100);
+}
+[data-skin="fluent"] .bz-side-item.active {
+  background: var(--tint-blue-50);
+  color: var(--blue);
+  font-weight: 600;
+}
+[data-skin="fluent"] .bz-side-item.active::before {
+  background: var(--blue);
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+}
+[data-skin="fluent"] .bz-side-group {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--ink-400);
+}
+/* Logout is quiet by default; it only turns red on hover/focus. */
+[data-skin="fluent"] .bz-side-logout {
+  color: var(--ink-700);
+}
+[data-skin="fluent"] .bz-side-logout:hover {
+  background: var(--tint-red-50);
+  color: var(--danger);
+}
+[data-skin="fluent"] .bz-side-logout:hover svg {
+  color: var(--danger) !important;
+}
+[data-skin="fluent"] .bz-side-toggle:hover {
+  background: var(--blue);
+  border-color: var(--blue);
+}
+
+/* ── Reusable soft surfaces ─────────────────────────────────────────────
+   Composable card primitives for the dashboard + any seller page. A card is
+   a white surface with a hairline border and subtle depth — not a hard
+   bordered rectangle. */
+[data-skin="fluent"] .bz-card {
+  background: var(--card);
+  border: 1px solid var(--line-200);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-2);
+}
+[data-skin="fluent"] .bz-card--flat {
+  box-shadow: none;
+}
+[data-skin="fluent"] .bz-card--interactive {
+  cursor: pointer;
+  transition:
+    box-shadow 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+[data-skin="fluent"] .bz-card--interactive:hover {
+  box-shadow: var(--sh-3);
+  border-color: var(--line-100);
+}
+
+/* A soft inset fill for secondary rows (e.g. the store URL row) — replaces a
+   harsh bordered box with a calm tinted surface. */
+[data-skin="fluent"] .bz-inset {
+  background: var(--line-100);
+  border-radius: var(--r-md);
+}
+
+/* Small square icon tile, very light tint — for metric cards / quick actions. */
+[data-skin="fluent"] .bz-icon-tile {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--tint-blue-50);
+  color: var(--blue);
+}
+
+/* ── Store identity card — soft, compact ────────────────────────────── */
+[data-skin="fluent"] .bz-store-link {
+  border: 1px solid var(--line-200);
+  box-shadow: var(--sh-2);
+}
+[data-skin="fluent"] .bz-store-link__pill {
+  background: var(--line-100);
+}
+[data-skin="fluent"] .bz-store-link__divider {
+  border-color: var(--line-100);
+}
+
+/* Store live/pending badge follows the same subtle radius as every other
+   status chip and filter pill. */
+[data-skin="fluent"] .bz-store-link__badge {
+  border-radius: var(--chip-radius);
+}

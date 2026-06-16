@@ -248,7 +248,7 @@ export function Orders() {
                         <Chip tone={meta.tone}>{meta.label}</Chip>
                       </div>
                       <div style={{ fontSize: ".8125rem", color: "var(--ink-400)", marginTop: 4 }}>
-                        Placed {o.placed} · ETA {o.eta}
+                        Placed {o.placed}
                       </div>
                     </div>
                     <span
@@ -1329,6 +1329,7 @@ export function WriteReview({ productId }: WriteReviewProps) {
     >
       <AppLink
         href={pathFromScreen("orders")}
+        className="bz-back-link"
         style={{
           background: "none",
           border: "none",
@@ -1625,6 +1626,7 @@ export function ProfileEdit() {
     >
       <AppLink
         href={pathFromScreen("profile")}
+        className="bz-back-link"
         style={{
           background: "none",
           border: "none",

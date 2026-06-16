@@ -184,7 +184,14 @@ export function MarketplaceScreen() {
 
   if (SELLER_SCREENS.has(screen)) {
     let inner: React.ReactNode;
-    if (screen === "s-onboarding") return <SellerOnboarding />;
+    if (screen === "s-onboarding")
+      // Onboarding renders outside SellerShell, so it carries the Fluent skin
+      // itself. (SellerChat in buyerMode is intentionally left unskinned.)
+      return (
+        <div data-skin="fluent">
+          <SellerOnboarding />
+        </div>
+      );
     if (screen === "s-dashboard") inner = <SellerDashboard />;
     else if (screen === "s-inbox") inner = <SellerInbox />;
     else if (screen === "s-order-detail") inner = <SellerOrderDetail />;

@@ -967,6 +967,7 @@ export function Checkout() {
     >
       <AppLink
         href={pathFromScreen("cart")}
+        className="bz-back-link"
         style={{
           background: "none",
           border: "none",
@@ -1878,12 +1879,6 @@ export function OrderSuccess({ total }) {
               {products.length === 0 && (
                 <span style={{ color: "var(--ink-400)", fontSize: ".875rem" }}>Your order</span>
               )}
-            </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: ".75rem", color: "var(--ink-400)" }}>Estimated delivery</div>
-              <div style={{ fontWeight: 700, color: "var(--ink-900)", whiteSpace: "nowrap" }}>
-                {order?.eta ?? "We'll confirm soon"}
-              </div>
             </div>
           </div>
           <div

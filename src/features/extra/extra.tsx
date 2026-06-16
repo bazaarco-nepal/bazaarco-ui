@@ -119,6 +119,7 @@ export function Tracking() {
       >
         <AppLink
           href={pathFromScreen("orders")}
+          className="bz-back-link"
           style={{
             background: "none",
             border: "none",
@@ -312,38 +313,6 @@ function TrackingSidebar({ nav, order }) {
   const deliveryLabel = deliveryTypeLabel(order?.deliveryType);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, position: "sticky", top: 96 }}>
-      {order?.eta && (
-        <div
-          style={{
-            background: "#fff",
-            border: "1px solid var(--line-200)",
-            borderRadius: "var(--r-lg)",
-            padding: 18,
-          }}
-        >
-          <div
-            style={{
-              fontSize: ".75rem",
-              color: "var(--ink-400)",
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: ".05em",
-            }}
-          >
-            Estimated delivery
-          </div>
-          <div
-            style={{
-              fontSize: "1.25rem",
-              fontWeight: 800,
-              color: "var(--blue-deep)",
-              marginTop: 4,
-            }}
-          >
-            {order.eta}
-          </div>
-        </div>
-      )}
       {lines.length > 0 && (
         <div
           style={{

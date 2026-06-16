@@ -372,6 +372,7 @@ export function SellerVideoLibrary({
 
       {videos.length === 0 && !showUpload ? (
         <EmptyState
+          icon="video"
           title="No videos yet"
           message="Add a short vertical clip to help buyers discover your products. Tap “Add video” at the top to upload your first one."
         />

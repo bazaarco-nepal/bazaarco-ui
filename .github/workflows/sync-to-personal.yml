@@ -1,0 +1,19 @@
+name: Sync to Personal Repo
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push to Personal Repo
+        run: |
+          git push --force https://x-access-token:${{ secrets.PERSONAL_REPO_UI }}@github.com/bazaarco-nepal/bazaarco-ui.git HEAD:refs/heads/main

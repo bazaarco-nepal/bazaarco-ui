@@ -6,6 +6,7 @@ import { Button, EmptyState, Icon, Spinner, VideoPlayer } from "@/components/ui"
 import { useDeleteSellerVideo, useUpdateSellerVideo } from "@/hooks/use-media-upload";
 import { useSellerInventory } from "@/hooks/use-seller";
 import { VideoDeleteConfirmModal } from "@/components/seller/video-delete-confirm-modal";
+import { SellerPageHeader } from "@/features/seller/_shared/components";
 import type { SellerVideoItem } from "@/services/api/media";
 
 function VideoEditModal({
@@ -323,31 +324,21 @@ export function SellerVideoLibrary({
 
   return (
     <>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 6,
-          gap: 10,
-        }}
-      >
-        <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-          Videos
-        </h1>
-        <Button
-          variant="primary"
-          size="sm"
-          icon="plus"
-          onClick={onToggleUpload}
-          style={{ flexShrink: 0 }}
-        >
-          Add video
-        </Button>
-      </div>
-      <p style={{ margin: "0 0 18px", fontSize: ".875rem", color: "var(--ink-500)" }}>
-        Products with video sell 2× more. Keep videos under 30 seconds.
-      </p>
+      <SellerPageHeader
+        title="Videos"
+        subtitle="Products with video sell 2× more. Keep videos under 30 seconds."
+        actions={
+          <Button
+            variant="primary"
+            size="sm"
+            icon="plus"
+            onClick={onToggleUpload}
+            style={{ flexShrink: 0 }}
+          >
+            Add video
+          </Button>
+        }
+      />
 
       {showUpload && (
         <div

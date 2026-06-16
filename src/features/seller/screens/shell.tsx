@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Icon } from "@/components/ui";
+import { IconOverrideContext } from "@/components/ui";
+import { SellerIcon } from "../_shared/icons";
 import { SellerVerificationBanner } from "@/components/seller/seller-verification-banner";
 import { StoreSwitcherChip } from "../store-switcher";
 import { useLogout } from "@/hooks/use-auth";
@@ -14,7 +15,6 @@ import { useBz, LogoutConfirmModal } from "@/components/common";
 import { bargainStatus } from "../_shared/bargain";
 import { SELLER_NAV } from "../_shared/nav";
 import { type SellerInboxOrderItem } from "../_shared/types";
-
 
 export function SellerSidebar({
   screen,
@@ -79,7 +79,7 @@ export function SellerSidebar({
                 aria-label={t("seller.expandSidebar")}
                 title={t("seller.expandSidebar")}
               >
-                <Icon name="chevronRight" size={14} />
+                <SellerIcon name="chevronRight" size={14} />
               </button>
             </div>
           ) : (
@@ -95,7 +95,7 @@ export function SellerSidebar({
                 aria-label={t("seller.collapseSidebar")}
                 title={t("seller.collapseSidebar")}
               >
-                <Icon name="chevronLeft" size={14} />
+                <SellerIcon name="chevronLeft" size={14} />
               </button>
             </div>
           )}
@@ -123,10 +123,11 @@ export function SellerSidebar({
                     }}
                     title={label}
                   >
-                    <Icon
+                    <SellerIcon
                       name={it.icon}
                       size={20}
                       color={active ? "var(--blue)" : "var(--ink-500)"}
+                      filled={active}
                     />
                     <span className="bz-side-label">
                       <span className="bz-side-en">{label}</span>
@@ -145,7 +146,7 @@ export function SellerSidebar({
             onClick={() => setConfirmLogout(true)}
             title={t("seller.logOut")}
           >
-            <Icon name="logout" size={20} color="var(--ink-500)" />
+            <SellerIcon name="logout" size={20} color="var(--ink-500)" />
             <span className="bz-side-label">
               <span className="bz-side-en">{t("seller.logOut")}</span>
             </span>
@@ -157,6 +158,7 @@ export function SellerSidebar({
         pending={logoutMutation.isPending}
         onConfirm={handleLogout}
         onCancel={() => setConfirmLogout(false)}
+        skin="fluent"
       />
     </>
   );
@@ -239,66 +241,110 @@ export function SellerShell({ screen, children }: { screen: string; children: Re
     }
   }, [organization, orgLoading, screen, nav]);
 
-  return (
-    <div className={"bz-seller-shell" + (collapsed ? " collapsed" : "")} data-skin="fluent">
-      <SellerSidebar
-        screen={screen}
-        onNav={nav}
-        collapsed={collapsed}
-        setCollapsed={setCollapsed}
-        openMobile={openMobile}
-        setOpenMobile={setOpenMobile}
-        badges={badges}
-        stores={organization?.stores ?? []}
-        activeSellerId={organization?.sellerId ?? null}
+  // The store switcher shows (and lists) the active store. A single-store seller
+  // may not have that store echoed in `organization.stores` — the organization's
+  // own identity *is* the active store — so synthesise it when missing. Without
+  // this the chip falls back to the generic "BazaarCo" label instead of the real
+  // store name.
+  const sidebarStores = useMemo<SellerStoreSummary[]>(() => {
+    const list = organization?.stores ?? [];
+    const activeId = organization?.sellerId;
+    if (activeId && organization?.shopName && !list.some((s) => s.sellerId === activeId)) {
+      return [
+        {
+          sellerId: activeId,
+          shopName: organization.shopName,
+          city: organization.city,
+          logoUrl: organization.logoUrl,
+          verified: organization.verified,
+        },
+        ...list,
+      ];
+    }
+    return list;
+  }, [organization]);
+
+  const renderFluentIcon = React.useCallback(
+    (props: {
+      name: string;
+      size?: number;
+      color?: string;
+      style?: React.CSSProperties;
+      className?: string;
+    }) => (
+      <SellerIcon
+        name={props.name}
+        size={props.size}
+        color={props.color}
+        style={props.style}
+        className={props.className}
       />
-      <section className="bz-side-content">
-        <div className="bz-side-mobile-bar">
-          <button
-            onClick={() => setOpenMobile(true)}
-            aria-label={t("seller.menu")}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: "var(--r-md)",
-              border: "1px solid var(--line-200)",
-              background: "#fff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              flexShrink: 0,
-            }}
-          >
-            <Icon name="menu" size={22} />
-          </button>
-          {/* Active-store chip is the primary identity on mobile and opens the
-              switcher bottom sheet without having to open the nav drawer. */}
-          <StoreSwitcherChip
-            variant="mobilebar"
-            stores={organization?.stores ?? []}
-            activeSellerId={organization?.sellerId ?? null}
-          />
-        </div>
-        {organization?.linked &&
-          organization.verification &&
-          organization.verification.status !== "approved" && (
-            <div
-              className="bz-container-pad"
+    ),
+    [],
+  );
+
+  return (
+    <IconOverrideContext.Provider value={renderFluentIcon}>
+      <div className={"bz-seller-shell" + (collapsed ? " collapsed" : "")} data-skin="fluent">
+        <SellerSidebar
+          screen={screen}
+          onNav={nav}
+          collapsed={collapsed}
+          setCollapsed={setCollapsed}
+          openMobile={openMobile}
+          setOpenMobile={setOpenMobile}
+          badges={badges}
+          stores={sidebarStores}
+          activeSellerId={organization?.sellerId ?? null}
+        />
+        <section className="bz-side-content">
+          <div className="bz-side-mobile-bar">
+            <button
+              onClick={() => setOpenMobile(true)}
+              aria-label={t("seller.menu")}
               style={{
-                maxWidth: "var(--seller-max, var(--container))",
-                margin: "0 auto",
-                padding: "16px 28px 0",
+                width: 40,
+                height: 40,
+                borderRadius: "var(--r-md)",
+                border: "1px solid var(--line-200)",
+                background: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                flexShrink: 0,
               }}
             >
-              <SellerVerificationBanner
-                status={organization.verification.status}
-                note={organization.verification.note}
-              />
-            </div>
-          )}
-        {children}
-      </section>
-    </div>
+              <SellerIcon name="menu" size={22} />
+            </button>
+            {/* Active-store chip is the primary identity on mobile and opens the
+              switcher bottom sheet without having to open the nav drawer. */}
+            <StoreSwitcherChip
+              variant="mobilebar"
+              stores={sidebarStores}
+              activeSellerId={organization?.sellerId ?? null}
+            />
+          </div>
+          {organization?.linked &&
+            organization.verification &&
+            organization.verification.status !== "approved" && (
+              <div
+                className="bz-container-pad"
+                style={{
+                  maxWidth: "var(--seller-max, var(--container))",
+                  margin: "0 auto",
+                  padding: "16px 28px 0",
+                }}
+              >
+                <SellerVerificationBanner
+                  status={organization.verification.status}
+                  note={organization.verification.note}
+                />
+              </div>
+            )}
+          {children}
+        </section>
+      </div>
+    </IconOverrideContext.Provider>
   );
 }

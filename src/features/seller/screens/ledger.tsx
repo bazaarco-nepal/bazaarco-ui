@@ -2,12 +2,11 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Button, ChipGroup, ApiState } from "@/components/ui";
+import { Button, Chip, ChipGroup, ApiState } from "@/components/ui";
 import { formatNPR } from "@/lib/money";
 import { useSellerLedger } from "@/hooks/use-seller";
 import { pathFromScreen } from "@/config/routes";
-import { SellerHelpBar, SellerPageHeader } from "../_shared/components";
-
+import { SellerHelpBar, SellerPageHeader, Card } from "../_shared/components";
 
 /* ---------- 4.6 Payouts Ledger ---------- */
 export function SellerLedger() {
@@ -41,17 +40,25 @@ export function SellerLedger() {
     received: {
       en: "Received",
       color: "var(--success)",
-      bg: "rgba(22,163,74,.1)",
+      bg: "color-mix(in srgb, var(--success) 10%, transparent)",
     },
     sending: { en: "Sending", color: "var(--saffron)", bg: "rgba(247,127,0,.1)" },
-    held: { en: "On hold", color: "var(--danger)", bg: "rgba(220,38,38,.1)" },
+    held: {
+      en: "On hold",
+      color: "var(--danger)",
+      bg: "color-mix(in srgb, var(--danger) 10%, transparent)",
+    },
   };
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
       <div
         className="bz-seller-ledger-print bz-container-pad"
-        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
+        style={{
+          maxWidth: "var(--seller-max, var(--container))",
+          margin: "0 auto",
+          padding: "20px 28px 100px",
+        }}
       >
         <div className="bz-no-print">
           <SellerHelpBar />
@@ -81,104 +88,66 @@ export function SellerLedger() {
           />
         </div>
 
-        <div
-          style={{
-            background: "#fff",
-            border: "2px solid var(--ink-900)",
-            borderRadius: "var(--r-lg)",
-            overflow: "hidden",
-          }}
-        >
+        <Card title="Payout history">
           <div
-            style={{
-              background: "var(--ink-900)",
-              color: "#fff",
-              padding: "10px 16px",
-              fontWeight: 800,
-              fontSize: ".8125rem",
-              letterSpacing: ".06em",
-              textTransform: "uppercase",
-              textAlign: "center",
-            }}
+            className="bz-dtable"
+            style={{ "--bz-dtable-cols": "1.2fr 1fr 1fr 1fr auto" } as React.CSSProperties}
           >
-            Payout history
-          </div>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ background: "var(--line-100)" }}>
-                {["Date", "Sold", "Fee", "Net", "Status"].map((h) => (
-                  <th
-                    key={h}
-                    style={{
-                      padding: "10px 12px",
-                      textAlign: "left",
-                      fontSize: ".75rem",
-                      letterSpacing: ".04em",
-                      textTransform: "uppercase",
-                      color: "var(--ink-700)",
-                    }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={5}
-                    style={{
-                      padding: 28,
-                      textAlign: "center",
-                      color: "var(--ink-500)",
-                      fontSize: ".875rem",
-                    }}
-                  >
-                    No payouts yet. History appears here after your first sale.
-                  </td>
-                </tr>
-              )}
-              {rows.map((r, i) => {
-                const s = statusLabel[r.status as keyof typeof statusLabel];
-                return (
-                  <tr key={i} style={{ borderTop: "1px solid var(--line-200)" }}>
-                    <td style={{ padding: "14px 12px", fontWeight: 700 }}>{r.date}</td>
-                    <td className="tnum" style={{ padding: "14px 12px" }}>
-                      {formatNPR(Number(r.cash))}
-                    </td>
-                    <td className="tnum" style={{ padding: "14px 12px", color: "var(--danger)" }}>
+            <div className="bz-dtable__head">
+              <span>Date</span>
+              <span>Sold</span>
+              <span>Fee</span>
+              <span>Net</span>
+              <span>Status</span>
+            </div>
+            {rows.length === 0 && (
+              <p
+                style={{
+                  padding: "20px 2px",
+                  textAlign: "center",
+                  color: "var(--ink-500)",
+                  fontSize: ".875rem",
+                  margin: 0,
+                }}
+              >
+                No payouts yet. History appears here after your first sale.
+              </p>
+            )}
+            {rows.map((r, i) => {
+              const s = statusLabel[r.status as keyof typeof statusLabel];
+              const tone =
+                r.status === "received" ? "success" : r.status === "sending" ? "saffron" : "red";
+              return (
+                <div className="bz-dtable__row" key={i}>
+                  <div>
+                    <span className="bz-dtable__lab">Date</span>
+                    <span style={{ fontWeight: 600 }}>{r.date}</span>
+                  </div>
+                  <div>
+                    <span className="bz-dtable__lab">Sold</span>
+                    <span className="tnum">{formatNPR(Number(r.cash))}</span>
+                  </div>
+                  <div>
+                    <span className="bz-dtable__lab">Fee</span>
+                    <span className="tnum" style={{ color: "var(--danger)" }}>
                       − {formatNPR(Number(r.fee))}
-                    </td>
-                    <td
-                      className="tnum"
-                      style={{ padding: "14px 12px", color: "var(--success)", fontWeight: 800 }}
-                    >
+                    </span>
+                  </div>
+                  <div>
+                    <span className="bz-dtable__lab">Net</span>
+                    <span className="tnum" style={{ color: "var(--success)", fontWeight: 600 }}>
                       {formatNPR(Number(r.net))}
-                    </td>
-                    <td style={{ padding: "14px 12px" }}>
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 4,
-                          padding: "4px 10px",
-                          borderRadius: 999,
-                          background: s.bg,
-                          color: s.color,
-                          fontWeight: 700,
-                          fontSize: ".75rem",
-                        }}
-                      >
-                        {s.en}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                    </span>
+                  </div>
+                  <div>
+                    <span className="bz-dtable__lab">Status</span>
+                    <Chip tone={tone}>{s.en}</Chip>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
 
         <div className="bz-no-print" style={{ marginTop: 14, display: "flex", gap: 10 }}>
           <Button variant="ghost" full icon="image" onClick={saveAsPdf}>

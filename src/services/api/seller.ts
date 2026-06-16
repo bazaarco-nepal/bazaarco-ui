@@ -25,7 +25,6 @@ export interface CreateProductVariantPayload {
   sellerSku?: string | null;
   /** Server-generated, read-only on responses. */
   platformSku?: string;
-  barcode?: string;
 }
 
 /** An option-level image sent at upload/edit: one URL per attribute value. */

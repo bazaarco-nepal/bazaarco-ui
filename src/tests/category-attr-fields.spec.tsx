@@ -2,14 +2,15 @@ import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-// The "Product details" section on Add Product was redesigned around progressive
-// disclosure: optional attributes start as tappable suggestion chips, not empty
-// input rows. Tapping a chip reveals an inline row; removing the row sends it
-// back to the chips and clears its value. Required fields are always rows.
-// Custom details are a peer chip (dashed) that opens a label+value editor.
+// The "Specifications" section on Add Product uses progressive disclosure via a
+// search-to-add box: optional attributes aren't empty input rows — they're
+// suggestions you reveal by focusing/typing in the search field, then tap to add
+// as an inline row. Removing the row sends it back to the suggestions and clears
+// its value. Required fields are always rows. "Custom detail" sits at the bottom
+// of the results and opens a label+value editor.
 //
 // These tests pin that behaviour so a future tweak to the form can't silently
-// regress sellers back into the wall-of-empty-inputs it replaced.
+// regress sellers back into the wall-of-empty-inputs (or the chip cloud) it replaced.
 
 // Keep i18n's real bootstrap but echo keys so any t() calls stay stable.
 vi.mock("react-i18next", async (importOriginal) => {
@@ -71,34 +72,40 @@ function setup(initial: Record<string, unknown> = {}) {
   return { onChange, ...utils };
 }
 
-const chip = (name: RegExp | string) => screen.getByRole("button", { name });
+// Reveal the suggestion list by focusing the search box, then a result row.
+const openSearch = () => fireEvent.focusIn(screen.getByLabelText("Search a detail to add"));
+const result = (name: RegExp | string) => screen.getByRole("button", { name });
 
 beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe("CategoryAttrFields — progressive disclosure", () => {
-  it("shows required fields as rows but optional fields only as suggestion chips", () => {
+describe("CategoryAttrFields — search-to-add disclosure", () => {
+  it("shows required fields as rows but optional fields only as searchable suggestions", () => {
     setup();
     // Required field is always an editable row.
     expect(screen.getByLabelText("Made in")).toBeTruthy();
-    // Optional fields are NOT input rows yet — they're suggestion chips.
+    // Optional fields are neither rows nor visible suggestions until you search.
     expect(screen.queryByLabelText("Material")).toBeNull();
-    expect(chip("Material")).toBeTruthy();
-    expect(chip("Colour")).toBeTruthy();
-    expect(chip(/Custom detail/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Material" })).toBeNull();
+    // Focusing the search box surfaces them as tappable results.
+    openSearch();
+    expect(result("Material")).toBeTruthy();
+    expect(result("Colour")).toBeTruthy();
+    expect(result(/Custom detail/)).toBeTruthy();
   });
 
-  it("reveals an editable row when a suggestion chip is tapped, and drops the chip", () => {
+  it("reveals an editable row when a suggestion is tapped, and drops it from results", () => {
     setup();
-    fireEvent.click(chip("Material"));
+    openSearch();
+    fireEvent.click(result("Material"));
     // The row now exists...
     expect(screen.getByLabelText("Material")).toBeTruthy();
-    // ...and the chip is gone from the suggestion row.
+    // ...and it's gone from the suggestion results (only the row textbox remains).
     expect(screen.queryByRole("button", { name: "Material" })).toBeNull();
   });
 
-  it("removing an opened optional row returns it to chips and clears its value", () => {
+  it("removing an opened optional row returns it to suggestions and clears its value", () => {
     const { onChange } = setup({ material: "Cotton" });
     // A filled optional field renders as a row from the start.
     const input = screen.getByLabelText("Material") as HTMLInputElement;
@@ -108,29 +115,33 @@ describe("CategoryAttrFields — progressive disclosure", () => {
     expect(onChange).toHaveBeenCalledWith(
       expect.not.objectContaining({ material: expect.anything() }),
     );
-    // ...and it's offered again as a chip.
-    expect(chip("Material")).toBeTruthy();
+    // ...and it's offered again as a search result.
+    openSearch();
+    expect(result("Material")).toBeTruthy();
   });
 
   it("writes the typed value back through onChange", () => {
     const { onChange } = setup();
-    fireEvent.click(chip("Material"));
+    openSearch();
+    fireEvent.click(result("Material"));
     fireEvent.change(screen.getByLabelText("Material"), { target: { value: "Wool" } });
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ material: "Wool" }));
   });
 
   it("renders a toggle field as a switch and flips it through onChange", () => {
     const { onChange } = setup();
-    fireEvent.click(chip("Fully handmade"));
+    openSearch();
+    fireEvent.click(result("Fully handmade"));
     const sw = screen.getByRole("switch", { name: "Fully handmade" });
     expect(sw.getAttribute("aria-checked")).toBe("false");
     fireEvent.click(sw);
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ handmade: true }));
   });
 
-  it("opens a label+value editor from the Custom detail chip and saves a custom key", () => {
+  it("opens a label+value editor from the Custom detail result and saves a custom key", () => {
     const { onChange } = setup();
-    fireEvent.click(chip(/Custom detail/));
+    openSearch();
+    fireEvent.click(result(/Custom detail/));
     fireEvent.change(screen.getByLabelText("Custom detail name"), {
       target: { value: "Fabric origin" },
     });
@@ -142,9 +153,8 @@ describe("CategoryAttrFields — progressive disclosure", () => {
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ fabricOrigin: "Nepal" }));
   });
 
-  it("keeps the section optional — surfaces the keep-scrolling reassurance", () => {
+  it("keeps the section optional — surfaces the buyer-trust reassurance", () => {
     setup();
-    expect(screen.getByText(/keep scrolling/i)).toBeTruthy();
-    expect(screen.getByText(/Optional/i)).toBeTruthy();
+    expect(screen.getByText(/More detail builds buyer trust/i)).toBeTruthy();
   });
 });

@@ -2,12 +2,12 @@
 
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Icon, ApiState } from "@/components/ui";
+import { ApiState } from "@/components/ui";
+import { SellerIcon } from "../_shared/icons";
 import { SellerVideoLibrary } from "@/components/seller/seller-video-library";
 import { useSellerVideos, useSellerOrganization } from "@/hooks/use-seller";
 import { useBz } from "@/components/common";
 import { SellerHelpBar } from "../_shared/components";
-
 
 /* ---------- 4.12 Videos ---------- */
 export function SellerVideos() {
@@ -49,7 +49,7 @@ export function SellerVideos() {
               marginBottom: 12,
             }}
           >
-            <Icon name="video" size={32} color="var(--ink-400)" />
+            <SellerIcon name="video" size={32} color="var(--ink-400)" />
           </div>
           <p style={{ margin: 0, fontSize: ".9375rem", fontWeight: 600, maxWidth: 320 }}>
             {t("seller.videos.verifyRequired")}
@@ -63,7 +63,11 @@ export function SellerVideos() {
     <ApiState isLoading={isLoading} isError={isError} error={error}>
       <div
         className="bz-container-pad"
-        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
+        style={{
+          maxWidth: "var(--seller-max, var(--container))",
+          margin: "0 auto",
+          padding: "20px 28px 100px",
+        }}
       >
         <SellerHelpBar />
         <SellerVideoLibrary

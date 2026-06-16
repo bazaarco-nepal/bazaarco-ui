@@ -155,8 +155,6 @@ export interface PricedVariant {
   resolvedImageUrl?: string | null;
   /** Immutable, server-generated platform SKU. */
   platformSku?: string;
-  /** Scannable barcode (`BZC|<platformSku>`). */
-  barcode?: string;
   /** Optional seller-chosen code. */
   sellerSku?: string | null;
 }

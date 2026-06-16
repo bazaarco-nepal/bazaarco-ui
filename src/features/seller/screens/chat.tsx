@@ -2,14 +2,22 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Icon, Button, Spinner, EmptyState, TINTS, ApiState } from "@/components/ui";
+import { Button, Spinner, EmptyState, TINTS, ApiState } from "@/components/ui";
+import { SellerIcon } from "../_shared/icons";
 import { useChatInbox, useChatMessages, useInvalidateChat } from "@/hooks/use-chat";
-import { connectChatSocket, disconnectChatSocket, emitTypingStart, emitTypingStop, joinConversation, leaveConversation, sendChatMessage } from "@/lib/chat-socket";
+import {
+  connectChatSocket,
+  disconnectChatSocket,
+  emitTypingStart,
+  emitTypingStop,
+  joinConversation,
+  leaveConversation,
+  sendChatMessage,
+} from "@/lib/chat-socket";
 import { chatApi, type ChatMessage, type ChatThread } from "@/services/api/chat";
 import { useBz, BuyerAvatar } from "@/components/common";
 import { SellerHelpBar } from "../_shared/components";
 import { useIsNarrow } from "../_shared/hooks";
-
 
 export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
   const { t } = useTranslation();
@@ -280,7 +288,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
         >
           <Spinner />
           <div>
-            <div style={{ fontWeight: 700, color: "var(--ink-900)", fontSize: "1rem" }}>
+            <div style={{ fontWeight: 600, color: "var(--ink-900)", fontSize: "1rem" }}>
               Opening chat…
             </div>
             <div style={{ fontSize: ".875rem", color: "var(--ink-500)", marginTop: 4 }}>
@@ -308,8 +316,8 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
           style={{
             margin: "0 0 4px",
             fontSize: "clamp(1.25rem, 4vw, 1.5rem)",
-            fontWeight: 800,
-            color: "var(--blue-deep)",
+            fontWeight: 600,
+            color: "var(--ink-900)",
           }}
         >
           {buyerMode ? "Messages" : "Messages"}
@@ -353,7 +361,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
         }}
       >
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
+          <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 600, color: "var(--ink-900)" }}>
             {buyerMode ? t("seller.chat.titleBuyer") : t("seller.chat.title")}
           </h1>
           <p style={{ margin: "2px 0 0", fontSize: ".8125rem", color: "var(--ink-500)" }}>
@@ -412,7 +420,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
                     <div
                       style={{
-                        fontWeight: 800,
+                        fontWeight: 600,
                         fontSize: ".875rem",
                         color: "var(--ink-900)",
                         overflow: "hidden",
@@ -445,7 +453,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
                       background: "var(--danger)",
                       color: "#fff",
                       fontSize: ".68rem",
-                      fontWeight: 800,
+                      fontWeight: 600,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -490,7 +498,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
                     flexShrink: 0,
                   }}
                 >
-                  <Icon name="arrowLeft" size={18} color="var(--ink-700)" />
+                  <SellerIcon name="arrowLeft" size={18} color="var(--ink-700)" />
                 </button>
               ) : null}
               <BuyerAvatar
@@ -504,7 +512,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
                 }}
               />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 800, fontSize: ".9375rem" }}>{active.buyer}</div>
+                <div style={{ fontWeight: 600, fontSize: ".9375rem" }}>{active.buyer}</div>
                 <div style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
                   {peerTyping
                     ? `${active.buyer} is typing...`
@@ -634,7 +642,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
                     color: "var(--blue)",
                     borderRadius: 999,
                     fontSize: ".75rem",
-                    fontWeight: 700,
+                    fontWeight: 600,
                     cursor: "pointer",
                     whiteSpace: "nowrap",
                   }}
@@ -673,7 +681,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
                 }}
                 aria-label="Attach media"
               >
-                <Icon name="image" size={20} color="var(--ink-500)" />
+                <SellerIcon name="image" size={20} color="var(--ink-500)" />
               </button>
               <input
                 ref={inputRef}
@@ -702,7 +710,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
                   width: 44,
                   height: 44,
                   borderRadius: "50%",
-                  background: msg.trim() && !sending ? "var(--red)" : "var(--line-200)",
+                  background: msg.trim() && !sending ? "var(--blue)" : "var(--line-200)",
                   color: "#fff",
                   border: "none",
                   cursor: msg.trim() && !sending ? "pointer" : "not-allowed",
@@ -711,7 +719,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
                   justifyContent: "center",
                 }}
               >
-                <Icon name="arrowRight" size={20} color="#fff" />
+                <SellerIcon name="arrowRight" size={20} color="#fff" />
               </button>
             </div>
           </div>

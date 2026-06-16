@@ -2,13 +2,23 @@
 
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Icon, Button, ApiState } from "@/components/ui";
+import { Button, ApiState } from "@/components/ui";
+import { SellerIcon } from "../_shared/icons";
 import { useBazaarStore } from "@/store/bazaar-store";
-import { useSellerNotifications, useSellerSettings, useUpdateSellerSettings, useSellerOrganization } from "@/hooks/use-seller";
-import { useBz, PasswordResetModal, SellerDeleteAccountModal, LanguageToggle } from "@/components/common";
+import {
+  useSellerNotifications,
+  useSellerSettings,
+  useUpdateSellerSettings,
+  useSellerOrganization,
+} from "@/hooks/use-seller";
+import {
+  useBz,
+  PasswordResetModal,
+  SellerDeleteAccountModal,
+  LanguageToggle,
+} from "@/components/common";
 import { SellerHelpBar, SellerPageHeader } from "../_shared/components";
 import { NOTIF_CHANNELS, NOTIF_EVENTS } from "../_shared/notif";
-
 
 export function SellerSettings() {
   const { t } = useTranslation();
@@ -88,13 +98,13 @@ export function SellerSettings() {
                   gap: 8,
                   background: "none",
                   border: "none",
-                  borderBottom: `2px solid ${active ? "var(--red)" : "transparent"}`,
+                  borderBottom: `2px solid ${active ? "var(--blue)" : "transparent"}`,
                   marginBottom: -2,
                   padding: "12px 18px",
                   cursor: tabDef.soon ? "not-allowed" : "pointer",
-                  fontWeight: active ? 800 : 600,
+                  fontWeight: active ? 600 : 500,
                   fontSize: ".9375rem",
-                  color: tabDef.soon ? "var(--ink-300)" : active ? "var(--red)" : "var(--ink-500)",
+                  color: tabDef.soon ? "var(--ink-300)" : active ? "var(--blue)" : "var(--ink-500)",
                   fontFamily: "var(--font-sans)",
                   transition:
                     "color var(--dur-standard) var(--ease), border-color var(--dur-standard) var(--ease)",
@@ -105,7 +115,7 @@ export function SellerSettings() {
                   <span
                     style={{
                       fontSize: ".625rem",
-                      fontWeight: 800,
+                      fontWeight: 600,
                       letterSpacing: ".04em",
                       textTransform: "uppercase",
                       color: "var(--ink-400)",
@@ -138,7 +148,7 @@ export function SellerSettings() {
                   marginBottom: 14,
                 }}
               >
-                <div style={{ fontWeight: 800, fontSize: ".875rem", marginBottom: 10 }}>
+                <div style={{ fontWeight: 600, fontSize: ".875rem", marginBottom: 10 }}>
                   {t("seller.settings.recentAlerts")}
                 </div>
                 {(notifications?.items ?? []).map((n) => (
@@ -150,7 +160,7 @@ export function SellerSettings() {
                       fontSize: ".8125rem",
                     }}
                   >
-                    <div style={{ fontWeight: 700 }}>{n.title}</div>
+                    <div style={{ fontWeight: 600 }}>{n.title}</div>
                     <div style={{ color: "var(--ink-500)" }}>
                       {n.body} · {n.time}
                     </div>
@@ -174,7 +184,7 @@ export function SellerSettings() {
                         textAlign: "left",
                         padding: "12px 16px",
                         fontSize: ".7rem",
-                        fontWeight: 700,
+                        fontWeight: 600,
                         color: "var(--ink-500)",
                         letterSpacing: ".06em",
                         textTransform: "uppercase",
@@ -188,14 +198,14 @@ export function SellerSettings() {
                         style={{
                           padding: "12px 12px",
                           fontSize: ".7rem",
-                          fontWeight: 700,
+                          fontWeight: 600,
                           color: "var(--ink-500)",
                           letterSpacing: ".06em",
                           textTransform: "uppercase",
                         }}
                       >
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                          <Icon name={c.icon} size={14} /> {t(c.labelKey)}
+                          <SellerIcon name={c.icon} size={14} /> {t(c.labelKey)}
                         </span>
                       </th>
                     ))}
@@ -205,7 +215,7 @@ export function SellerSettings() {
                   {NOTIF_EVENTS.map((e, ri) => (
                     <tr key={e.id} style={{ borderTop: "1px solid var(--line-200)" }}>
                       <td style={{ padding: "14px 16px" }}>
-                        <div style={{ fontWeight: 700 }}>{t(e.labelKey)}</div>
+                        <div style={{ fontWeight: 600 }}>{t(e.labelKey)}</div>
                       </td>
                       {NOTIF_CHANNELS.map((_, ci) => (
                         <td key={ci} style={{ padding: "14px 12px", textAlign: "center" }}>
@@ -225,7 +235,7 @@ export function SellerSettings() {
                             style={{
                               width: 20,
                               height: 20,
-                              accentColor: "var(--red)",
+                              accentColor: "var(--blue)",
                               cursor: ri === 0 && ci === 0 ? "not-allowed" : "pointer",
                             }}
                           />
@@ -280,14 +290,16 @@ export function SellerSettings() {
             ].map((r, i, a) => {
               const content = (
                 <>
-                  <Icon name={r.icon} size={22} color="var(--ink-700)" />
+                  <SellerIcon name={r.icon} size={22} color="var(--ink-700)" />
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700 }}>{r.title}</div>
+                    <div style={{ fontWeight: 600 }}>{r.title}</div>
                     <div style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}>{r.sub}</div>
                   </div>
                   {r.control
                     ? r.control
-                    : r.onAct && <Icon name="chevronRight" size={18} color="var(--ink-400)" />}
+                    : r.onAct && (
+                        <SellerIcon name="chevronRight" size={18} color="var(--ink-400)" />
+                      )}
                 </>
               );
               const rowStyle: React.CSSProperties = {
@@ -354,7 +366,7 @@ export function SellerSettings() {
         {tab === "alerts" && (
           <Button
             variant="primary"
-            size="lg"
+            size="md"
             full
             disabled={!notif || updateSettings.isPending}
             onClick={() => void handleSave()}

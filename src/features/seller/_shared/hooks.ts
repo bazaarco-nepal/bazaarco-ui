@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 
-
 /* ---------- 4.7 Customer Chat ---------- */
 // Tracks whether the viewport is at/below a breakpoint. Generic — used by the
 // chat split-pane and the storefront's column layout.

@@ -13,7 +13,8 @@
    ============================================================ */
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Icon, Button } from "@/components/ui";
+import { Button } from "@/components/ui";
+import { SellerIcon } from "./icons";
 
 /* ---------- Section progress ---------- */
 
@@ -26,10 +27,7 @@ export interface FormSection {
   state: SectionState;
 }
 
-const SECTION_VISUAL: Record<
-  SectionState,
-  { icon: string; color: string; label: string }
-> = {
+const SECTION_VISUAL: Record<SectionState, { icon: string; color: string; label: string }> = {
   todo: { icon: "clock", color: "var(--ink-300)", label: "Not started" },
   active: { icon: "edit", color: "var(--blue)", label: "In progress" },
   done: { icon: "check", color: "var(--success)", label: "Complete" },
@@ -64,9 +62,9 @@ export function FormSectionNav({
             >
               <span className="bz-form-nav__num" style={{ color: v.color, borderColor: v.color }}>
                 {s.state === "done" ? (
-                  <Icon name="check" size={13} color="var(--success)" />
+                  <SellerIcon name="check" size={13} color="var(--success)" />
                 ) : s.state === "error" ? (
-                  <Icon name="flag" size={12} color="var(--danger)" />
+                  <SellerIcon name="flag" size={12} color="var(--danger)" />
                 ) : (
                   i + 1
                 )}
@@ -145,7 +143,7 @@ export function MessageBar({
         marginBottom: 14,
       }}
     >
-      <Icon name={t.icon} size={18} color={t.accent} />
+      <SellerIcon name={t.icon} size={18} color={t.accent} />
       <div style={{ flex: 1, minWidth: 0 }}>
         {title && (
           <div style={{ fontWeight: 700, fontSize: ".875rem", color: "var(--ink-900)" }}>
@@ -173,7 +171,7 @@ export function MessageBar({
             lineHeight: 0,
           }}
         >
-          <Icon name="x" size={16} />
+          <SellerIcon name="x" size={16} />
         </button>
       )}
     </div>
@@ -188,7 +186,12 @@ export function InfoTip({ text, label = "More info" }: { text: string; label?: s
   const [open, setOpen] = useState(false);
   return (
     <span
-      style={{ position: "relative", display: "inline-flex", verticalAlign: "middle", marginInlineStart: 6 }}
+      style={{
+        position: "relative",
+        display: "inline-flex",
+        verticalAlign: "middle",
+        marginInlineStart: 6,
+      }}
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
     >
@@ -286,6 +289,43 @@ export function useLocalDraft<T>(key: string) {
   }, [key]);
 
   return { read, write, clear, exists };
+}
+
+/* The single device-local draft for the new-product form. Shared so the Add
+   Product form can write/resume it and the Inventory screen can surface it —
+   one key, one source of truth, no drift between the two screens. */
+export const ADD_PRODUCT_DRAFT_KEY = "bz-draft-add-product";
+
+/* The subset of the draft both screens read — to label the Inventory card and
+   to gate whether a draft is worth surfacing/resuming. The Add Product form
+   owns the full draft shape; it's structurally a superset of this. */
+export interface ProductDraftPreview {
+  title?: string;
+  description?: string;
+  category?: string;
+  price?: string;
+  stock?: string;
+  hasVariants?: boolean;
+  brand?: string;
+  keywords?: string;
+}
+
+/* A draft only counts once the seller has entered something real — a stray
+   focus or a lone (unsaved) photo shouldn't leave a ghost "draft" behind.
+   Photos aren't part of the draft (they aren't persisted to localStorage), so
+   they're deliberately not considered here. */
+export function productDraftHasContent(d: ProductDraftPreview | null | undefined): boolean {
+  if (!d) return false;
+  return Boolean(
+    d.title?.trim() ||
+    d.description?.trim() ||
+    d.category ||
+    d.price ||
+    d.stock ||
+    d.hasVariants ||
+    d.brand?.trim() ||
+    d.keywords?.trim(),
+  );
 }
 
 /* ---------- Scroll spy ---------- */

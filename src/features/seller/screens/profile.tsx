@@ -2,14 +2,19 @@
 
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Icon, Button } from "@/components/ui";
+import { Button } from "@/components/ui";
+import { SellerIcon } from "../_shared/icons";
 import { useLogout, useUpdateProfile } from "@/hooks/use-auth";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { displayName, userInitial } from "@/lib/display";
 import { useSellerStorefront } from "@/hooks/use-seller";
-import { useBz, PasswordResetModal, LogoutConfirmModal, SellerDeleteAccountModal } from "@/components/common";
-import { SellerHelpBar, SellerPageHeader } from "../_shared/components";
-
+import {
+  useBz,
+  PasswordResetModal,
+  LogoutConfirmModal,
+  SellerDeleteAccountModal,
+} from "@/components/common";
+import { SellerHelpBar, SellerPageHeader, SellerPage, Card } from "../_shared/components";
 
 /* ---------- 4.18 Profile (includes KYC) ---------- */
 export function SellerProfile() {
@@ -57,47 +62,30 @@ export function SellerProfile() {
   };
 
   return (
-    <div
-      className="bz-container-pad"
-      style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
-    >
+    <SellerPage>
       <SellerHelpBar />
-      <SellerPageHeader
-        title={t("seller.profile.title")}
-        subtitle={t("seller.profile.subtitle")}
-      />
+      <SellerPageHeader title={t("seller.profile.title")} subtitle={t("seller.profile.subtitle")} />
 
       {/* Owner card */}
-      <div
-        style={{
-          background: "#fff",
-          border: "1px solid var(--line-200)",
-          borderRadius: "var(--r-lg)",
-          padding: 20,
-          display: "flex",
-          alignItems: "center",
-          gap: 14,
-          marginBottom: 16,
-        }}
-      >
+      <Card style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <div
           style={{
             width: 64,
             height: 64,
             borderRadius: "50%",
-            background: "var(--tint-red-50)",
-            color: "var(--red)",
+            background: "var(--tint-blue-50)",
+            color: "var(--blue)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontWeight: 800,
+            fontWeight: 600,
             fontSize: "1.5rem",
           }}
         >
           {userInitial(user)}
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 800, fontSize: "1.125rem" }}>{sellerName}</div>
+          <div style={{ fontWeight: 600, fontSize: "1.125rem" }}>{sellerName}</div>
           <div style={{ fontSize: ".875rem", color: "var(--ink-500)" }}>
             {shopName} · {user?.email ?? "—"}
           </div>
@@ -105,15 +93,15 @@ export function SellerProfile() {
             Complete KYC to get verified
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* My info */}
       <h2
         style={{
           margin: "10px 0 8px",
           fontSize: ".9375rem",
-          fontWeight: 800,
-          color: "var(--blue-deep)",
+          fontWeight: 600,
+          color: "var(--ink-900)",
         }}
       >
         My info
@@ -155,12 +143,12 @@ export function SellerProfile() {
               textAlign: "left",
             }}
           >
-            <Icon name={r.icon} size={22} color="var(--ink-700)" />
+            <SellerIcon name={r.icon} size={22} color="var(--ink-700)" />
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700 }}>{r.en}</div>
+              <div style={{ fontWeight: 600 }}>{r.en}</div>
               <div style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}>{r.sub}</div>
             </div>
-            <Icon name="chevronRight" size={18} color="var(--ink-400)" />
+            <SellerIcon name="chevronRight" size={18} color="var(--ink-400)" />
           </button>
         ))}
       </div>
@@ -214,7 +202,8 @@ export function SellerProfile() {
         pending={logoutMutation.isPending}
         onConfirm={handleLogout}
         onCancel={() => setConfirmLogout(false)}
+        skin="fluent"
       />
-    </div>
+    </SellerPage>
   );
 }

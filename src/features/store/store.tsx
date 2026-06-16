@@ -10,7 +10,7 @@ import {
   EmptyState,
   ApiState,
   SkeletonCard,
-  TINTS,
+  StoreAvatar,
   AppLink,
 } from "@/components/ui";
 import { BuyerAvatar, ProductCard, useBz } from "@/components/common";
@@ -194,8 +194,6 @@ export function Store() {
   const [tab, setTab] = useState<"products" | "reviews">("products");
   const [rating, setRating] = useState(false);
 
-  const tint = seller ? (TINTS[seller.tint ?? "slate"] ?? TINTS.slate) : TINTS.slate;
-
   const openRate = () => {
     if (!authed) {
       promptLogin("Please sign in to review this store.");
@@ -275,41 +273,7 @@ export function Store() {
               marginBottom: 22,
             }}
           >
-            <div
-              style={{
-                width: 76,
-                height: 76,
-                borderRadius: "50%",
-                overflow: "hidden",
-                border: `2px solid ${tint[1]}`,
-                boxShadow: `0 0 0 4px ${tint[0]}`,
-                flexShrink: 0,
-                background: tint[0],
-              }}
-            >
-              {seller.avatar ? (
-                <img
-                  src={seller.avatar}
-                  alt={seller.name}
-                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                />
-              ) : (
-                <div
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 800,
-                    fontSize: "1.75rem",
-                    color: tint[2],
-                  }}
-                >
-                  {seller.name?.[0] ?? "?"}
-                </div>
-              )}
-            </div>
+            <StoreAvatar src={seller.avatar} name={seller.name} size={72} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                 <h1

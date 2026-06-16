@@ -6,75 +6,49 @@ import { useTranslation } from "react-i18next";
 import { useBazaarStore } from "@/store/bazaar-store";
 import type { Locale } from "@/i18n";
 
+// Each option shows its language in its OWN script (endonym), so a buyer who
+// can't read the current UI language can still recognise and pick theirs — the
+// standard for language switchers. These are proper names, not UI copy.
+const OPTIONS: ReadonlyArray<{ value: Locale; label: string }> = [
+  { value: "en", label: "English" },
+  { value: "ne", label: "नेपाली" },
+];
+
 export function LanguageToggle({ compact = false }: { compact?: boolean }) {
   const { t } = useTranslation();
   const locale = useBazaarStore((s) => s.locale);
   const setLocale = useBazaarStore((s) => s.setLocale);
 
-  const set = (next: Locale) => {
-    if (next !== locale) setLocale(next);
-  };
+  // Drive the sliding thumb from the active index (0 = EN, 1 = ने). Styling and
+  // the slide animation live in CSS (.bz-lang-toggle) so both skins and
+  // prefers-reduced-motion are handled in one place.
+  const activeIndex = Math.max(
+    0,
+    OPTIONS.findIndex((o) => o.value === locale),
+  );
 
   return (
     <div
       role="group"
       aria-label={t("language.switchAria")}
-      className="bz-lang-toggle"
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: compact ? 4 : 6,
-        padding: compact ? "4px 6px" : "5px 8px",
-        borderRadius: "var(--r-full)",
-        border: "1px solid var(--line-200)",
-        background: "#fff",
-      }}
+      className={"bz-lang-toggle" + (compact ? " bz-lang-toggle--compact" : "")}
+      style={{ "--bz-lang-active": activeIndex } as CSSProperties}
     >
-      {!compact && (
-        <span
-          style={{
-            fontSize: ".6875rem",
-            fontWeight: 700,
-            color: "var(--ink-400)",
-            letterSpacing: ".04em",
-            textTransform: "uppercase",
-            paddingLeft: 4,
+      <span className="bz-lang-toggle__thumb" aria-hidden="true" />
+      {OPTIONS.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          className="bz-lang-toggle__opt"
+          onClick={() => {
+            if (o.value !== locale) setLocale(o.value);
           }}
+          aria-pressed={o.value === locale}
+          lang={o.value}
         >
-          {t("language.label")}
-        </span>
-      )}
-      <button
-        type="button"
-        onClick={() => set("en")}
-        aria-pressed={locale === "en"}
-        style={toggleStyle(locale === "en")}
-      >
-        EN
-      </button>
-      <span style={{ color: "var(--line-200)", fontSize: ".75rem" }}>|</span>
-      <button
-        type="button"
-        onClick={() => set("ne")}
-        aria-pressed={locale === "ne"}
-        style={toggleStyle(locale === "ne")}
-      >
-        ने
-      </button>
+          {o.label}
+        </button>
+      ))}
     </div>
   );
-}
-
-function toggleStyle(active: boolean): CSSProperties {
-  return {
-    background: active ? "var(--tint-blue-50)" : "transparent",
-    border: "none",
-    borderRadius: "var(--r-full)",
-    color: active ? "var(--blue-deep)" : "var(--ink-500)",
-    cursor: "pointer",
-    fontSize: ".75rem",
-    fontWeight: 800,
-    padding: "4px 8px",
-    lineHeight: 1,
-  };
 }

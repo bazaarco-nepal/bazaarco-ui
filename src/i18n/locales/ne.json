@@ -325,7 +325,7 @@
     "navHome": "घर",
     "navAddProduct": "उत्पादन थप्नुहोस्",
     "navOrders": "अर्डर",
-    "navProducts": "मेरा उत्पादन",
+    "navProducts": "मौज्दात",
     "navMessages": "सन्देश",
     "navVideos": "भिडियो",
     "navStorefront": "मेरो स्टोर",
@@ -408,7 +408,7 @@
       "tabCancelled": "रद्द"
     },
     "products": {
-      "title": "मेरा उत्पादन",
+      "title": "मौज्दात",
       "subtitle": "तपाईंको क्याटलग व्यवस्थापन गर्नुहोस् — स्टक, मूल्य र विवरण अपडेट गर्नुहोस्।",
       "addProduct": "उत्पादन थप्नुहोस्",
       "addShort": "थप्नुहोस्",

@@ -2,15 +2,20 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Icon, Button, LandmarkAddress, AppLink } from "@/components/ui";
+import { Button, LandmarkAddress, AppLink } from "@/components/ui";
+import { SellerIcon } from "../_shared/icons";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { clearDeferredSellerOnboarding, deferSellerOnboarding } from "@/lib/seller-onboarding";
-import { useSellerOrganization, useSetupSellerOrganization, useSubmitSellerVerification, useSellerStorefront } from "@/hooks/use-seller";
+import {
+  useSellerOrganization,
+  useSetupSellerOrganization,
+  useSubmitSellerVerification,
+  useSellerStorefront,
+} from "@/hooks/use-seller";
 import { useBz } from "@/components/common";
 import { pathFromScreen } from "@/config/routes";
 import { emptyStoreAddress, type StoreAddress } from "@/lib/store-address";
 import { SellerHelpBar } from "../_shared/components";
-
 
 // Short walkthrough that plays on the seller onboarding hero. Hosted on Drive
 // rather than uploaded as an asset so the team can swap the clip without a deploy.
@@ -181,7 +186,11 @@ export function SellerOnboarding() {
     return (
       <div
         className="bz-container-pad"
-        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
+        style={{
+          maxWidth: "var(--seller-max, var(--container))",
+          margin: "0 auto",
+          padding: "20px 28px 100px",
+        }}
       >
         <div style={{ maxWidth: 540, margin: "0 auto" }}>
           <SellerHelpBar />
@@ -191,18 +200,18 @@ export function SellerOnboarding() {
                 width: 80,
                 height: 80,
                 borderRadius: "50%",
-                background: "rgba(22,163,74,.12)",
+                background: "color-mix(in srgb, var(--success) 12%, transparent)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 margin: "0 auto 18px",
               }}
             >
-              <Icon name="badgeCheck" size={42} color="var(--success)" />
+              <SellerIcon name="badgeCheck" size={42} color="var(--success)" />
             </div>
-            <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800 }}>You&apos;re verified</h1>
+            <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 600 }}>You&apos;re verified</h1>
             <div style={{ marginTop: 24 }}>
-              <Button variant="primary" size="lg" full href={pathFromScreen("s-dashboard")}>
+              <Button variant="primary" size="md" full href={pathFromScreen("s-dashboard")}>
                 Open dashboard
               </Button>
             </div>
@@ -217,7 +226,11 @@ export function SellerOnboarding() {
     return (
       <div
         className="bz-container-pad"
-        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
+        style={{
+          maxWidth: "var(--seller-max, var(--container))",
+          margin: "0 auto",
+          padding: "20px 28px 100px",
+        }}
       >
         <div style={{ maxWidth: 540, margin: "0 auto" }}>
           <SellerHelpBar />
@@ -234,9 +247,9 @@ export function SellerOnboarding() {
                 margin: "0 auto 18px",
               }}
             >
-              <Icon name="shieldCheck" size={42} color="var(--saffron)" />
+              <SellerIcon name="shieldCheck" size={42} color="var(--saffron)" />
             </div>
-            <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800 }}>
+            <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 600 }}>
               You&apos;re all set — keep going
             </h1>
             <p style={{ color: "var(--ink-600)", marginTop: 8, fontSize: ".9375rem" }}>
@@ -250,11 +263,11 @@ export function SellerOnboarding() {
                 background: "rgba(247,127,0,.08)",
                 borderRadius: "var(--r-md)",
                 fontSize: ".8125rem",
-                color: "var(--blue-deep)",
+                color: "var(--ink-900)",
                 textAlign: "left",
               }}
             >
-              <Icon
+              <SellerIcon
                 name="shieldCheck"
                 size={16}
                 color="var(--saffron)"
@@ -264,7 +277,7 @@ export function SellerOnboarding() {
               know.
             </div>
             <div style={{ marginTop: 24 }}>
-              <Button variant="primary" size="lg" full href={pathFromScreen("s-dashboard")}>
+              <Button variant="primary" size="md" full href={pathFromScreen("s-dashboard")}>
                 Open dashboard
               </Button>
             </div>
@@ -277,7 +290,11 @@ export function SellerOnboarding() {
   return (
     <div
       className="bz-container-pad"
-      style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
+      style={{
+        maxWidth: "var(--seller-max, var(--container))",
+        margin: "0 auto",
+        padding: "20px 28px 100px",
+      }}
     >
       <div style={{ maxWidth: 540, margin: "0 auto" }}>
         <SellerHelpBar />
@@ -297,10 +314,10 @@ export function SellerOnboarding() {
                 marginBottom: 16,
               }}
             >
-              <Icon name="store" size={30} color="var(--blue)" />
+              <SellerIcon name="store" size={30} color="var(--blue)" />
             </div>
             <h1
-              style={{ margin: 0, fontSize: "1.75rem", fontWeight: 800, color: "var(--blue-deep)" }}
+              style={{ margin: 0, fontSize: "1.75rem", fontWeight: 600, color: "var(--ink-900)" }}
             >
               Open your shop on <span style={{ color: "var(--red)" }}>BazaarCo</span>
             </h1>
@@ -323,13 +340,13 @@ export function SellerOnboarding() {
                 cursor: "pointer",
               }}
             >
-              <Icon name="play" size={26} color="var(--blue)" />
+              <SellerIcon name="play" size={26} color="var(--blue)" />
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 800, color: "var(--blue-deep)" }}>
+                <div style={{ fontWeight: 600, color: "var(--ink-900)" }}>
                   Watch a 2-min seller KYC setup guide
                 </div>
               </div>
-              <Icon name="chevronRight" size={20} color="var(--blue)" />
+              <SellerIcon name="chevronRight" size={20} color="var(--blue)" />
             </AppLink>
 
             <div style={{ marginTop: 22, textAlign: "left", padding: "0 4px" }}>
@@ -352,9 +369,9 @@ export function SellerOnboarding() {
                     cursor: href ? "pointer" : "default",
                   }}
                 >
-                  <Icon name={i ?? ""} size={22} color="var(--blue)" />
+                  <SellerIcon name={i ?? ""} size={22} color="var(--blue)" />
                   <div>
-                    <div style={{ fontWeight: 700, color: "var(--ink-900)" }}>{t}</div>
+                    <div style={{ fontWeight: 600, color: "var(--ink-900)" }}>{t}</div>
                   </div>
                 </AppLink>
               ))}
@@ -363,7 +380,7 @@ export function SellerOnboarding() {
             <div style={{ marginTop: 24 }}>
               <Button
                 variant="primary"
-                size="lg"
+                size="md"
                 full
                 icon="image"
                 onClick={() => {
@@ -404,14 +421,14 @@ export function SellerOnboarding() {
                 marginBottom: 14,
               }}
             >
-              <Icon name="chevronLeft" size={16} /> Back
+              <SellerIcon name="chevronLeft" size={16} /> Back
             </button>
             <h2
               style={{
                 margin: 0,
                 fontSize: "1.375rem",
-                fontWeight: 800,
-                color: "var(--blue-deep)",
+                fontWeight: 600,
+                color: "var(--ink-900)",
               }}
             >
               Which document do you have?
@@ -459,15 +476,15 @@ export function SellerOnboarding() {
                     justifyContent: "center",
                   }}
                 >
-                  <Icon name={d.icon} size={28} color="var(--blue)" />
+                  <SellerIcon name={d.icon} size={28} color="var(--blue)" />
                 </span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 800, fontSize: "1rem" }}>{d.title}</div>
+                  <div style={{ fontWeight: 600, fontSize: "1rem" }}>{d.title}</div>
                   <div style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 2 }}>
                     {d.sub}
                   </div>
                 </div>
-                <Icon name="chevronRight" size={22} color="var(--ink-400)" />
+                <SellerIcon name="chevronRight" size={22} color="var(--ink-400)" />
               </button>
             ))}
           </div>
@@ -489,9 +506,9 @@ export function SellerOnboarding() {
                 marginBottom: 14,
               }}
             >
-              <Icon name="chevronLeft" size={16} /> Back
+              <SellerIcon name="chevronLeft" size={16} /> Back
             </button>
-            <h2 style={{ margin: "0 0 6px", fontSize: "1.25rem", fontWeight: 800 }}>
+            <h2 style={{ margin: "0 0 6px", fontSize: "1.25rem", fontWeight: 600 }}>
               Upload your {docType === "pan" ? "PAN" : "NID"} photo
             </h2>
             <input
@@ -528,7 +545,7 @@ export function SellerOnboarding() {
               <Button
                 variant="primary"
                 full
-                size="lg"
+                size="md"
                 disabled={!docFile}
                 onClick={() => setStage("review")}
               >
@@ -546,13 +563,13 @@ export function SellerOnboarding() {
                 alignItems: "center",
                 gap: 10,
                 color: "var(--success)",
-                fontWeight: 700,
+                fontWeight: 600,
                 marginBottom: 12,
               }}
             >
-              <Icon name="check" size={20} color="var(--success)" /> Document uploaded
+              <SellerIcon name="check" size={20} color="var(--success)" /> Document uploaded
             </div>
-            <h2 style={{ margin: "0 0 16px", fontSize: "1.25rem", fontWeight: 800 }}>
+            <h2 style={{ margin: "0 0 16px", fontSize: "1.25rem", fontWeight: 600 }}>
               Confirm your details
             </h2>
             <div
@@ -568,7 +585,7 @@ export function SellerOnboarding() {
                 style={{
                   fontSize: ".75rem",
                   color: "var(--ink-400)",
-                  fontWeight: 700,
+                  fontWeight: 600,
                   display: "block",
                   marginBottom: 8,
                 }}
@@ -607,7 +624,7 @@ export function SellerOnboarding() {
                 style={{
                   fontSize: ".75rem",
                   color: "var(--ink-400)",
-                  fontWeight: 700,
+                  fontWeight: 600,
                   display: "block",
                   marginBottom: 8,
                 }}
@@ -642,7 +659,7 @@ export function SellerOnboarding() {
                 style={{
                   fontSize: ".75rem",
                   color: "var(--ink-400)",
-                  fontWeight: 700,
+                  fontWeight: 600,
                   display: "block",
                   marginBottom: 8,
                 }}
@@ -664,7 +681,7 @@ export function SellerOnboarding() {
                 style={{
                   fontSize: ".75rem",
                   color: "var(--ink-400)",
-                  fontWeight: 700,
+                  fontWeight: 600,
                   display: "block",
                   marginBottom: 8,
                 }}
@@ -699,7 +716,7 @@ export function SellerOnboarding() {
                 style={{
                   fontSize: ".75rem",
                   color: "var(--ink-400)",
-                  fontWeight: 700,
+                  fontWeight: 600,
                   display: "block",
                   marginBottom: 8,
                 }}
@@ -725,7 +742,7 @@ export function SellerOnboarding() {
               <Button
                 variant="primary"
                 full
-                size="lg"
+                size="md"
                 disabled={setupOrganization.isPending || submitVerification.isPending}
                 onClick={() => void finishSetup()}
               >
@@ -744,16 +761,16 @@ export function SellerOnboarding() {
                 width: 80,
                 height: 80,
                 borderRadius: "50%",
-                background: "rgba(22,163,74,.12)",
+                background: "color-mix(in srgb, var(--success) 12%, transparent)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 margin: "0 auto 18px",
               }}
             >
-              <Icon name="check" size={42} color="var(--success)" />
+              <SellerIcon name="check" size={42} color="var(--success)" />
             </div>
-            <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800 }}>Submitted for review</h1>
+            <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 600 }}>Submitted for review</h1>
             <p style={{ color: "var(--ink-500)", marginTop: 6 }}>
               BazaarCo admin will verify your {docType === "pan" ? "PAN" : "NID"}. You can use the
               dashboard meanwhile.
@@ -765,11 +782,11 @@ export function SellerOnboarding() {
                 background: "rgba(247,127,0,.08)",
                 borderRadius: "var(--r-md)",
                 fontSize: ".8125rem",
-                color: "var(--blue-deep)",
+                color: "var(--ink-900)",
                 textAlign: "left",
               }}
             >
-              <Icon
+              <SellerIcon
                 name="shieldCheck"
                 size={16}
                 color="var(--saffron)"
@@ -778,7 +795,7 @@ export function SellerOnboarding() {
               Adding products and videos unlocks after approval.
             </div>
             <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 10 }}>
-              <Button variant="primary" size="lg" full href={pathFromScreen("s-dashboard")}>
+              <Button variant="primary" size="md" full href={pathFromScreen("s-dashboard")}>
                 Open dashboard
               </Button>
               <Button

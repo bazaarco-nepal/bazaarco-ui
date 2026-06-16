@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { Icon, Button, Placeholder, EmptyState, AppLink } from "@/components/ui";
+import { Button, Placeholder, EmptyState, AppLink } from "@/components/ui";
+import { SellerIcon } from "../_shared/icons";
 import { formatNPR } from "@/lib/money";
 import { type OrderStatus } from "@/lib/order-utils";
 import { useSellerInbox, useUpdateSellerOrderStatus } from "@/hooks/use-seller";
@@ -10,7 +11,6 @@ import { pathFromScreen } from "@/config/routes";
 import { SellerHelpBar } from "../_shared/components";
 import { INBOX_LABEL } from "../_shared/inbox";
 import { sellerOrderRef } from "../_shared/refs";
-
 
 /* ---------- 4.3b Order detail — full-screen, one big action ---------- */
 export function SellerOrderDetail() {
@@ -23,7 +23,11 @@ export function SellerOrderDetail() {
     return (
       <div
         className="bz-container-pad"
-        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
+        style={{
+          maxWidth: "var(--seller-max, var(--container))",
+          margin: "0 auto",
+          padding: "20px 28px 100px",
+        }}
       >
         <EmptyState
           icon="package"
@@ -77,7 +81,11 @@ export function SellerOrderDetail() {
   return (
     <div
       className="bz-container-pad"
-      style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 100px" }}
+      style={{
+        maxWidth: "var(--seller-max, var(--container))",
+        margin: "0 auto",
+        padding: "20px 28px 100px",
+      }}
     >
       <div style={{ maxWidth: 620, margin: "0 auto" }}>
         <SellerHelpBar />
@@ -99,7 +107,7 @@ export function SellerOrderDetail() {
             textDecoration: "none",
           }}
         >
-          <Icon name="chevronLeft" size={16} /> Back to orders
+          <SellerIcon name="chevronLeft" size={16} /> Back to orders
         </AppLink>
 
         <div
@@ -114,9 +122,9 @@ export function SellerOrderDetail() {
             gap: 14,
           }}
         >
-          <Icon name="package" size={32} color="var(--danger)" />
+          <SellerIcon name="package" size={32} color="var(--danger)" />
           <div>
-            <div style={{ fontWeight: 800, color: "var(--danger)", fontSize: "1rem" }}>
+            <div style={{ fontWeight: 600, color: "var(--danger)", fontSize: "1rem" }}>
               {INBOX_LABEL[o.status].en}
             </div>
             <div style={{ fontSize: ".8125rem", color: "var(--ink-700)" }}>
@@ -139,7 +147,7 @@ export function SellerOrderDetail() {
             style={{
               fontSize: ".75rem",
               color: "var(--ink-400)",
-              fontWeight: 700,
+              fontWeight: 600,
               textTransform: "uppercase",
               letterSpacing: ".06em",
               marginBottom: 8,
@@ -156,7 +164,7 @@ export function SellerOrderDetail() {
               style={{ background: "var(--tint-blue-50)", color: "var(--blue)" }}
             />
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 800, fontSize: "1.0625rem" }}>{o.buyer}</div>
+              <div style={{ fontWeight: 600, fontSize: "1.0625rem" }}>{o.buyer}</div>
               <div style={{ fontSize: ".875rem", color: "var(--ink-500)" }}>{o.city}</div>
             </div>
             <a
@@ -173,7 +181,7 @@ export function SellerOrderDetail() {
                 textDecoration: "none",
               }}
             >
-              <Icon name="phone" size={22} color="#fff" />
+              <SellerIcon name="phone" size={22} color="#fff" />
             </a>
           </div>
         </div>
@@ -192,7 +200,7 @@ export function SellerOrderDetail() {
             style={{
               fontSize: ".75rem",
               color: "var(--ink-400)",
-              fontWeight: 700,
+              fontWeight: 600,
               textTransform: "uppercase",
               letterSpacing: ".06em",
               marginBottom: 8,
@@ -208,7 +216,7 @@ export function SellerOrderDetail() {
               radius="var(--r-md)"
             />
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700 }}>{o.item}</div>
+              <div style={{ fontWeight: 600 }}>{o.item}</div>
               <div
                 className="tnum"
                 style={{ fontSize: ".875rem", color: "var(--ink-500)", marginTop: 2 }}
@@ -233,7 +241,7 @@ export function SellerOrderDetail() {
             style={{
               fontSize: ".75rem",
               color: "var(--ink-400)",
-              fontWeight: 700,
+              fontWeight: 600,
               textTransform: "uppercase",
               letterSpacing: ".06em",
               marginBottom: 10,
@@ -252,7 +260,7 @@ export function SellerOrderDetail() {
             <span style={{ color: "var(--ink-700)" }}>Buyer pays</span>
             <span
               className="tnum"
-              style={{ fontWeight: 800, fontSize: "1.25rem", color: "var(--blue-deep)" }}
+              style={{ fontWeight: 600, fontSize: "1.25rem", color: "var(--ink-900)" }}
             >
               {formatNPR(o.price)}
             </span>
@@ -266,10 +274,10 @@ export function SellerOrderDetail() {
               alignItems: "center",
             }}
           >
-            <span style={{ fontWeight: 700, color: "var(--ink-900)" }}>You get</span>
+            <span style={{ fontWeight: 600, color: "var(--ink-900)" }}>You get</span>
             <span
               className="tnum"
-              style={{ fontWeight: 800, fontSize: "1.375rem", color: "var(--success)" }}
+              style={{ fontWeight: 600, fontSize: "1.375rem", color: "var(--success)" }}
             >
               {formatNPR(o.price)}
             </span>
@@ -288,16 +296,16 @@ export function SellerOrderDetail() {
               borderRadius: "var(--r-lg)",
               padding: 16,
               textAlign: "center",
-              color: "var(--blue-deep)",
-              fontWeight: 700,
+              color: "var(--ink-900)",
+              fontWeight: 600,
             }}
           >
-            <Icon name="check" size={18} /> Accepted — waiting for other sellers to confirm
+            <SellerIcon name="check" size={18} /> Accepted — waiting for other sellers to confirm
           </div>
         ) : nextStatus[o.status] ? (
           <Button
             variant="primary"
-            size="lg"
+            size="md"
             full
             loading={updateStatus.isPending}
             onClick={() => void moveOrder(nextStatus[o.status]!)}
@@ -306,7 +314,7 @@ export function SellerOrderDetail() {
             {nextLabel[o.status]}
           </Button>
         ) : (
-          <Button variant="ghost" size="lg" full disabled>
+          <Button variant="ghost" size="md" full disabled>
             {INBOX_LABEL[o.status].en}
           </Button>
         )}

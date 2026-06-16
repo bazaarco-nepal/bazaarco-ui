@@ -29,6 +29,10 @@
      than spanning the full buyer --container. Every seller page (.bz-seller-page
      / SellerPage) and the KYC banner share this so they line up. */
   --seller-max: 1160px;
+  /* Wider variant for data-dense pages (dashboards, tables, charts, and the
+     three-zone Add Product layout) so cards/columns fill the space instead of
+     leaving dead gutters. Page-type-aware: opt in via .bz-seller-page--wide. */
+  --seller-max-wide: 1360px;
 
   /* Accent blue — primary actions, links, active/selected, focus */
   --blue: #0078d4;

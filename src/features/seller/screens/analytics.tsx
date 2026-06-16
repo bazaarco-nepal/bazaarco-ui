@@ -2,12 +2,12 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Icon, Placeholder, ApiState } from "@/components/ui";
+import { Placeholder, ApiState } from "@/components/ui";
+import { SellerIcon } from "../_shared/icons";
 import { formatNPR } from "@/lib/money";
 import { useSellerAnalytics } from "@/hooks/use-seller";
 import { SellerBarChart } from "../_shared/charts";
 import { SellerHelpBar, SellerPageHeader } from "../_shared/components";
-
 
 /* ---------- NEW: Simple Analytics ("My shop") for non-tech 40+ users ---------- */
 
@@ -54,10 +54,10 @@ export function SellerAnalytics() {
             <div
               className="tnum bz-stat-xl"
               style={{
-                fontWeight: 800,
+                fontWeight: 600,
                 letterSpacing: "-.02em",
                 margin: "6px 0 4px",
-                color: "var(--blue-deep)",
+                color: "var(--ink-900)",
               }}
             >
               {formatNPR(soldToday)}
@@ -87,7 +87,7 @@ export function SellerAnalytics() {
                   <span style={{ fontSize: ".8125rem", fontWeight: 500, color: "var(--ink-500)" }}>
                     {b.en}
                   </span>
-                  <span className="tnum" style={{ fontWeight: 700, color: "var(--ink-900)" }}>
+                  <span className="tnum" style={{ fontWeight: 600, color: "var(--ink-900)" }}>
                     {formatNPR(b.v)}
                   </span>
                 </div>
@@ -111,8 +111,8 @@ export function SellerAnalytics() {
                   style={{
                     margin: 0,
                     fontSize: "1.125rem",
-                    fontWeight: 800,
-                    color: "var(--blue-deep)",
+                    fontWeight: 600,
+                    color: "var(--ink-900)",
                   }}
                 >
                   Shop snapshot
@@ -124,8 +124,8 @@ export function SellerAnalytics() {
                   background: "var(--tint-blue-50)",
                   borderRadius: 999,
                   fontSize: ".75rem",
-                  fontWeight: 700,
-                  color: "var(--blue-deep)",
+                  fontWeight: 600,
+                  color: "var(--ink-900)",
                 }}
               >
                 Last 7 days
@@ -173,7 +173,7 @@ export function SellerAnalytics() {
                   <div
                     style={{
                       fontSize: ".7rem",
-                      fontWeight: 700,
+                      fontWeight: 600,
                       color: "var(--ink-500)",
                       textTransform: "uppercase",
                       letterSpacing: ".04em",
@@ -185,8 +185,8 @@ export function SellerAnalytics() {
                     className="tnum"
                     style={{
                       fontSize: "1rem",
-                      fontWeight: 800,
-                      color: "var(--blue-deep)",
+                      fontWeight: 600,
+                      color: "var(--ink-900)",
                       marginTop: 4,
                     }}
                   >
@@ -202,8 +202,8 @@ export function SellerAnalytics() {
               style={{
                 margin: "0 0 4px",
                 fontSize: "1.125rem",
-                fontWeight: 800,
-                color: "var(--blue-deep)",
+                fontWeight: 600,
+                color: "var(--ink-900)",
               }}
             >
               Sales — last 7 days
@@ -216,8 +216,8 @@ export function SellerAnalytics() {
               style={{
                 margin: "0 0 4px",
                 fontSize: "1.05rem",
-                fontWeight: 800,
-                color: "var(--blue-deep)",
+                fontWeight: 600,
+                color: "var(--ink-900)",
               }}
             >
               Where my money is
@@ -236,11 +236,11 @@ export function SellerAnalytics() {
                       }}
                     >
                       <div>
-                        <span style={{ fontWeight: 700, fontSize: ".95rem" }}>{b.en}</span>
+                        <span style={{ fontWeight: 600, fontSize: ".95rem" }}>{b.en}</span>
                       </div>
                       <span
                         className="tnum"
-                        style={{ fontWeight: 800, fontSize: "1.05rem", color: b.c }}
+                        style={{ fontWeight: 600, fontSize: "1.05rem", color: b.c }}
                       >
                         {formatNPR(b.v)}
                       </span>
@@ -273,10 +273,10 @@ export function SellerAnalytics() {
                 background: "var(--tint-blue-50)",
                 borderRadius: "var(--r-md)",
                 fontSize: ".875rem",
-                color: "var(--blue-deep)",
+                color: "var(--ink-900)",
               }}
             >
-              <Icon
+              <SellerIcon
                 name="badgeCheck"
                 size={14}
                 color="var(--blue)"
@@ -293,8 +293,8 @@ export function SellerAnalytics() {
               style={{
                 margin: "0 0 4px",
                 fontSize: "1.125rem",
-                fontWeight: 800,
-                color: "var(--blue-deep)",
+                fontWeight: 600,
+                color: "var(--ink-900)",
               }}
             >
               Your top 3 items this week
@@ -327,7 +327,7 @@ export function SellerAnalytics() {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontWeight: 800,
+                      fontWeight: 600,
                       flexShrink: 0,
                     }}
                   >
@@ -340,7 +340,7 @@ export function SellerAnalytics() {
                     radius="var(--r-sm)"
                   />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: ".95rem" }}>{p.name}</div>
+                    <div style={{ fontWeight: 600, fontSize: ".95rem" }}>{p.name}</div>
                     <div
                       className="tnum"
                       style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 2 }}
@@ -350,7 +350,7 @@ export function SellerAnalytics() {
                   </div>
                   <div
                     className="tnum"
-                    style={{ fontWeight: 800, color: "var(--success)", fontSize: "1rem" }}
+                    style={{ fontWeight: 600, color: "var(--success)", fontSize: "1rem" }}
                   >
                     {formatNPR(Number(p.rev))}
                   </div>

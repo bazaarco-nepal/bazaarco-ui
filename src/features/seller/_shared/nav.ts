@@ -1,7 +1,5 @@
 "use client";
 
-
-
 export const SELLER_NAV = [
   {
     groupKey: "seller.groupMyShop",

@@ -292,7 +292,7 @@
     "navHome": "Home",
     "navAddProduct": "Add product",
     "navOrders": "Orders",
-    "navProducts": "My products",
+    "navProducts": "Inventory",
     "navMessages": "Messages",
     "navVideos": "Videos",
     "navStorefront": "My Store",
@@ -375,7 +375,7 @@
       "tabCancelled": "Cancelled"
     },
     "products": {
-      "title": "My products",
+      "title": "Inventory",
       "subtitle": "Manage your catalogue — update stock, prices, and details.",
       "addProduct": "Add product",
       "addShort": "Add",

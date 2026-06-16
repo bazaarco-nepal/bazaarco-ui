@@ -2,11 +2,12 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Icon, Button, ApiState } from "@/components/ui";
+import { Button, ApiState } from "@/components/ui";
+import { SellerIcon } from "../_shared/icons";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { useSellerOrganization } from "@/hooks/use-seller";
 import { useBz } from "@/components/common";
-import { SellerHelpBar, SellerPageHeader } from "../_shared/components";
+import { SellerHelpBar, SellerPageHeader, Card } from "../_shared/components";
 
 export function SellerVerificationTimeline() {
   const { t } = useTranslation();
@@ -49,7 +50,7 @@ export function SellerVerificationTimeline() {
     },
     approved: {
       label: t("seller.kyc.statusApproved"),
-      bg: "rgba(22,163,74,.14)",
+      bg: "color-mix(in srgb, var(--success) 14%, transparent)",
       fg: "var(--success)",
     },
     rejected: { label: t("seller.kyc.statusRejected"), bg: "var(--tint-red-50)", fg: "var(--red)" },
@@ -94,7 +95,7 @@ export function SellerVerificationTimeline() {
   const dotFor = (state: string) => {
     switch (state) {
       case "done":
-        return { bg: "rgba(22,163,74,.12)", fg: "var(--success)" };
+        return { bg: "color-mix(in srgb, var(--success) 12%, transparent)", fg: "var(--success)" };
       case "done-red":
         return { bg: "var(--tint-red-50)", fg: "var(--red)" };
       case "current":
@@ -127,7 +128,7 @@ export function SellerVerificationTimeline() {
                   alignItems: "center",
                   background: meta.bg,
                   color: meta.fg,
-                  fontWeight: 800,
+                  fontWeight: 600,
                   fontSize: ".8125rem",
                   padding: "6px 12px",
                   borderRadius: 999,
@@ -140,15 +141,7 @@ export function SellerVerificationTimeline() {
           />
 
           {/* Vertical timeline */}
-          <div
-            style={{
-              marginTop: 18,
-              background: "#fff",
-              border: "1px solid var(--line-200)",
-              borderRadius: "var(--r-lg)",
-              padding: "22px 20px",
-            }}
-          >
+          <Card style={{ marginTop: 18 }}>
             {milestones.map((m, i) => {
               const dot = dotFor(m.state);
               const last = i === milestones.length - 1;
@@ -176,7 +169,7 @@ export function SellerVerificationTimeline() {
                         justifyContent: "center",
                       }}
                     >
-                      <Icon name={m.icon} size={19} color={dot.fg} />
+                      <SellerIcon name={m.icon} size={19} color={dot.fg} />
                     </div>
                     {!last && (
                       <div
@@ -186,7 +179,9 @@ export function SellerVerificationTimeline() {
                           minHeight: 26,
                           margin: "4px 0",
                           background:
-                            m.state === "todo" ? "var(--line-200)" : "rgba(22,163,74,.35)",
+                            m.state === "todo"
+                              ? "var(--line-200)"
+                              : "color-mix(in srgb, var(--success) 35%, transparent)",
                         }}
                       />
                     )}
@@ -195,7 +190,7 @@ export function SellerVerificationTimeline() {
                   <div style={{ flex: 1, minWidth: 0, paddingBottom: last ? 0 : 20 }}>
                     <div
                       style={{
-                        fontWeight: 800,
+                        fontWeight: 600,
                         fontSize: ".9375rem",
                         color: dim ? "var(--ink-500)" : "var(--ink-900)",
                       }}
@@ -214,7 +209,7 @@ export function SellerVerificationTimeline() {
                           fontWeight: 600,
                         }}
                       >
-                        <Icon name="clock" size={13} color="var(--ink-400)" />
+                        <SellerIcon name="clock" size={13} color="var(--ink-400)" />
                         <span className="tnum">{when}</span>
                       </div>
                     ) : m.state === "current" ? (
@@ -223,7 +218,7 @@ export function SellerVerificationTimeline() {
                           marginTop: 6,
                           fontSize: ".8125rem",
                           color: "var(--saffron)",
-                          fontWeight: 700,
+                          fontWeight: 600,
                         }}
                       >
                         In progress
@@ -253,7 +248,7 @@ export function SellerVerificationTimeline() {
                 </div>
               );
             })}
-          </div>
+          </Card>
 
           {/* Approved isn't a dead end — tell the seller what they've unlocked and
              point them straight at the next useful action. */}
@@ -261,15 +256,15 @@ export function SellerVerificationTimeline() {
             <div
               style={{
                 marginTop: 16,
-                background: "rgba(22,163,74,.06)",
-                border: "1px solid rgba(22,163,74,.25)",
+                background: "color-mix(in srgb, var(--success) 7%, transparent)",
+                border: "1px solid color-mix(in srgb, var(--success) 25%, transparent)",
                 borderRadius: "var(--r-lg)",
                 padding: "18px 20px",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <Icon name="badgeCheck" size={20} color="var(--success)" />
-                <div style={{ fontWeight: 800, fontSize: "1rem", color: "var(--ink-900)" }}>
+                <SellerIcon name="badgeCheck" size={20} color="var(--success)" />
+                <div style={{ fontWeight: 600, fontSize: "1rem", color: "var(--ink-900)" }}>
                   You&apos;re verified — your store is live
                 </div>
               </div>
@@ -307,7 +302,7 @@ export function SellerVerificationTimeline() {
                       color: "var(--ink-700)",
                     }}
                   >
-                    <Icon name="check" size={15} color="var(--success)" />
+                    <SellerIcon name="check" size={15} color="var(--success)" />
                     {line}
                   </li>
                 ))}
@@ -319,14 +314,14 @@ export function SellerVerificationTimeline() {
              buttons size to their label (full-width only on mobile, see .bz-kyc-actions). */}
           {status === "none" && (
             <div className="bz-kyc-actions">
-              <Button variant="primary" size="lg" onClick={() => nav("s-onboarding")}>
+              <Button variant="primary" size="md" onClick={() => nav("s-onboarding")}>
                 Start verification
               </Button>
             </div>
           )}
           {status === "rejected" && (
             <div className="bz-kyc-actions">
-              <Button variant="primary" size="lg" onClick={startReupload}>
+              <Button variant="primary" size="md" onClick={startReupload}>
                 Re-upload document
               </Button>
             </div>
@@ -336,7 +331,7 @@ export function SellerVerificationTimeline() {
              most pending sellers just need to wait. */}
           {status === "pending" && (
             <div className="bz-kyc-actions" style={{ flexWrap: "wrap" }}>
-              <Button variant="secondary" size="lg" onClick={startReupload}>
+              <Button variant="secondary" size="md" onClick={startReupload}>
                 Re-upload document
               </Button>
               <span
@@ -352,10 +347,10 @@ export function SellerVerificationTimeline() {
           )}
           {status === "approved" && (
             <div className="bz-kyc-actions">
-              <Button variant="primary" size="lg" onClick={() => nav("s-add")}>
+              <Button variant="primary" size="md" onClick={() => nav("s-add")}>
                 Start listing products
               </Button>
-              <Button variant="ghost" size="lg" onClick={() => nav("s-dashboard")}>
+              <Button variant="ghost" size="md" onClick={() => nav("s-dashboard")}>
                 Open dashboard
               </Button>
             </div>

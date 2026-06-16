@@ -13,7 +13,16 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # Don't persist the workflow GITHUB_TOKEN as a git credential — it would
+          # override the PAT below and push as github-actions[bot] (403 on the personal repo).
+          persist-credentials: false
 
       - name: Push to Personal Repo
+        env:
+          TOKEN: ${{ secrets.PERSONAL_REPO_UI }}
         run: |
-          git push --force https://x-access-token:${{ secrets.PERSONAL_REPO_UI }}@github.com/bazaarco-nepal/bazaarco-ui.git HEAD:refs/heads/main
+          if [ -z "$TOKEN" ]; then
+            echo "::error::PERSONAL_REPO_UI secret is not set — add a PAT with write access to bazaarco-nepal/bazaarco-ui"
+            exit 1
+          fi
+          git push --force "https://x-access-token:${TOKEN}@github.com/bazaarco-nepal/bazaarco-ui.git" HEAD:refs/heads/main

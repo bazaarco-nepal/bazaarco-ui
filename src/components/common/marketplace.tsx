@@ -400,14 +400,6 @@ export function ProductCard({
             <Icon name="play" size={13} fill="#fff" />
           </div>
         )}
-        {/* Urgency only — low stock */}
-        {p.lowStock && (
-          <div style={{ position: "absolute", bottom: 10, right: 10 }}>
-            <Chip tone="saffron" size="sm">
-              Only {p.lowStock} left
-            </Chip>
-          </div>
-        )}
       </div>
       <div
         className="bz-pcard__body"
@@ -451,7 +443,7 @@ export function ProductCard({
           {sale && <span style={{ color: "var(--ink-400)" }}>· {soldLabel}</span>}
         </div>
         {/* Single price line: all-in price + strikethrough original — via Price primitive */}
-        {/* Trust row (cash on delivery / 7-day return) and delivery ETA live on the PDP only, not on cards. */}
+        {/* Trust row (cash on delivery / 7-day return) lives on the PDP only, not on cards. */}
         {/* marginTop:auto pins price to card bottom so price rows align across the grid */}
         <div className="bz-pcard__price" style={{ marginTop: "auto" }}>
           <Price value={p.price} original={p.original} size="md" />

@@ -19,8 +19,20 @@ export interface CreateProductVariantPayload {
   minimumPrice?: number | null;
   /** Maps dimension name → selected option for multi-dimensional variants. */
   optionValues?: Record<string, string> | null;
-  /** Optional Cloudinary URL for a variant-specific photo. */
+  /** Optional Cloudinary URL for a variant-specific (exact) photo. */
   imageUrl?: string | null;
+  /** Optional seller-chosen SKU code (unique per seller). */
+  sellerSku?: string | null;
+  /** Server-generated, read-only on responses. */
+  platformSku?: string;
+  barcode?: string;
+}
+
+/** An option-level image sent at upload/edit: one URL per attribute value. */
+export interface OptionImagePayload {
+  optionName: string;
+  optionValue: string;
+  img: string;
 }
 
 // Discount fields: `price` is the effective (sale) price, `original` the
@@ -36,7 +48,6 @@ export interface DiscountFields {
 export interface PdpProductFields {
   brand?: string | null;
   sku?: string | null;
-  highlights?: string[];
   warrantyAvailable?: boolean;
   warrantyDurationMonths?: number | null;
   warrantyType?: string | null;
@@ -55,10 +66,12 @@ export interface UpdateProductPayload extends DiscountFields, PdpProductFields {
   variants?: CreateProductVariantPayload[];
   allowBargaining?: boolean;
   minimumPrice?: number | null;
-  // 3–5 gallery images, cover first. Replaces the whole gallery; the server
-  // re-derives the cover from images[0]. Omit to leave photos untouched.
+  // 1 cover + 2–5 gallery images, cover first. Replaces the whole gallery; the
+  // server re-derives the cover from images[0]. Omit to leave photos untouched.
   images?: string[];
   variantGroups?: Array<{ name: string; options: string[] }> | null;
+  /** Option-level images, one per attribute value (e.g. per Color). */
+  optionImages?: OptionImagePayload[];
 }
 
 export interface SellerInventoryItem extends PdpProductFields {
@@ -118,6 +131,8 @@ export interface CreateProductPayload extends DiscountFields, PdpProductFields {
   allowBargaining?: boolean;
   minimumPrice?: number | null;
   variantGroups?: Array<{ name: string; options: string[] }> | null;
+  /** Option-level images, one per attribute value (e.g. per Color). */
+  optionImages?: OptionImagePayload[];
 }
 
 export const sellerApi = {

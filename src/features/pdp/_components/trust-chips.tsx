@@ -18,18 +18,12 @@ type TrustChipsProps = {
  */
 export function TrustChips({ product, sellerVerified }: TrustChipsProps) {
   const status = product.stockStatus ?? (product.outOfStock ? "out_of_stock" : "in_stock");
-  const left = product.availableStock ?? product.lowStock;
 
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
       {status === "in_stock" && (
         <CalmChip dot="var(--success)" fg="var(--success)">
           In stock
-        </CalmChip>
-      )}
-      {status === "low_stock" && (
-        <CalmChip dot="var(--saffron, #f77f00)" fg="#b85e00">
-          {left ? `Only ${left} left` : "Low stock"}
         </CalmChip>
       )}
       {status === "out_of_stock" && (

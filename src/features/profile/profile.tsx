@@ -248,7 +248,7 @@ export function Orders() {
                         <Chip tone={meta.tone}>{meta.label}</Chip>
                       </div>
                       <div style={{ fontSize: ".8125rem", color: "var(--ink-400)", marginTop: 4 }}>
-                        Placed {o.placed} · ETA {o.eta}
+                        Placed {o.placed}
                       </div>
                     </div>
                     <span

@@ -24,7 +24,6 @@ interface ApiProductPayload {
   tint: Product["tint"];
   rating: number;
   reviews: number;
-  eta: string;
   stock: number;
 }
 
@@ -39,7 +38,6 @@ function base(overrides: Partial<ApiProductPayload> & { stock: number }): ApiPro
     tint: "blue",
     rating: 0,
     reviews: 0,
-    eta: "",
     ...overrides,
   };
 }

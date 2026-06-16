@@ -83,11 +83,9 @@ export interface Product {
   videoThumb?: string;
   videoUrl?: string | null;
   videoPublicId?: string | null;
-  eta: string;
   img?: string;
   // Gallery, cover first. Sellers list with 3–5 images; `img` mirrors images[0].
   images?: string[];
-  lowStock?: number;
   outOfStock?: boolean;
   allowBargaining?: boolean;
   // The seller's bargaining floor is private and never sent to buyers, so it is
@@ -101,13 +99,13 @@ export interface Product {
    * Null/absent for products using flat single-name variants.
    */
   variantGroups?: Array<{ name: string; options: string[] }> | null;
+  /** Option-level images, one per attribute value (e.g. per Color). */
+  optionImages?: OptionImage[];
   createdAt?: string;
   /** Manufacturer/brand label, when the seller provided one. */
   brand?: string | null;
   /** Seller-supplied stock keeping unit. */
   sku?: string | null;
-  /** Short selling-point bullets shown above the description. */
-  highlights?: string[];
   /** Server-computed availability so the UI never re-derives the rule. */
   stockStatus?: StockStatus;
   /** Total purchasable units (caps the quantity selector). */
@@ -117,7 +115,7 @@ export interface Product {
   returns?: ProductReturns;
 }
 
-export type StockStatus = "in_stock" | "low_stock" | "out_of_stock" | "unavailable";
+export type StockStatus = "in_stock" | "out_of_stock" | "unavailable";
 
 export interface ProductWarranty {
   available: boolean;
@@ -159,6 +157,21 @@ export interface PricedVariant {
   optionValues?: Record<string, string> | null;
   /** Optional photo specific to this variant (e.g. colour swatch). */
   imageUrl?: string | null;
+  /** Server-resolved image (exact → option → product main → gallery). */
+  resolvedImageUrl?: string | null;
+  /** Immutable, server-generated platform SKU. */
+  platformSku?: string;
+  /** Scannable barcode (`BZC|<platformSku>`). */
+  barcode?: string;
+  /** Optional seller-chosen code. */
+  sellerSku?: string | null;
+}
+
+/** An option-level image: one photo per attribute value (e.g. per Color). */
+export interface OptionImage {
+  optionName: string;
+  optionValue: string;
+  imageUrl: string;
 }
 
 export interface CartLine extends Product {

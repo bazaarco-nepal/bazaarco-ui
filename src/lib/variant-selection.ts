@@ -77,3 +77,35 @@ export function groupedVariantRows(
         }),
     );
 }
+
+/**
+ * Full cartesian matrix: one sellable SKU for every combination of options
+ * across all dimensions. "Color: Black,Blue" × "Storage: 128GB,256GB" yields the
+ * four rows Black/128GB … Blue/256GB, each declaring every dimension in
+ * `optionValues`. The buyer's PDP picker resolves such a variant only once every
+ * dimension is chosen (see matchSelectedVariants).
+ */
+export function cartesianVariantRows(
+  groups: Array<{ name: string; options: string[] }>,
+): Array<{ name: string; optionValues: Record<string, string> }> {
+  const valid = groups
+    .map((g) => ({
+      name: g.name.trim(),
+      options: g.options.map((o) => o.trim()).filter(Boolean),
+    }))
+    .filter((g) => g.name && g.options.length > 0);
+  if (valid.length === 0) return [];
+
+  const combinations = valid.reduce<Array<Record<string, string>>>(
+    (acc, group) =>
+      acc.flatMap((combo) => group.options.map((option) => ({ ...combo, [group.name]: option }))),
+    [{}],
+  );
+
+  return combinations.map((optionValues) => ({
+    name: Object.entries(optionValues)
+      .map(([dim, val]) => `${dim}: ${val}`)
+      .join(" / "),
+    optionValues,
+  }));
+}

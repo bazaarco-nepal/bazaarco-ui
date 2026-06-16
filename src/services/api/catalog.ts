@@ -41,7 +41,6 @@ export interface CreateProductQuestionPayload {
  *   coverImageUrl            → img
  *   reviewsCount             → reviews
  *   storeId                  → seller  (also kept as storeId)
- *   lowStockThreshold        → lowStock
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function mapProduct(raw: any): Product {
@@ -53,8 +52,6 @@ export function mapProduct(raw: any): Product {
     seller: raw.seller ?? raw.storeId ?? "",
     img: raw.img ?? raw.coverImageUrl ?? undefined,
     reviews: raw.reviews ?? raw.reviewsCount ?? 0,
-    lowStock: raw.lowStock ?? raw.lowStockThreshold ?? undefined,
-    eta: raw.eta ?? "2–3 days",
     category: raw.category ?? undefined,
     // Inline seller snapshot from product detail endpoint
     sellerInfo: raw.store

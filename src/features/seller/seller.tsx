@@ -57,7 +57,7 @@ import { bargainExpiryLabel } from "@/lib/bargain-expiry";
 import { displayName, userInitial } from "@/lib/display";
 import { saleEffective, saleValid as isSaleValid, buildPricing } from "@/lib/discount";
 import { formatNPR } from "@/lib/money";
-import { groupedVariantRows } from "@/lib/variant-selection";
+import { cartesianVariantRows } from "@/lib/variant-selection";
 import {
   clearDeferredSellerOnboarding,
   deferSellerOnboarding,
@@ -4331,11 +4331,10 @@ export function SellerAddProduct({
   const [salePct, setSalePct] = useState("");
   const [attrs, setAttrs] = useState<Record<string, unknown>>({});
 
-  // Structured PDP fields — warranty, returns, highlights, brand, SKU. Shown on
-  // the product page as first-class info (not buried in spec metadata).
+  // Structured PDP fields — warranty, returns, brand, SKU. Shown on the product
+  // page as first-class info (not buried in spec metadata).
   const [brand, setBrand] = useState("");
   const [sku, setSku] = useState("");
-  const [highlightsText, setHighlightsText] = useState("");
   const [warrantyAvailable, setWarrantyAvailable] = useState(false);
   const [warrantyMonths, setWarrantyMonths] = useState("");
   const [warrantyType, setWarrantyType] = useState("");
@@ -4363,12 +4362,9 @@ export function SellerAddProduct({
     const meta = { ...((editingProduct.metadata as Record<string, unknown>) ?? {}) };
     delete meta.stock;
     setAttrs(meta);
-    // Structured PDP fields (warranty / returns / highlights / brand / SKU).
+    // Structured PDP fields (warranty / returns / brand / SKU).
     setBrand(editingProduct.brand ?? "");
     setSku(editingProduct.sku ?? "");
-    setHighlightsText(
-      Array.isArray(editingProduct.highlights) ? editingProduct.highlights.join("\n") : "",
-    );
     const warranty = editingProduct.warranty;
     setWarrantyAvailable(Boolean(warranty?.available));
     setWarrantyMonths(warranty?.durationMonths ? String(warranty.durationMonths) : "");
@@ -4602,7 +4598,7 @@ export function SellerAddProduct({
    *  exist. */
   const syncMultiVariants = (groups: typeof variantGroupDefs) => {
     setVariants((prev) =>
-      groupedVariantRows(groups).map(({ name, optionValues }) => {
+      cartesianVariantRows(groups).map(({ name, optionValues }) => {
         const existing = prev.find(
           (v) => v.name === name || JSON.stringify(v.optionValues) === JSON.stringify(optionValues),
         );
@@ -4714,19 +4710,12 @@ export function SellerAddProduct({
           })
       : undefined;
 
-  // Structured PDP fields shared by create + update. Highlights come from the
-  // textarea (one per line), trimmed and capped at 6. Warranty details are
+  // Structured PDP fields shared by create + update. Warranty details are
   // cleared when warranty is off; "no returns" zeroes the window.
   const buildPdpFields = () => {
-    const highlights = highlightsText
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .slice(0, 6);
     return {
       brand: brand.trim() || null,
       sku: sku.trim() || null,
-      highlights,
       warrantyAvailable,
       warrantyDurationMonths: warrantyAvailable ? Number(warrantyMonths) || null : null,
       warrantyType: warrantyAvailable ? warrantyType.trim() || null : null,
@@ -5211,8 +5200,8 @@ export function SellerAddProduct({
             </div>
           )}
 
-          {/* Warranty, returns & highlights — shown on the product page as
-              first-class trust info (backend-driven, not buried in specs). */}
+          {/* Warranty & returns — shown on the product page as first-class
+              trust info (backend-driven, not buried in specs). */}
           {category && (
             <div
               style={{
@@ -5239,7 +5228,7 @@ export function SellerAddProduct({
                   <Icon name="shieldCheck" size={18} color="var(--blue)" />
                 </span>
                 <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>
-                  Warranty, returns &amp; highlights
+                  Warranty &amp; returns
                 </h3>
               </div>
 
@@ -5272,25 +5261,6 @@ export function SellerAddProduct({
                     style={pdpFieldStyle}
                   />
                 </div>
-              </div>
-
-              {/* Highlights */}
-              <div style={{ marginBottom: 14 }}>
-                <label style={pdpLabelStyle}>Highlights — one per line, up to 6</label>
-                <textarea
-                  value={highlightsText}
-                  onChange={(e) => setHighlightsText(e.target.value)}
-                  placeholder={
-                    "Portable 8-channel audio mixer\nRugged protective case\nGreat for live sound"
-                  }
-                  rows={4}
-                  style={{
-                    ...pdpFieldStyle,
-                    height: "auto",
-                    padding: "10px 14px",
-                    resize: "vertical",
-                  }}
-                />
               </div>
 
               {/* Warranty */}
@@ -7003,6 +6973,31 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
                 </span>
               ))}
             </div>
+            {/* Tracking codes — the immutable platform SKU + barcode per SKU, for
+                pickup, hub verification, packing and dispatch. */}
+            {product.variants.some((v) => v.platformSku) && (
+              <div style={{ marginTop: 14, display: "grid", gap: 6 }}>
+                {product.variants.map((v) =>
+                  v.platformSku ? (
+                    <div
+                      key={`sku-${v.id}`}
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        alignItems: "center",
+                        gap: 10,
+                        fontSize: ".75rem",
+                        color: "var(--ink-500)",
+                      }}
+                    >
+                      <span style={{ fontWeight: 700, color: "var(--ink-700)" }}>{v.name}</span>
+                      <code style={{ fontFamily: "monospace" }}>{v.platformSku}</code>
+                      {v.sellerSku ? <span>· your code: {v.sellerSku}</span> : null}
+                    </div>
+                  ) : null,
+                )}
+              </div>
+            )}
           </div>
         )}
 

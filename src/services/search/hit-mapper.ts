@@ -52,6 +52,5 @@ export function toSearchProductHit(record: AlgoliaRecord): Product {
     rating: document.rating,
     reviews: document.reviews_count,
     img: document.img || undefined,
-    eta: "2–3 days",
   };
 }

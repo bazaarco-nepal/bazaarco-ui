@@ -1879,12 +1879,6 @@ export function OrderSuccess({ total }) {
                 <span style={{ color: "var(--ink-400)", fontSize: ".875rem" }}>Your order</span>
               )}
             </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: ".75rem", color: "var(--ink-400)" }}>Estimated delivery</div>
-              <div style={{ fontWeight: 700, color: "var(--ink-900)", whiteSpace: "nowrap" }}>
-                {order?.eta ?? "We'll confirm soon"}
-              </div>
-            </div>
           </div>
           <div
             style={{

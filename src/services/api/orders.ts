@@ -2,7 +2,6 @@ import { getData, postData } from "./http";
 
 export interface OrderRider {
   name: string;
-  eta: string;
 }
 
 export interface DeliveryAddress {
@@ -46,7 +45,6 @@ export interface Order {
   id: string;
   status: string;
   placed: string;
-  eta: string;
   total: number;
   items: string[];
   /** Per-line quantities; unit price is resolved from the catalog client-side. */

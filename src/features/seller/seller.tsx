@@ -4286,7 +4286,12 @@ export function SellerAddProduct({
     isError: editingError,
     error: editingErr,
   } = useProduct(isEdit ? (editing?.id ?? null) : null);
-  const [productPhotos, setProductPhotos] = useState<ProductPhoto[]>([]);
+  // The product's images split the demo way: one Main image (the cover that
+  // represents the product) + a Gallery (2–5). They compose, cover-first, into
+  // the `images[]` the API stores (images[0] is the cover).
+  const [mainPhoto, setMainPhoto] = useState<ProductPhoto[]>([]);
+  const [galleryPhotos, setGalleryPhotos] = useState<ProductPhoto[]>([]);
+  const productPhotos = [...mainPhoto, ...galleryPhotos];
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
@@ -4355,7 +4360,10 @@ export function SellerAddProduct({
     const existingImages = editingProduct.images?.length
       ? editingProduct.images
       : [editingProduct.img, ...(editing?.images ?? [])].filter(Boolean);
-    setProductPhotos(existingImages.map((url, i) => remotePhotoFromUrl(url as string, i)));
+    const existingPhotos = existingImages.map((url, i) => remotePhotoFromUrl(url as string, i));
+    // First image is the main/cover; the rest seed the gallery.
+    setMainPhoto(existingPhotos.slice(0, 1));
+    setGalleryPhotos(existingPhotos.slice(1));
     setTitle(editingProduct.name ?? "");
     setDescription(editingProduct.description ?? "");
     setCategory(editingProduct.cat ?? "");
@@ -4463,9 +4471,8 @@ export function SellerAddProduct({
   const variantsOk =
     !hasVariants ||
     variants.every((v) => v.price && v.stock && (!v.onSale || isSaleValid(variantSaleInput(v))));
-  // Same 3–5 rule for new listings and edits — an edit can swap photos but must
-  // still end with a valid gallery.
-  const photosOk = productPhotos.length >= 3 && productPhotos.length <= 5;
+  // 1 main image (the cover) + 2–5 gallery images, for new listings and edits.
+  const photosOk = mainPhoto.length === 1 && galleryPhotos.length >= 2 && galleryPhotos.length <= 5;
 
   // Discount (single-price only). Pure math lives in @/lib/discount and mirrors
   // the server's authoritative rules so the seller gets immediate feedback.
@@ -4529,7 +4536,7 @@ export function SellerAddProduct({
     (hasVariants ? variantsOk : price && stock);
 
   const publishMissing: string[] = [];
-  if (!photosOk) publishMissing.push("3 to 5 photos (required)");
+  if (!photosOk) publishMissing.push("1 main photo + 2 to 5 gallery photos");
   if (!titleOk) publishMissing.push("product name (3+ characters)");
   if (!descriptionOk) publishMissing.push("product description (10+ characters)");
   if (!category) publishMissing.push("category");
@@ -4746,7 +4753,8 @@ export function SellerAddProduct({
     marginBottom: 6,
   };
 
-  // Publish: upload every photo (3–5, cover first), then create the product.
+  // Publish: upload every photo (1 main + 2–5 gallery, cover first), then create
+  // the product.
   // Edit: upload any newly added photos, then PATCH the changed fields (category
   // is never sent). Postgres is the source of truth; the server re-indexes it
   // into search in the background.
@@ -4982,17 +4990,54 @@ export function SellerAddProduct({
                 <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>
                   {isEdit ? "Photos" : "Add photos"}{" "}
                   <span style={{ fontSize: ".75rem", color: "var(--ink-400)", fontWeight: 600 }}>
-                    3 required · up to 5
+                    1 main + 2–5 gallery
                   </span>
                 </h3>
               </div>
             </div>
-            <ProductPhotoPicker
-              photos={productPhotos}
-              onChange={setProductPhotos}
-              min={3}
-              max={5}
-            />
+
+            {/* Main image — the single cover that represents the product. */}
+            <div style={{ marginBottom: 18 }}>
+              <div
+                style={{
+                  fontSize: ".8125rem",
+                  fontWeight: 800,
+                  color: "var(--ink-700)",
+                  marginBottom: 2,
+                }}
+              >
+                Main product image{" "}
+                <span style={{ color: "var(--red)", fontWeight: 700 }}>· required</span>
+              </div>
+              <p style={{ margin: "0 0 10px", fontSize: ".75rem", color: "var(--ink-500)" }}>
+                The cover shoppers see first in search, the storefront and the cart.
+              </p>
+              <ProductPhotoPicker photos={mainPhoto} onChange={setMainPhoto} min={1} max={1} />
+            </div>
+
+            {/* Gallery — the rest of the product photos. */}
+            <div>
+              <div
+                style={{
+                  fontSize: ".8125rem",
+                  fontWeight: 800,
+                  color: "var(--ink-700)",
+                  marginBottom: 2,
+                }}
+              >
+                Gallery images{" "}
+                <span style={{ color: "var(--ink-400)", fontWeight: 600 }}>· 2 to 5</span>
+              </div>
+              <p style={{ margin: "0 0 10px", fontSize: ".75rem", color: "var(--ink-500)" }}>
+                More angles, details and the product in use.
+              </p>
+              <ProductPhotoPicker
+                photos={galleryPhotos}
+                onChange={setGalleryPhotos}
+                min={2}
+                max={5}
+              />
+            </div>
           </div>
 
           {/* Step 2 — Describe */}

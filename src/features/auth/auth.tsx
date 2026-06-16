@@ -207,6 +207,12 @@ export function Auth() {
     } catch (err) {
       const message =
         err instanceof ApiRequestError ? err.message : "Something went wrong. Please try again.";
+      if (mode === "register") {
+        // Surface signup failures (e.g. "already registered as a buyer account") as a
+        // toast — the conflict message guides the user back to the right flow.
+        toast(message, "error");
+        return;
+      }
       if (mode === "login" && err instanceof ApiRequestError && err.status === 403) {
         setPendingVerification({
           email: loginEmail.trim(),
@@ -352,6 +358,7 @@ export function Auth() {
       <div>
         <AppLink
           href={pathFromScreen("home")}
+          className="bz-back-link"
           style={{
             background: "none",
             border: "none",

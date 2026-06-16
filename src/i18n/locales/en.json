@@ -27,7 +27,6 @@
   "trust": {
     "bargain": "Bargain freely with every seller",
     "verified": "Verified sellers",
-    "returns": "7-day returns",
     "payments": "eSewa · Khalti · IME"
   },
   "bottomNav": {
@@ -391,7 +390,8 @@
       "sortName": "Name A → Z"
     },
     "ledger": {
-      "title": "Payouts"
+      "title": "Payouts",
+      "subtitle": "Track settlements, fees and exactly what BazaarCo owes you."
     },
     "chat": {
       "title": "Chat",
@@ -408,26 +408,31 @@
       "subtitle": "Reply to every review. Buyers trust shops that listen."
     },
     "storefront": {
-      "title": "My Store"
+      "title": "My Store",
+      "subtitle": "Customize how buyers see your store page."
     },
     "videos": {
       "verifyRequired": "Complete verification to add and manage videos"
     },
     "kyc": {
       "title": "KYC verification",
+      "subtitle": "Verify your identity to unlock selling, payouts and store features.",
       "statusNotStarted": "Not started",
       "statusPending": "Under review",
       "statusApproved": "Approved",
       "statusRejected": "Not approved"
     },
     "profile": {
-      "title": "My profile"
+      "title": "My profile",
+      "subtitle": "Your seller identity and store contact details."
     },
     "analytics": {
-      "title": "My shop"
+      "title": "My shop",
+      "subtitle": "See how your store, products and sales are performing."
     },
     "settings": {
       "title": "Settings",
+      "subtitle": "Manage your account and notification preferences.",
       "tabAccount": "Account",
       "tabAlerts": "Alerts",
       "alertsHint": "Pick how we tell you about each thing. New-order alerts are always on.",

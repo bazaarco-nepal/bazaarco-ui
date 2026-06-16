@@ -966,10 +966,6 @@ export function Navbar() {
           </span>
           <span style={{ opacity: 0.35 }}>·</span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-            <Icon name="returns" size={13} color="#fff" /> {t("trust.returns")}
-          </span>
-          <span style={{ opacity: 0.35 }}>·</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
             <Icon name="lock" size={13} color="#fff" /> {t("trust.payments")}
           </span>
         </div>

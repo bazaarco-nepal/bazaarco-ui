@@ -119,6 +119,7 @@ export function Tracking() {
       >
         <AppLink
           href={pathFromScreen("orders")}
+          className="bz-back-link"
           style={{
             background: "none",
             border: "none",

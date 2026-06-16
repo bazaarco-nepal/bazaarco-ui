@@ -238,6 +238,7 @@ export function AddressesPage() {
       <AppLink
         href={pathFromScreen("profile")}
         onNavigate={() => nav("profile")}
+        className="bz-back-link"
         style={{
           display: "inline-flex",
           alignItems: "center",

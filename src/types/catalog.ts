@@ -113,8 +113,6 @@ export interface Product {
   /** Total purchasable units (caps the quantity selector). */
   availableStock?: number;
   warranty?: ProductWarranty;
-  /** Return policy resolved server-side (product override or platform default). */
-  returns?: ProductReturns;
 }
 
 export type StockStatus = "in_stock" | "out_of_stock" | "unavailable";
@@ -124,12 +122,6 @@ export interface ProductWarranty {
   durationMonths: number | null;
   type: string | null;
   notes: string | null;
-}
-
-export interface ProductReturns {
-  eligible: boolean;
-  windowDays: number;
-  type: "free_return" | "paid_return" | "no_return";
 }
 
 /** Seller trust signals for the PDP seller card (GET /catalog/sellers/:id/trust). */

@@ -17,7 +17,7 @@ export function LegalPageLayout({ title, children }: LegalPageLayoutProps) {
       {/* Header */}
       <header className="legal-page-header">
         <div className="legal-page-header__inner">
-          <Link href={pathFromScreen("home")} className="legal-page-header__back">
+          <Link href={pathFromScreen("home")} className="legal-page-header__back bz-back-link">
             <svg
               width="20"
               height="20"

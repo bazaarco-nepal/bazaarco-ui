@@ -967,6 +967,7 @@ export function Checkout() {
     >
       <AppLink
         href={pathFromScreen("cart")}
+        className="bz-back-link"
         style={{
           background: "none",
           border: "none",

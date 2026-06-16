@@ -8,7 +8,6 @@ export type {
   Product,
   StockStatus,
   ProductWarranty,
-  ProductReturns,
   SellerTrust,
   CartLine,
   ProductReview,

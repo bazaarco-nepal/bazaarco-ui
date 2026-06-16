@@ -1240,14 +1240,85 @@ body {
 /* Seller page layouts — use full content area beside sidebar */
 .bz-seller-page {
   width: 100%;
-  /* Center seller content to the same --container width the KYC banner uses, so
-     the page body lines up with the banner above it on wide screens. Side
-     padding (28px) also matches the banner. Mobile (<=768px) is forced back to
-     16px by the media rules below, so this only affects desktop. */
-  max-width: var(--container);
+  /* Center seller content to a calm reading column (--seller-max, 1160px in the
+     Fluent skin) so pages line up with the KYC banner above them. Falls back to
+     --container outside the seller skin. Side padding (28px) matches the banner;
+     mobile (<=768px) is forced back to 16px by the media rules below. */
+  max-width: var(--seller-max, var(--container));
   margin: 0 auto;
   padding: 20px 28px 100px;
   box-sizing: border-box;
+}
+
+/* Seller page header — one shared pattern across every seller screen: a blue
+   accent rail beside a dark title, a helper line, optional breadcrumb, and a
+   right-aligned actions slot. Colors come from tokens so it follows the skin. */
+.bz-seller-pagehead {
+  margin-bottom: 20px;
+}
+.bz-seller-pagehead__crumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--ink-400);
+  margin-bottom: 8px;
+}
+.bz-seller-pagehead__crumbs button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--ink-400);
+  cursor: pointer;
+}
+.bz-seller-pagehead__crumbs button:hover {
+  color: var(--blue);
+  text-decoration: underline;
+}
+.bz-seller-pagehead__crumb-sep {
+  color: var(--ink-300);
+}
+.bz-seller-pagehead__crumb-current {
+  color: var(--ink-700);
+  font-weight: 600;
+}
+.bz-seller-pagehead__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.bz-seller-pagehead__title {
+  min-width: 0;
+}
+.bz-seller-pagehead h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--ink-900);
+}
+.bz-seller-pagehead__sub {
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--ink-500);
+  max-width: 64ch;
+}
+.bz-seller-pagehead__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+@media (max-width: 640px) {
+  .bz-seller-pagehead__actions {
+    width: 100%;
+  }
 }
 
 /* KYC verification — a status/confirmation page that spans the full width of the
@@ -1747,6 +1818,19 @@ body {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   width: 100%;
+  /* Stay fluid (3 tiles to a row) on mobile, but cap the grid so each square
+     tile can't balloon to ~440px on wide desktop screens. */
+  max-width: 680px;
+}
+
+/* Page-level "Back to …" navigation links. On desktop the navbar/sidebar
+   already handles getting around, so these are redundant chrome — hide them
+   there and keep them only on mobile, where there's no persistent nav.
+   !important is needed to beat the inline `display: inline-flex` each link sets. */
+@media (min-width: 769px) {
+  .bz-back-link {
+    display: none !important;
+  }
 }
 
 .bz-metadata-row {

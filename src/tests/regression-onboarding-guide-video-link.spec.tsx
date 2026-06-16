@@ -54,7 +54,7 @@ vi.mock("@/hooks/use-seller", () => ({
 }));
 
 import { BazaarProvider } from "@/providers/bazaar-provider";
-import { SellerOnboarding } from "@/features/seller/seller";
+import { SellerOnboarding } from "@/features/seller";
 import { useBazaarStore } from "@/store/bazaar-store";
 
 beforeEach(() => {

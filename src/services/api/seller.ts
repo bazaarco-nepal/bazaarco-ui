@@ -54,9 +54,6 @@ export interface PdpProductFields {
   warrantyDurationMonths?: number | null;
   warrantyType?: string | null;
   warrantyNotes?: string | null;
-  returnEligible?: boolean;
-  returnWindowDays?: number | null;
-  returnType?: "free_return" | "paid_return" | "no_return" | null;
 }
 
 export interface UpdateProductPayload extends DiscountFields, PdpProductFields {

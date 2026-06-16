@@ -1,6 +1,5 @@
 "use client";
 
-import { returnPolicyLabel } from "@/config/policies";
 import type { Product } from "@/types";
 
 type TrustChipsProps = {
@@ -32,10 +31,6 @@ export function TrustChips({ product, sellerVerified }: TrustChipsProps) {
         </CalmChip>
       )}
       {status === "unavailable" && <CalmChip>Currently unavailable</CalmChip>}
-
-      {product.returns?.eligible !== false && (
-        <CalmChip>{returnPolicyLabel(product.returns)}</CalmChip>
-      )}
 
       {sellerVerified && <CalmChip>Verified seller</CalmChip>}
 

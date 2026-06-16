@@ -1329,6 +1329,7 @@ export function WriteReview({ productId }: WriteReviewProps) {
     >
       <AppLink
         href={pathFromScreen("orders")}
+        className="bz-back-link"
         style={{
           background: "none",
           border: "none",
@@ -1625,6 +1626,7 @@ export function ProfileEdit() {
     >
       <AppLink
         href={pathFromScreen("profile")}
+        className="bz-back-link"
         style={{
           background: "none",
           border: "none",

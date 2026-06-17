@@ -38,13 +38,6 @@ import { ConfirmModal } from "@/components/seller/confirm-modal";
 /* ---------- 4.5 Inventory — swipe-to-sell ---------- */
 const EMPTY_INVENTORY: SellerInventoryItem[] = [];
 
-export const INV_SORTS = [
-  { value: "added", label: "Recently added" },
-  { value: "stockLow", label: "Stock low → high" },
-  { value: "priceLow", label: "Price low → high" },
-  { value: "name", label: "Name A → Z" },
-];
-
 export function SellerInventory() {
   const { t } = useTranslation();
   const { nav, toast } = useBz();

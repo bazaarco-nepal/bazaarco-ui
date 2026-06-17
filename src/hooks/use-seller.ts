@@ -6,6 +6,7 @@ import {
   type CreateProductPayload,
   type UpdateProductPayload,
 } from "@/services/api/seller";
+import type { SellerVideosResponse } from "@/services/api/media";
 import type { OrderStatus } from "@/lib/order-utils";
 import type { SellerReview } from "@/types/catalog";
 import {
@@ -292,26 +293,10 @@ export function useSellerReviews() {
   });
 }
 
-export function useSellerChat() {
-  return useQuery({
-    queryKey: queryKeys.seller.chat,
-    queryFn: () => sellerApi.getChat(),
-    staleTime: STALE_TIME,
-  });
-}
-
-export function useSellerPromotions() {
-  return useQuery({
-    queryKey: queryKeys.seller.promotions,
-    queryFn: () => sellerApi.getPromotions(),
-    staleTime: STALE_TIME,
-  });
-}
-
 export function useSellerVideos() {
   return useQuery({
     queryKey: queryKeys.seller.videos,
-    queryFn: () => sellerApi.getVideos<import("@/services/api/media").SellerVideosResponse>(),
+    queryFn: () => sellerApi.getVideos<SellerVideosResponse>(),
     staleTime: STALE_TIME,
   });
 }
@@ -421,13 +406,5 @@ export function useUpdateSellerSettings() {
     onSuccess: (data) => {
       qc.setQueryData(queryKeys.seller.settings, data);
     },
-  });
-}
-
-export function useShippingZones() {
-  return useQuery({
-    queryKey: queryKeys.seller.shippingZones,
-    queryFn: () => sellerSettingsApi.getShippingZones(),
-    staleTime: 10 * 60 * 1000,
   });
 }

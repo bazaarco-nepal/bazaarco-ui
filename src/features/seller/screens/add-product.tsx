@@ -606,13 +606,6 @@ export function CategoryAttrFields({
   );
 }
 
-// Has the seller filled an attribute field? (multi=any selected, toggle=true, else non-empty)
-export const attrFilled = (f: { t: string }, v: unknown) => {
-  if (f.t === "multi") return Array.isArray(v) && v.length > 0;
-  if (f.t === "toggle") return v === true;
-  return !!v && (typeof v !== "string" || v.trim() !== "");
-};
-
 /* ---------- 4.4 Add / Edit Product — Three-Tap Listing ---------- */
 // One form for both create and edit. In edit mode (`editing` set, threaded via
 // `editProductRef`) the screen prefills from the existing product, locks the

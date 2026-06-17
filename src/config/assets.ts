@@ -39,7 +39,3 @@ export const ASSETS = {
     step5: "/assets/how-bazaarco/step-5.png",
   },
 } as const;
-
-export type AssetPath = (typeof ASSETS)[keyof typeof ASSETS] extends string
-  ? (typeof ASSETS)[keyof typeof ASSETS]
-  : string;

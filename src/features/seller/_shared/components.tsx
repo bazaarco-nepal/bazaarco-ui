@@ -471,7 +471,7 @@ export function Field({
   );
 }
 
-export type SegOption = {
+type SegOption = {
   value: string;
   title: React.ReactNode;
   sub?: React.ReactNode;
@@ -480,7 +480,7 @@ export type SegOption = {
 
 /* Segmented toggle — a 2-up row of radio-style cards for a small, mutually
    exclusive choice (e.g. "No variants / Has variants"). */
-export function SegToggle({
+function SegToggle({
   options,
   value,
   onChange,
@@ -516,7 +516,7 @@ export function SegToggle({
   );
 }
 
-export type RadioCardOption = {
+type RadioCardOption = {
   value: string;
   title: React.ReactNode;
   sub?: React.ReactNode;
@@ -524,7 +524,7 @@ export type RadioCardOption = {
 };
 
 /* Stacked single-select radio cards (e.g. variant photo mode). */
-export function RadioCardGroup({
+function RadioCardGroup({
   options,
   value,
   onChange,
@@ -570,7 +570,7 @@ export function RadioCardGroup({
 /* Photo uploader tile — presentational. The host owns the actual file picking
    (it passes `onPick`) and the preview `url`; the tile shows the preview, an
    add affordance when empty, and a remove button when filled. */
-export function PhotoTile({
+function PhotoTile({
   url,
   onPick,
   onRemove,
@@ -654,7 +654,7 @@ export function Metric({
 
 /* A single "before you publish" checklist row: state icon + label, with an
    optional Fix action when the item still needs attention. */
-export function ChecklistRow({
+function ChecklistRow({
   label,
   done,
   onFix,

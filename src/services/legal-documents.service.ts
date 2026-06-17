@@ -74,30 +74,6 @@ function extractTitle(markdown: string): string {
 }
 
 /**
- * Fetch all legal documents
- * @returns Array of legal documents
- */
-export async function getAllLegalDocuments(): Promise<LegalDocument[]> {
-  const documents: LegalDocument[] = [];
-
-  for (const slug of LEGAL_DOCUMENTS) {
-    const doc = await getLegalDocument(slug);
-    if (doc) {
-      documents.push(doc);
-    }
-  }
-
-  return documents;
-}
-
-/**
- * Markdown is already formatted, return as-is
- */
-export function formatLegalContent(content: string): string {
-  return content;
-}
-
-/**
  * Get display name for a document slug
  * @param slug - The document slug
  * @returns Human-readable name

@@ -198,7 +198,7 @@ export function SellerSparkline({
   );
 }
 
-export function SellerDonut({
+function SellerDonut({
   slices,
   size = 160,
 }: {

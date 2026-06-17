@@ -36,7 +36,7 @@ const SECTION_VISUAL: Record<SectionState, { icon: string; color: string; label:
 
 /* Sticky section navigator. Desktop: a left rail. Mobile: a horizontal
    scroll strip. Clicking a section jumps the host form to its anchor. */
-export function FormSectionNav({
+function FormSectionNav({
   sections,
   activeId,
   onJump,
@@ -332,7 +332,7 @@ export function productDraftHasContent(d: ProductDraftPreview | null | undefined
 
 /* Highlights the section currently in view. `rootId` is the scroll container
    (the seller shell scrolls inside #app-scroll, not the window). */
-export function useScrollSpy(ids: string[], rootId?: string): string | undefined {
+function useScrollSpy(ids: string[], rootId?: string): string | undefined {
   const [active, setActive] = useState<string | undefined>(ids[0]);
   const idsKey = ids.join("|");
   const frame = useRef<number | null>(null);
@@ -378,6 +378,3 @@ export function scrollToSection(id: string) {
   const el = document.getElementById(id);
   if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
-
-/* Re-export for hosts that compose their own action rows. */
-export { Button as FormButton };

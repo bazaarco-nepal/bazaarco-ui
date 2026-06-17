@@ -10,11 +10,6 @@ export function normalizePhone(raw: string): string {
   return (raw ?? "").replace(/\D/g, "").slice(0, 10);
 }
 
-/** A valid Nepal mobile: starts 96/97/98, 10 digits total. */
-export function isValidNpPhone(raw: string): boolean {
-  return /^9[678]\d{8}$/.test(normalizePhone(raw));
-}
-
 export function readPhoneFromStorage(): string {
   if (typeof window === "undefined") return "";
   try {

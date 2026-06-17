@@ -15,11 +15,11 @@
     "test:e2e": "playwright test",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,json}\"",
     "sync:assets": "node scripts/sync-assets.mjs",
+    "knip": "knip",
     "prepare": "husky || true"
   },
   "dependencies": {
     "@fluentui/react-icons": "^2.0.330",
-    "@hookform/resolvers": "^5.0.1",
     "@tanstack/react-query": "^5.80.7",
     "@vercel/speed-insights": "^2.0.0",
     "algoliasearch": "^5.54.0",
@@ -30,12 +30,10 @@
     "next": "^15.3.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-hook-form": "^7.57.0",
     "react-i18next": "^17.0.8",
     "react-markdown": "^9.1.0",
     "remark-gfm": "^4.0.1",
     "socket.io-client": "^4.8.3",
-    "zod": "^3.25.56",
     "zustand": "^5.0.5"
   },
   "devDependencies": {
@@ -53,6 +51,7 @@
     "eslint-config-prettier": "^10.1.5",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
+    "knip": "^6.17.1",
     "lint-staged": "^16.1.0",
     "prettier": "^3.5.3",
     "typescript": "^5.8.3",

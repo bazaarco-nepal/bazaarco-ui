@@ -251,25 +251,3 @@ export interface ProductProfile {
   specs: [string, string][];
   desc: string;
 }
-
-export type Province =
-  | "Koshi"
-  | "Madhesh"
-  | "Bagmati"
-  | "Gandaki"
-  | "Lumbini"
-  | "Karnali"
-  | "Sudurpashchim";
-
-export interface OrderInbox {
-  id: string;
-  buyer: string;
-  items: number;
-  total: number;
-  status: string;
-  time: string;
-  pay: string;
-  city: string;
-}
-
-export type ScreenId = string;

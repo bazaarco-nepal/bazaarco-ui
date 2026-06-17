@@ -68,14 +68,6 @@ export const NO_FOOTER_SCREENS = new Set([
   ...SELLER_SCREENS,
 ]);
 
-export const NO_HELP_SCREENS = new Set([
-  "auth",
-  "auth-callback",
-  "checkout",
-  "video",
-  ...SELLER_SCREENS,
-]);
-
 const SCREEN_PATH: Record<string, string> = {
   auth: "/auth",
   "auth-callback": "/auth/callback",
@@ -314,19 +306,6 @@ export function categoryIdsFromSearchParams(
     .split(",")
     .map((id) => id.trim())
     .filter(Boolean);
-}
-
-/** @deprecated Prefer `categoryIdsFromSearchParams` — `usePathname()` omits `?cat=`. */
-export function categoryIdsFromPath(pathname: string): string[] {
-  const idx = pathname.indexOf("?");
-  if (idx === -1) return [];
-  return categoryIdsFromSearchParams(new URLSearchParams(pathname.slice(idx + 1)));
-}
-
-export function sortFromPath(pathname: string): string | null {
-  const idx = pathname.indexOf("?");
-  if (idx === -1) return null;
-  return new URLSearchParams(pathname.slice(idx + 1)).get("sort");
 }
 
 export function screenFromPath(pathname: string): string {

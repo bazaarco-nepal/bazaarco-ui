@@ -1,7 +1,6 @@
 import type { DeliveryLocation } from "@/lib/delivery-location";
 import { postalForCity } from "@/lib/delivery-location";
 import type { SavedAddress } from "@/services/api/addresses";
-import type { DeliveryAddress } from "@/services/api/orders";
 
 export const ADDRESS_LABEL_PRESETS = ["Home", "Office", "Other"] as const;
 
@@ -13,14 +12,6 @@ export function savedAddressToDelivery(addr: SavedAddress): DeliveryLocation {
     postal: addr.postal?.trim() || postalForCity(addr.city),
     lat: addr.lat ?? undefined,
     lng: addr.lng ?? undefined,
-  };
-}
-
-export function savedAddressToCheckout(addr: SavedAddress): DeliveryAddress {
-  return {
-    city: addr.city,
-    area: addr.area,
-    landmark: addr.landmark,
   };
 }
 

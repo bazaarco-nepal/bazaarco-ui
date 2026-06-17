@@ -22,7 +22,3 @@ export function alignStyle(align: HeroAlign | undefined): CSSProperties {
       return { textAlign: "left", alignItems: "flex-start" };
   }
 }
-
-export function useThemeTokens(useCssVars: boolean) {
-  return useCssVars;
-}

@@ -433,12 +433,6 @@ export function ProductCard({
   );
 }
 
-/* ---------- Sale product card ---------- */
-/* Inherits ProductCard; adds sold-count social proof. */
-export function SaleProductCard(props: { p: Product; onClick: (p: Product) => void }) {
-  return <ProductCard {...props} sale />;
-}
-
 /* ---------- Horizontal rail of cards ---------- */
 export function ProductRail({
   items,

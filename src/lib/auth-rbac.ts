@@ -31,10 +31,6 @@ export function isSellerUser(user?: AuthUser | null): boolean {
   return user?.intent === "seller";
 }
 
-export function isBuyerUser(user?: AuthUser | null): boolean {
-  return !user || user.intent === "buyer";
-}
-
 /** Default landing screen after sign-in for this account. */
 export function defaultScreenForUser(user: AuthUser): string {
   return isSellerUser(user) ? "s-dashboard" : "home";

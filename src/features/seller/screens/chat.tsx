@@ -495,8 +495,10 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
                   style={{ flexShrink: 0, marginTop: 1 }}
                 />
                 <span>
-                  Keep chats and payments on BazaarCo. Orders settled outside the app aren&apos;t
-                  protected for buyers or sellers.
+                  🔒 Keep your account safe: Please do not share phone numbers, emails, addresses,
+                  or bank details here. Buying or selling outside BazaarCO is risky and removes your
+                  refund protection. Users who share contact details or pay offline may lose access
+                  to their accounts.
                 </span>
               </div>
               {msgsLoading && !messages.length ? (

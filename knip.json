@@ -1,0 +1,21 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": ["src/app/**/*.{ts,tsx}"],
+  "project": ["src/**/*.{ts,tsx}"],
+  "ignoreExportsUsedInFile": true,
+  "ignoreDependencies": ["eslint-config-next", "eslint-config-prettier"],
+  "eslint": true,
+  "next": true,
+  "playwright": true,
+  "vitest": true,
+  "rules": {
+    "duplicates": "error",
+    "files": "error",
+    "dependencies": "error",
+    "devDependencies": "error",
+    "exports": "error",
+    "types": "error"
+  },
+  "treatConfigHintsAsErrors": true,
+  "treatTagHintsAsErrors": true
+}

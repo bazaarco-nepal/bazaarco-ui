@@ -55,22 +55,3 @@ export function useDeleteSellerVideo() {
     },
   });
 }
-
-export function useUpdateProductMedia() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      productId,
-      media,
-    }: {
-      productId: string;
-      media: Parameters<typeof mediaApi.updateProductMedia>[1];
-    }) => mediaApi.updateProductMedia(productId, media),
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.catalog.products() });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.catalog.product(variables.productId),
-      });
-    },
-  });
-}

@@ -151,6 +151,27 @@
   border-color: var(--blue);
 }
 
+/* ── Mobile bottom nav (seller, phone only) ─────────────────────────────
+   The seller bottom nav is rendered outside the shell, so it sets
+   data-skin="fluent" on itself. --red is intentionally not remapped, so the
+   active accent + badge are re-pointed to blue here to match the sidebar;
+   the markup renders Fluent icons (SellerIcon) instead of the buyer glyphs. */
+[data-skin="fluent"].bz-bnav {
+  font-family: var(--font-sans);
+}
+[data-skin="fluent"] .bz-bnav__item--active {
+  color: var(--blue);
+}
+[data-skin="fluent"] .bz-bnav__item--active::before {
+  background: var(--blue);
+}
+[data-skin="fluent"] .bz-bnav__label {
+  font-weight: 600;
+}
+[data-skin="fluent"] .bz-bnav__badge {
+  background: var(--blue);
+}
+
 /* ── Reusable soft surfaces ─────────────────────────────────────────────
    Composable card primitives for the dashboard + any seller page. A card is
    a white surface with a hairline border and subtle depth — not a hard

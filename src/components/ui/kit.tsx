@@ -12,6 +12,7 @@ import { formatNPR } from "@/lib/money";
 import { MapPinPicker } from "@/components/ui/map-pin-picker";
 import { TOAST_VARIANT_META } from "@/lib/toast-variant";
 import { CLOUDINARY_CLOUD_NAME, publicIdFromVideoUrl } from "@/lib/cloudinary";
+import { SellerIcon } from "@/features/seller/_shared/icons";
 import "cloudinary-video-player/cld-video-player.min.css";
 
 /* ============================================================
@@ -2942,7 +2943,14 @@ export function BottomNav({
     setAvatarFailed(false);
   }, [avatarUrl]);
   return (
-    <nav className="bz-bnav" aria-label={t("bottomNav.aria")}>
+    // The seller nav lives outside the seller shell, so it opts into the
+    // Fluent skin itself — that re-points the accent/badge to blue and swaps
+    // in Segoe UI to match the rest of the seller console.
+    <nav
+      className="bz-bnav"
+      data-skin={seller ? "fluent" : undefined}
+      aria-label={t("bottomNav.aria")}
+    >
       {items.map((it) => (
         <button
           key={it.id}
@@ -2971,6 +2979,9 @@ export function BottomNav({
                 border: active === it.id ? "2px solid var(--blue)" : "2px solid var(--line-200)",
               }}
             />
+          ) : seller ? (
+            // Fluent icons (filled when active) to match the seller sidebar.
+            <SellerIcon name={it.icon} size={22} filled={active === it.id} />
           ) : (
             <Icon name={it.icon} size={22} />
           )}

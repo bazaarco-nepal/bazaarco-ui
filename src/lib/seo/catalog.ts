@@ -14,7 +14,9 @@ import type { PaginatedData } from "@/services/api/types";
 
 const REVALIDATE_SECONDS = 1800;
 const REQUEST_TIMEOUT_MS = 8000;
-const PRODUCTS_PAGE_SIZE = 200;
+// Backend caps the catalog list `limit` at 100 (productListQuerySchema); a
+// larger page size 400s and silently empties the product sitemap.
+const PRODUCTS_PAGE_SIZE = 100;
 // Hard ceiling so a growing catalog can never blow past the 50k-URL sitemap
 // limit or stall the build. Revisit with a sitemap index when we near it.
 const MAX_SITEMAP_PRODUCTS = 10_000;

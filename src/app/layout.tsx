@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
@@ -16,7 +16,9 @@ import {
   SITE_NAME,
   SITE_TITLE,
   SITE_URL,
+  THEME_COLOR,
 } from "@/config/site";
+import { IosInstallBanner } from "@/components/common/ios-install-banner";
 import { JsonLd } from "@/components/seo/json-ld";
 import { organizationSchema, websiteSchema } from "@/lib/seo/structured-data";
 import "@/styles/globals.css";
@@ -37,6 +39,18 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
+  // iOS ignores the web manifest for the home-screen icon and reads
+  // <link rel="apple-touch-icon"> directly.
+  icons: {
+    apple: "/icons/icon-192.png",
+  },
+  // Emits <meta name="apple-mobile-web-app-capable" content="yes"> so Safari
+  // launches the saved shortcut as a standalone app (no browser chrome).
+  appleWebApp: {
+    capable: true,
+    title: SITE_NAME,
+    statusBarStyle: "default",
+  },
   openGraph: {
     type: "website",
     siteName: SITE_NAME,
@@ -59,6 +73,11 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
     images: [OG_IMAGE],
   },
+};
+
+// Emits <meta name="theme-color"> — colors the browser/standalone chrome.
+export const viewport: Viewport = {
+  themeColor: THEME_COLOR,
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -86,7 +105,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <GoogleAnalyticsPageView />
         </Suspense>
         <SpeedInsights />
-        <AppProviders initialLocale={locale}>{children}</AppProviders>
+        <AppProviders initialLocale={locale}>
+          {children}
+          <IosInstallBanner />
+        </AppProviders>
       </body>
     </html>
   );

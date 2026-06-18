@@ -139,16 +139,18 @@ export function CategoryAttrFields({
     fontWeight: 600,
     cursor: "pointer",
   };
-  // Borderless control that lives inside a spec row (the row itself carries the
-  // border + focus ring), so the input reads as plain text next to its label.
+  // The value control inside a spec row. A light filled box (the row still carries
+  // its own border + focus ring) so it clearly reads as a field to type in, not
+  // plain text sitting next to the label.
   const cellInput = {
     width: "100%",
     minWidth: 0,
-    height: 40,
-    border: "none",
+    height: 38,
+    border: "1px solid var(--line-200)",
+    borderRadius: "8px",
     outline: "none",
-    background: "transparent",
-    padding: 0,
+    background: "var(--line-100)",
+    padding: "0 12px",
     fontFamily: "var(--font-sans)",
     fontSize: ".9375rem",
     color: "var(--ink-900)",
@@ -507,8 +509,21 @@ export function CategoryAttrFields({
             onBlur={() => window.setTimeout(() => setSearchFocused(false), 150)}
             placeholder="Search a detail to add…"
             aria-label="Search a detail to add"
-            style={inputStyle}
+            style={{ ...inputStyle, paddingRight: 40, cursor: "pointer" }}
           />
+          <span
+            style={{
+              position: "absolute",
+              right: 14,
+              top: 15,
+              pointerEvents: "none",
+              display: "inline-flex",
+              transform: showResults ? "rotate(180deg)" : "none",
+              transition: "transform var(--dur-standard) var(--ease)",
+            }}
+          >
+            <SellerIcon name="chevronDown" size={18} color="var(--ink-400)" />
+          </span>
           {showResults && (
             <div
               style={{
@@ -625,112 +640,6 @@ function remotePhotoFromUrl(url: string, index: number): ProductPhoto {
   };
 }
 
-// Quick-pick option types for the variant builder. Tapping one seeds an option
-// group with sensible default choices; "Custom" starts blank for anything else.
-const VARIANT_OPTION_BUTTONS = ["Colour", "Size", "Material", "Pattern", "Custom"] as const;
-
-const VARIANT_OPTION_SUGGESTIONS: Record<string, string[]> = {
-  "mobile-phones-tablets": ["Colour", "Storage", "RAM", "Connectivity", "Custom"],
-  "electronics-gadgets": ["Colour", "Size", "Capacity", "Pack size", "Custom"],
-  "computers-accessories": ["Colour", "Storage", "RAM", "Size", "Custom"],
-  "fashion-clothing": ["Colour", "Size", "Fit", "Material", "Sleeve", "Custom"],
-  "shoes-footwear": ["Size", "Colour", "Material", "Style", "Heel height", "Custom"],
-  "bags-watches-accessories": ["Colour", "Size", "Material", "Strap", "Dial size", "Custom"],
-  "beauty-cosmetics": ["Shade", "Size", "Scent", "Pack size", "Custom"],
-  "health-wellness": ["Size", "Flavour", "Pack size", "Strength", "Custom"],
-  "groceries-essentials": ["Pack size", "Weight", "Flavour", "Quantity", "Type", "Custom"],
-  "kitchenware-dining": ["Size", "Colour", "Material", "Capacity", "Set", "Custom"],
-  "home-appliances": ["Capacity", "Colour", "Size", "Set", "Custom"],
-  "home-decor": ["Colour", "Size", "Material", "Pattern", "Set", "Custom"],
-  furniture: ["Colour", "Size", "Material", "Finish", "Seating capacity", "Custom"],
-  "baby-kids-toys": ["Age", "Size", "Colour", "Pack size", "Style", "Custom"],
-  "sports-fitness-outdoors": ["Size", "Colour", "Weight", "Material", "Resistance", "Custom"],
-  "automotive-motorbike": ["Size", "Colour", "Pack size", "Material", "Custom"],
-  "books-stationery": ["Format", "Language", "Binding", "Pack size", "Custom"],
-  "musical-instruments": ["Size", "Colour", "Material", "Key", "Custom"],
-  "pet-supplies": ["Size", "Flavour", "Pack size", "Pet size", "Colour", "Custom"],
-  "local-nepali-handmade": ["Colour", "Size", "Material", "Pattern", "Set", "Custom"],
-  electronics: ["Colour", "Storage", "RAM", "Capacity", "Custom"],
-  fashion: ["Colour", "Size", "Fit", "Material", "Sleeve", "Custom"],
-  "health-beauty": ["Shade", "Size", "Scent", "Pack size", "Custom"],
-  "home-living": ["Colour", "Size", "Material", "Pattern", "Set", "Custom"],
-  "mother-baby-kids": ["Age", "Size", "Colour", "Pack size", "Style", "Custom"],
-  "sports-outdoors": ["Size", "Colour", "Weight", "Material", "Resistance", "Custom"],
-  automotive: ["Size", "Colour", "Pack size", "Material", "Custom"],
-  "crafts-heritage": ["Colour", "Size", "Material", "Pattern", "Set", "Custom"],
-  "digital-goods-services": ["Plan", "Duration", "Language", "Format", "Custom"],
-};
-
-function variantOptionButtonsForCategory(categoryId: string) {
-  return VARIANT_OPTION_SUGGESTIONS[categoryId] ?? [...VARIANT_OPTION_BUTTONS];
-}
-
-// Common choices offered as one-tap chips inside each option group.
-const VARIANT_VALUE_PRESETS: Record<string, string[]> = {
-  Age: ["0-6 months", "6-12 months", "1-2 years", "3-5 years", "6+ years"],
-  Binding: ["Paperback", "Hardcover", "Spiral", "Board book"],
-  Capacity: ["500ml", "1L", "2L", "5L", "10L", "20L"],
-  Colour: ["Red", "Blue", "Black", "White", "Green", "Yellow", "Pink", "Brown", "Navy", "Gray"],
-  Connectivity: ["4G", "5G", "Bluetooth", "Wi-Fi", "Wired", "Wireless"],
-  Condition: ["New", "Like new", "Refurbished"],
-  "Dial size": ["Small", "Medium", "Large", "38mm", "42mm", "45mm"],
-  Duration: ["1 month", "3 months", "6 months", "1 year"],
-  Edition: ["Standard", "Revised", "Latest", "Collector"],
-  Finish: ["Matte", "Glossy", "Natural", "Polished", "Painted"],
-  Fit: ["Regular", "Slim", "Relaxed", "Oversized"],
-  Flavour: ["Original", "Chocolate", "Vanilla", "Strawberry", "Mint", "Lemon"],
-  Format: ["Print", "Digital", "Audio", "PDF"],
-  Grade: ["Nursery", "Grade 1", "Grade 5", "Grade 10", "SEE", "+2"],
-  "Heel height": ["Flat", "Low", "Medium", "High"],
-  Key: ["C", "D", "E", "F", "G", "A", "B"],
-  Language: ["English", "Nepali", "Hindi"],
-  Model: ["Standard", "Plus", "Pro", "Max"],
-  Pack: ["Single", "Pack of 2", "Pack of 3", "Pack of 5"],
-  "Pack size": ["Single", "Pack of 2", "Pack of 3", "Pack of 5", "Family pack"],
-  Pattern: ["Plain", "Printed", "Striped", "Floral", "Checked"],
-  "Pet size": ["Small", "Medium", "Large"],
-  Plan: ["Basic", "Standard", "Premium"],
-  Power: ["Battery", "Rechargeable", "USB", "220V"],
-  Quantity: ["250g", "500g", "1kg", "2kg", "5kg"],
-  RAM: ["4GB", "6GB", "8GB", "12GB", "16GB"],
-  Resistance: ["Light", "Medium", "Heavy"],
-  "Screen size": ["11 inch", "13 inch", "14 inch", "15 inch", "17 inch"],
-  "Seating capacity": ["1 seater", "2 seater", "3 seater", "4 seater", "6 seater"],
-  Set: ["Single", "Set of 2", "Set of 4", "Set of 6"],
-  Scent: ["Unscented", "Rose", "Lavender", "Citrus", "Sandalwood"],
-  Shade: ["Light", "Medium", "Dark", "Nude", "Pink", "Red"],
-  "Skin type": ["Normal", "Dry", "Oily", "Combination", "Sensitive"],
-  Color: ["Red", "Blue", "Black", "White", "Green", "Yellow", "Pink", "Brown", "Navy", "Gray"],
-  Size: ["XS", "S", "M", "L", "XL", "XXL"],
-  Storage: ["64GB", "128GB", "256GB", "512GB", "1TB"],
-  Strap: ["Leather", "Metal", "Silicone", "Fabric"],
-  "Design/Style": ["Classic", "Bomber", "Varsity", "Slim", "Oversized"],
-  Material: ["Cotton", "Polyester", "Leather", "Denim", "Wool"],
-  Sleeve: ["Sleeveless", "Short sleeve", "Long sleeve", "Full sleeve"],
-  Strength: ["Low", "Medium", "High", "Extra strong"],
-  Style: ["Classic", "Modern", "Sport", "Casual", "Formal"],
-  Type: ["Regular", "Organic", "Premium", "Imported", "Local"],
-  "Vehicle type": ["Bike", "Scooter", "Car", "SUV", "Truck"],
-  Weight: ["250g", "500g", "1kg", "2kg", "5kg"],
-};
-
-// Choices pre-filled when a preset option type is added, so the matrix has rows
-// immediately. "Custom" and unlisted types start with a single empty choice.
-const VARIANT_VALUE_DEFAULTS: Record<string, string[]> = {
-  Colour: ["Red", "Blue"],
-  Color: ["Red", "Blue", "Black"],
-  Size: ["S", "M", "L"],
-  Storage: ["128GB", "256GB"],
-  RAM: ["4GB", "8GB"],
-  Shade: ["Light", "Medium"],
-  "Pack size": ["Single", "Pack of 2"],
-  Capacity: ["1L", "2L"],
-  Material: ["Cotton", "Polyester"],
-  Pattern: ["Plain", "Printed"],
-  Flavour: ["Original", "Chocolate"],
-  "Design/Style": ["Classic", "Modern"],
-};
-
 // One image source per variant, resolved in priority order on the server:
 // exact (per version) → option (per attribute value) → product main image. The
 // seller picks which level to manage; the rest fall back automatically.
@@ -745,6 +654,50 @@ function variantDisplayName(
 ) {
   const values = Object.values(optionValues ?? {}).filter(Boolean);
   return values.length ? values.join(" · ") : fallback;
+}
+
+// Variant builder is capped at 2 axes, named from a fixed list, each with up to 6
+// values. Color values map to a swatch shown on chips, grid rows and the preview.
+const VARIANT_AXIS_NAMES = ["Color", "Size", "Material", "Style", "Fit"] as const;
+const MAX_AXES = 2;
+const MAX_AXIS_VALUES = 6;
+const VARIANT_COLOR_MAP: Record<string, string> = {
+  Red: "#E24B4A",
+  Blue: "#378ADD",
+  Green: "#1D9E75",
+  Black: "#2C2C2A",
+  White: "#F1EFE8",
+  Yellow: "#EF9F27",
+  Pink: "#D4537E",
+  Purple: "#7F77DD",
+  Orange: "#D85A30",
+};
+
+/** Swatch hex for a value, but only on the Color axis and only when the value is a
+ *  known colour (case-insensitive). Null → render no dot. */
+function colorDotFor(axisName: string, value: string): string | null {
+  if (axisName.trim().toLowerCase() !== "color") return null;
+  const key = Object.keys(VARIANT_COLOR_MAP).find(
+    (k) => k.toLowerCase() === value.trim().toLowerCase(),
+  );
+  return key ? (VARIANT_COLOR_MAP[key] ?? null) : null;
+}
+
+function ColorDot({ hex }: { hex: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        width: 12,
+        height: 12,
+        flex: "0 0 12px",
+        borderRadius: "50%",
+        background: hex,
+        border: "1px solid rgba(0,0,0,.18)",
+        display: "inline-block",
+      }}
+    />
+  );
 }
 
 function parseKeywordTags(raw: string) {
@@ -792,9 +745,7 @@ export function SellerAddProduct({
   // attribute value (option), or a per-version exact image. Drives the server's
   // image fallback chain.
   const [variantImageMode, setVariantImageMode] = useState<VariantImageMode>("product");
-  // Which attribute drives option-level images (e.g. Color), and the uploaded
-  // URL per "attr::value" key.
-  const [optionImageAttr, setOptionImageAttr] = useState("");
+  // Uploaded option-image URL per "attr::value" key (keyed to the primary axis).
   const [optionImageUrls, setOptionImageUrls] = useState<Record<string, string>>({});
   const [optionImageUploading, setOptionImageUploading] = useState<Record<string, boolean>>({});
   // Dimension groups for multi-dimensional mode e.g. [{name:"Color",options:["Orange","Black"]}]
@@ -817,11 +768,7 @@ export function SellerAddProduct({
       imageUrl?: string | null;
       uploadingImg?: boolean;
     }>
-  >([
-    { id: 1, name: "Small", price: "", stock: "" },
-    { id: 2, name: "Medium", price: "", stock: "" },
-    { id: 3, name: "Large", price: "", stock: "" },
-  ]);
+  >([]);
   const [bargainOk, setBargainOk] = useState(true);
   const [bargainMinPrice, setBargainMinPrice] = useState("");
   // "Set the same price & stock for all" helper — fills every variant row at once
@@ -967,9 +914,19 @@ export function SellerAddProduct({
     salePrice: Number(v.salePrice) || 0,
     salePct: Number(v.salePct) || 0,
   });
+  // Variant readiness, broken into the 5 conditions surfaced in the checklist.
+  const axesDefined = variantGroupDefs.length >= 1;
+  const everyAxisHasValue =
+    axesDefined && variantGroupDefs.every((g) => g.options.some((o) => o.trim()));
+  const everyVariantPriced = variants.length > 0 && variants.every((v) => Number(v.price) > 0);
+  const everyVariantStocked = variants.length > 0 && variants.every((v) => Number(v.stock) > 0);
   const variantsOk =
     !hasVariants ||
-    variants.every((v) => v.price && v.stock && (!v.onSale || isSaleValid(variantSaleInput(v))));
+    (axesDefined &&
+      everyAxisHasValue &&
+      everyVariantPriced &&
+      everyVariantStocked &&
+      variants.every((v) => !v.onSale || isSaleValid(variantSaleInput(v))));
   // 1 main image (the cover) + 2–5 gallery images, for new listings and edits.
   const photosOk = mainPhoto.length === 1 && galleryPhotos.length >= 2 && galleryPhotos.length <= 5;
 
@@ -1123,11 +1080,14 @@ export function SellerAddProduct({
       id: "sec-basics",
     },
     { ok: categoryOk, label: "Category selected", id: "sec-basics" },
-    {
-      ok: hasVariants ? variantsOk : Boolean(price && stock),
-      label: hasVariants ? "Every version has a price & stock" : "Price & stock added",
-      id: "sec-variants",
-    },
+    ...(hasVariants
+      ? [
+          { ok: axesDefined, label: "At least one option added", id: "sec-variants" },
+          { ok: everyAxisHasValue, label: "Every option has a value", id: "sec-variants" },
+          { ok: everyVariantPriced, label: "Every version has a price", id: "sec-variants" },
+          { ok: everyVariantStocked, label: "Every version has stock", id: "sec-variants" },
+        ]
+      : [{ ok: Boolean(price && stock), label: "Price & stock added", id: "sec-variants" }]),
     { ok: bargainFloorOk, label: "Bargaining configured", id: "sec-bargain" },
   ];
 
@@ -1364,7 +1324,6 @@ export function SellerAddProduct({
     : Number(stock) || 0;
 
   const categoryMeta = categories.find((c) => c.id === category);
-  const variantOptionButtons = variantOptionButtonsForCategory(category);
 
   // Live preview reuses the real buyer ProductCard (DRY + pixel-exact) rather
   // than a look-alike, so the seller sees precisely what shoppers will. Built
@@ -1542,16 +1501,9 @@ export function SellerAddProduct({
   const chooseHasVariants = (next: boolean) => {
     setHasVariants(next);
     if (next) {
-      const seedNames = variantOptionButtons.filter((name) => name !== "Custom").slice(0, 2);
-      const seeded = seedNames.map((name, index) => ({
-        id: Date.now() + index,
-        name,
-        options: VARIANT_VALUE_DEFAULTS[name] ??
-          VARIANT_VALUE_PRESETS[name]?.slice(
-            0,
-            Math.min(3, VARIANT_VALUE_PRESETS[name].length),
-          ) ?? [""],
-      }));
+      // Start from one empty option — the seller names it and adds the choices.
+      // Nothing is pre-filled or chosen on their behalf.
+      const seeded = [{ id: Date.now(), name: "", options: [""] }];
       setVariantGroupDefs(seeded);
       syncMultiVariants(seeded);
     } else {
@@ -1559,7 +1511,6 @@ export function SellerAddProduct({
       setVariants([]);
     }
     setVariantImageMode("product");
-    setOptionImageAttr("");
     setOptionImageUrls({});
     setOptionImageUploading({});
     setShowPhotoOptions(false);
@@ -1581,43 +1532,6 @@ export function SellerAddProduct({
     setVariantGroupDefs(next);
     syncMultiVariants(next);
   };
-  const addGroupOption = (groupId: number) => {
-    const next = variantGroupDefs.map((g) =>
-      g.id === groupId ? { ...g, options: [...g.options, ""] } : g,
-    );
-    setVariantGroupDefs(next);
-  };
-  const updateGroupOption = (groupId: number, idx: number, val: string) => {
-    const next = variantGroupDefs.map((g) =>
-      g.id === groupId ? { ...g, options: g.options.map((o, i) => (i === idx ? val : o)) } : g,
-    );
-    setVariantGroupDefs(next);
-    syncMultiVariants(next);
-  };
-  const removeGroupOption = (groupId: number, idx: number) => {
-    const next = variantGroupDefs.map((g) =>
-      g.id === groupId ? { ...g, options: g.options.filter((_, i) => i !== idx) } : g,
-    );
-    setVariantGroupDefs(next);
-    syncMultiVariants(next);
-  };
-
-  /** Quick-add an option type (Color, Size, …) with sensible default choices.
-   *  Named presets are de-duplicated; "Custom" starts blank for free typing. */
-  const addPresetAttribute = (preset: string) => {
-    const name = preset === "Custom" ? "" : preset;
-    if (name && variantGroupDefs.some((g) => g.name.trim().toLowerCase() === name.toLowerCase())) {
-      return;
-    }
-    const defaults = VARIANT_VALUE_DEFAULTS[preset] ?? [];
-    const next = [
-      ...variantGroupDefs,
-      { id: Date.now(), name, options: defaults.length ? defaults : [""] },
-    ];
-    setVariantGroupDefs(next);
-    syncMultiVariants(next);
-  };
-
   /** Append a choice to an option group (deduped), then rebuild the matrix. */
   const addAttributeValue = (groupId: number, value: string) => {
     const optionValue = value.trim();
@@ -1625,6 +1539,7 @@ export function SellerAddProduct({
     const next = variantGroupDefs.map((g) => {
       if (g.id !== groupId) return g;
       const existing = g.options.map((o) => o.trim()).filter(Boolean);
+      if (existing.length >= MAX_AXIS_VALUES) return g;
       if (existing.some((o) => o.toLowerCase() === optionValue.toLowerCase())) return g;
       return { ...g, options: [...existing, optionValue] };
     });
@@ -1641,15 +1556,15 @@ export function SellerAddProduct({
     syncMultiVariants(next);
   };
 
-  // Uncontrolled "add choice" inputs, one per option group — read on demand so
-  // typing a new choice doesn't re-render the whole form on every keystroke.
-  const choiceInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
-  const submitChoiceInput = (groupId: number) => {
-    const input = choiceInputRefs.current[groupId];
-    if (!input) return;
-    addAttributeValue(groupId, input.value);
-    input.value = "";
-    input.focus();
+  // Controlled per-group "add value" inputs, keyed by group id.
+  const [choiceDrafts, setChoiceDrafts] = useState<Record<number, string>>({});
+  // Buyer-style picks for the live preview selector (primary axis → secondary).
+  const [previewPicks, setPreviewPicks] = useState<Record<string, string>>({});
+  const submitChoiceDraft = (groupId: number) => {
+    const val = (choiceDrafts[groupId] ?? "").trim();
+    if (!val) return;
+    addAttributeValue(groupId, val);
+    setChoiceDrafts((d) => ({ ...d, [groupId]: "" }));
   };
 
   /** Builds the variantGroups payload from current group defs (variant products). */
@@ -1661,19 +1576,9 @@ export function SellerAddProduct({
     return groups.length ? groups : undefined;
   };
 
-  // The attribute names available to drive option-level images.
-  const variantAttributeNames = variantGroupDefs
-    .map((g) => g.name.trim())
-    .filter((name, i, arr) => name && arr.indexOf(name) === i);
-  // The attribute currently driving option images, falling back to a colour-like
-  // one (or the first) when the saved choice is no longer present.
-  const activeOptionImageAttr = variantAttributeNames.includes(optionImageAttr)
-    ? optionImageAttr
-    : variantAttributeNames.find((n) =>
-        ["color", "colour", "design", "design/style", "style", "shade"].includes(n.toLowerCase()),
-      ) ||
-      variantAttributeNames[0] ||
-      "";
+  // Option-level photos are keyed to the PRIMARY axis (the first one the seller
+  // added) — e.g. one photo per colour. optionImageValues are that axis's values.
+  const activeOptionImageAttr = variantGroupDefs[0]?.name.trim() || "";
   // Distinct choices of the driving attribute, for the per-value image uploaders.
   const optionImageValues = activeOptionImageAttr
     ? (variantGroupDefs.find((g) => g.name.trim() === activeOptionImageAttr)?.options ?? [])
@@ -2685,23 +2590,41 @@ export function SellerAddProduct({
 
                     <div className="bz-option-groups">
                       {variantGroupDefs.map((group) => {
-                        const presets = VARIANT_VALUE_PRESETS[group.name.trim()] ?? [];
                         const currentValues = group.options
                           .map((o) => o.trim())
                           .filter((o, i, arr) => o && arr.indexOf(o) === i);
-                        const unusedPresets = presets.filter(
-                          (p) => !currentValues.some((v) => v.toLowerCase() === p.toLowerCase()),
+                        const usedByOthers = variantGroupDefs
+                          .filter((g) => g.id !== group.id)
+                          .map((g) => g.name.trim().toLowerCase());
+                        const nameInList = VARIANT_AXIS_NAMES.some(
+                          (n) => n.toLowerCase() === group.name.trim().toLowerCase(),
                         );
+                        const atValueCap = currentValues.length >= MAX_AXIS_VALUES;
                         return (
                           <div className="bz-option-group" key={group.id}>
                             <div className="bz-option-group__top">
-                              <input
+                              <select
                                 value={group.name}
                                 onChange={(e) => updateGroupName(group.id, e.target.value)}
-                                placeholder="Option name"
                                 className="bz-option-name"
-                                aria-label="Option name"
-                              />
+                                aria-label="Option type"
+                              >
+                                <option value="" disabled>
+                                  Choose option…
+                                </option>
+                                {VARIANT_AXIS_NAMES.map((n) => (
+                                  <option
+                                    key={n}
+                                    value={n}
+                                    disabled={usedByOthers.includes(n.toLowerCase())}
+                                  >
+                                    {n}
+                                  </option>
+                                ))}
+                                {group.name.trim() && !nameInList && (
+                                  <option value={group.name}>{group.name}</option>
+                                )}
+                              </select>
                               <button
                                 type="button"
                                 className="bz-option-remove"
@@ -2711,132 +2634,141 @@ export function SellerAddProduct({
                                 <SellerIcon name="trash" size={14} />
                               </button>
                             </div>
-                            <div className="bz-chip-row">
-                              {currentValues.map((value) => (
-                                <button
-                                  key={value}
-                                  type="button"
-                                  className="bz-choice-chip is-selected"
-                                  onClick={() => removeAttributeValue(group.id, value)}
-                                  title={`Remove ${value}`}
-                                >
-                                  {value}
-                                </button>
-                              ))}
-                              {unusedPresets.map((value) => (
-                                <button
-                                  key={value}
-                                  type="button"
-                                  className="bz-choice-chip"
-                                  onClick={() => addAttributeValue(group.id, value)}
-                                >
-                                  + {value}
-                                </button>
-                              ))}
-                            </div>
-                            <div className="bz-custom-choice">
-                              <input
-                                ref={(el) => {
-                                  choiceInputRefs.current[group.id] = el;
-                                }}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    e.preventDefault();
-                                    submitChoiceInput(group.id);
+                            {currentValues.length > 0 && (
+                              <div className="bz-chip-row">
+                                {currentValues.map((value) => {
+                                  const dot = colorDotFor(group.name, value);
+                                  return (
+                                    <button
+                                      key={value}
+                                      type="button"
+                                      className="bz-choice-chip is-selected"
+                                      onClick={() => removeAttributeValue(group.id, value)}
+                                      title={`Remove ${value}`}
+                                      aria-label={`Remove ${value}`}
+                                    >
+                                      {dot && <ColorDot hex={dot} />}
+                                      {value}
+                                      <span aria-hidden="true" className="bz-choice-chip__x">
+                                        ×
+                                      </span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            {atValueCap ? (
+                              <p className="bz-axis-note">Up to {MAX_AXIS_VALUES} values.</p>
+                            ) : (
+                              <div className="bz-custom-choice">
+                                <input
+                                  value={choiceDrafts[group.id] ?? ""}
+                                  onChange={(e) =>
+                                    setChoiceDrafts((d) => ({ ...d, [group.id]: e.target.value }))
                                   }
-                                }}
-                                placeholder="Add a choice"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => submitChoiceInput(group.id)}
-                                className="bz-hover-border"
-                              >
-                                Add
-                              </button>
-                            </div>
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault();
+                                      submitChoiceDraft(group.id);
+                                    }
+                                  }}
+                                  placeholder="Add a value"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => submitChoiceDraft(group.id)}
+                                  className="bz-hover-border"
+                                >
+                                  Add
+                                </button>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
                     </div>
 
-                    <div className="bz-add-option-row">
-                      {variantOptionButtons.map((preset) => {
-                        const already =
-                          preset !== "Custom" &&
-                          variantGroupDefs.some(
-                            (g) => g.name.trim().toLowerCase() === preset.toLowerCase(),
-                          );
-                        return (
-                          <button
-                            key={preset}
-                            type="button"
-                            className="bz-add-option"
-                            onClick={() => addPresetAttribute(preset)}
-                            disabled={already}
-                          >
-                            + {preset}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    {variantGroupDefs.length < MAX_AXES ? (
+                      <div className="bz-add-option-row">
+                        <button
+                          type="button"
+                          className="bz-add-option bz-add-option--full"
+                          onClick={addGroupDef}
+                        >
+                          + Add option
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="bz-axis-note">You can add up to {MAX_AXES} options.</p>
+                    )}
                   </section>
 
                   <section className="bz-variant-card">
-                    <div className="bz-photo-card-head">
-                      <span className="bz-photo-card-head__num">4</span>
-                      <div>
-                        <h3 className="bz-variant-card__title">
-                          Do the versions look different in photos?
-                        </h3>
-                        <p className="bz-variant-card__helper">You can change this anytime.</p>
-                      </div>
-                    </div>
+                    <h3 className="bz-variant-card__title">Photos</h3>
+                    <p className="bz-variant-card__helper">
+                      Choose how photos vary across versions.
+                    </p>
                     <div className="bz-radio-stack">
-                      {(
-                        [
-                          [
-                            "product",
-                            "No, the photo is the same",
-                            "Every version shows your main product photo.",
-                          ],
-                          [
-                            "option",
-                            activeOptionImageAttr
-                              ? `Yes — different by ${activeOptionImageAttr.toLowerCase()}`
-                              : "Yes — different by option",
-                            `Add one photo per ${activeOptionImageAttr.toLowerCase() || "option"}. Sizes share it.`,
-                          ],
-                          [
-                            "exact",
-                            "Each version has its own photo",
-                            "Add a photo to each row in the table below.",
-                          ],
-                        ] as const
-                      ).map(([mode, label, desc]) => {
-                        const selected = variantImageMode === mode;
-                        return (
-                          <label
-                            key={mode}
-                            className={`bz-radio-row ${selected ? "is-selected" : ""}`}
-                          >
-                            <input
-                              type="radio"
-                              name="variantImageMode"
-                              checked={selected}
-                              onChange={() => {
-                                setVariantImageMode(mode);
-                                setShowPhotoOptions(true);
-                                if (mode === "option") setOptionImageAttr(activeOptionImageAttr);
-                              }}
-                            />
-                            <span>
-                              <strong>{label}</strong>
-                              <small>{desc}</small>
-                            </span>
-                          </label>
-                        );
-                      })}
+                      {(() => {
+                        const primaryHasValues = optionImageValues.length > 0;
+                        const bothAxesHaveValues =
+                          variantGroupDefs.length === 2 &&
+                          variantGroupDefs.every((g) => g.options.some((o) => o.trim()));
+                        const modes = [
+                          {
+                            mode: "product" as const,
+                            label: "Main product photo",
+                            desc: "Every version shows your main photo.",
+                            disabled: false,
+                          },
+                          {
+                            mode: "option" as const,
+                            label: `One photo per ${(activeOptionImageAttr || "option").toLowerCase()}`,
+                            desc: primaryHasValues
+                              ? `${optionImageValues.join(", ")} each get their own photo.`
+                              : "Add a value to your first option to enable this.",
+                            disabled: !primaryHasValues,
+                          },
+                          {
+                            mode: "exact" as const,
+                            label: "A photo for each version",
+                            desc: bothAxesHaveValues
+                              ? `${variants
+                                  .map((v) => variantDisplayName(v.optionValues, v.name))
+                                  .slice(0, 3)
+                                  .join(", ")}${variants.length > 3 ? ", …" : ""} — a photo each.`
+                              : "Add values to both options to enable this.",
+                            disabled: !bothAxesHaveValues,
+                          },
+                        ];
+                        return modes.map(({ mode, label, desc, disabled }) => {
+                          const selected = variantImageMode === mode;
+                          return (
+                            <label
+                              key={mode}
+                              className={`bz-radio-row ${selected ? "is-selected" : ""} ${
+                                disabled ? "is-disabled" : ""
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="variantImageMode"
+                                checked={selected}
+                                disabled={disabled}
+                                onChange={() => {
+                                  if (disabled) return;
+                                  setVariantImageMode(mode);
+                                  setShowPhotoOptions(true);
+                                }}
+                              />
+                              <span>
+                                <strong>{label}</strong>
+                                <small>{desc}</small>
+                              </span>
+                            </label>
+                          );
+                        });
+                      })()}
                     </div>
 
                     {variantImageMode === "option" && (
@@ -2873,7 +2805,12 @@ export function SellerAddProduct({
                                   </>
                                 )}
                               </label>
-                              <span>{value}</span>
+                              <span>
+                                {colorDotFor(activeOptionImageAttr, value) && (
+                                  <ColorDot hex={colorDotFor(activeOptionImageAttr, value)!} />
+                                )}
+                                {value}
+                              </span>
                             </div>
                           );
                         })}
@@ -2882,7 +2819,7 @@ export function SellerAddProduct({
 
                     {variantImageMode === "exact" && (
                       <div className="bz-photo-tile-row">
-                        {variants.map((v) => {
+                        {variants.slice(0, 8).map((v) => {
                           const label = variantDisplayName(v.optionValues, v.name);
                           return (
                             <div className="bz-photo-choice" key={v.id}>
@@ -2911,6 +2848,11 @@ export function SellerAddProduct({
                             </div>
                           );
                         })}
+                        {variants.length > 8 && (
+                          <div className="bz-photo-choice bz-photo-more">
+                            <span>+{variants.length - 8} more</span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </section>
@@ -2965,6 +2907,11 @@ export function SellerAddProduct({
                       </div>
                       {variants.map((v) => {
                         const label = variantDisplayName(v.optionValues, v.name);
+                        const rowDot = v.optionValues
+                          ? (Object.entries(v.optionValues)
+                              .map(([k, val]) => colorDotFor(k, val))
+                              .find(Boolean) ?? null)
+                          : null;
                         const priceNum = Number(v.price) || 0;
                         const discount = v.onSale ? Number(v.salePct) || 0 : 0;
                         const buyerPays = priceNum
@@ -2974,7 +2921,10 @@ export function SellerAddProduct({
                           <div key={v.id} className="bz-vrow">
                             <div className="bz-vcell bz-vcell--version">
                               <span className="bz-vcell__lbl">Version</span>
-                              <strong>{label}</strong>
+                              <strong>
+                                {rowDot && <ColorDot hex={rowDot} />}
+                                {label}
+                              </strong>
                             </div>
                             <label className="bz-vcell">
                               <span className="bz-vcell__lbl">Price (Rs.)</span>
@@ -3044,1166 +2994,6 @@ export function SellerAddProduct({
             </div>
           </div>
 
-          {/* Legacy variants block kept inert while the desktop card layout above owns this step. */}
-          <div hidden>
-            <div id="sec-variants-legacy" className="bz-form-section" aria-hidden="true" />
-            <div
-              style={{
-                background: "#fff",
-                border: "1px solid var(--line-200)",
-                borderRadius: "var(--r-lg)",
-                padding: 18,
-                marginBottom: 14,
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-                <span
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: "50%",
-                    background: (hasVariants ? variantsOk : price && stock)
-                      ? "var(--success)"
-                      : "var(--ink-400)",
-                    color: "#fff",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 600,
-                  }}
-                >
-                  {(hasVariants ? variantsOk : price && stock) ? (
-                    <SellerIcon name="check" size={18} color="#fff" />
-                  ) : (
-                    3
-                  )}
-                </span>
-                <div style={{ flex: 1 }}>
-                  <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 600 }}>
-                    Options
-                    <InfoTip text="A version is one thing a buyer can pick and buy — e.g. Red / Medium — with its own price and stock. Turn this on when the same product sells in different colours, sizes, and so on." />
-                  </h3>
-                </div>
-              </div>
-
-              {/* Does this come in different versions? A plain yes/no a shopkeeper
-                can answer — two cards, one for a single product and one for many. */}
-              <p
-                style={{
-                  margin: "0 0 4px",
-                  fontSize: ".9375rem",
-                  fontWeight: 600,
-                  color: "var(--ink-800)",
-                }}
-              >
-                Does this come in different versions?
-              </p>
-              <p style={{ margin: "0 0 10px", fontSize: ".75rem", color: "var(--ink-400)" }}>
-                Like a t-shirt in different sizes, or a phone in different colours.
-              </p>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 10,
-                  marginBottom: 16,
-                }}
-              >
-                {(
-                  [
-                    [
-                      false,
-                      "No — just one version",
-                      "One price and one stock for the whole product.",
-                    ],
-                    [
-                      true,
-                      "Yes — different colours, sizes, etc.",
-                      "Set a price and stock for each version.",
-                    ],
-                  ] as const
-                ).map(([value, label, desc]) => {
-                  const selected = hasVariants === value;
-                  return (
-                    <label
-                      key={label}
-                      style={{
-                        display: "flex",
-                        gap: 10,
-                        alignItems: "flex-start",
-                        padding: "12px 14px",
-                        borderRadius: "var(--r-md)",
-                        border: selected
-                          ? "1.5px solid var(--blue-deep)"
-                          : "1px solid var(--line-200)",
-                        background: selected ? "var(--tint-blue-50)" : "#fff",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <input
-                        type="radio"
-                        name="productType"
-                        checked={selected}
-                        onChange={() => chooseHasVariants(value)}
-                        style={{ marginTop: 2, accentColor: "var(--blue-deep)" }}
-                      />
-                      <span>
-                        <span
-                          style={{
-                            display: "block",
-                            fontSize: ".875rem",
-                            fontWeight: 600,
-                            color: "var(--ink-800)",
-                          }}
-                        >
-                          {label}
-                        </span>
-                        <span
-                          style={{ display: "block", fontSize: ".75rem", color: "var(--ink-500)" }}
-                        >
-                          {desc}
-                        </span>
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-
-              {!hasVariants ? (
-                <>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                    <div>
-                      <label
-                        style={{
-                          fontSize: ".8125rem",
-                          fontWeight: 600,
-                          color: "var(--ink-700)",
-                          display: "block",
-                          marginBottom: 6,
-                        }}
-                      >
-                        Price (Rs.)
-                      </label>
-                      <input
-                        value={price}
-                        onChange={(e) => setPrice(e.target.value.replace(/[^\d.]/g, ""))}
-                        inputMode="numeric"
-                        placeholder="1200"
-                        className="tnum"
-                        style={{
-                          width: "100%",
-                          height: 64,
-                          fontSize: "1.5rem",
-                          fontWeight: 600,
-                          textAlign: "center",
-                          border: `1px solid ${price || !submitAttempted ? "var(--line-200)" : "var(--danger)"}`,
-                          borderRadius: "var(--r-md)",
-                          fontFamily: "var(--font-sans)",
-                          outline: "none",
-                        }}
-                      />
-                      {!price && submitAttempted && (
-                        <p
-                          style={{
-                            fontSize: ".75rem",
-                            color: "var(--danger)",
-                            textAlign: "center",
-                            margin: "6px 0 0",
-                          }}
-                        >
-                          Required
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <label
-                        style={{
-                          fontSize: ".8125rem",
-                          fontWeight: 600,
-                          color: "var(--ink-700)",
-                          display: "block",
-                          marginBottom: 6,
-                        }}
-                      >
-                        Stock
-                      </label>
-                      <input
-                        value={stock}
-                        onChange={(e) => setStock(e.target.value.replace(/\D/g, ""))}
-                        inputMode="numeric"
-                        placeholder="15"
-                        className="tnum"
-                        style={{
-                          width: "100%",
-                          height: 64,
-                          fontSize: "1.5rem",
-                          fontWeight: 600,
-                          textAlign: "center",
-                          border: `1px solid ${stock || !submitAttempted ? "var(--line-200)" : "var(--danger)"}`,
-                          borderRadius: "var(--r-md)",
-                          fontFamily: "var(--font-sans)",
-                          outline: "none",
-                        }}
-                      />
-                      {!stock && submitAttempted && (
-                        <p
-                          style={{
-                            fontSize: ".75rem",
-                            color: "var(--danger)",
-                            textAlign: "center",
-                            margin: "6px 0 0",
-                          }}
-                        >
-                          Required
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Discount (sale) — single-price products. The Price above is the
-                  regular price; this sets the discounted price buyers see. */}
-                  <div
-                    style={{
-                      marginTop: 14,
-                      border: "1px solid var(--line-200)",
-                      borderRadius: "var(--r-md)",
-                      padding: 14,
-                    }}
-                  >
-                    <label
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 10,
-                        cursor: "pointer",
-                        fontWeight: 600,
-                        color: "var(--ink-700)",
-                        fontSize: ".9375rem",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={onSale}
-                        onChange={(e) => setOnSale(e.target.checked)}
-                      />
-                      Put this product on sale
-                    </label>
-
-                    {onSale && (
-                      <div style={{ marginTop: 12 }}>
-                        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-                          {(
-                            [
-                              ["percent", "% off"],
-                              ["amount", "Set sale price"],
-                            ] as const
-                          ).map(([mode, label]) => (
-                            <button
-                              key={mode}
-                              type="button"
-                              onClick={() => setSaleMode(mode)}
-                              style={{
-                                flex: 1,
-                                height: 40,
-                                borderRadius: "var(--r-md)",
-                                border:
-                                  saleMode === mode
-                                    ? "1.5px solid var(--blue-deep)"
-                                    : "1px solid var(--line-200)",
-                                background: saleMode === mode ? "var(--tint-blue-50)" : "#fff",
-                                color: saleMode === mode ? "var(--blue-deep)" : "var(--ink-600)",
-                                fontWeight: 600,
-                                cursor: "pointer",
-                                fontFamily: "var(--font-sans)",
-                              }}
-                            >
-                              {label}
-                            </button>
-                          ))}
-                        </div>
-
-                        {saleMode === "percent" ? (
-                          <div>
-                            <label
-                              style={{
-                                fontSize: ".8125rem",
-                                fontWeight: 600,
-                                color: "var(--ink-700)",
-                                display: "block",
-                                marginBottom: 6,
-                              }}
-                            >
-                              Discount (%)
-                            </label>
-                            <input
-                              value={salePct}
-                              onChange={(e) =>
-                                setSalePct(e.target.value.replace(/\D/g, "").slice(0, 2))
-                              }
-                              inputMode="numeric"
-                              placeholder="e.g. 20"
-                              className="tnum"
-                              style={{
-                                width: "100%",
-                                height: 48,
-                                padding: "0 12px",
-                                border: "1px solid var(--line-200)",
-                                borderRadius: "var(--r-md)",
-                                fontFamily: "var(--font-sans)",
-                                outline: "none",
-                                textAlign: "center",
-                              }}
-                            />
-                          </div>
-                        ) : (
-                          <div>
-                            <label
-                              style={{
-                                fontSize: ".8125rem",
-                                fontWeight: 600,
-                                color: "var(--ink-700)",
-                                display: "block",
-                                marginBottom: 6,
-                              }}
-                            >
-                              Sale price (Rs.)
-                            </label>
-                            <input
-                              value={salePrice}
-                              onChange={(e) => setSalePrice(e.target.value.replace(/[^\d.]/g, ""))}
-                              inputMode="numeric"
-                              placeholder="e.g. 960"
-                              className="tnum"
-                              style={{
-                                width: "100%",
-                                height: 48,
-                                padding: "0 12px",
-                                border: "1px solid var(--line-200)",
-                                borderRadius: "var(--r-md)",
-                                fontFamily: "var(--font-sans)",
-                                outline: "none",
-                                textAlign: "center",
-                              }}
-                            />
-                          </div>
-                        )}
-
-                        <p
-                          style={{
-                            margin: "10px 0 0",
-                            fontSize: ".8125rem",
-                            color: saleValid ? "var(--ink-600)" : "var(--danger, #d23)",
-                          }}
-                        >
-                          {!saleValid
-                            ? saleMode === "percent"
-                              ? "Enter a percentage between 1 and 99."
-                              : "Sale price must be a positive number below the regular price."
-                            : `Buyers pay ${formatNPR(saleEffectivePrice)} ` +
-                              `(was ${formatNPR(baseNum)}, −${
-                                baseNum > 0
-                                  ? Math.round((1 - saleEffectivePrice / baseNum) * 100)
-                                  : 0
-                              }%).`}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <div>
-                  <h4
-                    style={{
-                      margin: "0 0 4px",
-                      fontSize: ".9375rem",
-                      fontWeight: 600,
-                      color: "var(--ink-800)",
-                    }}
-                  >
-                    What's different between versions?
-                  </h4>
-                  <p style={{ margin: "0 0 12px", fontSize: ".8125rem", color: "var(--ink-500)" }}>
-                    Pick what changes — like colour or size — then add the choices. The price list
-                    below updates on its own as you go.
-                  </p>
-
-                  {/* Quick-add option types */}
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
-                    {variantOptionButtons.map((preset) => {
-                      const already =
-                        preset !== "Custom" &&
-                        variantGroupDefs.some(
-                          (g) => g.name.trim().toLowerCase() === preset.toLowerCase(),
-                        );
-                      return (
-                        <button
-                          key={preset}
-                          type="button"
-                          onClick={() => addPresetAttribute(preset)}
-                          disabled={already}
-                          style={{
-                            height: 36,
-                            padding: "0 14px",
-                            borderRadius: "var(--r-full)",
-                            border: "1px solid var(--line-200)",
-                            background: already ? "var(--bg-100)" : "#fff",
-                            color: already ? "var(--ink-400)" : "var(--ink-700)",
-                            fontWeight: 600,
-                            fontSize: ".8125rem",
-                            cursor: already ? "default" : "pointer",
-                            fontFamily: "var(--font-sans)",
-                          }}
-                        >
-                          + {preset}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Option (attribute) cards */}
-                  {variantGroupDefs.length === 0 ? (
-                    <p style={{ margin: "0 0 6px", fontSize: ".8125rem", color: "var(--ink-400)" }}>
-                      Pick an option type above to start building variants.
-                    </p>
-                  ) : (
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 10,
-                        marginBottom: 14,
-                      }}
-                    >
-                      {variantGroupDefs.map((group) => {
-                        const presets = VARIANT_VALUE_PRESETS[group.name.trim()] ?? [];
-                        const currentValues = group.options
-                          .map((o) => o.trim())
-                          .filter((o, i, arr) => o && arr.indexOf(o) === i);
-                        const unusedPresets = presets.filter(
-                          (p) => !currentValues.some((v) => v.toLowerCase() === p.toLowerCase()),
-                        );
-                        return (
-                          <div
-                            key={group.id}
-                            style={{
-                              border: "1px solid var(--line-200)",
-                              borderRadius: "var(--r-md)",
-                              padding: "10px 12px",
-                              background: "var(--line-100)",
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: "flex",
-                                gap: 8,
-                                alignItems: "center",
-                                marginBottom: 8,
-                              }}
-                            >
-                              <input
-                                value={group.name}
-                                onChange={(e) => updateGroupName(group.id, e.target.value)}
-                                placeholder="Option name (e.g. Color, Size)"
-                                style={{
-                                  flex: 1,
-                                  height: 38,
-                                  padding: "0 10px",
-                                  border: "1px solid var(--line-200)",
-                                  borderRadius: "var(--r-md)",
-                                  fontFamily: "var(--font-sans)",
-                                  fontWeight: 600,
-                                  outline: "none",
-                                }}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => removeGroupDef(group.id)}
-                                aria-label="Remove option"
-                                style={{
-                                  width: 34,
-                                  height: 34,
-                                  borderRadius: "var(--r-md)",
-                                  border: "1px solid var(--line-200)",
-                                  background: "#fff",
-                                  cursor: "pointer",
-                                }}
-                              >
-                                <SellerIcon name="trash" size={14} color="var(--danger)" />
-                              </button>
-                            </div>
-
-                            {/* Current choices */}
-                            <div
-                              style={{
-                                display: "flex",
-                                flexWrap: "wrap",
-                                gap: 6,
-                                marginBottom: currentValues.length ? 8 : 0,
-                              }}
-                            >
-                              {currentValues.length ? (
-                                currentValues.map((value) => (
-                                  <span
-                                    key={value}
-                                    style={{
-                                      display: "inline-flex",
-                                      alignItems: "center",
-                                      gap: 6,
-                                      padding: "4px 6px 4px 10px",
-                                      borderRadius: "var(--r-full)",
-                                      background: "#fff",
-                                      border: "1px solid var(--line-200)",
-                                      fontSize: ".8125rem",
-                                      fontWeight: 600,
-                                      color: "var(--ink-700)",
-                                    }}
-                                  >
-                                    {value}
-                                    <button
-                                      type="button"
-                                      onClick={() => removeAttributeValue(group.id, value)}
-                                      aria-label={`Remove ${value}`}
-                                      style={{
-                                        width: 18,
-                                        height: 18,
-                                        borderRadius: "50%",
-                                        border: "none",
-                                        background: "var(--bg-100)",
-                                        cursor: "pointer",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        padding: 0,
-                                      }}
-                                    >
-                                      <SellerIcon name="x" size={11} color="var(--ink-500)" />
-                                    </button>
-                                  </span>
-                                ))
-                              ) : (
-                                <span style={{ fontSize: ".75rem", color: "var(--ink-400)" }}>
-                                  No choices yet.
-                                </span>
-                              )}
-                            </div>
-
-                            {/* One-tap preset choices */}
-                            {unusedPresets.length > 0 && (
-                              <div
-                                style={{
-                                  display: "flex",
-                                  flexWrap: "wrap",
-                                  gap: 6,
-                                  marginBottom: 8,
-                                }}
-                              >
-                                {unusedPresets.map((value) => (
-                                  <button
-                                    key={value}
-                                    type="button"
-                                    onClick={() => addAttributeValue(group.id, value)}
-                                    style={{
-                                      height: 28,
-                                      padding: "0 10px",
-                                      borderRadius: "var(--r-full)",
-                                      border: "1.5px dashed var(--line-300)",
-                                      background: "transparent",
-                                      fontSize: ".75rem",
-                                      fontWeight: 600,
-                                      color: "var(--ink-500)",
-                                      cursor: "pointer",
-                                    }}
-                                  >
-                                    + {value}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-
-                            {/* Add a custom choice */}
-                            <div style={{ display: "flex", gap: 6 }}>
-                              <input
-                                ref={(el) => {
-                                  choiceInputRefs.current[group.id] = el;
-                                }}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    e.preventDefault();
-                                    submitChoiceInput(group.id);
-                                  }
-                                }}
-                                placeholder="Add a choice, e.g. Red"
-                                style={{
-                                  flex: 1,
-                                  height: 34,
-                                  padding: "0 10px",
-                                  border: "1px solid var(--line-200)",
-                                  borderRadius: "var(--r-md)",
-                                  fontFamily: "var(--font-sans)",
-                                  fontSize: ".8125rem",
-                                  outline: "none",
-                                }}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => submitChoiceInput(group.id)}
-                                style={{
-                                  height: 34,
-                                  padding: "0 12px",
-                                  border: "1px solid var(--line-200)",
-                                  borderRadius: "var(--r-md)",
-                                  background: "#fff",
-                                  fontSize: ".75rem",
-                                  fontWeight: 600,
-                                  color: "var(--ink-600)",
-                                  cursor: "pointer",
-                                }}
-                              >
-                                Add
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* No "regenerate" button — the price list below rebuilds itself
-                    whenever options or choices change (see syncMultiVariants). The
-                    only escape hatch is a quiet "Reset table" link under it. */}
-
-                  {/* Photos for each version — defaults to one shared photo, with the
-                    other photo modes tucked away until the seller asks for them. */}
-                  {variants.length > 0 && (
-                    <div
-                      style={{
-                        border: "1px solid var(--line-200)",
-                        borderRadius: "var(--r-md)",
-                        padding: 12,
-                        marginBottom: 14,
-                        background: "#fff",
-                      }}
-                    >
-                      <p
-                        style={{
-                          margin: "0 0 4px",
-                          fontSize: ".8125rem",
-                          fontWeight: 600,
-                          color: "var(--ink-700)",
-                        }}
-                      >
-                        Photos for each version
-                      </p>
-
-                      {!photoOptionsExpanded ? (
-                        <p style={{ margin: 0, fontSize: ".8125rem", color: "var(--ink-500)" }}>
-                          All versions use your main photo.{" "}
-                          <button
-                            type="button"
-                            onClick={() => setShowPhotoOptions(true)}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              padding: 0,
-                              fontWeight: 600,
-                              color: "var(--blue-deep)",
-                              textDecoration: "underline",
-                              cursor: "pointer",
-                              fontFamily: "var(--font-sans)",
-                              fontSize: ".8125rem",
-                            }}
-                          >
-                            Want different photos? Choose below.
-                          </button>
-                        </p>
-                      ) : (
-                        <>
-                          <p
-                            style={{
-                              margin: "0 0 10px",
-                              fontSize: ".75rem",
-                              color: "var(--ink-500)",
-                            }}
-                          >
-                            Pick how photos work. Each version falls back to its own photo first,
-                            then its colour photo, then your main photo.
-                          </p>
-                          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                            {(
-                              [
-                                [
-                                  "product",
-                                  "Same photo for all",
-                                  "Every version shows your main product photo.",
-                                ],
-                                [
-                                  "option",
-                                  optionPhotoLabel,
-                                  "Add one photo per choice — it shows on every matching version.",
-                                ],
-                                [
-                                  "exact",
-                                  "A different photo for each version",
-                                  "Upload a separate photo for every version in the list below.",
-                                ],
-                              ] as const
-                            ).map(([mode, label, desc]) => {
-                              const selected = variantImageMode === mode;
-                              return (
-                                <label
-                                  key={mode}
-                                  style={{
-                                    display: "flex",
-                                    gap: 10,
-                                    alignItems: "flex-start",
-                                    padding: "10px 12px",
-                                    borderRadius: "var(--r-md)",
-                                    border: selected
-                                      ? "1.5px solid var(--blue-deep)"
-                                      : "1px solid var(--line-200)",
-                                    background: selected ? "var(--tint-blue-50)" : "#fff",
-                                    cursor: "pointer",
-                                  }}
-                                >
-                                  <input
-                                    type="radio"
-                                    name="variantImageMode"
-                                    checked={selected}
-                                    onChange={() => {
-                                      setVariantImageMode(mode);
-                                      if (mode === "option")
-                                        setOptionImageAttr(activeOptionImageAttr);
-                                    }}
-                                    style={{ marginTop: 2, accentColor: "var(--blue-deep)" }}
-                                  />
-                                  <span>
-                                    <span
-                                      style={{
-                                        display: "block",
-                                        fontSize: ".8125rem",
-                                        fontWeight: 600,
-                                        color: "var(--ink-800)",
-                                      }}
-                                    >
-                                      {label}
-                                    </span>
-                                    <span
-                                      style={{
-                                        display: "block",
-                                        fontSize: ".75rem",
-                                        color: "var(--ink-500)",
-                                      }}
-                                    >
-                                      {desc}
-                                    </span>
-                                  </span>
-                                </label>
-                              );
-                            })}
-                          </div>
-
-                          {variantImageMode === "option" && (
-                            <div style={{ marginTop: 12 }}>
-                              <label
-                                style={{
-                                  display: "block",
-                                  fontSize: ".75rem",
-                                  fontWeight: 600,
-                                  color: "var(--ink-600)",
-                                  marginBottom: 6,
-                                }}
-                              >
-                                Image changes by
-                              </label>
-                              <select
-                                value={activeOptionImageAttr}
-                                onChange={(e) => setOptionImageAttr(e.target.value)}
-                                style={{
-                                  width: "100%",
-                                  height: 44,
-                                  padding: "0 12px",
-                                  border: "1px solid var(--line-200)",
-                                  borderRadius: "var(--r-md)",
-                                  background: "#fff",
-                                  fontFamily: "var(--font-sans)",
-                                  marginBottom: 10,
-                                }}
-                              >
-                                {variantAttributeNames.length ? (
-                                  variantAttributeNames.map((name) => (
-                                    <option key={name} value={name}>
-                                      {name}
-                                    </option>
-                                  ))
-                                ) : (
-                                  <option value="">Add an option first</option>
-                                )}
-                              </select>
-                              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                {optionImageValues.length ? (
-                                  optionImageValues.map((value) => {
-                                    const key = optionImageKey(activeOptionImageAttr, value);
-                                    const url = optionImageUrls[key];
-                                    const uploading = optionImageUploading[key];
-                                    return (
-                                      <div
-                                        key={value}
-                                        style={{ display: "flex", alignItems: "center", gap: 10 }}
-                                      >
-                                        <span
-                                          style={{
-                                            flex: 1,
-                                            fontSize: ".8125rem",
-                                            fontWeight: 600,
-                                            color: "var(--ink-700)",
-                                          }}
-                                        >
-                                          {activeOptionImageAttr}: {value}
-                                        </span>
-                                        <label
-                                          title={`Photo for ${value}`}
-                                          style={{
-                                            width: 44,
-                                            height: 44,
-                                            borderRadius: "var(--r-sm)",
-                                            border: "1.5px dashed var(--line-300)",
-                                            background: url ? "transparent" : "var(--bg-50)",
-                                            cursor: "pointer",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            overflow: "hidden",
-                                            flexShrink: 0,
-                                          }}
-                                        >
-                                          <input
-                                            type="file"
-                                            accept="image/*"
-                                            style={{ display: "none" }}
-                                            onChange={(e) => {
-                                              const file = e.target.files?.[0];
-                                              if (file)
-                                                void handleOptionImageUpload(
-                                                  activeOptionImageAttr,
-                                                  value,
-                                                  file,
-                                                );
-                                              e.target.value = "";
-                                            }}
-                                          />
-                                          {uploading ? (
-                                            <Spinner size={14} />
-                                          ) : url ? (
-                                            <img
-                                              src={url}
-                                              alt=""
-                                              style={{
-                                                width: "100%",
-                                                height: "100%",
-                                                objectFit: "cover",
-                                              }}
-                                            />
-                                          ) : (
-                                            <SellerIcon
-                                              name="camera"
-                                              size={16}
-                                              color="var(--ink-400)"
-                                            />
-                                          )}
-                                        </label>
-                                      </div>
-                                    );
-                                  })
-                                ) : (
-                                  <p
-                                    style={{
-                                      margin: 0,
-                                      fontSize: ".75rem",
-                                      color: "var(--ink-400)",
-                                    }}
-                                  >
-                                    Add choices to this option to upload images.
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Auto-generated price list. Rebuilds itself as options change;
-                    a bulk "set the same for all" helper sits on top, and each row
-                    keeps its own price / stock. Reflows to stacked cards on
-                    mobile via .bz-vtable in form-workflow.css. */}
-                  {variants.length > 0 &&
-                    (() => {
-                      const showImg = variantImageMode !== "product";
-                      // Columns live in a CSS var so the stylesheet's mobile media
-                      // query can stack them without fighting an inline value.
-                      const vcols = showImg
-                        ? "40px minmax(0,1fr) 96px 76px"
-                        : "minmax(0,1fr) 96px 76px";
-                      return (
-                        <div>
-                          <p
-                            style={{
-                              margin: "0 0 4px",
-                              fontSize: ".8125rem",
-                              fontWeight: 600,
-                              color: "var(--ink-700)",
-                            }}
-                          >
-                            {variants.length} version{variants.length !== 1 ? "s" : ""} — set a
-                            price and stock for each
-                          </p>
-                          <p
-                            style={{
-                              margin: "0 0 10px",
-                              fontSize: ".75rem",
-                              color: "var(--ink-400)",
-                            }}
-                          >
-                            This list updates on its own when you change options. Edit any row
-                            below.
-                          </p>
-
-                          {/* Bulk fill — one price + one stock applied to every version */}
-                          <div className="bz-vbulk">
-                            <span className="bz-vbulk__title">
-                              Set the same price &amp; stock for all
-                            </span>
-                            <div className="bz-vbulk__row">
-                              <input
-                                value={bulkPrice}
-                                onChange={(e) =>
-                                  setBulkPrice(e.target.value.replace(/[^\d.]/g, ""))
-                                }
-                                inputMode="numeric"
-                                placeholder="Price (Rs.)"
-                                className="tnum bz-vbulk__input"
-                                aria-label="Price for all versions"
-                              />
-                              <input
-                                value={bulkStock}
-                                onChange={(e) => setBulkStock(e.target.value.replace(/\D/g, ""))}
-                                inputMode="numeric"
-                                placeholder="Stock"
-                                className="tnum bz-vbulk__input"
-                                aria-label="Stock for all versions"
-                              />
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={applyBulkPriceStock}
-                                disabled={!bulkPrice.trim() && !bulkStock.trim()}
-                              >
-                                Apply to all
-                              </Button>
-                            </div>
-                            <p className="bz-vbulk__hint">
-                              Fills every version below — you can still change any row after.
-                            </p>
-                          </div>
-
-                          <div
-                            className="bz-vtable"
-                            style={{ ["--bz-vcols" as string]: vcols } as React.CSSProperties}
-                          >
-                            <div className="bz-vrow bz-vhead">
-                              {showImg && <span aria-hidden />}
-                              <span>Version</span>
-                              <span style={{ textAlign: "center" }}>Price (Rs.)</span>
-                              <span style={{ textAlign: "center" }}>Stock</span>
-                            </div>
-                            {variants.map((v) => {
-                              const pairs = Object.entries(v.optionValues ?? {});
-                              const label = pairs.length
-                                ? pairs.map(([g, o]) => `${g}: ${o}`).join(" / ")
-                                : v.name;
-                              const optionValueForImage = activeOptionImageAttr
-                                ? (v.optionValues ?? {})[activeOptionImageAttr]
-                                : undefined;
-                              const optionImg = optionValueForImage
-                                ? optionImageUrls[
-                                    optionImageKey(activeOptionImageAttr, optionValueForImage)
-                                  ]
-                                : undefined;
-                              return (
-                                <div key={v.id} className="bz-vrow">
-                                  {showImg &&
-                                    (variantImageMode === "exact" ? (
-                                      <label
-                                        title="Photo for this version"
-                                        className="bz-vrow__photo"
-                                        style={{
-                                          width: 36,
-                                          height: 36,
-                                          borderRadius: "var(--r-sm)",
-                                          border: "1.5px dashed var(--line-300)",
-                                          background: v.imageUrl ? "transparent" : "var(--bg-50)",
-                                          cursor: "pointer",
-                                          display: "flex",
-                                          alignItems: "center",
-                                          justifyContent: "center",
-                                          overflow: "hidden",
-                                          flexShrink: 0,
-                                        }}
-                                      >
-                                        <input
-                                          type="file"
-                                          accept="image/*"
-                                          style={{ display: "none" }}
-                                          onChange={(e) => {
-                                            const file = e.target.files?.[0];
-                                            if (file) void handleVariantImageUpload(v.id, file);
-                                            e.target.value = "";
-                                          }}
-                                        />
-                                        {v.uploadingImg ? (
-                                          <Spinner size={12} />
-                                        ) : v.imageUrl ? (
-                                          <img
-                                            src={v.imageUrl}
-                                            alt=""
-                                            style={{
-                                              width: "100%",
-                                              height: "100%",
-                                              objectFit: "cover",
-                                            }}
-                                          />
-                                        ) : (
-                                          <SellerIcon
-                                            name="camera"
-                                            size={14}
-                                            color="var(--ink-400)"
-                                          />
-                                        )}
-                                      </label>
-                                    ) : (
-                                      <div
-                                        className="bz-vrow__photo"
-                                        style={{
-                                          width: 36,
-                                          height: 36,
-                                          borderRadius: "var(--r-sm)",
-                                          background: "var(--bg-50)",
-                                          display: "flex",
-                                          alignItems: "center",
-                                          justifyContent: "center",
-                                          overflow: "hidden",
-                                          flexShrink: 0,
-                                        }}
-                                      >
-                                        {optionImg ? (
-                                          <img
-                                            src={optionImg}
-                                            alt=""
-                                            style={{
-                                              width: "100%",
-                                              height: "100%",
-                                              objectFit: "cover",
-                                            }}
-                                          />
-                                        ) : (
-                                          <SellerIcon
-                                            name="image"
-                                            size={14}
-                                            color="var(--ink-300, #ccc)"
-                                          />
-                                        )}
-                                      </div>
-                                    ))}
-
-                                  <div className="bz-vcell">
-                                    <span className="bz-vcell__lbl">Version</span>
-                                    <span className="bz-vrow__name">{label}</span>
-                                  </div>
-
-                                  <div className="bz-vcell">
-                                    <span className="bz-vcell__lbl">Price (Rs.)</span>
-                                    <input
-                                      value={v.price}
-                                      onChange={(e) =>
-                                        updateVariant(
-                                          v.id,
-                                          "price",
-                                          e.target.value.replace(/[^\d.]/g, ""),
-                                        )
-                                      }
-                                      inputMode="numeric"
-                                      placeholder="0"
-                                      className="tnum bz-vcell__input"
-                                      style={{
-                                        border: `1.5px solid ${v.price ? "var(--line-200)" : "var(--warning, #f59e0b)"}`,
-                                      }}
-                                    />
-                                    {!v.price && (
-                                      <span className="bz-vcell__hint">Add a price</span>
-                                    )}
-                                  </div>
-
-                                  <div className="bz-vcell">
-                                    <span className="bz-vcell__lbl">Stock</span>
-                                    <input
-                                      value={v.stock}
-                                      onChange={(e) =>
-                                        updateVariant(
-                                          v.id,
-                                          "stock",
-                                          e.target.value.replace(/\D/g, ""),
-                                        )
-                                      }
-                                      inputMode="numeric"
-                                      placeholder="0"
-                                      className="tnum bz-vcell__input"
-                                      style={{
-                                        border: `1.5px solid ${v.stock ? "var(--line-200)" : "var(--warning, #f59e0b)"}`,
-                                      }}
-                                    />
-                                    {!v.stock && <span className="bz-vcell__hint">Add stock</span>}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              gap: 8,
-                              marginTop: 8,
-                              flexWrap: "wrap",
-                            }}
-                          >
-                            <button
-                              type="button"
-                              onClick={resetVariantValues}
-                              style={{
-                                background: "none",
-                                border: "none",
-                                padding: 0,
-                                fontSize: ".75rem",
-                                fontWeight: 600,
-                                color: "var(--ink-400)",
-                                textDecoration: "underline",
-                                cursor: "pointer",
-                                fontFamily: "var(--font-sans)",
-                              }}
-                            >
-                              Reset table
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                </div>
-              )}
-            </div>
-          </div>
           {/* Step 4 — Bargaining (optional) */}
           <div hidden={step !== 3}>
             <div id="sec-bargain" className="bz-form-section" aria-hidden="true" />
@@ -4715,6 +3505,90 @@ export function SellerAddProduct({
               <ProductCard p={previewProduct} onClick={() => {}} preview />
             </div>
           </div>
+
+          {hasVariants &&
+            !!variantGroupDefs[0]?.name.trim() &&
+            variantGroupDefs[0].options.some((o) => o.trim()) &&
+            (() => {
+              const prim = variantGroupDefs[0];
+              const sec = variantGroupDefs[1];
+              const primName = prim.name.trim();
+              const primValues = prim.options
+                .map((o) => o.trim())
+                .filter((o, i, arr) => o && arr.indexOf(o) === i);
+              const secName = sec?.name.trim() ?? "";
+              const secValues = (sec?.options ?? [])
+                .map((o) => o.trim())
+                .filter((o, i, arr) => o && arr.indexOf(o) === i);
+              const picked = previewPicks[primName];
+              const secAvailable = (val: string) =>
+                variants.some(
+                  (v) =>
+                    v.optionValues?.[secName] === val &&
+                    (!picked || v.optionValues?.[primName] === picked),
+                );
+              const enteredPrices = variants.map((v) => Number(v.price)).filter((n) => n > 0);
+              const fromPrice = enteredPrices.length ? Math.min(...enteredPrices) : null;
+              const togglePick = (axis: string, val: string) =>
+                setPreviewPicks((p) => ({ ...p, [axis]: p[axis] === val ? "" : val }));
+              return (
+                <div className="bz-preview-picker">
+                  <div className="bz-preview-picker__price">
+                    {fromPrice != null ? (
+                      <span>
+                        from <strong>{formatNPR(fromPrice)}</strong>
+                      </span>
+                    ) : (
+                      <strong>—</strong>
+                    )}
+                  </div>
+                  <div className="bz-preview-picker__axis">
+                    <span className="bz-preview-picker__lbl">{primName}</span>
+                    <div className="bz-preview-picker__pills">
+                      {primValues.map((val) => {
+                        const dot = colorDotFor(primName, val);
+                        return (
+                          <button
+                            key={val}
+                            type="button"
+                            className={`bz-preview-pill ${picked === val ? "is-on" : ""}`}
+                            onClick={() => togglePick(primName, val)}
+                          >
+                            {dot && <ColorDot hex={dot} />}
+                            {val}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  {secName && picked && secValues.length > 0 && (
+                    <div className="bz-preview-picker__axis">
+                      <span className="bz-preview-picker__lbl">{secName}</span>
+                      <div className="bz-preview-picker__pills">
+                        {secValues.map((val) => {
+                          const dot = colorDotFor(secName, val);
+                          const avail = secAvailable(val);
+                          return (
+                            <button
+                              key={val}
+                              type="button"
+                              disabled={!avail}
+                              className={`bz-preview-pill ${
+                                previewPicks[secName] === val ? "is-on" : ""
+                              } ${avail ? "" : "is-out"}`}
+                              onClick={() => togglePick(secName, val)}
+                            >
+                              {dot && <ColorDot hex={dot} />}
+                              {val}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
           <div
             style={{

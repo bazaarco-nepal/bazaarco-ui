@@ -1003,88 +1003,95 @@ export function PDP({ p: pProp }: PdpProps) {
     return selectedVariants.map((v) => v.id);
   };
 
-  const variantPicker = hasPricedVariants ? (
-    <div style={{ marginTop: 18 }}>
-      {isMultiDimVariant ? (
-        /* Multi-dimensional picker — one group per dimension (Colour, Size, …) */
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {variantGroups!.map((group) => {
-            const selectedOpt = selDimensions[group.name];
-            return (
-              <div key={group.name}>
-                <div style={{ ...fieldLabelStyle, marginBottom: 8 }}>
-                  {group.name}
-                  {selectedOpt && (
-                    <>
-                      : <span style={fieldValueStyle}>{selectedOpt}</span>
-                    </>
-                  )}
-                </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {group.options.map((opt) => {
-                    const available = isOptionAvailable(group.name, opt);
-                    const inStock = isOptionInStock(group.name, opt);
-                    // Swatch for this option: a SKU's exact image for it, else the
-                    // option-level image (e.g. the "Red" colour photo).
-                    const swatchImg =
-                      pricedVariants.find((v) => v.optionValues?.[group.name] === opt && v.imageUrl)
-                        ?.imageUrl ?? optionImageFor(p.optionImages, group.name, opt);
-                    return (
-                      <OptionChip
-                        key={opt}
-                        label={opt}
-                        selected={selectedOpt === opt}
-                        unavailable={!available}
-                        soldOut={available && !inStock}
-                        image={swatchImg}
-                        imageAlt={opt}
-                        onImageClick={swatchImg ? () => openPhotoLightbox(swatchImg) : undefined}
-                        // Tapping the active option unselects it — nothing is forced.
-                        onClick={() =>
-                          setSelDimensions((prev) => toggleOption(prev, group.name, opt))
-                        }
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-          {selectedVariants.length === 0 &&
-            Object.keys(selDimensions).length > 0 &&
-            variantGroups!.every((g) => selDimensions[g.name]) && (
-              <div style={{ fontSize: ".8125rem", color: "var(--danger)" }}>
-                This combination is not available.
-              </div>
-            )}
-        </div>
-      ) : (
-        /* Flat single-dimension picker */
-        <>
-          <div style={{ ...fieldLabelStyle, marginBottom: 10 }}>
-            Option: <span style={fieldValueStyle}>{selVariant?.name}</span>
-          </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            {pricedVariants.map((v) => {
-              const swatchImg = variantSwatchImage(v, p.optionImages);
+  // Only show a picker when there's an actual choice: a multi-dimension product,
+  // or more than one flat variant. A single flat variant (e.g. the synthetic
+  // "Default" SKU of a no-variant product) has nothing to pick — selVariantId is
+  // still preselected for price/cart, so we just hide the redundant "Option:
+  // Default" row.
+  const variantPicker =
+    hasPricedVariants && (isMultiDimVariant || pricedVariants.length > 1) ? (
+      <div style={{ marginTop: 18 }}>
+        {isMultiDimVariant ? (
+          /* Multi-dimensional picker — one group per dimension (Colour, Size, …) */
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {variantGroups!.map((group) => {
+              const selectedOpt = selDimensions[group.name];
               return (
-                <OptionChip
-                  key={v.id}
-                  label={v.name}
-                  selected={v.id === selVariantId}
-                  soldOut={(v.stock ?? 0) <= 0}
-                  image={swatchImg}
-                  imageAlt={v.name}
-                  onImageClick={swatchImg ? () => openPhotoLightbox(swatchImg) : undefined}
-                  onClick={() => setSelVariantId(v.id)}
-                />
+                <div key={group.name}>
+                  <div style={{ ...fieldLabelStyle, marginBottom: 8 }}>
+                    {group.name}
+                    {selectedOpt && (
+                      <>
+                        : <span style={fieldValueStyle}>{selectedOpt}</span>
+                      </>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {group.options.map((opt) => {
+                      const available = isOptionAvailable(group.name, opt);
+                      const inStock = isOptionInStock(group.name, opt);
+                      // Swatch for this option: a SKU's exact image for it, else the
+                      // option-level image (e.g. the "Red" colour photo).
+                      const swatchImg =
+                        pricedVariants.find(
+                          (v) => v.optionValues?.[group.name] === opt && v.imageUrl,
+                        )?.imageUrl ?? optionImageFor(p.optionImages, group.name, opt);
+                      return (
+                        <OptionChip
+                          key={opt}
+                          label={opt}
+                          selected={selectedOpt === opt}
+                          unavailable={!available}
+                          soldOut={available && !inStock}
+                          image={swatchImg}
+                          imageAlt={opt}
+                          onImageClick={swatchImg ? () => openPhotoLightbox(swatchImg) : undefined}
+                          // Tapping the active option unselects it — nothing is forced.
+                          onClick={() =>
+                            setSelDimensions((prev) => toggleOption(prev, group.name, opt))
+                          }
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
               );
             })}
+            {selectedVariants.length === 0 &&
+              Object.keys(selDimensions).length > 0 &&
+              variantGroups!.every((g) => selDimensions[g.name]) && (
+                <div style={{ fontSize: ".8125rem", color: "var(--danger)" }}>
+                  This combination is not available.
+                </div>
+              )}
           </div>
-        </>
-      )}
-    </div>
-  ) : null;
+        ) : (
+          /* Flat single-dimension picker */
+          <>
+            <div style={{ ...fieldLabelStyle, marginBottom: 10 }}>
+              Option: <span style={fieldValueStyle}>{selVariant?.name}</span>
+            </div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {pricedVariants.map((v) => {
+                const swatchImg = variantSwatchImage(v, p.optionImages);
+                return (
+                  <OptionChip
+                    key={v.id}
+                    label={v.name}
+                    selected={v.id === selVariantId}
+                    soldOut={(v.stock ?? 0) <= 0}
+                    image={swatchImg}
+                    imageAlt={v.name}
+                    onImageClick={swatchImg ? () => openPhotoLightbox(swatchImg) : undefined}
+                    onClick={() => setSelVariantId(v.id)}
+                  />
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
+    ) : null;
 
   useEffect(() => {
     setMediaIdx(0);

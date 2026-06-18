@@ -79,9 +79,9 @@ describe("OptionChip — unified selectable option", () => {
 describe("TrustChips", () => {
   const base = { stockStatus: "in_stock" } as unknown as Product;
 
-  it("shows an 'In stock' badge for an in-stock product", () => {
+  it("shows no stock badge for an in-stock product (in stock is the expected default)", () => {
     render(<TrustChips product={base} />);
-    expect(screen.getByText("In stock")).toBeInTheDocument();
+    expect(screen.queryByText("In stock")).toBeNull();
     expect(screen.queryByText("Out of stock")).toBeNull();
   });
 

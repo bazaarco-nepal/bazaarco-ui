@@ -4,7 +4,7 @@ import { fetchSellerSeo } from "@/lib/seo/catalog";
 import { JsonLd } from "@/components/seo/json-ld";
 import { breadcrumbSchema, storeSchema } from "@/lib/seo/structured-data";
 
-export const revalidate = 1800;
+export const dynamic = "force-dynamic";
 
 interface StorePageProps {
   params: Promise<{ id: string }>;

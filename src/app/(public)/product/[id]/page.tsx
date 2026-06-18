@@ -1,19 +1,14 @@
 import type { Metadata } from "next";
 import { OG_IMAGE, SITE_NAME, SITE_URL } from "@/config/site";
-import { fetchProductSeo, fetchTopProductIds, truncate } from "@/lib/seo/catalog";
+import { fetchProductSeo, truncate } from "@/lib/seo/catalog";
 import { JsonLd } from "@/components/seo/json-ld";
 import { breadcrumbSchema, productSchema } from "@/lib/seo/structured-data";
 
-export const revalidate = 1800;
-
-export async function generateStaticParams() {
-  try {
-    const ids = await fetchTopProductIds();
-    return ids.map((id) => ({ id }));
-  } catch {
-    return [];
-  }
-}
+// The root layout reads the locale cookie (dynamic), so this route can't be
+// statically/ISR-rendered — declaring `revalidate` here caused a static/dynamic
+// conflict (DYNAMIC_SERVER_USAGE) that 500'd every product page. Render per
+// request; metadata + JSON-LD are still emitted, so SEO is unaffected.
+export const dynamic = "force-dynamic";
 
 interface ProductPageProps {
   params: Promise<{ id: string }>;

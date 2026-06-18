@@ -146,16 +146,6 @@ export interface SitemapEntry {
   lastModified?: string;
 }
 
-const TOP_PRODUCTS_LIMIT = 100;
-
-export async function fetchTopProductIds(): Promise<string[]> {
-  const data = await fetchCatalog<PaginatedData<RawProduct>>(
-    `/catalog/products?page=1&limit=${TOP_PRODUCTS_LIMIT}&sort=popular`,
-  );
-  if (!data?.items?.length) return [];
-  return data.items.filter((p) => p?.id).map((p) => p.id);
-}
-
 export async function fetchSitemapProducts(): Promise<SitemapEntry[]> {
   const entries: SitemapEntry[] = [];
   for (let page = 1; entries.length < MAX_SITEMAP_PRODUCTS; page++) {

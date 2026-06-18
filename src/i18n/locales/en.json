@@ -5,6 +5,10 @@
     "label": "Language",
     "switchAria": "Switch language"
   },
+  "pwa": {
+    "iosInstallTitle": "Install BazaarCo",
+    "iosInstallBody": "Tap Share, then “Add to Home Screen”."
+  },
   "nav": {
     "search": "Search",
     "searchProducts": "Search products",

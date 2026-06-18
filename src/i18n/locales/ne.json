@@ -5,6 +5,10 @@
     "label": "भाषा",
     "switchAria": "भाषा बदल्नुहोस्"
   },
+  "pwa": {
+    "iosInstallTitle": "BazaarCo इन्स्टल गर्नुहोस्",
+    "iosInstallBody": "Share थिच्नुहोस्, त्यसपछि “Add to Home Screen” छान्नुहोस्।"
+  },
   "nav": {
     "search": "खोज्नुहोस्",
     "searchProducts": "उत्पादन खोज्नुहोस्",

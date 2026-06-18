@@ -105,7 +105,7 @@ export function useCreateSellerReview(sellerId: string | null) {
   });
 }
 
-export function useProducts(params?: ProductListParams) {
+function useProducts(params?: ProductListParams) {
   return useQuery({
     queryKey: queryKeys.catalog.products(params),
     queryFn: () => catalogApi.getProducts(params),
@@ -113,7 +113,7 @@ export function useProducts(params?: ProductListParams) {
   });
 }
 
-export function useAllProducts() {
+function useAllProducts() {
   return useProducts({ page: 1, limit: 100 });
 }
 

@@ -5,9 +5,6 @@ import type { ChatMessage, SendChatMessagePayload } from "@/services/api/chat";
 import { chatApi } from "@/services/api/chat";
 
 function resolveWsBaseUrl(): string {
-  const explicit = process.env.NEXT_PUBLIC_WS_BASE_URL?.trim();
-  if (explicit) return explicit.replace(/\/$/, "");
-
   const backend = process.env.NEXT_PUBLIC_BACKEND_URL?.trim();
   if (backend) return backend.replace(/\/$/, "");
 

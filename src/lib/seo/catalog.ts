@@ -2,7 +2,7 @@
  * Server-side catalog reads for SEO surfaces (sitemap, per-page metadata).
  *
  * These run in Server Components and route handlers, so they call the Core API
- * host directly (BACKEND_URL) instead of the browser's same-origin `/api/v1`
+ * host directly (NEXT_PUBLIC_BACKEND_URL) instead of the browser's same-origin `/api/v1`
  * rewrite — a relative URL has no host on the server. They deliberately do NOT
  * reuse the axios `apiClient`, which is browser-shaped (relative base, auth
  * token + zustand interceptors).
@@ -20,7 +20,7 @@ const PRODUCTS_PAGE_SIZE = 200;
 const MAX_SITEMAP_PRODUCTS = 10_000;
 
 function backendApiBase(): string {
-  const host = process.env.BACKEND_URL?.trim() || "http://localhost:3001";
+  const host = process.env.NEXT_PUBLIC_BACKEND_URL?.trim() ?? "";
   return `${host.replace(/\/$/, "")}/api/v1`;
 }
 

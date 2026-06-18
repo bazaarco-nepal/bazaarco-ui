@@ -7,34 +7,10 @@ import { usePendingSellerVerifications, useReviewSellerVerification } from "@/ho
 
 /* ---------- Admin: seller verification queue ---------- */
 
-function isAdminUser(email: string | undefined): boolean {
-  const list = (process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
-  if (!email || list.length === 0) return false;
-  return list.includes(email.toLowerCase());
-}
-
 export function AdminSellerVerifications() {
   const { data: me } = useCurrentUser();
-  const {
-    data: pending = [],
-    isLoading,
-    isError,
-    refetch,
-  } = usePendingSellerVerifications(isAdminUser(me?.email));
+  const { data: pending = [], isLoading, isError, refetch } = usePendingSellerVerifications(!!me);
   const review = useReviewSellerVerification();
-
-  if (!isAdminUser(me?.email)) {
-    return (
-      <div className="bz-seller-page">
-        <p style={{ color: "var(--ink-600)" }}>
-          Admin access only. Set NEXT_PUBLIC_ADMIN_EMAILS to match your login.
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="bz-seller-page">
@@ -54,7 +30,7 @@ export function AdminSellerVerifications() {
       {isLoading && <p>Loading…</p>}
       {isError && (
         <p style={{ color: "var(--red)" }}>
-          Could not load queue. Check ADMIN_EMAILS on the backend matches your account.
+          Could not load queue. This area is admin-only — your account may not have access.
         </p>
       )}
       {!isLoading && pending.length === 0 && (

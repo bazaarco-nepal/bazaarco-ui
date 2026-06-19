@@ -15,6 +15,12 @@ import {
 } from "../_shared/components";
 
 /* ---------- 4.10 Reviews ---------- */
+function formatReviewDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
 export function SellerReviews() {
   const { t } = useTranslation();
   const { toast } = useBz();
@@ -93,7 +99,7 @@ export function SellerReviews() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600 }}>{r.buyer}</div>
                   <div style={{ fontSize: ".75rem", color: "var(--ink-500)" }}>
-                    {r.product} · {r.time}
+                    {formatReviewDate(r.time)}
                   </div>
                 </div>
                 <RatingStars value={r.stars} />

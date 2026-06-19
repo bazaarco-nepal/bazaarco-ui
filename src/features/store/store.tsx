@@ -26,6 +26,12 @@ import type { Seller } from "@/types";
 
 const RATING_LABELS = ["", "Bad", "Not great", "Okay", "Good", "Excellent"];
 
+function formatReviewDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
 function RateStoreModal({ seller, onClose }: { seller: Seller; onClose: () => void }) {
   const { toast } = useBz();
   const createReview = useCreateSellerReview(seller.id);
@@ -459,7 +465,7 @@ export function Store() {
                         </div>
                       </div>
                       <div style={{ fontSize: ".75rem", color: "var(--ink-400)", marginBottom: 8 }}>
-                        {r.product} · {r.time}
+                        {formatReviewDate(r.time)}
                       </div>
                       <p
                         style={{

@@ -204,7 +204,6 @@ export interface SellerReview {
   buyer: string;
   avatar: string | null;
   stars: number;
-  product: string;
   text: string;
   time: string;
   replied: boolean;

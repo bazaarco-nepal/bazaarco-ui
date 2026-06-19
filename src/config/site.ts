@@ -11,6 +11,14 @@ export const SITE_TITLE = "BazaarCo - Nepal's Video-First Marketplace";
 export const SITE_DESCRIPTION =
   "Shop products through videos from verified sellers across Nepal on BazaarCo, Nepal's video-first marketplace.";
 
+/**
+ * PWA browser-chrome colors. Mirror `--blue` and `--page` in styles/tokens.css —
+ * the manifest and theme-color meta are JSON/HTML, so they can't read CSS vars;
+ * keep these in sync if the tokens change.
+ */
+export const THEME_COLOR = "#1d4ed8";
+export const BACKGROUND_COLOR = "#f8fafc";
+
 /** Default social share image (served from /public). */
 export const OG_IMAGE = "/open-graph.png";
 export const OG_IMAGE_WIDTH = 1200;

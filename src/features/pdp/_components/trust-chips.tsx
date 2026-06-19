@@ -11,8 +11,9 @@ type TrustChipsProps = {
 /**
  * Compact, backend-driven trust signals shown near the price. Every pill is the
  * shared {@link Badge}, so the row reads as one calm group differentiated only by
- * semantic colour — never by shape. Stock is the one signal a buyer scans for
- * first, so it carries a coloured dot + tint; everything else stays neutral.
+ * semantic colour — never by shape. In stock is the expected default, so it shows
+ * no badge; only the exceptional states (out of stock / unavailable) get a coloured
+ * dot + tint a buyer scans for. Everything else stays neutral.
  *
  * The "Verified seller" fact is intentionally NOT shown here — the seller card
  * already states it, and surfacing the same fact twice is noise.
@@ -22,11 +23,6 @@ export function TrustChips({ product }: TrustChipsProps) {
 
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-      {status === "in_stock" && (
-        <Badge tone="success" dot>
-          In stock
-        </Badge>
-      )}
       {status === "out_of_stock" && (
         <Badge tone="danger" dot>
           Out of stock

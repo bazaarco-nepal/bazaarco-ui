@@ -627,9 +627,9 @@ export function ProductPhotoPicker({
             style={{
               aspectRatio: "1",
               borderRadius: "var(--r-md)",
-              border: "1.5px dashed var(--saffron)",
-              background: "rgba(247,127,0,.06)",
-              color: "var(--saffron)",
+              border: "1.5px dashed var(--ink-300)",
+              background: "var(--line-100)",
+              color: "var(--ink-500)",
               fontWeight: 800,
               fontSize: ".75rem",
               cursor: "pointer",
@@ -641,7 +641,7 @@ export function ProductPhotoPicker({
               padding: 8,
             }}
           >
-            <Icon name="image" size={22} color="var(--saffron)" />
+            <Icon name="image" size={22} color="var(--ink-500)" />
             {photos.length === 0 ? "Add photo" : "Add more"}
           </button>
         )}

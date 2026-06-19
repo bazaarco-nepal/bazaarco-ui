@@ -23,7 +23,6 @@ export * from "./screens/inventory";
 export * from "./screens/ledger";
 export * from "./screens/chat";
 export * from "./screens/bargain";
-export * from "./screens/promotions";
 export * from "./screens/reviews";
 export * from "./screens/storefront";
 export * from "./screens/videos";

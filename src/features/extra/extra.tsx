@@ -614,12 +614,14 @@ export function Bargains() {
     countered: "blue",
     accepted: "success",
     rejected: "neutral",
+    expired: "neutral",
   };
   const labels = {
     pending: t("bargains.statusPending"),
     countered: t("bargains.statusCountered"),
     accepted: t("bargains.statusAccepted"),
     rejected: t("bargains.statusDeclined"),
+    expired: "Expired",
   };
 
   return (
@@ -828,6 +830,19 @@ export function Bargains() {
                       }}
                     >
                       Raise your price a bit and offer again.
+                    </span>
+                  )}
+                  {o.status === "expired" && (
+                    <span
+                      style={{
+                        fontSize: ".8125rem",
+                        color: "var(--ink-500)",
+                        alignSelf: "center",
+                      }}
+                    >
+                      {o.attemptRefunded
+                        ? "Seller didn't respond in time. Your bargain attempt has been refunded."
+                        : "Seller didn't respond in time. This offer expired."}
                     </span>
                   )}
                   {o.status !== "accepted" && (

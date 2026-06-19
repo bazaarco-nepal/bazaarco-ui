@@ -17,6 +17,7 @@ import { ProductPhotoPicker, type ProductPhoto } from "@/components/seller/produ
 import { SellerVerificationBlocked } from "@/components/seller/seller-verification-banner";
 import { saleEffective, saleValid as isSaleValid, buildPricing } from "@/lib/discount";
 import { formatNPR } from "@/lib/money";
+import { BARGAIN_MIN_GAP_PERCENT, maxAllowedBargainMinimum } from "@/lib/bargain-gap";
 import { cartesianVariantRows } from "@/lib/variant-selection";
 import { useCategories, useProduct } from "@/hooks/use-catalog";
 import { useUploadImage } from "@/hooks/use-media-upload";
@@ -1000,8 +1001,9 @@ export function SellerAddProduct({
   }) => (v.onSale ? saleEffective(variantSaleInput(v)) : Number(v.price) || 0);
   // Live, per-variant validation for the min-bargain-price field. Returns an
   // error string to show under the field, or null when the row is fine. Mirrors
-  // the server rule: a whole number above 0 and strictly below the variant's
-  // own listed price. Fires independently for each variant row.
+  // the server rule: a whole number above 0 and at least the global gap below the
+  // variant's own listed price. Backend re-validates; this is UX only. Fires
+  // independently for each variant row.
   const variantFloorError = (v: {
     price: string;
     onSale?: boolean;
@@ -1017,12 +1019,16 @@ export function SellerAddProduct({
     const floor = Number(raw);
     if (!Number.isInteger(floor) || floor <= 0) return "Enter a whole number above 0";
     const listed = variantListedPrice(v);
-    if (listed > 0 && floor >= listed) return `Must be less than ${formatNPR(listed)}`;
+    const maxAllowed = maxAllowedBargainMinimum(listed);
+    if (listed > 0 && floor > maxAllowed)
+      return `Must be ${formatNPR(maxAllowed)} or lower (at least ${BARGAIN_MIN_GAP_PERCENT}% below ${formatNPR(listed)})`;
     return null;
   };
   const bargainFloorOk = hasVariants
     ? variants.every((v) => variantFloorError(v) === null)
-    : !bargainOk || (Number(bargainMinPrice) > 0 && Number(bargainMinPrice) < productListedPrice);
+    : !bargainOk ||
+      (Number(bargainMinPrice) > 0 &&
+        Number(bargainMinPrice) <= maxAllowedBargainMinimum(productListedPrice));
 
   const canPublish =
     photosOk &&
@@ -4360,7 +4366,7 @@ export function SellerAddProduct({
                                   }}
                                 >
                                   {floorError ??
-                                    `Set a floor below ${formatNPR(variantListedPrice(v))}`}
+                                    `Max allowed: ${formatNPR(maxAllowedBargainMinimum(variantListedPrice(v)))} (at least ${BARGAIN_MIN_GAP_PERCENT}% below ${formatNPR(variantListedPrice(v))})`}
                                 </span>
                               </div>
                             )}
@@ -4386,6 +4392,12 @@ export function SellerAddProduct({
                     >
                       Lowest price you'll accept (Rs.)
                     </label>
+                    {productListedPrice > 0 && (
+                      <p style={{ fontSize: ".75rem", color: "var(--ink-500)", margin: "0 0 6px" }}>
+                        Must be at least {BARGAIN_MIN_GAP_PERCENT}% below the listed price. Max
+                        allowed: {formatNPR(maxAllowedBargainMinimum(productListedPrice))}.
+                      </p>
+                    )}
                     <input
                       type="number"
                       min={1}
@@ -4404,8 +4416,8 @@ export function SellerAddProduct({
                     {!bargainFloorOk && submitAttempted && (
                       <p style={{ fontSize: ".75rem", color: "var(--danger)", margin: "6px 0 0" }}>
                         {!bargainMinPrice || Number(bargainMinPrice) <= 0
-                          ? "Required — set a lowest price below the listed price."
-                          : `Must be less than ${formatNPR(productListedPrice)}.`}
+                          ? "Required — set a lowest price to enable bargaining."
+                          : `Must be ${formatNPR(maxAllowedBargainMinimum(productListedPrice))} or lower (at least ${BARGAIN_MIN_GAP_PERCENT}% below the listed price).`}
                       </p>
                     )}
                     <p style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 4 }}>

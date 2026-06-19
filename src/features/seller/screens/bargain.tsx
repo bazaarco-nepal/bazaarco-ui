@@ -103,6 +103,11 @@ function BargainOfferCard({
               Rejected
             </Chip>
           )}
+          {status === "expired" && (
+            <Chip tone="neutral" size="sm" icon="clock">
+              Expired — no response
+            </Chip>
+          )}
           {status === "pending" && o.recommendation && (
             <Chip
               tone={

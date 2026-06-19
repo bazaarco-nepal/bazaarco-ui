@@ -17,7 +17,13 @@ export interface BargainOffer {
   status: string;
   age: string;
   expires: string | null;
-  /** Daily bargain attempts left on this product — present on the create response only. */
+  /** Step 5 — set when a pending offer lapsed because the seller never responded. */
+  expiredAt?: string | null;
+  /** Step 5 — why it expired, e.g. "seller_no_response". Safe enum; no seller floor. */
+  expiryReason?: string | null;
+  /** Step 5 — true when the buyer's valid attempt was refunded on expiry. */
+  attemptRefunded?: boolean;
+  /** Daily bargain attempts left (platform-wide) — present on the create response only. */
   attemptsRemaining?: number;
   p: Product;
 }
@@ -37,6 +43,9 @@ function mapOffer(raw: any): BargainOffer {
     variantName: raw.variantName ?? null,
     sellerCounter: raw.sellerCounter ?? null,
     agreed: raw.agreed ?? null,
+    expiredAt: raw.expiredAt ?? null,
+    expiryReason: raw.expiryReason ?? null,
+    attemptRefunded: raw.attemptRefunded === true,
     attemptsRemaining:
       typeof raw.attemptsRemaining === "number" ? raw.attemptsRemaining : undefined,
     p: raw.p ? mapProduct(raw.p) : raw.p,

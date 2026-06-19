@@ -20,7 +20,7 @@ import {
   selectLine,
 } from "@/lib/cart-selection";
 import { inferToastVariant, type ToastVariant } from "@/lib/toast-variant";
-import type { CheckoutPayload } from "@/services/api/orders";
+import type { CheckoutPayload, EsewaPaymentInit } from "@/services/api/orders";
 import type { BazaarToast, Product } from "@/types";
 
 const TOAST_VISIBLE_MS = 3200;
@@ -363,6 +363,12 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       try {
         for (const vid of variantIds) {
           await addItem.mutateAsync({ product, qty, variantId: vid });
+          // Select the line for checkout, exactly like addToCart — otherwise a
+          // previously-materialized selection would price the wrong items (or
+          // an empty selection would leave the place-order button disabled).
+          setSelectedCartIds((prev) =>
+            selectLine(prev, cartLineKey({ id: product.id, variantId: vid })),
+          );
         }
         nav("checkout");
       } catch (error) {
@@ -370,7 +376,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
         toast(msg, "error");
       }
     },
-    [addItem, ensureAuthed, nav, toast],
+    [addItem, ensureAuthed, nav, setSelectedCartIds, toast],
   );
 
   const placeOrder = useCallback(
@@ -409,6 +415,33 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       setSelectedCartIds,
       toast,
     ],
+  );
+
+  // eSewa checkout: creates an awaiting_payment order and returns the signed
+  // gateway form data. Mirrors placeOrder's cart cleanup but does NOT navigate —
+  // the caller submits the returned form to redirect the buyer to eSewa. The
+  // order is placed only after the payment is verified server-side on return.
+  const checkoutEsewa = useCallback(
+    async (payload: CheckoutPayload): Promise<EsewaPaymentInit | null> => {
+      if (!ensureAuthed("Please sign in to place your order.")) return null;
+      try {
+        const { cart: currentCart, selectedCartIds } = useBazaarStore.getState();
+        const selectedItemIds = effectiveSelectedIds(currentCart, selectedCartIds);
+        const { order, payment } = await ordersApi.checkoutEsewa({ ...payload, selectedItemIds });
+        setOrderTotal(order.total);
+        setLastOrderId(order.id);
+        const orderedKeys = new Set(selectedItemIds);
+        setCart((prev) => prev.filter((line) => !orderedKeys.has(cartLineKey(line))));
+        setSelectedCartIds(null);
+        void queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });
+        return payment;
+      } catch (error) {
+        const msg = error instanceof ApiRequestError ? error.message : "Could not start payment";
+        toast(msg, "error");
+        throw error;
+      }
+    },
+    [ensureAuthed, queryClient, setCart, setLastOrderId, setOrderTotal, setSelectedCartIds, toast],
   );
 
   const cartCount = cart.reduce((sum, item) => sum + item.qty, 0);
@@ -462,6 +495,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       submitSearch,
       clearSearch,
       placeOrder,
+      checkoutEsewa,
       authed,
       setAuthed,
       product: productFromRoute,
@@ -492,6 +526,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       submitSearch,
       clearSearch,
       placeOrder,
+      checkoutEsewa,
       authed,
       setAuthed,
       productFromRoute,

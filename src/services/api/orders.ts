@@ -12,9 +12,12 @@ export interface DeliveryAddress {
 
 export type DeliveryTier = "standard" | "premium";
 
+export type PaymentMethod = "cod" | "esewa";
+
 export interface CheckoutPayload {
   phone: string;
-  paymentMethod: "cod";
+  /** 'cod' places the order immediately; 'esewa' returns gateway form fields. */
+  paymentMethod: PaymentMethod;
   /** Speed chosen by the customer; combined pricing is resolved server-side. */
   deliveryTier?: DeliveryTier;
   /**
@@ -62,6 +65,33 @@ export interface Order {
   rider?: OrderRider;
 }
 
+/** Signed eSewa form fields — generated and signed server-side; posted as-is. */
+export interface EsewaFormFields {
+  amount: string;
+  tax_amount: string;
+  total_amount: string;
+  transaction_uuid: string;
+  product_code: string;
+  product_service_charge: string;
+  product_delivery_charge: string;
+  success_url: string;
+  failure_url: string;
+  signed_field_names: string;
+  signature: string;
+}
+
+export interface EsewaPaymentInit {
+  gateway: "esewa";
+  paymentUrl: string;
+  fields: EsewaFormFields;
+}
+
+/** Response shape when checking out with eSewa: order + gateway form data. */
+export interface EsewaCheckoutResult {
+  order: Order;
+  payment: EsewaPaymentInit;
+}
+
 export const ordersApi = {
   list(): Promise<Order[]> {
     return getData<Order[]>("/orders");
@@ -71,8 +101,20 @@ export const ordersApi = {
     return getData<Order>(`/orders/${id}`);
   },
 
+  /** COD checkout — places the order and returns it (unchanged contract). */
   checkout(payload: CheckoutPayload): Promise<Order> {
-    return postData<Order>("/orders/checkout", payload);
+    return postData<Order>("/orders/checkout", { ...payload, paymentMethod: "cod" });
+  },
+
+  /**
+   * eSewa checkout — creates an awaiting_payment order and returns the signed
+   * form fields. The order is NOT placed until the payment is verified server-side.
+   */
+  checkoutEsewa(payload: CheckoutPayload): Promise<EsewaCheckoutResult> {
+    return postData<EsewaCheckoutResult>("/orders/checkout", {
+      ...payload,
+      paymentMethod: "esewa",
+    });
   },
 
   cancel(id: string): Promise<Order> {

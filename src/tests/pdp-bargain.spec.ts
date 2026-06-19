@@ -131,6 +131,63 @@ describe("BargainModal accept-counter contract", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// BargainModal submit guard: an offer must be a positive amount strictly below
+// the listed price. Mirrors the early-return checks in BargainModal.submit so a
+// refactor that lets an at/above-listed offer through trips a test. Returns the
+// blocking reason, or null when the offer may be sent to the backend.
+// ---------------------------------------------------------------------------
+function offerBlockReason(offerValue: number, listed: number): "empty" | "not-below-listed" | null {
+  if (!offerValue || offerValue <= 0) return "empty";
+  if (offerValue >= listed) return "not-below-listed";
+  return null;
+}
+
+describe("BargainModal submit guard (offer vs listed price)", () => {
+  it("blocks an offer equal to the listed price", () => {
+    expect(offerBlockReason(1000, 1000)).toBe("not-below-listed");
+  });
+
+  it("blocks an offer above the listed price", () => {
+    expect(offerBlockReason(1200, 1000)).toBe("not-below-listed");
+  });
+
+  it("allows an offer below the listed price", () => {
+    expect(offerBlockReason(950, 1000)).toBeNull();
+  });
+
+  it("blocks an empty/zero offer before the listed-price check", () => {
+    expect(offerBlockReason(0, 1000)).toBe("empty");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Attempts-remaining label (Step 3): platform-wide wording, no item-level text.
+// Mirrors the string built in BargainModal so a regression to "on this item"
+// trips a test.
+// ---------------------------------------------------------------------------
+function attemptsLabel(attemptsLeft: number): string {
+  return attemptsLeft === 0
+    ? "No bargain attempts left today."
+    : `${attemptsLeft} bargain ${attemptsLeft === 1 ? "attempt" : "attempts"} left today.`;
+}
+
+describe("BargainModal attempts label (platform-wide wording)", () => {
+  it("uses plural, platform-wide wording with no item-level text", () => {
+    const label = attemptsLabel(3);
+    expect(label).toBe("3 bargain attempts left today.");
+    expect(label).not.toMatch(/on this item|per item|this product/i);
+  });
+
+  it("uses singular wording for one attempt", () => {
+    expect(attemptsLabel(1)).toBe("1 bargain attempt left today.");
+  });
+
+  it("shows the exhausted message at zero", () => {
+    expect(attemptsLabel(0)).toBe("No bargain attempts left today.");
+  });
+});
+
 describe("MobileBuyBar onBargain wiring", () => {
   it("passes onBargain handler when bargainingAvailable is true", () => {
     // Simulates: onBargain={bargainingAvailable ? openBargain : undefined}

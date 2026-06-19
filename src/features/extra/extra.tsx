@@ -605,23 +605,52 @@ export function Wishlist() {
 
 export function Bargains() {
   const { t } = useTranslation();
-  const { nav, openProduct, addToCart, toast } = useBz();
+  const { openProduct, addToCart, toast } = useBz();
   const { data: offers = [], isLoading, isError, error } = useBargains();
   const acceptCounter = useAcceptCounterOffer();
+  const [tab, setTab] = useState("all");
 
-  const tones = {
+  const tones: Record<string, string> = {
     pending: "saffron",
     countered: "blue",
     accepted: "success",
     rejected: "neutral",
     expired: "neutral",
   };
-  const labels = {
+  const labels: Record<string, string> = {
     pending: t("bargains.statusPending"),
     countered: t("bargains.statusCountered"),
-    accepted: t("bargains.statusAccepted"),
+    accepted: "Accepted",
     rejected: t("bargains.statusDeclined"),
     expired: "Expired",
+  };
+
+  const isActive = (s: string) => s === "pending" || s === "countered";
+  const isClosed = (s: string) => s === "rejected" || s === "expired";
+  const counts = {
+    all: offers.length,
+    active: offers.filter((o) => isActive(o.status)).length,
+    accepted: offers.filter((o) => o.status === "accepted").length,
+    closed: offers.filter((o) => isClosed(o.status)).length,
+  };
+  const filtered =
+    tab === "all"
+      ? offers
+      : tab === "active"
+        ? offers.filter((o) => isActive(o.status))
+        : tab === "accepted"
+          ? offers.filter((o) => o.status === "accepted")
+          : offers.filter((o) => isClosed(o.status));
+
+  const expiryUrgent = (expires: string | null) => {
+    if (!expires) return false;
+    const ms = new Date(expires).getTime() - Date.now();
+    return ms > 0 && ms < 2 * 60 * 60 * 1000;
+  };
+
+  const savings = (o: { listed: number; agreed: number | null; yourOffer: number }) => {
+    const agreed = o.agreed ?? o.yourOffer;
+    return o.listed > agreed ? o.listed - agreed : 0;
   };
 
   return (
@@ -630,20 +659,36 @@ export function Bargains() {
         className="bz-container-pad"
         style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "28px 28px 96px" }}
       >
-        <div style={{ marginBottom: 20 }}>
-          <h1
-            style={{
-              margin: 0,
-              fontSize: "clamp(1.25rem, 4vw, 1.5rem)",
-              fontWeight: 800,
-              color: "var(--blue-deep)",
-            }}
-          >
-            {t("bargains.title")}
-          </h1>
-          <p style={{ margin: "4px 0 0", color: "var(--ink-500)", fontSize: ".875rem" }}>
-            {t("bargains.subtitle")}
-          </p>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: 12,
+            marginBottom: 16,
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <h1
+              style={{
+                margin: 0,
+                fontSize: "clamp(1.25rem, 4vw, 1.5rem)",
+                fontWeight: 800,
+                color: "var(--blue-deep)",
+              }}
+            >
+              {t("bargains.title")}
+            </h1>
+            <p style={{ margin: "4px 0 0", color: "var(--ink-500)", fontSize: ".8125rem" }}>
+              {t("bargains.subtitle")}
+            </p>
+          </div>
+          {offers.length > 0 && (
+            <Button variant="ghost" size="sm" icon="search" href={searchPath()}>
+              Find products
+            </Button>
+          )}
         </div>
 
         {offers.length === 0 ? (
@@ -654,219 +699,308 @@ export function Bargains() {
             ctaHref={searchPath()}
           />
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {offers.map((o) => (
-              <div
-                key={o.id}
+          <>
+            <div style={{ marginBottom: 14 }}>
+              <ChipGroup
+                options={[
+                  { value: "all", label: `All · ${counts.all}` },
+                  { value: "active", label: `Active · ${counts.active}` },
+                  { value: "accepted", label: `Accepted · ${counts.accepted}` },
+                  { value: "closed", label: `Closed · ${counts.closed}` },
+                ]}
+                value={tab}
+                onChange={setTab}
+              />
+            </div>
+
+            {filtered.length === 0 ? (
+              <p
                 style={{
-                  background: "#fff",
-                  border: "1px solid var(--line-200)",
-                  borderRadius: "var(--r-lg)",
-                  padding: 16,
+                  textAlign: "center",
+                  color: "var(--ink-400)",
+                  fontSize: ".875rem",
+                  padding: "32px 0",
                 }}
               >
-                <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-                  <AppLink
-                    href={pathFromScreen("pdp", o.p.id)}
-                    onNavigate={() => openProduct(o.p)}
-                    style={{ cursor: "pointer", flexShrink: 0, textDecoration: "none" }}
-                  >
-                    {o.p.img ? (
-                      <img
-                        src={o.p.img}
-                        alt={o.p.name}
-                        style={{
-                          width: 72,
-                          height: 72,
-                          objectFit: "cover",
-                          borderRadius: "var(--r-md)",
-                        }}
-                      />
-                    ) : (
-                      <Placeholder
-                        icon={o.p.icon}
-                        tint={o.p.tint}
-                        style={{ width: 72, height: 72 }}
-                        radius="var(--r-md)"
-                      />
-                    )}
-                  </AppLink>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: 10,
-                        marginBottom: 4,
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontWeight: 700,
-                          fontSize: ".9375rem",
-                          color: "var(--ink-900)",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          display: "-webkit-box",
-                          WebkitLineClamp: 1,
-                          WebkitBoxOrient: "vertical",
-                        }}
-                      >
-                        {o.p.name}
-                        {o.variantName && (
-                          <span style={{ color: "var(--ink-500)", fontWeight: 500 }}>
-                            {" "}
-                            · {o.variantName}
-                          </span>
-                        )}
-                      </div>
-                      <Chip tone={tones[o.status] ?? "neutral"} size="sm">
-                        {labels[o.status] ?? o.status}
-                      </Chip>
-                    </div>
-                    <div
-                      className="tnum"
-                      style={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: 14,
-                        fontSize: ".8125rem",
-                        marginTop: 8,
-                      }}
-                    >
-                      <span>
-                        <span style={{ color: "var(--ink-400)" }}>Listed:</span>{" "}
-                        <span style={{ textDecoration: "line-through", color: "var(--ink-500)" }}>
-                          {formatNPR(o.listed)}
-                        </span>
-                      </span>
-                      <span>
-                        <span style={{ color: "var(--ink-400)" }}>Your offer:</span>{" "}
-                        <b style={{ color: "var(--blue-deep)" }}>{formatNPR(o.yourOffer)}</b>
-                      </span>
-                      {o.sellerCounter && (
-                        <span>
-                          <span style={{ color: "var(--ink-400)" }}>Counter:</span>{" "}
-                          <b style={{ color: "var(--red)" }}>{formatNPR(o.sellerCounter)}</b>
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 6 }}>
-                      {o.age}
-                      {(o.status === "pending" || o.status === "countered") &&
-                      o.expires &&
-                      new Date(o.expires).getTime() <= Date.now() ? (
-                        <span style={{ color: "var(--red)", fontWeight: 600 }}>
-                          {" "}
-                          · Offer expired — send a new one
-                        </span>
-                      ) : bargainExpiryLabel(o.expires) ? (
-                        ` · ${bargainExpiryLabel(o.expires)}`
-                      ) : (
-                        ""
-                      )}
-                    </div>
-                  </div>
-                </div>
+                No offers in this category.
+              </p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {filtered.map((o) => {
+                  const closed = isClosed(o.status);
+                  const countered = o.status === "countered";
+                  const accepted = o.status === "accepted";
+                  const pending = o.status === "pending";
+                  const expired =
+                    (pending || countered) &&
+                    o.expires &&
+                    new Date(o.expires).getTime() <= Date.now();
+                  const urgent = !expired && expiryUrgent(o.expires);
+                  const save = accepted ? savings(o) : 0;
 
-                <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-                  {o.status === "accepted" && (
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      icon="cart"
-                      onClick={() =>
-                        // No price in the payload — the server binds the accepted
-                        // offer to this (product, variant) line at the agreed price.
-                        void addToCart(
-                          o.p,
-                          1,
-                          `Added at bargained price · ${formatNPR(o.agreed ?? o.yourOffer)}`,
-                          o.variantId,
-                        )
-                      }
+                  return (
+                    <div
+                      key={o.id}
+                      style={{
+                        background: closed ? "var(--line-50, #fafafa)" : "#fff",
+                        border: `1.5px solid ${countered ? "var(--blue)" : closed ? "var(--line-100)" : "var(--line-200)"}`,
+                        borderRadius: "var(--r-lg)",
+                        padding: "12px 14px",
+                        opacity: closed ? 0.75 : 1,
+                        display: "grid",
+                        gridTemplateColumns: "56px 1fr auto",
+                        gap: 12,
+                        alignItems: "start",
+                      }}
                     >
-                      Add to cart
-                    </Button>
-                  )}
-                  {o.status === "countered" && (
-                    <>
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        disabled={acceptCounter.isPending}
-                        onClick={async () => {
-                          // Accepting server-side is what locks the price for
-                          // checkout — a toast alone never bound the deal.
-                          try {
-                            await acceptCounter.mutateAsync(o.id);
-                            toast(t("bargains.counterAccepted"));
-                          } catch (err) {
-                            toast(
-                              err instanceof Error ? err.message : "Could not accept the counter",
-                              "error",
-                            );
-                          }
-                        }}
-                      >
-                        Accept {formatNPR(o.sellerCounter)}
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
+                      {/* Thumbnail */}
+                      <AppLink
                         href={pathFromScreen("pdp", o.p.id)}
                         onNavigate={() => openProduct(o.p)}
+                        style={{ cursor: "pointer", textDecoration: "none", alignSelf: "center" }}
                       >
-                        Counter back
-                      </Button>
-                    </>
-                  )}
-                  {o.status === "rejected" && (
-                    <span
-                      style={{
-                        fontSize: ".8125rem",
-                        color: "var(--ink-500)",
-                        alignSelf: "center",
-                      }}
-                    >
-                      Raise your price a bit and offer again.
-                    </span>
-                  )}
-                  {o.status === "expired" && (
-                    <span
-                      style={{
-                        fontSize: ".8125rem",
-                        color: "var(--ink-500)",
-                        alignSelf: "center",
-                      }}
-                    >
-                      {o.attemptRefunded
-                        ? "Seller didn't respond in time. Your bargain attempt has been refunded."
-                        : "Seller didn't respond in time. This offer expired."}
-                    </span>
-                  )}
-                  {o.status !== "accepted" && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      href={pathFromScreen("pdp", o.p.id)}
-                      onNavigate={() => openProduct(o.p)}
-                    >
-                      View product
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+                        {o.p.img ? (
+                          <img
+                            src={o.p.img}
+                            alt={o.p.name}
+                            style={{
+                              width: 56,
+                              height: 56,
+                              objectFit: "cover",
+                              borderRadius: "var(--r-md)",
+                              border: "1px solid var(--line-200)",
+                            }}
+                          />
+                        ) : (
+                          <Placeholder
+                            icon={o.p.icon}
+                            tint={o.p.tint}
+                            style={{ width: 56, height: 56 }}
+                            radius="var(--r-md)"
+                          />
+                        )}
+                      </AppLink>
 
-        {offers.length > 0 && (
-          <div style={{ marginTop: 24 }}>
-            <Button variant="secondary" full icon="bargain" href={searchPath()}>
-              Find products to bargain on
-            </Button>
-          </div>
+                      {/* Middle: negotiation story */}
+                      <div style={{ minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontWeight: 700,
+                            fontSize: ".875rem",
+                            color: "var(--ink-900)",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {o.p.name}
+                          {o.variantName && (
+                            <span style={{ color: "var(--ink-500)", fontWeight: 500 }}>
+                              {" "}
+                              · {o.variantName}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Price comparison — the hero of each row */}
+                        <div
+                          className="tnum"
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            marginTop: 4,
+                            fontSize: ".8125rem",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <span
+                            style={{
+                              textDecoration: "line-through",
+                              color: "var(--ink-400)",
+                            }}
+                          >
+                            {formatNPR(o.listed)}
+                          </span>
+                          <Icon name="arrowRight" size={12} color="var(--ink-300)" />
+                          <span style={{ fontWeight: 700, color: "var(--blue-deep)" }}>
+                            You offered {formatNPR(o.yourOffer)}
+                          </span>
+                          {countered && o.sellerCounter && (
+                            <>
+                              <Icon name="arrowRight" size={12} color="var(--ink-300)" />
+                              <Chip tone="blue" size="sm">
+                                Seller counters {formatNPR(o.sellerCounter)}
+                              </Chip>
+                            </>
+                          )}
+                          {accepted && save > 0 && (
+                            <Chip tone="success" size="sm">
+                              you save {formatNPR(save)}
+                            </Chip>
+                          )}
+                          {accepted && (
+                            <span style={{ fontWeight: 700, color: "var(--success)" }}>
+                              {formatNPR(o.agreed ?? o.yourOffer)} agreed
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Time / expiry line */}
+                        <div
+                          style={{
+                            fontSize: ".75rem",
+                            color: urgent
+                              ? "var(--saffron)"
+                              : expired
+                                ? "var(--red)"
+                                : "var(--ink-400)",
+                            fontWeight: urgent || expired ? 600 : 400,
+                            marginTop: 3,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 4,
+                          }}
+                        >
+                          <Icon name="clock" size={12} color="currentColor" />
+                          {expired ? (
+                            "Offer expired — send a new one"
+                          ) : o.status === "expired" ? (
+                            o.expiryReason === "checkout_lock_expired" ? (
+                              "Deal expired — wasn't checked out in time"
+                            ) : o.attemptRefunded ? (
+                              "Seller didn't respond in time"
+                            ) : (
+                              "Seller didn't respond in time"
+                            )
+                          ) : o.status === "rejected" ? (
+                            "Declined — offer below seller's minimum"
+                          ) : accepted ? (
+                            <>
+                              Price held for you
+                              {bargainExpiryLabel(o.expires)
+                                ? ` · ${bargainExpiryLabel(o.expires)}`
+                                : ""}
+                            </>
+                          ) : (
+                            <>
+                              {o.age}
+                              {bargainExpiryLabel(o.expires)
+                                ? ` · ${urgent ? "⚠ " : ""}${bargainExpiryLabel(o.expires)}`
+                                : ""}
+                              {countered ? " · respond within this time" : ""}
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right column: status badge + contextual action */}
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "flex-end",
+                          gap: 8,
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Chip tone={tones[o.status] ?? "neutral"} size="sm">
+                          {labels[o.status] ?? o.status}
+                        </Chip>
+
+                        {accepted && (
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            icon="cart"
+                            onClick={() =>
+                              void addToCart(
+                                o.p,
+                                1,
+                                `Added at bargained price · ${formatNPR(o.agreed ?? o.yourOffer)}`,
+                                o.variantId,
+                              )
+                            }
+                          >
+                            Add to cart
+                          </Button>
+                        )}
+
+                        {countered && !expired && (
+                          <div style={{ display: "flex", gap: 6 }}>
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              disabled={acceptCounter.isPending}
+                              onClick={async () => {
+                                try {
+                                  await acceptCounter.mutateAsync(o.id);
+                                  toast(t("bargains.counterAccepted"));
+                                } catch (err) {
+                                  toast(
+                                    err instanceof Error
+                                      ? err.message
+                                      : "Could not accept the counter",
+                                    "error",
+                                  );
+                                }
+                              }}
+                            >
+                              Accept · {formatNPR(o.sellerCounter)}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              href={pathFromScreen("pdp", o.p.id)}
+                              onNavigate={() => openProduct(o.p)}
+                            >
+                              Decline
+                            </Button>
+                          </div>
+                        )}
+
+                        {pending && !expired && (
+                          <div style={{ display: "flex", gap: 6 }}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              href={pathFromScreen("pdp", o.p.id)}
+                              onNavigate={() => openProduct(o.p)}
+                            >
+                              View product
+                            </Button>
+                          </div>
+                        )}
+
+                        {(o.status === "rejected" || o.status === "expired" || expired) && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            icon="bargain"
+                            href={pathFromScreen("pdp", o.p.id)}
+                            onNavigate={() => openProduct(o.p)}
+                          >
+                            Bargain again
+                          </Button>
+                        )}
+
+                        {accepted && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            href={pathFromScreen("pdp", o.p.id)}
+                            onNavigate={() => openProduct(o.p)}
+                          >
+                            View product
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
       </div>
     </ApiState>

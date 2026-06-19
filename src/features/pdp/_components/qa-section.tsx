@@ -148,7 +148,7 @@ function QuestionRow({ q, isLast }: { q: ProductQuestion; isLast: boolean }) {
       <div style={{ marginTop: 10 }}>
         {q.answer ? (
           <Bubble kind="A">
-            <div style={{ color: "var(--ink-700)", fontSize: ".9375rem" }}>{q.answer.text}</div>
+            <div style={{ color: "var(--ink-700)", fontSize: ".8125rem" }}>{q.answer.text}</div>
             <div style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 4 }}>
               {q.answer.answeredBy ?? "Seller"}
               {q.answer.answeredAt ? ` · ${timeAgo(q.answer.answeredAt)}` : ""}
@@ -198,11 +198,11 @@ export function QASection({ productId }: { productId: string }) {
         <QuestionComposer productId={productId} onDone={() => setComposerOpen(false)} />
       )}
       {isLoading ? (
-        <div style={{ color: "var(--ink-400)", fontSize: ".875rem", padding: "4px 0" }}>
+        <div style={{ color: "var(--ink-400)", fontSize: ".8125rem", padding: "4px 0" }}>
           Loading questions…
         </div>
       ) : questions.length === 0 ? (
-        <div style={{ color: "var(--ink-400)", fontSize: ".9375rem", padding: "4px 0" }}>
+        <div style={{ color: "var(--ink-400)", fontSize: ".8125rem", padding: "4px 0" }}>
           No questions yet — be the first to ask.
         </div>
       ) : (

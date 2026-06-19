@@ -24,7 +24,8 @@ import {
   useSellerOrganization,
   useUpdateStoreHandle,
 } from "@/hooks/use-seller";
-import { useBz } from "@/components/common";
+import { useBz, BuyerAvatar } from "@/components/common";
+import { useChatInbox } from "@/hooks/use-chat";
 import { pathFromScreen, storeShareUrl } from "@/config/routes";
 import { SellerBarChart, SellerSparkline } from "../_shared/charts";
 import {
@@ -239,6 +240,10 @@ export function SellerDashboard() {
   const { data: dashboard, isLoading, isError, error } = useSellerDashboard(range);
   const { data: inbox = [] } = useSellerInbox();
   const { data: inventory = [] } = useSellerInventory();
+  const { data: chatInbox } = useChatInbox();
+  const chatThreads = chatInbox?.threads ?? [];
+  const unreadChats = chatThreads.filter((ct) => (ct.unread ?? 0) > 0);
+  const totalUnread = unreadChats.reduce((sum, ct) => sum + (ct.unread ?? 0), 0);
   const rangeLabel =
     range === "today"
       ? t("seller.common.today")
@@ -363,6 +368,17 @@ export function SellerDashboard() {
       to: "s-inbox",
       urgent: true,
       action: { label: t("seller.common.viewOrders"), onAct: () => nav("s-inbox") },
+    },
+    totalUnread > 0 && {
+      icon: "message",
+      tint: "blue",
+      label:
+        unreadChats.length === 1
+          ? `${totalUnread} unread message from ${unreadChats[0]?.buyer ?? "a buyer"}`
+          : `${totalUnread} unread messages from ${unreadChats.length} buyers`,
+      to: "s-chat",
+      urgent: true,
+      action: { label: "Reply", onAct: () => nav("s-chat") },
     },
     lowStock > 0 && {
       icon: "zap",
@@ -1066,70 +1082,247 @@ export function SellerDashboard() {
           </div>
         </div>
 
-        {/* Recent activity */}
+        {/* Messages + Recent activity — side by side */}
         <div
           style={{
-            background: "#fff",
-            border: "1px solid var(--line-200)",
-            borderRadius: "var(--r-lg)",
-            padding: 22,
+            display: "grid",
+            gridTemplateColumns: chatThreads.length > 0 ? "minmax(0, 1fr) minmax(0, 1fr)" : "1fr",
+            gap: 18,
             marginBottom: 18,
           }}
+          className="bz-seller-grid bz-stack-900"
         >
-          <h3
-            style={{
-              margin: "0 0 14px",
-              fontSize: "1rem",
-              fontWeight: 600,
-              color: "var(--ink-900)",
-            }}
-          >
-            {t("seller.dashboard.recentActivity")}
-          </h3>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 0,
-              maxHeight: 320,
-              overflowY: "auto",
-            }}
-          >
-            {activity.map((a, i) => (
+          {/* Recent messages — always visible, unread rows highlighted */}
+          {chatThreads.length > 0 && (
+            <div
+              style={{
+                background: "#fff",
+                border: "1px solid var(--line-200)",
+                borderRadius: "var(--r-lg)",
+                overflow: "hidden",
+              }}
+            >
               <div
-                key={i}
                 style={{
+                  padding: "14px 16px",
+                  borderBottom: "1px solid var(--line-200)",
                   display: "flex",
-                  gap: 12,
-                  padding: "10px 0",
-                  borderBottom: i < activity.length - 1 ? "1px dashed var(--line-200)" : "none",
+                  alignItems: "center",
+                  justifyContent: "space-between",
                 }}
               >
-                <span
+                <div
                   style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: "50%",
-                    background: "var(--line-100)",
-                    color: a.color,
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
+                    gap: 8,
+                    fontWeight: 600,
+                    fontSize: ".9375rem",
+                    color: "var(--ink-900)",
                   }}
                 >
-                  <SellerIcon name={a.icon} size={16} color={a.color} />
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: ".875rem", color: "var(--ink-900)", lineHeight: 1.4 }}>
-                    {a.text}
-                  </div>
-                  <div style={{ fontSize: ".7rem", color: "var(--ink-400)", marginTop: 2 }}>
-                    {a.t}
-                  </div>
+                  <SellerIcon name="message" size={18} color="var(--blue)" />
+                  Messages
+                  {totalUnread > 0 && (
+                    <span
+                      style={{
+                        minWidth: 20,
+                        height: 20,
+                        padding: "0 6px",
+                        borderRadius: 999,
+                        background: "var(--danger)",
+                        color: "#fff",
+                        fontSize: ".7rem",
+                        fontWeight: 800,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {totalUnread}
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    href={pathFromScreen("s-chat")}
+                    iconRight="chevronRight"
+                  >
+                    Open
+                  </Button>
                 </div>
               </div>
-            ))}
+              {chatThreads.slice(0, 3).map((ct, i) => {
+                const hasUnread = (ct.unread ?? 0) > 0;
+                return (
+                  <AppLink
+                    key={ct.id}
+                    href={pathFromScreen("s-chat")}
+                    onNavigate={() => nav("s-chat")}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "10px 14px",
+                      borderBottom:
+                        i < Math.min(chatThreads.length, 3) - 1
+                          ? "1px solid var(--line-100)"
+                          : "none",
+                      background: hasUnread ? "rgba(0,98,204,.06)" : "transparent",
+                      textDecoration: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <BuyerAvatar
+                      src={ct.avatarUrl}
+                      name={ct.buyer}
+                      size={38}
+                      fontSize=".8125rem"
+                      style={{
+                        background: TINTS[ct.tone as keyof typeof TINTS]?.[0] ?? TINTS.blue[0],
+                        color: TINTS[ct.tone as keyof typeof TINTS]?.[2] ?? TINTS.blue[2],
+                        flexShrink: 0,
+                      }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          gap: 6,
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontWeight: hasUnread ? 800 : 600,
+                            fontSize: ".8125rem",
+                            color: "var(--ink-900)",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {ct.buyer}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: ".65rem",
+                            color: "var(--ink-400)",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {ct.time}
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          fontSize: ".75rem",
+                          color: hasUnread ? "var(--ink-900)" : "var(--ink-600)",
+                          fontWeight: hasUnread ? 700 : 500,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          marginTop: 1,
+                        }}
+                      >
+                        {ct.last || "No messages yet"}
+                      </div>
+                    </div>
+                    {hasUnread && (
+                      <span
+                        style={{
+                          minWidth: 22,
+                          height: 22,
+                          padding: "0 6px",
+                          borderRadius: 999,
+                          background: "var(--blue)",
+                          color: "#fff",
+                          fontSize: ".65rem",
+                          fontWeight: 800,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {ct.unread}
+                      </span>
+                    )}
+                  </AppLink>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Recent activity */}
+          <div
+            style={{
+              background: "#fff",
+              border: "1px solid var(--line-200)",
+              borderRadius: "var(--r-lg)",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                padding: "14px 16px",
+                borderBottom: "1px solid var(--line-200)",
+                fontWeight: 600,
+                fontSize: ".9375rem",
+                color: "var(--ink-900)",
+              }}
+            >
+              {t("seller.dashboard.recentActivity")}
+            </div>
+            <div
+              style={{
+                padding: "0 16px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 0,
+                maxHeight: 280,
+                overflowY: "auto",
+              }}
+            >
+              {activity.map((a, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    padding: "10px 0",
+                    borderBottom: i < activity.length - 1 ? "1px dashed var(--line-200)" : "none",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 30,
+                      height: 30,
+                      borderRadius: "50%",
+                      background: "var(--line-100)",
+                      color: a.color,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <SellerIcon name={a.icon} size={14} color={a.color} />
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: ".8125rem", color: "var(--ink-900)", lineHeight: 1.4 }}>
+                      {a.text}
+                    </div>
+                    <div style={{ fontSize: ".65rem", color: "var(--ink-400)", marginTop: 2 }}>
+                      {a.t}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

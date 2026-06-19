@@ -3707,13 +3707,6 @@ body {
   border-color: rgba(230, 57, 70, 0.5);
 }
 
-/* Quiet "Make an offer" — the tertiary buy-box action. No fill at rest (red is
-   the accent on the text/icon only); a soft red tint appears on hover so it
-   never competes with the solid Buy now above it. */
-.bz-pdp-offer-quiet:hover:not(:disabled) {
-  background: var(--tint-red-50);
-}
-
 /* ── Language toggle — segmented switch with a sliding thumb ──────────────
    Shared by the buyer profile and seller settings. Token-based, so it adopts
    the buyer (BazaarCo) and seller (Fluent) skins automatically. Large, easy

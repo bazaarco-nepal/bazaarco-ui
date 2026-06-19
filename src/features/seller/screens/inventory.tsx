@@ -587,10 +587,13 @@ export function SellerInventory() {
                         onClick={() => toggleExpanded(it.id)}
                         style={{
                           width: "100%",
-                          display: "flex",
-                          gap: 14,
+                          display: "grid",
+                          gridTemplateColumns: isMobile
+                            ? "48px 1fr 20px"
+                            : "52px 1fr auto auto auto 20px",
                           alignItems: "center",
-                          padding: 14,
+                          gap: isMobile ? 10 : 16,
+                          padding: isMobile ? "10px 12px" : "10px 16px",
                           background: "transparent",
                           border: "none",
                           cursor: "pointer",
@@ -602,9 +605,8 @@ export function SellerInventory() {
                             src={it.img}
                             alt=""
                             style={{
-                              width: 72,
-                              height: 72,
-                              flexShrink: 0,
+                              width: isMobile ? 48 : 52,
+                              height: isMobile ? 48 : 52,
                               borderRadius: "var(--r-md)",
                               objectFit: "cover",
                               border: "1px solid var(--line-200)",
@@ -615,65 +617,131 @@ export function SellerInventory() {
                           <Placeholder
                             icon={it.icon}
                             tint={it.tint}
-                            style={{ width: 72, height: 72, flexShrink: 0 }}
+                            style={{ width: isMobile ? 48 : 52, height: isMobile ? 48 : 52 }}
                             radius="var(--r-md)"
                           />
                         )}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 600, fontSize: "1rem" }}>{it.name}</div>
-                          {(isFrozen || pendingReview) && (
-                            <div style={{ marginTop: 4 }}>
-                              <Chip tone={isFrozen ? "red" : "saffron"} size="sm">
-                                {isFrozen
-                                  ? t("seller.inventory.takenDown")
-                                  : t("seller.inventory.awaitingReview")}
-                              </Chip>
-                            </div>
-                          )}
+                        <div style={{ minWidth: 0 }}>
                           <div
-                            className="tnum"
                             style={{
-                              fontSize: ".875rem",
-                              color: "var(--ink-900)",
                               fontWeight: 600,
-                              marginTop: 2,
+                              fontSize: ".875rem",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
                             }}
                           >
-                            {formatNPR(it.price)}
+                            {it.name}
                           </div>
                           <div
                             style={{
+                              fontSize: ".75rem",
+                              color: "var(--ink-500)",
+                              marginTop: 2,
+                            }}
+                          >
+                            {it.hasVariants && it.variants && it.variants.length > 1
+                              ? `${it.variants.length} variants`
+                              : "Single variant"}
+                          </div>
+                          {isMobile && (
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                marginTop: 6,
+                                flexWrap: "wrap",
+                              }}
+                            >
+                              <Chip
+                                tone={
+                                  isFrozen || oos ? "red" : pendingReview ? "saffron" : "success"
+                                }
+                                size="sm"
+                              >
+                                {isFrozen
+                                  ? t("seller.inventory.takenDown")
+                                  : pendingReview
+                                    ? t("seller.inventory.awaitingReview")
+                                    : oos
+                                      ? t("seller.inventory.outOfStock")
+                                      : t("seller.products.filterActive")}
+                              </Chip>
+                              <span
+                                className="tnum"
+                                style={{
+                                  fontSize: ".8125rem",
+                                  fontWeight: 600,
+                                  color: "var(--ink-900)",
+                                }}
+                              >
+                                {formatNPR(it.price)}
+                              </span>
+                              <span
+                                className="tnum"
+                                style={{
+                                  fontSize: ".75rem",
+                                  fontWeight: 600,
+                                  color: oos
+                                    ? "var(--danger)"
+                                    : low
+                                      ? "var(--saffron)"
+                                      : "var(--ink-500)",
+                                }}
+                              >
+                                {t("seller.inventory.stockCount", { count: it.stock })}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        {!isMobile && (
+                          <Chip
+                            tone={isFrozen || oos ? "red" : pendingReview ? "saffron" : "success"}
+                            size="sm"
+                          >
+                            {isFrozen
+                              ? t("seller.inventory.takenDown")
+                              : pendingReview
+                                ? t("seller.inventory.awaitingReview")
+                                : oos
+                                  ? t("seller.inventory.outOfStock")
+                                  : t("seller.products.filterActive")}
+                          </Chip>
+                        )}
+                        {!isMobile && (
+                          <span
+                            className="tnum"
+                            style={{
+                              fontSize: ".875rem",
+                              fontWeight: 600,
+                              color: "var(--ink-900)",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {formatNPR(it.price)}
+                          </span>
+                        )}
+                        {!isMobile && (
+                          <span
+                            className="tnum"
+                            style={{
                               fontSize: ".8125rem",
+                              fontWeight: 600,
                               color: oos
                                 ? "var(--danger)"
                                 : low
                                   ? "var(--saffron)"
                                   : "var(--ink-500)",
-                              marginTop: 2,
-                              fontWeight: 600,
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 4,
+                              whiteSpace: "nowrap",
                             }}
                           >
-                            {oos ? (
-                              <>
-                                <SellerIcon name="zap" size={14} color="var(--danger)" />{" "}
-                                {t("seller.inventory.outOfStock")}
-                              </>
-                            ) : low ? (
-                              <>
-                                <SellerIcon name="zap" size={14} color="var(--saffron)" />{" "}
-                                {t("seller.inventory.onlyLeft", { count: it.stock })}
-                              </>
-                            ) : (
-                              <>{t("seller.inventory.stockCount", { count: it.stock })}</>
-                            )}
-                          </div>
-                        </div>
+                            {t("seller.inventory.stockCount", { count: it.stock })}
+                          </span>
+                        )}
                         <SellerIcon
                           name={isOpen ? "chevronDown" : "chevronRight"}
-                          size={22}
+                          size={18}
                           color="var(--ink-400)"
                         />
                       </button>

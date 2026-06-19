@@ -1055,7 +1055,6 @@ export function PDP({ p: pProp }: PdpProps) {
                           soldOut={available && !inStock}
                           image={swatchImg}
                           imageAlt={opt}
-                          onImageClick={swatchImg ? () => openPhotoLightbox(swatchImg) : undefined}
                           // Tapping the active option unselects it — nothing is forced.
                           onClick={() =>
                             setSelDimensions((prev) => toggleOption(prev, group.name, opt))
@@ -1092,7 +1091,6 @@ export function PDP({ p: pProp }: PdpProps) {
                     soldOut={(v.stock ?? 0) <= 0}
                     image={swatchImg}
                     imageAlt={v.name}
-                    onImageClick={swatchImg ? () => openPhotoLightbox(swatchImg) : undefined}
                     onClick={() => setSelVariantId(v.id)}
                   />
                 );
@@ -1612,47 +1610,16 @@ export function PDP({ p: pProp }: PdpProps) {
                   Add to cart
                 </Button>
 
-                {/* Bargaining is BazaarCo's identity, but it's the tertiary action:
-                    a quiet text + icon button. Red is the accent (text/icon) only —
-                    never a fill — so it never out-shouts Buy now and red keeps its
-                    single meaning (bargaining) across the app. */}
                 {bargainingAvailable && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    <button
-                      type="button"
-                      onClick={openBargain}
-                      disabled={isOutOfStock}
-                      className="bz-pdp-offer-quiet"
-                      style={{
-                        height: 44,
-                        width: "100%",
-                        borderRadius: "var(--r-control)",
-                        background: "transparent",
-                        border: "none",
-                        color: "var(--red)",
-                        fontWeight: 700,
-                        fontSize: "1rem",
-                        cursor: isOutOfStock ? "not-allowed" : "pointer",
-                        opacity: isOutOfStock ? 0.5 : 1,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 8,
-                      }}
-                    >
-                      <Icon name="bargain" size={16} /> {t("pdp.makeOffer")}
-                    </button>
-                    <p
-                      style={{
-                        margin: 0,
-                        textAlign: "center",
-                        fontSize: ".75rem",
-                        color: "var(--ink-500)",
-                      }}
-                    >
-                      Propose your price — this seller bargains
-                    </p>
-                  </div>
+                  <Button
+                    variant="danger"
+                    full
+                    icon="bargain"
+                    disabled={isOutOfStock}
+                    onClick={openBargain}
+                  >
+                    {t("pdp.makeOffer")}
+                  </Button>
                 )}
               </div>
 
@@ -1773,6 +1740,7 @@ export function PDP({ p: pProp }: PdpProps) {
                 <p
                   style={{
                     color: "var(--ink-600)",
+                    fontSize: ".8125rem",
                     lineHeight: 1.75,
                     margin: 0,
                     whiteSpace: "pre-line",
@@ -1794,7 +1762,7 @@ export function PDP({ p: pProp }: PdpProps) {
                       fontWeight: 700,
                       cursor: "pointer",
                       padding: "10px 0 0",
-                      fontSize: ".875rem",
+                      fontSize: ".8125rem",
                     }}
                   >
                     {descOpen ? "Read less" : "Read more"}
@@ -1802,7 +1770,7 @@ export function PDP({ p: pProp }: PdpProps) {
                 )}
               </>
             ) : (
-              <p style={{ color: "var(--ink-400)", margin: 0, fontSize: ".875rem" }}>
+              <p style={{ color: "var(--ink-400)", margin: 0, fontSize: ".8125rem" }}>
                 No product description has been added yet.
               </p>
             )}
@@ -1823,7 +1791,7 @@ export function PDP({ p: pProp }: PdpProps) {
                         style={{
                           padding: "10px 12px",
                           color: "var(--ink-500)",
-                          fontSize: ".875rem",
+                          fontSize: ".8125rem",
                           width: 200,
                           verticalAlign: "top",
                         }}
@@ -1834,7 +1802,7 @@ export function PDP({ p: pProp }: PdpProps) {
                         style={{
                           padding: "10px 12px",
                           color: "var(--ink-800)",
-                          fontSize: ".875rem",
+                          fontSize: ".8125rem",
                           fontWeight: 500,
                         }}
                       >
@@ -1845,7 +1813,7 @@ export function PDP({ p: pProp }: PdpProps) {
                 </tbody>
               </table>
             ) : (
-              <p style={{ color: "var(--ink-400)", margin: 0, fontSize: ".875rem" }}>
+              <p style={{ color: "var(--ink-400)", margin: 0, fontSize: ".8125rem" }}>
                 No specifications have been added for this product yet.
               </p>
             )}

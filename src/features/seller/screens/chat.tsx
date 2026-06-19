@@ -7,7 +7,6 @@ import { SellerIcon } from "../_shared/icons";
 import { useChatInbox, useChatMessages, useInvalidateChat } from "@/hooks/use-chat";
 import {
   connectChatSocket,
-  disconnectChatSocket,
   emitTypingStart,
   emitTypingStop,
   joinConversation,
@@ -97,9 +96,6 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
 
   useEffect(() => {
     connectChatSocket();
-    return () => {
-      disconnectChatSocket();
-    };
   }, []);
 
   useEffect(() => {
@@ -337,6 +333,10 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
               <button
                 key={t.id}
                 onClick={() => {
+                  if (active?.id === t.id) {
+                    if (isMobile) setMobileInThread(true);
+                    return;
+                  }
                   setActive(t);
                   setMessages([]);
                   setPeerTyping(false);

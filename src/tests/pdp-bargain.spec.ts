@@ -69,8 +69,9 @@ describe("PDP bargainingAvailable logic", () => {
 // ---------------------------------------------------------------------------
 async function acceptCounterFlow(deps: {
   offerId: string | null;
+  variantId?: string | null;
   acceptCounter: (id: string) => Promise<unknown>;
-  addToCart: () => Promise<void>;
+  addToCart: (variantId: string | null | undefined) => Promise<void>;
   onError: () => void;
   close: () => void;
 }) {
@@ -81,7 +82,9 @@ async function acceptCounterFlow(deps: {
     deps.onError();
     return;
   }
-  await deps.addToCart();
+  // The accepted deal is keyed to the bargained variant — the cart add MUST
+  // use that exact variant so the bargained price lands on the right line.
+  await deps.addToCart(deps.variantId);
   deps.close();
 }
 
@@ -114,6 +117,21 @@ describe("BargainModal accept-counter contract", () => {
       close: () => calls.push("close"),
     });
     expect(calls).toEqual(["error"]);
+  });
+
+  it("adds the bargained variant to the cart with its exact variantId", async () => {
+    let addedVariantId: string | null | undefined = "unset";
+    await acceptCounterFlow({
+      offerId: "o1",
+      variantId: "v-red-s",
+      acceptCounter: async () => undefined,
+      addToCart: async (variantId) => {
+        addedVariantId = variantId;
+      },
+      onError: () => undefined,
+      close: () => undefined,
+    });
+    expect(addedVariantId).toBe("v-red-s");
   });
 
   it("treats a missing offer id as a failure, not a silent add", async () => {

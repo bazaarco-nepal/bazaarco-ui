@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button, PasswordInput } from "@/components/ui";
 import { useBz } from "@/components/common/marketplace";
@@ -21,6 +22,7 @@ const inputStyle: React.CSSProperties = {
 };
 
 export function ChangePasswordModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { t } = useTranslation();
   const { nav, toast } = useBz();
   const changePassword = useChangePassword();
 
@@ -55,7 +57,7 @@ export function ChangePasswordModal({ open, onClose }: { open: boolean; onClose:
     setError(null);
 
     if (!currentPassword) {
-      setError("Enter your current password");
+      setError(t("common.changePassword.enterCurrent"));
       return;
     }
     if (!isStrongPassword(newPassword)) {
@@ -63,17 +65,17 @@ export function ChangePasswordModal({ open, onClose }: { open: boolean; onClose:
       return;
     }
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match");
+      setError(t("common.changePassword.mismatch"));
       return;
     }
 
     try {
       await changePassword.mutateAsync({ currentPassword, newPassword });
-      toast("Password changed — please sign in again");
+      toast(t("common.changePassword.success"));
       onClose();
       nav("auth");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not change password");
+      setError(err instanceof Error ? err.message : t("common.changePassword.failed"));
     }
   };
 
@@ -116,7 +118,7 @@ export function ChangePasswordModal({ open, onClose }: { open: boolean; onClose:
             color: "var(--ink-900)",
           }}
         >
-          Change password
+          {t("common.changePassword.title")}
         </h3>
 
         <form onSubmit={handleSubmit}>
@@ -129,12 +131,12 @@ export function ChangePasswordModal({ open, onClose }: { open: boolean; onClose:
               margin: "0 0 6px",
             }}
           >
-            Current password
+            {t("common.changePassword.currentLabel")}
           </label>
           <PasswordInput
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
-            placeholder="Enter current password"
+            placeholder={t("common.changePassword.currentPlaceholder")}
             autoComplete="current-password"
             inputStyle={inputStyle}
             style={{ marginBottom: 14 }}
@@ -149,12 +151,12 @@ export function ChangePasswordModal({ open, onClose }: { open: boolean; onClose:
               margin: "0 0 6px",
             }}
           >
-            New password
+            {t("common.changePassword.newLabel")}
           </label>
           <PasswordInput
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="8+ characters, number, symbol"
+            placeholder={t("common.passwordHint")}
             autoComplete="new-password"
             inputStyle={inputStyle}
             style={{ marginBottom: 14 }}
@@ -169,12 +171,12 @@ export function ChangePasswordModal({ open, onClose }: { open: boolean; onClose:
               margin: "0 0 6px",
             }}
           >
-            Confirm new password
+            {t("common.changePassword.confirmLabel")}
           </label>
           <PasswordInput
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Re-enter new password"
+            placeholder={t("common.changePassword.confirmPlaceholder")}
             autoComplete="new-password"
             inputStyle={inputStyle}
             style={{ marginBottom: 14 }}
@@ -192,7 +194,7 @@ export function ChangePasswordModal({ open, onClose }: { open: boolean; onClose:
               disabled={pending}
               style={{ flex: "1 1 120px" }}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               variant="primary"
@@ -201,7 +203,7 @@ export function ChangePasswordModal({ open, onClose }: { open: boolean; onClose:
               disabled={pending}
               style={{ flex: "1 1 120px" }}
             >
-              Change password
+              {t("common.changePassword.title")}
             </Button>
           </div>
         </form>

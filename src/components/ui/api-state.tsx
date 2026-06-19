@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
+
 import { Spinner } from "@/components/ui";
 
 interface ApiStateProps {
@@ -11,6 +13,7 @@ interface ApiStateProps {
 }
 
 export function ApiState({ isLoading, isError = false, error, children, fallback }: ApiStateProps) {
+  const { t } = useTranslation();
   if (isLoading) {
     return (
       fallback ?? (
@@ -24,9 +27,11 @@ export function ApiState({ isLoading, isError = false, error, children, fallback
   if (isError) {
     return (
       <div style={{ maxWidth: 640, margin: "48px auto", padding: "0 28px", textAlign: "center" }}>
-        <p style={{ margin: 0, fontWeight: 700, color: "var(--danger)" }}>Something went wrong</p>
+        <p style={{ margin: 0, fontWeight: 700, color: "var(--danger)" }}>
+          {t("common.apiState.errorTitle")}
+        </p>
         <p style={{ margin: "8px 0 0", fontSize: ".875rem", color: "var(--ink-500)" }}>
-          {error?.message ?? "Unable to load data. Please try again."}
+          {error?.message ?? t("common.apiState.errorMessage")}
         </p>
       </div>
     );

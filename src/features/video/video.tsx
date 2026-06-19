@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { formatNPR } from "@/lib/money";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import {
   Icon,
   Logo,
@@ -173,10 +174,11 @@ function ReelThumb({
   active?: boolean;
   onClick?: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <button
       onClick={onClick}
-      aria-label={`Watch ${v.name}`}
+      aria-label={t("video.watchAria", { name: v.name })}
       style={{
         padding: 0,
         border: `2px solid ${active ? "var(--red)" : "transparent"}`,
@@ -274,6 +276,7 @@ function ReelItem({
   radius?: string;
   hideMuteBadge?: boolean;
 }) {
+  const { t } = useTranslation();
   const { openProduct, addToCart, toggleWish, wish, toast } = useBz();
   const p = item;
   const s = item.seller;
@@ -370,7 +373,7 @@ function ReelItem({
           }}
         >
           <Icon name="fastForward" size={18} color="#fff" />
-          2x Speed
+          {t("video.speed2x")}
         </div>
       )}
       <VideoPlayer
@@ -412,7 +415,7 @@ function ReelItem({
         className="tnum"
       >
         <Icon name="video" size={12} color="#fff" />
-        {fmtCount(metrics.views)} views
+        {t("video.views", { count: fmtCount(metrics.views) })}
       </div>
 
       {!hideMuteBadge && (
@@ -421,7 +424,7 @@ function ReelItem({
             e.stopPropagation();
             if (onMutedChange) onMutedChange(!muted);
           }}
-          aria-label={muted ? "Unmute" : "Mute"}
+          aria-label={muted ? t("video.unmute") : t("video.mute")}
           style={{
             position: "absolute",
             top: 14,

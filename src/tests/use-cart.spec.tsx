@@ -87,6 +87,29 @@ describe("useCartMutations", () => {
     expect(mockedCart.addItem).toHaveBeenCalledWith("p1", 1, "v-l");
   });
 
+  it("updateQty optimistically updates the store qty before the response", async () => {
+    useBazaarStore.setState({ cart: [{ id: "p1", variantId: "v-l", qty: 1 }] as never });
+    // Never resolves during the test — we assert the optimistic state set in onMutate.
+    mockedCart.updateItem.mockReturnValue(new Promise(() => {}));
+    const { result } = renderHook(() => useCartMutations(), { wrapper: wrapper() });
+
+    void result.current.updateQty.mutate({ productId: "p1", qty: 2, variantId: "v-l" });
+
+    await waitFor(() => expect(useBazaarStore.getState().cart[0]?.qty).toBe(2));
+  });
+
+  it("updateQty rolls back the optimistic qty when the request fails", async () => {
+    useBazaarStore.setState({ cart: [{ id: "p1", variantId: "v-l", qty: 1 }] as never });
+    mockedCart.updateItem.mockRejectedValue(new Error("network"));
+    const { result } = renderHook(() => useCartMutations(), { wrapper: wrapper() });
+
+    await result.current.updateQty
+      .mutateAsync({ productId: "p1", qty: 2, variantId: "v-l" })
+      .catch(() => {});
+
+    expect(useBazaarStore.getState().cart[0]?.qty).toBe(1); // restored
+  });
+
   it("updateQty and removeItem forward the right args (incl. variantId)", async () => {
     mockedCart.updateItem.mockResolvedValue({ items: [] });
     mockedCart.removeItem.mockResolvedValue({ items: [] });

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 
 import { Button, PasswordInput } from "@/components/ui";
 import { useBz } from "@/components/common/marketplace";
@@ -29,6 +30,7 @@ export function PasswordResetModal({
   onClose: () => void;
   mode?: "reset" | "set";
 }) {
+  const { t } = useTranslation();
   const { nav, toast } = useBz();
   const requestReset = useRequestPasswordReset();
   const confirmReset = useConfirmPasswordReset();
@@ -42,7 +44,7 @@ export function PasswordResetModal({
 
   const pending = requestReset.isPending || confirmReset.isPending;
   const isSet = mode === "set";
-  const title = isSet ? "Set a password" : "Reset password";
+  const title = isSet ? t("common.passwordReset.setTitle") : t("common.passwordReset.resetTitle");
 
   // Reset internal state whenever the modal closes so reopening starts fresh.
   useEffect(() => {
@@ -72,9 +74,9 @@ export function PasswordResetModal({
       const res = await requestReset.mutateAsync();
       setMaskedEmail(res.email);
       setStep(2);
-      toast("Code sent");
+      toast(t("common.passwordReset.codeSent"));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not send code");
+      setError(e instanceof Error ? e.message : t("common.passwordReset.sendFailed"));
     }
   };
 
@@ -83,7 +85,7 @@ export function PasswordResetModal({
     setError(null);
 
     if (!/^\d{6}$/.test(otp)) {
-      setError("Enter the 6-digit code");
+      setError(t("common.passwordReset.enterCode"));
       return;
     }
     if (!isStrongPassword(newPassword)) {
@@ -91,17 +93,17 @@ export function PasswordResetModal({
       return;
     }
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match");
+      setError(t("common.passwordReset.mismatch"));
       return;
     }
 
     try {
       await confirmReset.mutateAsync({ otp, newPassword });
-      toast("Password updated — please sign in again");
+      toast(t("common.passwordReset.updated"));
       onClose();
       nav("auth");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not update password");
+      setError(err instanceof Error ? err.message : t("common.passwordReset.updateFailed"));
     }
   };
 
@@ -157,9 +159,7 @@ export function PasswordResetModal({
                 lineHeight: 1.55,
               }}
             >
-              {isSet
-                ? "We'll email you a 6-digit code to confirm it's you. After that you can set a password and also sign in with email."
-                : "We'll email you a 6-digit code to confirm it's you, then you can choose a new password."}
+              {isSet ? t("common.passwordReset.introSet") : t("common.passwordReset.introReset")}
             </p>
 
             {error && (
@@ -178,7 +178,7 @@ export function PasswordResetModal({
                 disabled={pending}
                 style={{ flex: "1 1 120px" }}
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button
                 variant="primary"
@@ -187,7 +187,7 @@ export function PasswordResetModal({
                 onClick={() => void handleSendCode()}
                 style={{ flex: "1 1 120px" }}
               >
-                Send code
+                {t("common.passwordReset.sendCode")}
               </Button>
             </div>
           </>
@@ -201,8 +201,11 @@ export function PasswordResetModal({
                 lineHeight: 1.55,
               }}
             >
-              Enter the code we sent to <b style={{ color: "var(--ink-700)" }}>{maskedEmail}</b> and
-              choose your new password.
+              <Trans
+                i18nKey="common.passwordReset.codeIntro"
+                values={{ email: maskedEmail }}
+                components={{ strong: <b style={{ color: "var(--ink-700)" }} /> }}
+              />
             </p>
 
             <label
@@ -214,7 +217,7 @@ export function PasswordResetModal({
                 margin: "0 0 6px",
               }}
             >
-              Verification code
+              {t("common.passwordReset.codeLabel")}
             </label>
             <input
               type="text"
@@ -245,12 +248,12 @@ export function PasswordResetModal({
                 margin: "0 0 6px",
               }}
             >
-              New password
+              {t("common.passwordReset.newLabel")}
             </label>
             <PasswordInput
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="8+ characters, number, symbol"
+              placeholder={t("common.passwordHint")}
               autoComplete="new-password"
               inputStyle={inputStyle}
               style={{ marginBottom: 14 }}
@@ -265,12 +268,12 @@ export function PasswordResetModal({
                 margin: "0 0 6px",
               }}
             >
-              Confirm new password
+              {t("common.changePassword.confirmLabel")}
             </label>
             <PasswordInput
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Re-enter password"
+              placeholder={t("common.passwordReset.confirmPlaceholder")}
               autoComplete="new-password"
               inputStyle={inputStyle}
               style={{ marginBottom: 14 }}
@@ -293,7 +296,7 @@ export function PasswordResetModal({
                 disabled={pending}
                 style={{ flex: "1 1 120px" }}
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button
                 variant="primary"
@@ -302,7 +305,7 @@ export function PasswordResetModal({
                 disabled={pending}
                 style={{ flex: "1 1 120px" }}
               >
-                Update password
+                {t("common.passwordReset.updatePassword")}
               </Button>
             </div>
           </form>

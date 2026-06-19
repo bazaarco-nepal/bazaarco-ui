@@ -30,6 +30,7 @@ import { ASSETS } from "@/config/assets";
 import { SOCIAL_LINKS } from "@/config/site";
 import { BuyerAvatar } from "@/components/common/buyer-avatar";
 import { LogoutConfirmModal } from "@/components/common/logout-confirm-modal";
+import { LanguageToggle } from "@/components/common/language-toggle";
 
 import type { BazaarContextValue } from "@/types/bazaar";
 import type { Category, Product, Seller } from "@/types";
@@ -136,6 +137,7 @@ export function SellerRow({
   onVisit?: (sellerId: string) => void;
   compact?: boolean;
 }) {
+  const { t } = useTranslation();
   if (!seller) {
     return (
       <div
@@ -148,7 +150,7 @@ export function SellerRow({
           fontSize: ".875rem",
         }}
       >
-        <Spinner size={18} /> Loading seller…
+        <Spinner size={18} /> {t("common.loadingSeller")}
       </div>
     );
   }
@@ -197,7 +199,7 @@ export function SellerRow({
             onVisit(sellerId);
           }}
         >
-          Visit store
+          {t("common.visitStore")}
         </Button>
       )}
       {onToggleSave && sellerId && (
@@ -207,7 +209,7 @@ export function SellerRow({
             e.stopPropagation();
             onToggleSave(sellerId);
           }}
-          aria-label={saved ? "Unsave seller" : "Save seller"}
+          aria-label={saved ? t("common.a11y.unsaveSeller") : t("common.a11y.saveSeller")}
           style={{
             width: 40,
             height: 40,
@@ -243,6 +245,7 @@ export function ProductCard({
       the Add Product live preview so sellers see the exact buyer card. */
   preview?: boolean;
 }) {
+  const { t } = useTranslation();
   const { toggleWish, wish } = useBz();
   const locale = useBazaarStore((s) => s.locale);
   const productName = displayProductName(p, locale);
@@ -324,7 +327,7 @@ export function ProductCard({
                   void toggleWish(p.id);
                 }
           }
-          aria-label="Add to wishlist"
+          aria-label={t("common.a11y.addToWishlist")}
           aria-hidden={preview || undefined}
           tabIndex={preview ? -1 : undefined}
           style={{
@@ -651,6 +654,7 @@ export function CategoryTile({
 
 /* ---------- Navbar ---------- */
 export function DevViewSwitcher() {
+  const { t } = useTranslation();
   const { screen } = useBz();
   const SELLER = [
     "s-onboarding",
@@ -664,7 +668,7 @@ export function DevViewSwitcher() {
   const isSeller = SELLER.includes(screen);
   const target = isSeller ? "home" : "s-dashboard";
   const icon = isSeller ? "cart" : "store";
-  const label = isSeller ? "Switch to buyer view" : "Switch to seller view";
+  const label = isSeller ? t("common.switchToBuyer") : t("common.switchToSeller");
   return (
     <AppLink
       href={pathFromScreen(target)}
@@ -831,6 +835,21 @@ function AccountMenuPanel({
         onNavigate={() => goAndClose("bargains")}
       />
       <div style={{ height: 1, background: "var(--line-200)", margin: "6px 4px" }} />
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
+          padding: "6px 12px 8px",
+        }}
+      >
+        <span style={{ fontSize: ".8125rem", fontWeight: 600, color: "var(--ink-700)" }}>
+          {t("language.label")}
+        </span>
+        <LanguageToggle compact />
+      </div>
+      <div style={{ height: 1, background: "var(--line-200)", margin: "6px 4px" }} />
       {authed ? (
         <NavMenuItem icon="x" label={t("nav.logOut")} danger onClick={onLogout} />
       ) : (
@@ -932,15 +951,19 @@ export function Navbar() {
             suppressHydrationWarning
             style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
           >
+            <Icon name="video" size={13} color="#fff" /> {t("trust.shopping")}
+          </span>
+          <span style={{ opacity: 0.35 }}>·</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+            <Icon name="play" size={13} color="#fff" /> {t("trust.videos")}
+          </span>
+          <span style={{ opacity: 0.35 }}>·</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
             <Icon name="bargain" size={13} color="#fff" /> {t("trust.bargain")}
           </span>
           <span style={{ opacity: 0.35 }}>·</span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-            <Icon name="check" size={13} color="#fff" /> {t("trust.verified")}
-          </span>
-          <span style={{ opacity: 0.35 }}>·</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-            <Icon name="lock" size={13} color="#fff" /> {t("trust.payments")}
+            <Icon name="truck" size={13} color="#fff" /> {t("trust.delivery")}
           </span>
         </div>
       </div>
@@ -970,7 +993,7 @@ export function Navbar() {
               onClick={() => setDeliverOpen(true)}
               aria-haspopup="dialog"
               aria-expanded={deliverOpen}
-              aria-label={`Deliver to ${deliverLabel}`}
+              aria-label={t("common.deliverToAria", { label: deliverLabel })}
               className="bz-navbar__deliver bz-hide-mobile"
             >
               <Icon name="mapPin" size={16} color="var(--red)" />
@@ -1036,7 +1059,7 @@ export function Navbar() {
           {query && (
             <button
               type="button"
-              aria-label="Clear search"
+              aria-label={t("common.a11y.clearSearch")}
               className="bz-navbar__search-clear"
               onClick={() => {
                 clearSearch();
@@ -1135,13 +1158,13 @@ export function Navbar() {
             className="bz-navbar__sheet bz-show-mobile"
             role="dialog"
             aria-modal="true"
-            aria-label="Account menu"
+            aria-label={t("common.a11y.accountMenu")}
           >
             <div className="bz-navbar__sheet-head">
               <h2 className="bz-navbar__sheet-title">{t("nav.menu")}</h2>
               <button
                 type="button"
-                aria-label="Close menu"
+                aria-label={t("common.a11y.closeMenu")}
                 onClick={() => setMenuOpen(false)}
                 style={{
                   width: 40,

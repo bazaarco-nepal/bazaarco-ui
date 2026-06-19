@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { Trans, useTranslation } from "react-i18next";
 
 import { Button, PasswordInput } from "@/components/ui";
 import { useBz } from "@/components/common/marketplace";
@@ -14,6 +16,7 @@ export function SellerDeleteAccountModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const { nav, toast } = useBz();
   const deleteMutation = useDeleteAccount();
   const otpMutation = useRequestAccountDeletionOtp();
@@ -78,7 +81,9 @@ export function SellerDeleteAccountModal({
         setResendCooldown(30);
       },
       onError: (err) => {
-        setDeleteError(err instanceof Error ? err.message : "Could not send verification code");
+        setDeleteError(
+          err instanceof Error ? err.message : t("common.deleteSellerAccount.sendCodeFailed"),
+        );
       },
     });
   };
@@ -92,7 +97,9 @@ export function SellerDeleteAccountModal({
         setResendCooldown(30);
       },
       onError: (err) => {
-        setDeleteError(err instanceof Error ? err.message : "Could not resend code");
+        setDeleteError(
+          err instanceof Error ? err.message : t("common.deleteSellerAccount.resendFailed"),
+        );
       },
     });
   };
@@ -105,262 +112,145 @@ export function SellerDeleteAccountModal({
       {
         onSuccess: () => {
           closeModal();
-          toast("Account deleted. We're sorry to see you go.");
+          toast(t("common.deleteSellerAccount.deleted"));
           nav("home");
         },
         onError: (err) => {
-          setDeleteError(err instanceof Error ? err.message : "Could not delete account");
+          setDeleteError(
+            err instanceof Error ? err.message : t("common.deleteSellerAccount.deleteFailed"),
+          );
         },
       },
     );
   };
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  const dismiss = () => {
+    if (!deleteMutation.isPending && !otpMutation.isPending) closeModal();
+  };
+
+  return createPortal(
+    // The modal opens from seller page content; portal'ing to <body> keeps the
+    // fixed overlay clear of any transformed ancestor (matching the store
+    // switcher), and re-asserting data-skin="fluent" guarantees the inputs and
+    // buttons inside render in the seller's Fluent skin, not the buyer theme.
     <div
+      data-skin="fluent"
+      className="bz-store-modal-scrim"
       role="dialog"
       aria-modal="true"
       aria-labelledby="seller-delete-title"
-      onClick={() => {
-        if (!deleteMutation.isPending && !otpMutation.isPending) closeModal();
-      }}
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 700,
-        background: "rgba(11,18,32,.6)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 20,
-      }}
+      onClick={dismiss}
     >
-      <style>{`
-        .bz-delete-actions { display: flex; gap: 10px; flex-direction: row; }
-        @media (max-width: 480px) { .bz-delete-actions { flex-direction: column; } }
-      `}</style>
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: "#fff",
-          borderRadius: "var(--r-xl)",
-          padding: 28,
-          width: "100%",
-          maxWidth: 460,
-          boxShadow: "var(--sh-3)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-          <div
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: "50%",
-              background: "var(--tint-red-50)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-              color: "var(--danger)",
-              fontWeight: 800,
-              fontSize: 24,
-            }}
-          >
-            !
-          </div>
-          <h3
-            id="seller-delete-title"
-            style={{
-              margin: 0,
-              fontSize: "1.125rem",
-              fontWeight: 800,
-              color: "var(--ink-900)",
-            }}
-          >
-            Delete your seller account?
-          </h3>
-        </div>
-        <p
-          style={{
-            margin: "0 0 14px",
-            color: "var(--ink-500)",
-            fontSize: ".9375rem",
-            lineHeight: 1.5,
-          }}
-        >
-          This is <b style={{ color: "var(--danger)" }}>permanent</b>. Your shop, all your product
-          listings, reviews, and messages will be removed. If your products have any existing
-          orders, deletion is blocked — contact support instead.
+      <div className="bz-store-modal" onClick={(e) => e.stopPropagation()}>
+        <h3 id="seller-delete-title" className="bz-store-modal-title">
+          {t("common.deleteSellerAccount.title")}
+        </h3>
+        <p className="bz-del-warning">
+          <Trans i18nKey="common.deleteSellerAccount.warning" components={{ strong: <b /> }} />
         </p>
 
         {step === "request" && (
-          <>
-            <p
-              style={{
-                margin: "0 0 8px",
-                fontSize: ".8125rem",
-                fontWeight: 700,
-                color: "var(--ink-700)",
-              }}
-            >
-              Type <b style={{ color: "var(--danger)" }}>DELETE</b> to confirm
-            </p>
+          <label className="bz-store-field">
+            <span className="bz-store-field-label">
+              <Trans
+                i18nKey="common.deleteSellerAccount.typeToConfirm"
+                components={{ strong: <b /> }}
+              />
+            </span>
             <input
               value={deleteText}
               onChange={(e) => setDeleteText(e.target.value)}
-              placeholder="Type DELETE"
+              placeholder={t("common.deleteSellerAccount.typePlaceholder")}
               autoFocus
-              style={{
-                width: "100%",
-                height: 44,
-                border: "1.5px solid var(--line-200)",
-                borderRadius: "var(--r-md)",
-                padding: "0 14px",
-                fontSize: ".9375rem",
-                fontFamily: "var(--font-sans)",
-                outline: "none",
-                marginBottom: 18,
-                letterSpacing: ".02em",
-              }}
+              className="bz-store-field-input"
             />
-          </>
+          </label>
         )}
 
         {step === "confirm" && (
           <>
-            <p
-              style={{
-                margin: "0 0 12px",
-                fontSize: ".875rem",
-                color: "var(--ink-600)",
-              }}
-            >
-              We sent a 6-digit code to <b>{maskedEmail}</b>
+            <p className="bz-store-field-hint">
+              <Trans
+                i18nKey="common.deleteSellerAccount.codeSent"
+                values={{ email: maskedEmail }}
+                components={{ strong: <b /> }}
+              />
             </p>
-            <p
-              style={{
-                margin: "0 0 8px",
-                fontSize: ".8125rem",
-                fontWeight: 700,
-                color: "var(--ink-700)",
-              }}
-            >
-              Verification code
-            </p>
-            <input
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              placeholder="000000"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              autoFocus
-              style={{
-                width: "100%",
-                height: 44,
-                border: "1.5px solid var(--line-200)",
-                borderRadius: "var(--r-md)",
-                padding: "0 14px",
-                fontSize: "1.125rem",
-                fontFamily: "var(--font-mono, monospace)",
-                letterSpacing: "6px",
-                outline: "none",
-                marginBottom: requiresPassword ? 12 : 4,
-              }}
-            />
+            <label className="bz-store-field">
+              <span className="bz-store-field-label">
+                {t("common.deleteSellerAccount.codeLabel")}
+              </span>
+              <input
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="000000"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                autoFocus
+                className="bz-store-field-input bz-del-otp"
+              />
+            </label>
             {requiresPassword && (
-              <>
-                <p
-                  style={{
-                    margin: "0 0 8px",
-                    fontSize: ".8125rem",
-                    fontWeight: 700,
-                    color: "var(--ink-700)",
-                  }}
-                >
-                  Confirm your password
-                </p>
+              <label className="bz-store-field">
+                <span className="bz-store-field-label">
+                  {t("common.deleteSellerAccount.confirmPasswordLabel")}
+                </span>
                 <PasswordInput
                   value={deletePassword}
                   onChange={(e) => setDeletePassword(e.target.value)}
-                  placeholder="Your password"
+                  placeholder={t("common.deleteSellerAccount.passwordPlaceholder")}
                   autoComplete="current-password"
-                  inputStyle={{
-                    width: "100%",
-                    height: 44,
-                    border: "1.5px solid var(--line-200)",
-                    borderRadius: "var(--r-md)",
-                    padding: "0 14px",
-                    fontSize: ".9375rem",
-                    fontFamily: "var(--font-sans)",
-                    outline: "none",
-                    marginBottom: 4,
-                  }}
+                  className="bz-store-field-input"
                 />
-              </>
+              </label>
             )}
             <button
               type="button"
               onClick={handleResendOtp}
               disabled={resendCooldown > 0 || otpMutation.isPending}
-              style={{
-                background: "none",
-                border: "none",
-                padding: "4px 0",
-                marginBottom: 14,
-                color: resendCooldown > 0 ? "var(--ink-400)" : "var(--primary)",
-                fontSize: ".8125rem",
-                fontWeight: 600,
-                cursor: resendCooldown > 0 ? "default" : "pointer",
-              }}
+              className="bz-del-resend"
             >
-              {resendCooldown > 0 ? `Resend code (${resendCooldown}s)` : "Resend code"}
+              {resendCooldown > 0
+                ? t("common.deleteSellerAccount.resendIn", { seconds: resendCooldown })
+                : t("common.deleteSellerAccount.resend")}
             </button>
           </>
         )}
 
-        {deleteError && (
-          <p
-            style={{
-              margin: "0 0 14px",
-              color: "var(--danger)",
-              fontSize: ".875rem",
-              fontWeight: 600,
-            }}
-          >
-            {deleteError}
-          </p>
-        )}
-        <div className="bz-delete-actions">
+        {deleteError && <p className="bz-del-error">{deleteError}</p>}
+
+        <div className="bz-store-modal-actions">
           <Button
-            variant="primary"
-            full
+            variant="secondary"
             disabled={deleteMutation.isPending || otpMutation.isPending}
             onClick={closeModal}
           >
-            Cancel
+            {t("common.cancel")}
           </Button>
           {step === "request" ? (
             <Button
               variant="danger"
-              full
               disabled={!canRequestOtp}
               loading={otpMutation.isPending}
               onClick={handleRequestOtp}
             >
-              Proceed
+              {t("common.deleteSellerAccount.proceed")}
             </Button>
           ) : (
             <Button
               variant="danger"
-              full
               disabled={!canDelete}
               loading={deleteMutation.isPending}
               onClick={handleDelete}
             >
-              Delete forever
+              {t("common.deleteSellerAccount.deleteForever")}
             </Button>
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

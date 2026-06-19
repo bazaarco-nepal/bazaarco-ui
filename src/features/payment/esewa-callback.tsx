@@ -2,12 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { useVerifyEsewaPayment } from "@/hooks/use-payment";
 import { useBazaarStore } from "@/store/bazaar-store";
 
 type Phase = "verifying" | "captured" | "pending" | "failed";
-
-const FAILED_MESSAGE = "Payment could not be completed. Your order has not been confirmed.";
 
 /**
  * eSewa return handler. eSewa redirects here with a base64 `data` query param;
@@ -16,12 +15,15 @@ const FAILED_MESSAGE = "Payment could not be completed. Your order has not been 
  * the backend verdict. Re-running (refresh) is safe: verification is idempotent.
  */
 export function EsewaCallback({ mode }: { mode: "success" | "failure" }) {
+  const { t } = useTranslation();
   const router = useRouter();
   const params = useSearchParams();
   const verify = useVerifyEsewaPayment();
   const [phase, setPhase] = useState<Phase>("verifying");
   const [message, setMessage] = useState("");
   const ran = useRef(false);
+
+  const failedMessage = t("payment.callback.failedMessage");
 
   // eSewa returns the response in `data`; tolerate `encodedData` just in case.
   const encodedData = params.get("data") ?? params.get("encodedData");
@@ -33,7 +35,7 @@ export function EsewaCallback({ mode }: { mode: "success" | "failure" }) {
     if (!encodedData) {
       // Reached failure URL with no payload — nothing to verify, order unplaced.
       setPhase("failed");
-      setMessage(FAILED_MESSAGE);
+      setMessage(failedMessage);
       return;
     }
 
@@ -53,12 +55,10 @@ export function EsewaCallback({ mode }: { mode: "success" | "failure" }) {
         }
       } catch {
         setPhase("failed");
-        setMessage(
-          "We couldn't verify your payment. If money was deducted, it will be refunded — please contact support.",
-        );
+        setMessage(t("payment.callback.verifyError"));
       }
     })();
-  }, [encodedData, mode, router, verify]);
+  }, [encodedData, mode, router, verify, failedMessage, t]);
 
   return (
     <div
@@ -84,12 +84,14 @@ export function EsewaCallback({ mode }: { mode: "success" | "failure" }) {
         {(phase === "verifying" || phase === "captured") && (
           <>
             <div style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--ink-900)" }}>
-              {phase === "captured" ? "Payment confirmed" : "Verifying your eSewa payment…"}
+              {phase === "captured"
+                ? t("payment.callback.confirmedTitle")
+                : t("payment.callback.verifyingTitle")}
             </div>
             <p style={{ marginTop: 10, fontSize: ".875rem", color: "var(--ink-500)" }}>
               {phase === "captured"
-                ? "Taking you to your order confirmation…"
-                : "Please wait — do not close this page."}
+                ? t("payment.callback.confirmedHint")
+                : t("payment.callback.verifyingHint")}
             </p>
           </>
         )}
@@ -97,10 +99,10 @@ export function EsewaCallback({ mode }: { mode: "success" | "failure" }) {
         {phase === "pending" && (
           <>
             <div style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--ink-900)" }}>
-              Payment is being verified
+              {t("payment.callback.pendingTitle")}
             </div>
             <p style={{ marginTop: 10, fontSize: ".875rem", color: "var(--ink-500)" }}>
-              {message || "Your payment is still being confirmed. Please check again shortly."}
+              {message || t("payment.callback.pendingHint")}
             </p>
             <div
               style={{
@@ -112,10 +114,10 @@ export function EsewaCallback({ mode }: { mode: "success" | "failure" }) {
               }}
             >
               <button type="button" onClick={() => router.refresh()} style={primaryBtn}>
-                Check again
+                {t("payment.callback.checkAgain")}
               </button>
               <button type="button" onClick={() => router.push("/orders")} style={secondaryBtn}>
-                View my orders
+                {t("payment.callback.viewOrders")}
               </button>
             </div>
           </>
@@ -124,10 +126,10 @@ export function EsewaCallback({ mode }: { mode: "success" | "failure" }) {
         {phase === "failed" && (
           <>
             <div style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--danger)" }}>
-              Payment not completed
+              {t("payment.callback.failedTitle")}
             </div>
             <p style={{ marginTop: 10, fontSize: ".875rem", color: "var(--ink-500)" }}>
-              {message || FAILED_MESSAGE}
+              {message || failedMessage}
             </p>
             <div
               style={{
@@ -139,10 +141,10 @@ export function EsewaCallback({ mode }: { mode: "success" | "failure" }) {
               }}
             >
               <button type="button" onClick={() => router.push("/checkout")} style={primaryBtn}>
-                Try again
+                {t("payment.callback.tryAgain")}
               </button>
               <button type="button" onClick={() => router.push("/cart")} style={secondaryBtn}>
-                Back to cart
+                {t("payment.callback.backToCart")}
               </button>
             </div>
           </>

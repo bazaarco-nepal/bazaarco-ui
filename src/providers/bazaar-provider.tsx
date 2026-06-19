@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { BazaarCtx, LoginPromptModal } from "@/components/common";
@@ -26,6 +27,7 @@ import type { BazaarToast, Product } from "@/types";
 const TOAST_VISIBLE_MS = 3200;
 
 export function BazaarProvider({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const pathname = usePathname();
@@ -133,9 +135,12 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
-  const promptLogin = useCallback((message = "Please sign in to continue.") => {
-    setAuthPrompt(message);
-  }, []);
+  const promptLogin = useCallback(
+    (message?: string) => {
+      setAuthPrompt(message ?? t("toast.signInToContinue"));
+    },
+    [t],
+  );
 
   const closeAuthPrompt = useCallback(() => {
     setAuthPrompt(null);
@@ -173,14 +178,14 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
 
   const toggleWish = useCallback(
     async (productId: string) => {
-      if (!ensureAuthed("Please sign in to save products to your wishlist.")) return;
+      if (!ensureAuthed(t("toast.signInWishlistProduct"))) return;
       const prev = useBazaarStore.getState().wish;
       const isSaved = prev.includes(productId);
       setWish(isSaved ? prev.filter((id) => id !== productId) : [...prev, productId]);
       if (isSaved) {
-        toast("Removed from wishlist");
+        toast(t("toast.removedFromWishlist"));
       } else {
-        toast("Saved to wishlist", undefined, {
+        toast(t("toast.savedToWishlist"), undefined, {
           undo: () => void toggleWishRef.current(productId),
         });
       }
@@ -194,17 +199,17 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
         setWish(prev);
       }
     },
-    [addWishProduct, ensureAuthed, removeWishProduct, setWish, toast],
+    [addWishProduct, ensureAuthed, removeWishProduct, setWish, toast, t],
   );
   toggleWishRef.current = toggleWish;
 
   const toggleSellerWish = useCallback(
     async (sellerId: string) => {
-      if (!ensureAuthed("Please sign in to save sellers to your wishlist.")) return;
+      if (!ensureAuthed(t("toast.signInWishlistSeller"))) return;
       const prev = useBazaarStore.getState().wishSellers;
       const isSaved = prev.includes(sellerId);
       setWishSellers(isSaved ? prev.filter((id) => id !== sellerId) : [...prev, sellerId]);
-      toast(isSaved ? "Unfollowed seller" : "Seller saved");
+      toast(isSaved ? t("toast.unfollowedSeller") : t("toast.sellerSaved"));
       try {
         if (isSaved) {
           await removeWishSeller.mutateAsync(sellerId);
@@ -215,7 +220,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
         setWishSellers(prev);
       }
     },
-    [addWishSeller, ensureAuthed, removeWishSeller, setWishSellers, toast],
+    [addWishSeller, ensureAuthed, removeWishSeller, setWishSellers, toast, t],
   );
 
   const nav = useCallback(
@@ -299,7 +304,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       // the buyer pick one option from each group and add them together.
       variantId?: string | null | Array<string | null>,
     ) => {
-      if (!ensureAuthed("Please sign in to add items to your cart.")) return;
+      if (!ensureAuthed(t("toast.signInAddToCart"))) return;
       const variantIds = Array.isArray(variantId) ? variantId : [variantId ?? null];
       try {
         for (const vid of variantIds) {
@@ -312,18 +317,18 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
         }
         const defaultMsg =
           variantIds.length > 1
-            ? `${variantIds.length} options added to cart`
+            ? t("toast.optionsAddedToCart", { count: variantIds.length })
             : qty > 1
-              ? `${qty} added to cart`
-              : "Added to cart";
+              ? t("toast.qtyAddedToCart", { count: qty })
+              : t("toast.addedToCart");
         toast(successMessage ?? defaultMsg);
       } catch (error) {
-        const msg = error instanceof ApiRequestError ? error.message : "Could not add to cart";
+        const msg = error instanceof ApiRequestError ? error.message : t("toast.couldNotAddToCart");
         toast(msg, "error");
         throw error;
       }
     },
-    [addItem, ensureAuthed, setSelectedCartIds, toast],
+    [addItem, ensureAuthed, setSelectedCartIds, toast, t],
   );
 
   const updateCartQty = useCallback(
@@ -336,11 +341,12 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
         }
         await updateQty.mutateAsync({ productId, qty, variantId });
       } catch (error) {
-        const msg = error instanceof ApiRequestError ? error.message : "Could not update cart";
+        const msg =
+          error instanceof ApiRequestError ? error.message : t("toast.couldNotUpdateCart");
         toast(msg, "error");
       }
     },
-    [removeItem, updateQty, toast],
+    [removeItem, updateQty, toast, t],
   );
 
   const removeFromCart = useCallback(
@@ -349,39 +355,40 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       try {
         await removeItem.mutateAsync({ productId, variantId });
       } catch (error) {
-        const msg = error instanceof ApiRequestError ? error.message : "Could not remove item";
+        const msg =
+          error instanceof ApiRequestError ? error.message : t("toast.couldNotRemoveItem");
         toast(msg, "error");
       }
     },
-    [removeItem, toast],
+    [removeItem, toast, t],
   );
 
   const buyNow = useCallback(
     async (product: Product, qty = 1, variantId?: string | null | Array<string | null>) => {
-      if (!ensureAuthed("Please sign in to buy now and checkout.")) return;
+      if (!ensureAuthed(t("toast.signInBuyNow"))) return;
       const variantIds = Array.isArray(variantId) ? variantId : [variantId ?? null];
       try {
         for (const vid of variantIds) {
           await addItem.mutateAsync({ product, qty, variantId: vid });
-          // Select the line for checkout, exactly like addToCart — otherwise a
-          // previously-materialized selection would price the wrong items (or
-          // an empty selection would leave the place-order button disabled).
-          setSelectedCartIds((prev) =>
-            selectLine(prev, cartLineKey({ id: product.id, variantId: vid })),
-          );
         }
+        // Buy Now checks out exactly the chosen line(s): overwrite any prior
+        // (possibly partial) selection so unrelated cart items aren't priced or
+        // ordered too. An explicit list also keeps the place-order button enabled.
+        setSelectedCartIds(
+          variantIds.map((vid) => cartLineKey({ id: product.id, variantId: vid })),
+        );
         nav("checkout");
       } catch (error) {
-        const msg = error instanceof ApiRequestError ? error.message : "Could not add to cart";
+        const msg = error instanceof ApiRequestError ? error.message : t("toast.couldNotAddToCart");
         toast(msg, "error");
       }
     },
-    [addItem, ensureAuthed, nav, setSelectedCartIds, toast],
+    [addItem, ensureAuthed, nav, setSelectedCartIds, toast, t],
   );
 
   const placeOrder = useCallback(
     async (payload: CheckoutPayload) => {
-      if (!ensureAuthed("Please sign in to place your order.")) return;
+      if (!ensureAuthed(t("toast.signInPlaceOrder"))) return;
       try {
         const { cart: currentCart, selectedCartIds } = useBazaarStore.getState();
         // Resolve the selection to an explicit id list (the server only orders
@@ -400,7 +407,8 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
         void queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });
         nav("success");
       } catch (error) {
-        const msg = error instanceof ApiRequestError ? error.message : "Could not place order";
+        const msg =
+          error instanceof ApiRequestError ? error.message : t("toast.couldNotPlaceOrder");
         toast(msg, "error");
         throw error;
       }
@@ -414,6 +422,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       setOrderTotal,
       setSelectedCartIds,
       toast,
+      t,
     ],
   );
 
@@ -423,7 +432,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   // order is placed only after the payment is verified server-side on return.
   const checkoutEsewa = useCallback(
     async (payload: CheckoutPayload): Promise<EsewaPaymentInit | null> => {
-      if (!ensureAuthed("Please sign in to place your order.")) return null;
+      if (!ensureAuthed(t("toast.signInPlaceOrder"))) return null;
       try {
         const { cart: currentCart, selectedCartIds } = useBazaarStore.getState();
         const selectedItemIds = effectiveSelectedIds(currentCart, selectedCartIds);
@@ -436,12 +445,22 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
         void queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });
         return payment;
       } catch (error) {
-        const msg = error instanceof ApiRequestError ? error.message : "Could not start payment";
+        const msg =
+          error instanceof ApiRequestError ? error.message : t("toast.couldNotStartPayment");
         toast(msg, "error");
         throw error;
       }
     },
-    [ensureAuthed, queryClient, setCart, setLastOrderId, setOrderTotal, setSelectedCartIds, toast],
+    [
+      ensureAuthed,
+      queryClient,
+      setCart,
+      setLastOrderId,
+      setOrderTotal,
+      setSelectedCartIds,
+      toast,
+      t,
+    ],
   );
 
   const cartCount = cart.reduce((sum, item) => sum + item.qty, 0);

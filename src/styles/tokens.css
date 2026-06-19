@@ -825,6 +825,20 @@ body {
   border-top: 1px solid var(--line-200);
   padding: 8px 0;
 }
+.bz-side-lang {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 2px 8px 8px;
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--ink-700);
+}
+.bz-seller-side.collapsed .bz-side-lang {
+  display: none;
+}
 .bz-side-logout {
   color: var(--red);
 }
@@ -1275,6 +1289,44 @@ body {
   gap: 10px;
   justify-content: flex-end;
   margin-top: 4px;
+}
+
+/* Seller delete-account confirm dialog — Fluent MessageBar-style danger callout
+   plus the OTP/resend/error bits the generic store-modal classes don't cover. */
+.bz-del-warning {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border-left: 3px solid var(--danger);
+  background: var(--tint-red-50);
+  color: var(--ink-700);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.bz-del-otp {
+  font-family: var(--font-mono, monospace);
+  font-size: 1.125rem;
+  letter-spacing: 6px;
+}
+.bz-del-resend {
+  margin: 10px 0 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--blue);
+  cursor: pointer;
+}
+.bz-del-resend:disabled {
+  color: var(--ink-400);
+  cursor: default;
+}
+.bz-del-error {
+  margin: 14px 0 0;
+  color: var(--danger);
+  font-size: 0.875rem;
+  font-weight: 600;
 }
 
 /* Seller page layouts — use full content area beside sidebar */

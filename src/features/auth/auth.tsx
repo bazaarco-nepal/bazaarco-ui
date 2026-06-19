@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Trans, useTranslation } from "react-i18next";
 import { Icon, Logo, Button, AppLink, PasswordInput } from "@/components/ui";
 import { useBz } from "@/components/common";
 import { resolvePostAuthScreen } from "@/lib/auth-rbac";
@@ -76,6 +77,7 @@ function Field({
 }
 
 export function Auth() {
+  const { t } = useTranslation();
   const { nav, toast } = useBz();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -117,7 +119,7 @@ export function Auth() {
   const activeEmailTrimmed = activeEmail.trim();
   const emailFormatError =
     activeEmailTrimmed.length > 0 && !isValidEmail(activeEmailTrimmed)
-      ? "Enter a valid email address."
+      ? t("auth.invalidEmail")
       : null;
   const passwordFormatError =
     mode === "register" && password.length > 0 && !isStrongPassword(password)
@@ -134,9 +136,7 @@ export function Auth() {
     // New accounts must consent before we hand off to Google — the redirect can't
     // carry the checkbox, so the gate has to happen here (and again server-side).
     if (mode === "register" && !acceptedLegal) {
-      setError(
-        "Please confirm you're 18 or older and agree to the Terms & Conditions and Privacy Policy to continue.",
-      );
+      setError(t("auth.legalRequired"));
       return;
     }
     const role = isSeller ? "seller" : "buyer";
@@ -194,7 +194,7 @@ export function Auth() {
         });
         setPendingVerification(pending);
         setOtp("");
-        toast("Verification code sent");
+        toast(t("auth.codeSent"));
         return;
       } else {
         user = await loginMutation.mutateAsync({
@@ -202,11 +202,10 @@ export function Auth() {
           password,
         });
       }
-      toast("Welcome back");
+      toast(t("auth.welcomeBack"));
       afterAuth(user);
     } catch (err) {
-      const message =
-        err instanceof ApiRequestError ? err.message : "Something went wrong. Please try again.";
+      const message = err instanceof ApiRequestError ? err.message : t("auth.genericError");
       if (mode === "register") {
         // Surface signup failures (e.g. "already registered as a buyer account") as a
         // toast — the conflict message guides the user back to the right flow.
@@ -236,11 +235,10 @@ export function Auth() {
         email: pendingVerification.email,
         otp: otp.trim(),
       });
-      toast("Email verified");
+      toast(t("auth.emailVerified"));
       afterAuth(user);
     } catch (err) {
-      const message =
-        err instanceof ApiRequestError ? err.message : "Something went wrong. Please try again.";
+      const message = err instanceof ApiRequestError ? err.message : t("auth.genericError");
       setError(message);
     }
   };
@@ -254,10 +252,9 @@ export function Auth() {
       });
       setPendingVerification(pending);
       setOtp("");
-      toast("Verification code resent");
+      toast(t("auth.codeResent"));
     } catch (err) {
-      const message =
-        err instanceof ApiRequestError ? err.message : "Something went wrong. Please try again.";
+      const message = err instanceof ApiRequestError ? err.message : t("auth.genericError");
       setError(message);
     }
   };
@@ -301,16 +298,16 @@ export function Auth() {
     setForgotError(null);
     const trimmed = forgotEmail.trim();
     if (!isValidEmail(trimmed)) {
-      setForgotError("Enter a valid email address.");
+      setForgotError(t("auth.invalidEmail"));
       return;
     }
     try {
       const res = await forgotRequestMutation.mutateAsync({ email: trimmed });
       setForgotMaskedEmail(res.email);
       setForgotStep(2);
-      toast("Reset code sent to your email");
+      toast(t("auth.resetCodeSent"));
     } catch (err) {
-      setForgotError(err instanceof Error ? err.message : "Could not send reset code");
+      setForgotError(err instanceof Error ? err.message : t("auth.resetCodeFailed"));
     }
   };
 
@@ -319,7 +316,7 @@ export function Auth() {
     setForgotError(null);
 
     if (!/^\d{6}$/.test(forgotOtp.trim())) {
-      setForgotError("Enter the 6-digit code");
+      setForgotError(t("auth.enter6DigitCode"));
       return;
     }
     if (!isStrongPassword(forgotNewPassword)) {
@@ -327,7 +324,7 @@ export function Auth() {
       return;
     }
     if (forgotNewPassword !== forgotConfirmPassword) {
-      setForgotError("Passwords do not match");
+      setForgotError(t("auth.passwordsNoMatch"));
       return;
     }
 
@@ -337,10 +334,10 @@ export function Auth() {
         otp: forgotOtp.trim(),
         newPassword: forgotNewPassword,
       });
-      toast("Password updated — please sign in");
+      toast(t("auth.passwordUpdated"));
       setForgotMode(false);
     } catch (err) {
-      setForgotError(err instanceof Error ? err.message : "Could not reset password");
+      setForgotError(err instanceof Error ? err.message : t("auth.resetFailed"));
     }
   };
 
@@ -372,7 +369,7 @@ export function Auth() {
             textDecoration: "none",
           }}
         >
-          <Icon name="chevronLeft" size={16} /> Back
+          <Icon name="chevronLeft" size={16} /> {t("common.back")}
         </AppLink>
       </div>
 
@@ -427,7 +424,7 @@ export function Auth() {
                 }}
               >
                 <Icon name="cart" size={16} color={!isSeller ? "var(--blue)" : "var(--ink-400)"} />
-                Shop
+                {t("auth.shop")}
               </button>
               <button
                 type="button"
@@ -456,7 +453,7 @@ export function Auth() {
                 }}
               >
                 <Icon name="store" size={16} color={isSeller ? "var(--red)" : "var(--ink-400)"} />
-                Sell on BazaarCo
+                {t("auth.sellOnBazaarco")}
               </button>
             </div>
           )}
@@ -466,31 +463,31 @@ export function Auth() {
               style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}
             >
               {forgotMode ? (
-                "Reset your password"
+                t("auth.resetTitle")
               ) : pendingVerification ? (
-                "Verify your email"
+                t("auth.verifyTitle")
               ) : mode === "register" ? (
                 isSeller ? (
                   <>
-                    Open your shop on <span style={{ color: "var(--red)" }}>BazaarCo</span>
+                    {t("auth.openShopPrefix")} <span style={{ color: "var(--red)" }}>BazaarCo</span>
                   </>
                 ) : (
-                  "Create your account"
+                  t("auth.createAccount")
                 )
               ) : (
-                "Sign in to BazaarCo"
+                t("auth.signInTitle")
               )}
             </h1>
             <p style={{ color: "var(--ink-500)", margin: "6px 0 0" }}>
               {forgotMode
                 ? forgotStep === 1
-                  ? "Enter the email address you signed up with. We'll send a code to reset your password."
+                  ? t("auth.resetSubtitle")
                   : ""
                 : pendingVerification
-                  ? `Enter the 6-digit code sent to ${pendingVerification.email}.`
+                  ? t("auth.codeSentTo", { email: pendingVerification.email })
                   : mode === "register"
-                    ? "Your name, email, and password — or continue with Google."
-                    : "Sign in with email and password — or continue with Google."}
+                    ? t("auth.registerSubtitle")
+                    : t("auth.loginSubtitle")}
             </p>
 
             {!pendingVerification && !forgotMode && (
@@ -535,7 +532,7 @@ export function Auth() {
                       d="M43.6 20.5H42V20H24v8h11.3a12 12 0 0 1-4.1 5.5l6.2 5.3C37 39.3 44 34 44 24a20 20 0 0 0-.4-3.5z"
                     />
                   </svg>
-                  Continue with Google
+                  {t("auth.continueWithGoogle")}
                 </button>
               </div>
             )}
@@ -552,7 +549,7 @@ export function Auth() {
                     letterSpacing: ".06em",
                   }}
                 >
-                  or
+                  {t("auth.or")}
                 </span>
                 <span style={{ flex: 1, height: 1, background: "var(--line-200)" }} />
               </div>
@@ -562,10 +559,10 @@ export function Auth() {
               forgotStep === 1 ? (
                 <form onSubmit={handleForgotSendCode}>
                   <Field
-                    label="Email address"
+                    label={t("auth.emailAddress")}
                     error={
                       forgotEmail.trim().length > 0 && !isValidEmail(forgotEmail.trim())
-                        ? "Enter a valid email address."
+                        ? t("auth.invalidEmail")
                         : null
                     }
                   >
@@ -574,7 +571,7 @@ export function Auth() {
                       autoComplete="email"
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
-                      placeholder="you@example.com"
+                      placeholder={t("auth.emailPlaceholder")}
                       style={inputStyle}
                       required
                     />
@@ -600,7 +597,7 @@ export function Auth() {
                     disabled={!isValidEmail(forgotEmail.trim()) || forgotBusy}
                     type="submit"
                   >
-                    {forgotBusy ? "Please wait…" : "Send reset code"}
+                    {forgotBusy ? t("auth.pleaseWait") : t("auth.sendResetCode")}
                   </Button>
 
                   <div style={{ marginTop: 14, textAlign: "center" }}>
@@ -617,7 +614,7 @@ export function Auth() {
                         fontFamily: "inherit",
                       }}
                     >
-                      Back to sign in
+                      {t("auth.backToSignIn")}
                     </button>
                   </div>
                 </form>
@@ -632,19 +629,21 @@ export function Auth() {
                       textAlign: "left",
                     }}
                   >
-                    Enter the code sent to{" "}
-                    <b style={{ color: "var(--ink-700)" }}>{forgotMaskedEmail}</b> and choose a new
-                    password.
+                    <Trans
+                      i18nKey="auth.resetConfirmIntro"
+                      values={{ email: forgotMaskedEmail }}
+                      components={{ email: <b style={{ color: "var(--ink-700)" }} /> }}
+                    />
                   </p>
 
-                  <Field label="Verification code">
+                  <Field label={t("auth.verificationCode")}>
                     <input
                       type="text"
                       inputMode="numeric"
                       autoComplete="one-time-code"
                       value={forgotOtp}
                       onChange={(e) => setForgotOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                      placeholder="123456"
+                      placeholder={t("auth.otpPlaceholder")}
                       style={{
                         ...inputStyle,
                         textAlign: "center",
@@ -659,7 +658,7 @@ export function Auth() {
                   </Field>
 
                   <Field
-                    label="New password"
+                    label={t("auth.newPassword")}
                     error={
                       forgotNewPassword.length > 0 && !isStrongPassword(forgotNewPassword)
                         ? passwordRequirementMessage
@@ -669,7 +668,7 @@ export function Auth() {
                     <PasswordInput
                       value={forgotNewPassword}
                       onChange={(e) => setForgotNewPassword(e.target.value)}
-                      placeholder="8+ characters, number, symbol"
+                      placeholder={t("auth.passwordHint")}
                       autoComplete="new-password"
                       inputStyle={{
                         ...inputStyle,
@@ -682,18 +681,18 @@ export function Auth() {
                   </Field>
 
                   <Field
-                    label="Confirm new password"
+                    label={t("auth.confirmNewPassword")}
                     error={
                       forgotConfirmPassword.length > 0 &&
                       forgotConfirmPassword !== forgotNewPassword
-                        ? "Passwords do not match"
+                        ? t("auth.passwordsNoMatch")
                         : null
                     }
                   >
                     <PasswordInput
                       value={forgotConfirmPassword}
                       onChange={(e) => setForgotConfirmPassword(e.target.value)}
-                      placeholder="Re-enter password"
+                      placeholder={t("auth.reenterPassword")}
                       autoComplete="new-password"
                       inputStyle={{
                         ...inputStyle,
@@ -720,7 +719,7 @@ export function Auth() {
                   )}
 
                   <Button variant="primary" size="lg" full disabled={forgotBusy} type="submit">
-                    {forgotBusy ? "Please wait…" : "Update password"}
+                    {forgotBusy ? t("auth.pleaseWait") : t("auth.updatePassword")}
                   </Button>
 
                   <div
@@ -752,7 +751,7 @@ export function Auth() {
                         fontFamily: "inherit",
                       }}
                     >
-                      Change email
+                      {t("auth.changeEmail")}
                     </button>
                     <button
                       type="button"
@@ -768,21 +767,21 @@ export function Auth() {
                         fontFamily: "inherit",
                       }}
                     >
-                      Back to sign in
+                      {t("auth.backToSignIn")}
                     </button>
                   </div>
                 </form>
               )
             ) : pendingVerification ? (
               <form onSubmit={handleVerifyEmail}>
-                <Field label="Verification code">
+                <Field label={t("auth.verificationCode")}>
                   <input
                     type="text"
                     inputMode="numeric"
                     autoComplete="one-time-code"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                    placeholder="123456"
+                    placeholder={t("auth.otpPlaceholder")}
                     style={{
                       ...inputStyle,
                       textAlign: "center",
@@ -816,7 +815,7 @@ export function Auth() {
                   disabled={!canVerify || busy}
                   type="submit"
                 >
-                  {busy ? "Please wait…" : "Verify email"}
+                  {busy ? t("auth.pleaseWait") : t("auth.verifyEmail")}
                 </Button>
 
                 <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 14 }}>
@@ -834,7 +833,7 @@ export function Auth() {
                       fontFamily: "inherit",
                     }}
                   >
-                    Resend code
+                    {t("auth.resendCode")}
                   </button>
                   <button
                     type="button"
@@ -862,26 +861,29 @@ export function Auth() {
               <form onSubmit={handleSubmit}>
                 {mode === "register" ? (
                   <>
-                    <Field label="Full name">
+                    <Field label={t("auth.fullName")}>
                       <input
                         type="text"
                         autoComplete="name"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        placeholder="e.g. Rakshya Maharjan.."
+                        placeholder={t("auth.fullNamePlaceholder")}
                         style={inputStyle}
                         minLength={2}
                         maxLength={255}
                         required
                       />
                     </Field>
-                    <Field label="Email" error={mode === "register" ? emailFormatError : null}>
+                    <Field
+                      label={t("auth.email")}
+                      error={mode === "register" ? emailFormatError : null}
+                    >
                       <input
                         type="email"
                         autoComplete="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="you@example.com"
+                        placeholder={t("auth.emailPlaceholder")}
                         style={{
                           ...inputStyle,
                           border:
@@ -894,13 +896,13 @@ export function Auth() {
                     </Field>
                   </>
                 ) : (
-                  <Field label="Email" error={mode === "login" ? emailFormatError : null}>
+                  <Field label={t("auth.email")} error={mode === "login" ? emailFormatError : null}>
                     <input
                       type="email"
                       autoComplete="email"
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
-                      placeholder="you@example.com"
+                      placeholder={t("auth.emailPlaceholder")}
                       style={{
                         ...inputStyle,
                         border:
@@ -913,13 +915,13 @@ export function Auth() {
                   </Field>
                 )}
 
-                <Field label="Password" error={passwordFormatError}>
+                <Field label={t("auth.password")} error={passwordFormatError}>
                   <PasswordInput
                     autoComplete={mode === "register" ? "new-password" : "current-password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder={
-                      mode === "register" ? "8+ characters, number, symbol" : "Your password"
+                      mode === "register" ? t("auth.passwordHint") : t("auth.passwordPlaceholder")
                     }
                     inputStyle={{
                       ...inputStyle,
@@ -965,32 +967,35 @@ export function Auth() {
                           lineHeight: 1.4,
                         }}
                       >
-                        I'm 18 or older and agree to the{" "}
-                        <a
-                          href="/legal/terms-and-conditions"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            color: "var(--blue)",
-                            textDecoration: "none",
-                            fontWeight: 600,
+                        <Trans
+                          i18nKey="auth.legalConsent"
+                          components={{
+                            terms: (
+                              <a
+                                href="/legal/terms-and-conditions"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  color: "var(--blue)",
+                                  textDecoration: "none",
+                                  fontWeight: 600,
+                                }}
+                              />
+                            ),
+                            privacy: (
+                              <a
+                                href="/legal/privacy-policy"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  color: "var(--blue)",
+                                  textDecoration: "none",
+                                  fontWeight: 600,
+                                }}
+                              />
+                            ),
                           }}
-                        >
-                          Terms & Conditions
-                        </a>{" "}
-                        and{" "}
-                        <a
-                          href="/legal/privacy-policy"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            color: "var(--blue)",
-                            textDecoration: "none",
-                            fontWeight: 600,
-                          }}
-                        >
-                          Privacy Policy
-                        </a>
+                        />
                       </label>
                     </div>
 
@@ -1018,11 +1023,11 @@ export function Auth() {
                             lineHeight: 1.4,
                           }}
                         >
-                          Send me offers and updates
+                          {t("auth.marketingOptIn")}
                           <span
                             style={{ color: "var(--ink-400)", fontSize: ".8125rem", marginLeft: 4 }}
                           >
-                            (optional)
+                            {t("auth.optional")}
                           </span>
                         </label>
                       </div>
@@ -1046,7 +1051,7 @@ export function Auth() {
                         padding: 0,
                       }}
                     >
-                      Forgot password?
+                      {t("auth.forgotPassword")}
                     </button>
                   </div>
                 )}
@@ -1071,7 +1076,11 @@ export function Auth() {
                   disabled={!canSubmit || busy}
                   type="submit"
                 >
-                  {busy ? "Please wait…" : mode === "register" ? "Create account" : "Sign in"}
+                  {busy
+                    ? t("auth.pleaseWait")
+                    : mode === "register"
+                      ? t("auth.createAccountBtn")
+                      : t("auth.signIn")}
                 </Button>
               </form>
             )}
@@ -1096,9 +1105,7 @@ export function Auth() {
                     fontFamily: "inherit",
                   }}
                 >
-                  {mode === "login"
-                    ? "Need an account? Sign up"
-                    : "Already have an account? Sign in"}
+                  {mode === "login" ? t("auth.needAccount") : t("auth.haveAccount")}
                 </button>
               </div>
             )}
@@ -1106,7 +1113,7 @@ export function Auth() {
             {!pendingVerification && !forgotMode && !isSeller && (
               <div style={{ marginTop: 10 }}>
                 <Button variant="ghost" full href={pathFromScreen("home")}>
-                  Skip for now
+                  {t("auth.skipForNow")}
                 </Button>
               </div>
             )}

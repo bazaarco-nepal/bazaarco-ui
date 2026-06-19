@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { Button, Icon, Spinner } from "@/components/ui";
 import { useCreateSellerVideo, useUploadVideo } from "@/hooks/use-media-upload";
 import { useSellerInventory } from "@/hooks/use-seller";
@@ -26,6 +27,7 @@ function formatBytes(bytes: number): string {
 }
 
 export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
+  const { t } = useTranslation();
   const fileRef = useRef<HTMLInputElement>(null);
   const [productId, setProductId] = useState("");
   const [fileName, setFileName] = useState<string | null>(null);
@@ -72,7 +74,7 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
     const isVideo = file.type.startsWith("video/") || VIDEO_EXT_RE.test(file.name);
     if (!isVideo) {
       resetFile();
-      setError("That isn't a video file. Choose an MP4, MOV, or other video.");
+      setError(t("common.videoUpload.notVideo"));
       return;
     }
     setPreviewUrl(URL.createObjectURL(file));
@@ -90,23 +92,29 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
     setError(null);
     const file = fileRef.current?.files?.[0];
     if (!file) {
-      setError("Choose a video file first.");
+      setError(t("common.videoUpload.chooseFirst"));
       return;
     }
     const selectedProduct = products?.find((p) => p.id === productId);
     if (!selectedProduct) {
-      setError("Select which product this video is for.");
+      setError(t("common.videoUpload.selectProduct"));
       return;
     }
     if (durationSec !== null && durationSec < MIN_DURATION_SEC) {
       setError(
-        `Video is ${Math.ceil(durationSec)}s — must be at least ${MIN_DURATION_SEC} seconds long.`,
+        t("common.videoUpload.tooShortError", {
+          seconds: Math.ceil(durationSec),
+          min: MIN_DURATION_SEC,
+        }),
       );
       return;
     }
     if (durationSec !== null && durationSec > MAX_DURATION_SEC) {
       setError(
-        `Video is ${Math.ceil(durationSec)}s — trim to ${MAX_DURATION_SEC}s or less in your phone editor before uploading.`,
+        t("common.videoUpload.tooLongError", {
+          seconds: Math.ceil(durationSec),
+          max: MAX_DURATION_SEC,
+        }),
       );
       return;
     }
@@ -132,7 +140,7 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
       onSuccess(status);
     } catch (err) {
       setProgress(null);
-      setError(err instanceof Error ? err.message : "Upload failed");
+      setError(err instanceof Error ? err.message : t("common.videoUpload.uploadFailed"));
     }
   };
 
@@ -142,11 +150,11 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
   return (
     <div className="bz-upload-form">
       <header className="bz-upload-form__header">
-        <h2 className="bz-upload-form__title">Add product video</h2>
+        <h2 className="bz-upload-form__title">{t("common.videoUpload.title")}</h2>
         <button
           type="button"
           className="bz-upload-form__close"
-          aria-label="Close"
+          aria-label={t("common.close")}
           disabled={busy}
           onClick={onCancel}
         >
@@ -165,26 +173,25 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
             </span>
           </div>
           <div>
-            <div className="bz-upload-orient__title">Hold your phone upright</div>
-            <div className="bz-upload-orient__sub">
-              Record tall, like a TikTok or a Reel. Don&apos;t turn your phone sideways.
-            </div>
+            <div className="bz-upload-orient__title">{t("common.videoUpload.orientTitle")}</div>
+            <div className="bz-upload-orient__sub">{t("common.videoUpload.orientSub")}</div>
           </div>
         </div>
 
         <div className="bz-upload-tips">
           <div className="bz-upload-tips__head">
-            <Icon name="edit" size={16} color="var(--blue)" />A few quick tips
+            <Icon name="edit" size={16} color="var(--blue)" />
+            {t("common.videoUpload.tipsHead")}
           </div>
           <ul className="bz-upload-tips__list">
             <li>
-              Keep it short — <strong>5 to 30 seconds</strong>.
+              <Trans i18nKey="common.videoUpload.tipLength" components={{ strong: <strong /> }} />
             </li>
-            <li>Good light, steady hands, and show the product clearly.</li>
+            <li>{t("common.videoUpload.tipQuality")}</li>
           </ul>
         </div>
 
-        <label className="bz-upload-form__label">Video file</label>
+        <label className="bz-upload-form__label">{t("common.videoUpload.fileLabel")}</label>
         <input
           ref={fileRef}
           type="file"
@@ -206,14 +213,16 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
             <>
               <span className="bz-video-dropzone__name">{fileName}</span>
               <span className="bz-video-dropzone__hint">
-                {fileSize !== null ? `${formatBytes(fileSize)} · ` : ""}Tap to choose a different
-                file
+                {fileSize !== null ? `${formatBytes(fileSize)} · ` : ""}
+                {t("common.videoUpload.changeFile")}
               </span>
             </>
           ) : (
             <>
-              <span className="bz-video-dropzone__name">Choose a video to upload</span>
-              <span className="bz-video-dropzone__hint">MP4 or MOV · max 100 MB · 5–30 sec</span>
+              <span className="bz-video-dropzone__name">
+                {t("common.videoUpload.choosePrompt")}
+              </span>
+              <span className="bz-video-dropzone__hint">{t("common.videoUpload.fileSpec")}</span>
             </>
           )}
         </button>
@@ -233,17 +242,20 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
             {durationSec !== null && (
               <div className={`bz-upload-preview__meta${durationBad ? " is-bad" : ""}`}>
                 {durationSec < MIN_DURATION_SEC
-                  ? `Too short (${Math.ceil(durationSec)}s) — must be at least ${MIN_DURATION_SEC}s`
+                  ? t("common.videoUpload.tooShort", {
+                      seconds: Math.ceil(durationSec),
+                      min: MIN_DURATION_SEC,
+                    })
                   : durationSec > MAX_DURATION_SEC
-                    ? `Too long (${Math.ceil(durationSec)}s) — trim before publishing`
-                    : `Duration: ${Math.ceil(durationSec)}s · looks good`}
+                    ? t("common.videoUpload.tooLong", { seconds: Math.ceil(durationSec) })
+                    : t("common.videoUpload.durationOk", { seconds: Math.ceil(durationSec) })}
               </div>
             )}
           </div>
         )}
 
         <label className="bz-upload-form__label" htmlFor="bz-video-product">
-          Product
+          {t("common.videoUpload.productLabel")}
         </label>
         <select
           id="bz-video-product"
@@ -253,7 +265,9 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
           className="bz-upload-form__input"
         >
           <option value="">
-            {productsLoading ? "Loading your products…" : "Select a product…"}
+            {productsLoading
+              ? t("common.videoUpload.loadingProducts")
+              : t("common.videoUpload.selectProductOption")}
           </option>
           {products?.map((p) => (
             <option key={p.id} value={p.id}>
@@ -262,14 +276,14 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
           ))}
         </select>
         {!productsLoading && products?.length === 0 && (
-          <p className="bz-upload-form__hint">
-            You have no products yet — add a product first, then film a video for it.
-          </p>
+          <p className="bz-upload-form__hint">{t("common.videoUpload.noProducts")}</p>
         )}
 
         {progress !== null && (
           <div className="bz-upload-progress">
-            <div className="bz-upload-progress__label">Uploading… {progress}%</div>
+            <div className="bz-upload-progress__label">
+              {t("common.videoUpload.uploading", { percent: progress })}
+            </div>
             <div className="bz-upload-progress__track">
               <div className="bz-upload-progress__bar" style={{ width: `${progress}%` }} />
             </div>
@@ -288,7 +302,7 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
           icon={busy ? undefined : "video"}
           onClick={() => void submit("published")}
         >
-          {busy ? <Spinner size={18} /> : "Publish video"}
+          {busy ? <Spinner size={18} /> : t("common.videoUpload.publish")}
         </Button>
         <Button
           type="button"
@@ -297,9 +311,9 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
           disabled={busy}
           onClick={() => void submit("draft")}
         >
-          Save draft
+          {t("common.videoUpload.saveDraft")}
         </Button>
-        <p className="bz-upload-form__note">Draft = only you see it · Publish = live for buyers</p>
+        <p className="bz-upload-form__note">{t("common.videoUpload.note")}</p>
       </footer>
     </div>
   );

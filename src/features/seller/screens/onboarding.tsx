@@ -55,7 +55,6 @@ export function SellerOnboarding() {
     shop: string;
     docLabel: string;
     docId: string;
-    address: string;
   } | null>(null);
   const [shopName, setShopName] = useState("");
   const [storeAddress, setStoreAddress] = useState<StoreAddress>(emptyStoreAddress);
@@ -121,11 +120,6 @@ export function SellerOnboarding() {
       toast(`Enter your ${scanned?.docLabel ?? "document"} number`);
       return;
     }
-    const docAddress = (scanned?.address || "").trim();
-    if (docAddress.length < 1) {
-      toast("Enter the address on your document");
-      return;
-    }
     try {
       await setupOrganization.mutateAsync({
         shopName: name,
@@ -142,7 +136,6 @@ export function SellerOnboarding() {
         docType,
         docIdNumber: docId,
         ownerName: owner,
-        address: docAddress,
       });
       clearDeferredSellerOnboarding();
       setStage("done");
@@ -159,7 +152,6 @@ export function SellerOnboarding() {
       shop: "",
       docLabel: type === "pan" ? "PAN" : "NID",
       docId: "",
-      address: "",
     });
     setStage("docUpload");
   };
@@ -642,7 +634,7 @@ export function SellerOnboarding() {
               <input
                 value={scanned.name ?? ""}
                 onChange={(e) => setScanned((s) => (s ? { ...s, name: e.target.value } : s))}
-                placeholder="Full name as on your document"
+                placeholder="Full Name. (For eg. Sandhya Karki)"
                 style={{
                   width: "100%",
                   height: 44,
@@ -700,41 +692,6 @@ export function SellerOnboarding() {
                 value={scanned.docId ?? ""}
                 onChange={(e) => setScanned((s) => (s ? { ...s, docId: e.target.value } : s))}
                 placeholder={`${scanned.docLabel} number as on your document`}
-                style={{
-                  width: "100%",
-                  height: 44,
-                  padding: "0 12px",
-                  border: "1px solid var(--line-200)",
-                  borderRadius: "var(--r-md)",
-                  fontSize: ".9375rem",
-                  fontFamily: "var(--font-sans)",
-                }}
-              />
-            </div>
-            <div
-              style={{
-                background: "#fff",
-                border: "1px solid var(--line-200)",
-                borderRadius: "var(--r-md)",
-                padding: "12px 14px",
-                marginBottom: 10,
-              }}
-            >
-              <label
-                style={{
-                  fontSize: ".75rem",
-                  color: "var(--ink-400)",
-                  fontWeight: 600,
-                  display: "block",
-                  marginBottom: 8,
-                }}
-              >
-                {t("seller.kycAddress")} (required)
-              </label>
-              <input
-                value={scanned.address ?? ""}
-                onChange={(e) => setScanned((s) => (s ? { ...s, address: e.target.value } : s))}
-                placeholder="Address exactly as printed on your document"
                 style={{
                   width: "100%",
                   height: 44,

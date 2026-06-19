@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import type { EsewaFormFields } from "@/services/api/orders";
 
 /**
@@ -16,6 +17,7 @@ export function EsewaRedirectForm({
   paymentUrl: string;
   fields: EsewaFormFields;
 }) {
+  const { t } = useTranslation();
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
@@ -41,10 +43,10 @@ export function EsewaRedirectForm({
       }}
     >
       <div style={{ fontSize: "1.0625rem", fontWeight: 700, color: "var(--ink-900)" }}>
-        Redirecting to eSewa…
+        {t("payment.redirect.heading")}
       </div>
       <p style={{ fontSize: ".875rem", color: "var(--ink-500)", maxWidth: 360, margin: 0 }}>
-        Please wait while we take you to eSewa to complete your payment securely.
+        {t("payment.redirect.message")}
       </p>
 
       <form ref={formRef} method="POST" action={paymentUrl}>
@@ -65,7 +67,7 @@ export function EsewaRedirectForm({
             cursor: "pointer",
           }}
         >
-          Continue to eSewa
+          {t("payment.redirect.continue")}
         </button>
       </form>
     </div>

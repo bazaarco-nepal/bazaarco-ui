@@ -2,6 +2,13 @@ import "@testing-library/jest-dom/vitest";
 import { afterEach } from "vitest";
 import { cleanup } from "@testing-library/react";
 
+// Initialise the real i18n singleton (English) so components rendered in tests
+// resolve `t("…")` calls to actual copy instead of raw keys. Mirrors production,
+// where the same singleton is primed on import. Tests that need another language
+// can call `i18n.changeLanguage(...)` themselves.
+import { i18n } from "@/i18n/config";
+void i18n.changeLanguage("en");
+
 // jsdom under Node 22+ exposes no Web Storage (Node's own `localStorage` needs
 // `--localstorage-file`, and jsdom doesn't install one), so `window.localStorage`
 // is undefined in tests. Provide a small in-memory Storage so components that read

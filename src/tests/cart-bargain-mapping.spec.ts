@@ -48,6 +48,41 @@ describe("cart line mapping — server bargain overlay", () => {
     expect(cart.items[0]!.bargainExpiresAt).toBe("2026-06-11T10:00:00.000Z");
   });
 
+  it("keeps two variants of the same product distinct — one bargained, one not", async () => {
+    mockedGet.mockResolvedValue({
+      items: [
+        {
+          id: "p1",
+          name: "Tee",
+          price: 1000,
+          qty: 1,
+          variantId: "v-red-s",
+          variantName: "Red / S",
+          unitPrice: 800,
+          bargained: true,
+          bargainExpiresAt: "2026-06-11T10:00:00.000Z",
+        },
+        {
+          id: "p1",
+          name: "Tee",
+          price: 1000,
+          qty: 2,
+          variantId: "v-blue-l",
+          variantName: "Blue / L",
+        },
+      ],
+    });
+
+    const cart = await cartApi.get();
+
+    const bargained = cart.items.find((i) => i.variantId === "v-red-s")!;
+    const plain = cart.items.find((i) => i.variantId === "v-blue-l")!;
+    expect(bargained.price).toBe(800);
+    expect(bargained.bargained).toBe(true);
+    expect(plain.price).toBe(1000);
+    expect(plain.bargained).toBe(false);
+  });
+
   it("falls back to the listed price on lines with no overlay", async () => {
     mockedGet.mockResolvedValue({
       items: [{ id: "p1", name: "Tee", price: 1000, qty: 1 }],

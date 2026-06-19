@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 import {
   Button,
   Chip,
@@ -94,7 +94,7 @@ export function SellerInventory() {
     productDraft.clear();
     setDraftPreview(null);
     setDiscardConfirmOpen(false);
-    toast("Draft discarded");
+    toast(t("seller.inventory.draftDiscarded"));
   };
   // Keep the add-product action compact on phones so it stays inline with the
   // title instead of wrapping into an orphaned button above the search bar.
@@ -195,14 +195,14 @@ export function SellerInventory() {
           }),
         );
         clearDraft(id);
-        toast("Stock saved");
+        toast(t("seller.inventory.stockSaved"));
       } catch (err) {
-        toast(err instanceof Error ? err.message : "Could not update stock");
+        toast(err instanceof Error ? err.message : t("seller.inventory.stockUpdateFailed"));
       } finally {
         setSavingId(null);
       }
     },
-    [items, updateProduct, toast, savingId],
+    [items, updateProduct, toast, savingId, t],
   );
 
   const saveStock = (it: SellerInventoryItem) => {
@@ -220,14 +220,14 @@ export function SellerInventory() {
     const cur = effStock(it);
     if (cur <= 0) return;
     void commitStock(it.id, { stock: cur - 1 });
-    toast("Sold one in shop · −1 stock");
+    toast(t("seller.inventory.soldOneInShop"));
   };
   const sellVariantInShop = (it: SellerInventoryItem, v: CreateProductVariantPayload) => {
     if (savingId) return;
     if (effVariantStock(it.id, v) <= 0) return;
     const variants = effVariants(it).map((x) => (x.id === v.id ? { ...x, stock: x.stock - 1 } : x));
     void commitStock(it.id, { variants });
-    toast(`Sold one ${v.name} in shop`);
+    toast(t("seller.inventory.soldOneVariantInShop", { variant: v.name }));
   };
 
   const confirmDelete = async () => {
@@ -240,11 +240,11 @@ export function SellerInventory() {
       setItems((list) => list.filter((it) => it.id !== id));
       setExpanded((cur) => (cur === id ? null : cur));
       setDeleteTarget(null);
-      toast(`${name} deleted`);
+      toast(t("seller.inventory.productDeleted", { name }));
     } catch (err) {
       // 409 = product has order history (server keeps it to protect orders).
       // Keep the dialog open so the seller reads why and can cancel.
-      toast(err instanceof Error ? err.message : "Could not delete this product");
+      toast(err instanceof Error ? err.message : t("seller.inventory.productDeleteFailed"));
     }
   };
 
@@ -253,7 +253,7 @@ export function SellerInventory() {
     const raw = String(priceDraft[id] ?? it?.price ?? "").replace(/[^\d.]/g, "");
     const nextRupees = parseFloat(raw);
     if (!it || !Number.isFinite(nextRupees) || nextRupees <= 0) {
-      toast("Enter a valid price (Rs.)");
+      toast(t("seller.inventory.invalidPrice"));
       return;
     }
     if (nextRupees === it.price) return;
@@ -262,9 +262,9 @@ export function SellerInventory() {
       // Prices are rupees end to end — send exactly what the seller typed.
       await updateProduct.mutateAsync({ id, price: nextRupees });
       setItems((list) => list.map((i) => (i.id === id ? { ...i, price: nextRupees } : i)));
-      toast("Price saved");
+      toast(t("seller.inventory.priceSaved"));
     } catch (err) {
-      toast(err instanceof Error ? err.message : "Could not update price");
+      toast(err instanceof Error ? err.message : t("seller.inventory.priceUpdateFailed"));
     } finally {
       setSavingId(null);
     }
@@ -378,7 +378,7 @@ export function SellerInventory() {
               </div>
               <div style={{ flex: "1 1 200px", minWidth: 0 }}>
                 <Chip tone="blue" size="sm">
-                  Draft
+                  {t("seller.inventory.draftChip")}
                 </Chip>
                 <div
                   style={{
@@ -390,17 +390,19 @@ export function SellerInventory() {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {draftPreview.title?.trim() || "Untitled product"}
+                  {draftPreview.title?.trim() || t("seller.inventory.untitledProduct")}
                 </div>
                 <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 2 }}>
                   {Number(draftPreview.price) > 0
-                    ? `${formatNPR(Number(draftPreview.price))} · Not published yet`
-                    : "Not published yet"}
+                    ? t("seller.inventory.draftPriceNotPublished", {
+                        price: formatNPR(Number(draftPreview.price)),
+                      })
+                    : t("seller.inventory.notPublishedYet")}
                 </div>
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <Button variant="primary" size="sm" icon="arrowRight" onClick={() => nav("s-add")}>
-                  Continue
+                  {t("seller.inventory.continueDraft")}
                 </Button>
                 <button
                   type="button"
@@ -417,7 +419,7 @@ export function SellerInventory() {
                     textUnderlineOffset: 2,
                   }}
                 >
-                  Discard
+                  {t("seller.inventory.discardDraft")}
                 </button>
               </div>
             </div>
@@ -441,8 +443,8 @@ export function SellerInventory() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search products by name"
-                aria-label="Search products"
+                placeholder={t("seller.inventory.searchPlaceholder")}
+                aria-label={t("seller.inventory.searchAria")}
                 style={{
                   width: "100%",
                   padding: "10px 12px 10px 36px",
@@ -458,7 +460,7 @@ export function SellerInventory() {
               {search && (
                 <button
                   onClick={() => setSearch("")}
-                  aria-label="Clear search"
+                  aria-label={t("seller.inventory.clearSearch")}
                   className="bz-hover-tint"
                   style={{
                     position: "absolute",
@@ -498,7 +500,7 @@ export function SellerInventory() {
             >
               {sortOptions.map((o) => (
                 <option key={o.value} value={o.value}>
-                  Sort: {o.label}
+                  {t("seller.inventory.sortPrefix", { label: o.label })}
                 </option>
               ))}
             </select>
@@ -517,7 +519,7 @@ export function SellerInventory() {
                   textDecoration: "underline",
                 }}
               >
-                Clear filters
+                {t("seller.inventory.clearFilters")}
               </button>
             )}
           </div>
@@ -537,11 +539,11 @@ export function SellerInventory() {
           {visible.length === 0 ? (
             <SellerEmptyState
               icon="package"
-              title="No products match"
-              message="Try clearing the search or status filter."
+              title={t("seller.inventory.noMatchTitle")}
+              message={t("seller.inventory.noMatchMessage")}
               action={
                 <Button variant="secondary" onClick={clearFilters}>
-                  Clear filters
+                  {t("seller.inventory.clearFilters")}
                 </Button>
               }
             />
@@ -622,7 +624,9 @@ export function SellerInventory() {
                           {(isFrozen || pendingReview) && (
                             <div style={{ marginTop: 4 }}>
                               <Chip tone={isFrozen ? "red" : "saffron"} size="sm">
-                                {isFrozen ? "Taken down" : "Awaiting review"}
+                                {isFrozen
+                                  ? t("seller.inventory.takenDown")
+                                  : t("seller.inventory.awaitingReview")}
                               </Chip>
                             </div>
                           )}
@@ -654,16 +658,16 @@ export function SellerInventory() {
                           >
                             {oos ? (
                               <>
-                                <SellerIcon name="zap" size={14} color="var(--danger)" /> Out of
-                                stock
+                                <SellerIcon name="zap" size={14} color="var(--danger)" />{" "}
+                                {t("seller.inventory.outOfStock")}
                               </>
                             ) : low ? (
                               <>
-                                <SellerIcon name="zap" size={14} color="var(--saffron)" /> Only{" "}
-                                {it.stock} left
+                                <SellerIcon name="zap" size={14} color="var(--saffron)" />{" "}
+                                {t("seller.inventory.onlyLeft", { count: it.stock })}
                               </>
                             ) : (
-                              <>Stock: {it.stock}</>
+                              <>{t("seller.inventory.stockCount", { count: it.stock })}</>
                             )}
                           </div>
                         </div>
@@ -701,7 +705,7 @@ export function SellerInventory() {
                                   marginBottom: 6,
                                 }}
                               >
-                                Admin feedback
+                                {t("seller.inventory.adminFeedback")}
                               </div>
                               <p
                                 style={{
@@ -733,23 +737,20 @@ export function SellerInventory() {
                                               : row,
                                           ),
                                         );
-                                        toast(
-                                          "Thanks — we'll review your fixes and restore the listing soon.",
-                                          "success",
-                                        );
+                                        toast(t("seller.inventory.acknowledgeSuccess"), "success");
                                       },
                                       onError: (err) => {
                                         toast(
                                           err instanceof Error
                                             ? err.message
-                                            : "Could not submit. Try again.",
+                                            : t("seller.inventory.acknowledgeFailed"),
                                           "error",
                                         );
                                       },
                                     });
                                   }}
                                 >
-                                  I&apos;ve fixed this — submit for review
+                                  {t("seller.inventory.submitForReview")}
                                 </Button>
                               )}
                               {pendingReview && (
@@ -760,8 +761,7 @@ export function SellerInventory() {
                                     color: "var(--ink-500)",
                                   }}
                                 >
-                                  Submitted for review. You&apos;ll be notified when the listing is
-                                  live again.
+                                  {t("seller.inventory.pendingReviewNote")}
                                 </p>
                               )}
                             </div>
@@ -775,7 +775,7 @@ export function SellerInventory() {
                                   margin: "14px 0 10px",
                                 }}
                               >
-                                Stock by variant
+                                {t("seller.inventory.stockByVariant")}
                                 {savingId === it.id && (
                                   <span
                                     style={{
@@ -785,7 +785,7 @@ export function SellerInventory() {
                                       fontWeight: 600,
                                     }}
                                   >
-                                    Saving…
+                                    {t("seller.common.saving")}
                                   </span>
                                 )}
                               </div>
@@ -819,7 +819,7 @@ export function SellerInventory() {
                                               fontSize: ".75rem",
                                             }}
                                           >
-                                            Out
+                                            {t("seller.inventory.variantOut")}
                                           </span>
                                         )}
                                         {vLow && !vOos && (
@@ -830,7 +830,7 @@ export function SellerInventory() {
                                               fontSize: ".75rem",
                                             }}
                                           >
-                                            Low
+                                            {t("seller.inventory.variantLow")}
                                           </span>
                                         )}
                                       </span>
@@ -872,7 +872,9 @@ export function SellerInventory() {
                                         <input
                                           type="text"
                                           inputMode="numeric"
-                                          aria-label={`${v.name} stock`}
+                                          aria-label={t("seller.inventory.variantStockAria", {
+                                            variant: v.name,
+                                          })}
                                           value={String(vStock)}
                                           onClick={(e) => e.stopPropagation()}
                                           onChange={(e) => typeVariant(it, v, e.target.value)}
@@ -933,7 +935,7 @@ export function SellerInventory() {
                                             whiteSpace: "nowrap",
                                           }}
                                         >
-                                          −1 shop
+                                          {t("seller.inventory.minusOneShop")}
                                         </button>
                                       )}
                                     </div>
@@ -949,7 +951,9 @@ export function SellerInventory() {
                                   fontWeight: 600,
                                 }}
                               >
-                                Total: {effVariants(it).reduce((sum, v) => sum + v.stock, 0)} units
+                                {t("seller.inventory.totalUnits", {
+                                  count: effVariants(it).reduce((sum, v) => sum + v.stock, 0),
+                                })}
                               </div>
                               {stockDirty(it) && (
                                 <div
@@ -967,7 +971,7 @@ export function SellerInventory() {
                                     disabled={savingId === it.id}
                                     onClick={() => saveStock(it)}
                                   >
-                                    Save stock
+                                    {t("seller.inventory.saveStock")}
                                   </Button>
                                   <Button
                                     variant="secondary"
@@ -975,7 +979,7 @@ export function SellerInventory() {
                                     disabled={savingId === it.id}
                                     onClick={() => clearDraft(it.id)}
                                   >
-                                    Reset
+                                    {t("seller.inventory.reset")}
                                   </Button>
                                 </div>
                               )}
@@ -993,7 +997,7 @@ export function SellerInventory() {
                                 }}
                               >
                                 <div style={{ fontWeight: 600, fontSize: ".875rem" }}>
-                                  Change stock
+                                  {t("seller.inventory.changeStock")}
                                   {savingId === it.id && (
                                     <span
                                       style={{
@@ -1003,7 +1007,7 @@ export function SellerInventory() {
                                         fontWeight: 600,
                                       }}
                                     >
-                                      Saving…
+                                      {t("seller.common.saving")}
                                     </span>
                                   )}
                                 </div>
@@ -1042,7 +1046,7 @@ export function SellerInventory() {
                                   <input
                                     type="text"
                                     inputMode="numeric"
-                                    aria-label="Stock"
+                                    aria-label={t("seller.inventory.stockAria")}
                                     value={String(effStock(it))}
                                     onClick={(e) => e.stopPropagation()}
                                     onChange={(e) => typeStock(it, e.target.value)}
@@ -1090,14 +1094,14 @@ export function SellerInventory() {
                                       onClick={() => saveStock(it)}
                                       icon="check"
                                     >
-                                      Save stock
+                                      {t("seller.inventory.saveStock")}
                                     </Button>
                                     <Button
                                       variant="secondary"
                                       disabled={savingId === it.id}
                                       onClick={() => clearDraft(it.id)}
                                     >
-                                      Reset
+                                      {t("seller.inventory.reset")}
                                     </Button>
                                   </>
                                 )}
@@ -1108,7 +1112,7 @@ export function SellerInventory() {
                                     onClick={() => sellInShop(it)}
                                     icon="store"
                                   >
-                                    Sold one in shop (−1)
+                                    {t("seller.inventory.soldOneInShopButton")}
                                   </Button>
                                 )}
                               </div>
@@ -1122,7 +1126,7 @@ export function SellerInventory() {
                                 marginBottom: 8,
                               }}
                             >
-                              Price (Rs.)
+                              {t("seller.inventory.priceLabel")}
                             </div>
                             {it.hasVariants ? (
                               <div
@@ -1132,11 +1136,14 @@ export function SellerInventory() {
                                   padding: "10px 0",
                                 }}
                               >
-                                Price is set per variant — use{" "}
-                                <span style={{ fontWeight: 600, color: "var(--ink-900)" }}>
-                                  Edit
-                                </span>{" "}
-                                below to update variant prices.
+                                <Trans
+                                  i18nKey="seller.inventory.pricePerVariantHint"
+                                  components={{
+                                    strong: (
+                                      <span style={{ fontWeight: 600, color: "var(--ink-900)" }} />
+                                    ),
+                                  }}
+                                />
                               </div>
                             ) : (
                               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -1172,7 +1179,7 @@ export function SellerInventory() {
                                   disabled={savingId === it.id}
                                   onClick={() => void savePrice(it.id)}
                                 >
-                                  Save price
+                                  {t("seller.inventory.savePrice")}
                                 </Button>
                               </div>
                             )}
@@ -1196,7 +1203,7 @@ export function SellerInventory() {
                                 nav("s-product-view");
                               }}
                             >
-                              View
+                              {t("seller.inventory.view")}
                             </Button>
                             <Button
                               variant="secondary"
@@ -1207,7 +1214,7 @@ export function SellerInventory() {
                                 nav("s-edit");
                               }}
                             >
-                              Edit
+                              {t("seller.inventory.edit")}
                             </Button>
                             <Button
                               variant="danger"
@@ -1215,7 +1222,7 @@ export function SellerInventory() {
                               disabled={savingId === it.id}
                               onClick={() => setDeleteTarget(it)}
                             >
-                              Delete
+                              {t("seller.inventory.delete")}
                             </Button>
                           </div>
                         </div>
@@ -1243,7 +1250,11 @@ export function SellerInventory() {
                   className="tnum"
                   style={{ fontSize: ".8125rem", color: "var(--ink-400)", fontWeight: 600 }}
                 >
-                  Showing {invPaged.from}–{invPaged.to} of {invPaged.total} products
+                  {t("seller.inventory.showingProducts", {
+                    from: invPaged.from,
+                    to: invPaged.to,
+                    total: invPaged.total,
+                  })}
                 </div>
               </div>
             </>
@@ -1259,10 +1270,10 @@ export function SellerInventory() {
       />
       <ConfirmModal
         open={discardConfirmOpen}
-        title="Discard this draft?"
-        message="Your unsaved product listing will be permanently deleted. This cannot be undone."
-        confirmLabel="Discard draft"
-        cancelLabel="Keep editing"
+        title={t("seller.inventory.discardConfirmTitle")}
+        message={t("seller.inventory.discardConfirmMessage")}
+        confirmLabel={t("seller.inventory.discardConfirmButton")}
+        cancelLabel={t("seller.inventory.discardConfirmKeep")}
         onConfirm={discardDraft}
         onCancel={() => setDiscardConfirmOpen(false)}
       />

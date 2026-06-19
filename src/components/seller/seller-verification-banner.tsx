@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
+
 import { Icon, Button } from "@/components/ui";
 import type { SellerVerificationStatus } from "@/services/api/seller-verification";
 
@@ -9,6 +11,7 @@ export function SellerVerificationBanner({
   status: SellerVerificationStatus;
   note?: string | null;
 }) {
+  const { t } = useTranslation();
   if (status === "approved") return null;
 
   const isRejected = status === "rejected";
@@ -40,10 +43,10 @@ export function SellerVerificationBanner({
       <div style={{ flex: 1, minWidth: 0 }}>
         <span style={{ fontWeight: 700, fontSize: ".875rem", color: "var(--ink-900)" }}>
           {isRejected
-            ? "Verification not approved"
+            ? t("seller.verificationBanner.notApproved")
             : isNone
-              ? "Document required"
-              : "Your KYC is being reviewed"}
+              ? t("seller.verificationBanner.documentRequired")
+              : t("seller.verificationBanner.beingReviewed")}
         </span>
       </div>
     </div>
@@ -61,6 +64,7 @@ export function SellerVerificationBlocked({
   note?: string | null;
   onAction?: () => void;
 }) {
+  const { t } = useTranslation();
   const isPending = status === "pending";
   const isRejected = status === "rejected";
 
@@ -107,10 +111,10 @@ export function SellerVerificationBlocked({
         }}
       >
         {isPending
-          ? "Under review"
+          ? t("seller.verificationBanner.underReview")
           : isRejected
-            ? "Verification not approved"
-            : "Verification required"}
+            ? t("seller.verificationBanner.notApproved")
+            : t("seller.verificationBanner.required")}
       </h2>
       <p
         style={{
@@ -123,15 +127,17 @@ export function SellerVerificationBlocked({
         }}
       >
         {isPending
-          ? "Your KYC verification is under review — we'll notify you through email once it's done."
+          ? t("seller.verificationBanner.pendingMessage")
           : isRejected
-            ? (note ?? "Upload a clearer document to try again.")
-            : `Complete verification to ${actionLabel}.`}
+            ? (note ?? t("seller.verificationBanner.rejectedFallback"))
+            : t("seller.verificationBanner.completeToAction", { action: actionLabel })}
       </p>
       {showAction && (
         <div style={{ marginTop: 18 }}>
           <Button variant="secondary" onClick={onAction}>
-            {isRejected ? "Re-upload" : "Verify"}
+            {isRejected
+              ? t("seller.verificationBanner.reupload")
+              : t("seller.verificationBanner.verify")}
           </Button>
         </div>
       )}

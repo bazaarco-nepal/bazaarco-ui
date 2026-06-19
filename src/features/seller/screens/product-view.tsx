@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Button, Placeholder, VideoPlayer, EmptyState, ApiState } from "@/components/ui";
 import { SellerIcon } from "../_shared/icons";
 import { formatNPR } from "@/lib/money";
@@ -12,6 +13,7 @@ import { editProductRef } from "../_shared/refs";
 
 /* ---------- 4.4b Product View (read-only) ---------- */
 export function SellerProductView({ item }: { item: SellerInventoryItem | null }) {
+  const { t } = useTranslation();
   const { nav } = useBz();
   const { data: product, isLoading, isError, error } = useProduct(item?.id ?? null);
 
@@ -28,9 +30,9 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
         <SellerHelpBar />
         <EmptyState
           icon="store"
-          title="No product selected"
-          message="Go back to your inventory and select a product to view."
-          cta="Back to products"
+          title={t("seller.productView.noProductTitle")}
+          message={t("seller.productView.noProductMessage")}
+          cta={t("seller.productView.backToProducts")}
           onCta={() => nav("s-products")}
         />
       </div>
@@ -76,7 +78,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
             }}
           >
             <SellerIcon name="chevronLeft" size={18} color="var(--blue)" />
-            Back to products
+            {t("seller.productView.backToProducts")}
           </button>
           <div style={{ flex: 1 }} />
           <Button
@@ -87,7 +89,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
               nav("s-edit");
             }}
           >
-            Edit
+            {t("seller.productView.edit")}
           </Button>
         </div>
 
@@ -113,8 +115,8 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
                 }}
               >
                 {item.listingStatus === "frozen"
-                  ? "This listing was taken down"
-                  : "Awaiting admin review"}
+                  ? t("seller.productView.listingTakenDown")
+                  : t("seller.productView.awaitingAdminReview")}
               </div>
               <p
                 style={{
@@ -134,8 +136,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
                     color: "var(--ink-500)",
                   }}
                 >
-                  Edit this product to address the feedback, then acknowledge from Inventory so our
-                  team can restore it.
+                  {t("seller.productView.frozenInstructions")}
                 </p>
               )}
               {item.listingStatus === "pending_reinstatement" && (
@@ -146,7 +147,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
                     color: "var(--ink-500)",
                   }}
                 >
-                  Submitted for review. You&apos;ll be notified when the listing is live again.
+                  {t("seller.productView.pendingReviewNote")}
                 </p>
               )}
             </div>
@@ -175,7 +176,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
                 >
                   <img
                     src={src}
-                    alt={`${item.name} photo ${i + 1}`}
+                    alt={t("seller.productView.photoAlt", { name: item.name, index: i + 1 })}
                     style={{ width: "100%", height: "100%", objectFit: "cover" }}
                   />
                 </div>
@@ -258,7 +259,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
                 borderRadius: 999,
               }}
             >
-              {product.discountPct}% off
+              {t("seller.productView.percentOff", { percent: product.discountPct })}
             </span>
           )}
         </div>
@@ -274,28 +275,44 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
         >
           {/* Stock */}
           <DetailTile
-            label="Stock"
+            label={t("seller.productView.stock")}
             value={String(item.stock)}
             tone={item.stock === 0 ? "danger" : item.stock <= 3 ? "saffron" : "success"}
-            sub={item.stock === 0 ? "Out of stock" : item.stock <= 3 ? "Low stock" : "In stock"}
+            sub={
+              item.stock === 0
+                ? t("seller.productView.outOfStock")
+                : item.stock <= 3
+                  ? t("seller.productView.lowStock")
+                  : t("seller.productView.inStock")
+            }
           />
           {/* Rating */}
           {product && product.rating > 0 && (
             <DetailTile
-              label="Rating"
+              label={t("seller.productView.rating")}
               value={product.rating.toFixed(1)}
-              sub={`${product.reviews} review${product.reviews === 1 ? "" : "s"}`}
+              sub={t("seller.productView.reviewCount", { count: product.reviews })}
             />
           )}
           {/* Bargaining — the floor is private to the seller, so it's read from
               the seller-only inventory row, not the public product. */}
           <DetailTile
-            label="Bargaining"
-            value={item?.allowBargaining ? "Enabled" : "Disabled"}
-            sub={item?.minimumPrice ? `Min ${formatNPR(item.minimumPrice)}` : undefined}
+            label={t("seller.productView.bargaining")}
+            value={
+              item?.allowBargaining
+                ? t("seller.productView.enabled")
+                : t("seller.productView.disabled")
+            }
+            sub={
+              item?.minimumPrice
+                ? t("seller.productView.minPrice", { price: formatNPR(item.minimumPrice) })
+                : undefined
+            }
           />
           {/* Category */}
-          {product?.cat && <DetailTile label="Category" value={product.cat} />}
+          {product?.cat && (
+            <DetailTile label={t("seller.productView.category")} value={product.cat} />
+          )}
         </div>
 
         {/* Variants */}
@@ -309,7 +326,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
                 color: "var(--ink-700)",
               }}
             >
-              Options
+              {t("seller.productView.options")}
             </h3>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
               {product.variants.map((v, i) => (
@@ -367,7 +384,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
                           : "var(--ink-500)",
                   }}
                 >
-                  {v.name}: {v.stock} in stock
+                  {t("seller.productView.variantInStock", { name: v.name, count: v.stock })}
                 </span>
               ))}
             </div>
@@ -389,7 +406,9 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
                     >
                       <span style={{ fontWeight: 600, color: "var(--ink-700)" }}>{v.name}</span>
                       <code style={{ fontFamily: "monospace" }}>{v.platformSku}</code>
-                      {v.sellerSku ? <span>· your code: {v.sellerSku}</span> : null}
+                      {v.sellerSku ? (
+                        <span>· {t("seller.productView.yourCode", { code: v.sellerSku })}</span>
+                      ) : null}
                     </div>
                   ) : null,
                 )}
@@ -409,7 +428,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
                 color: "var(--ink-700)",
               }}
             >
-              Description
+              {t("seller.productView.description")}
             </h3>
             <p
               style={{
@@ -436,7 +455,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
                 color: "var(--ink-700)",
               }}
             >
-              Specifications
+              {t("seller.productView.specifications")}
             </h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {Object.entries(product.metadata).map(([key, val]) => (
@@ -472,7 +491,7 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
                 color: "var(--ink-700)",
               }}
             >
-              Product Video
+              {t("seller.productView.productVideo")}
             </h3>
             <VideoPlayer
               src={product.videoUrl}
@@ -485,11 +504,12 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
         {/* Footer info */}
         {product?.createdAt && (
           <div style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 8 }}>
-            Listed on{" "}
-            {new Date(product.createdAt).toLocaleDateString("en-IN", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
+            {t("seller.productView.listedOn", {
+              date: new Date(product.createdAt).toLocaleDateString("en-IN", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              }),
             })}
           </div>
         )}

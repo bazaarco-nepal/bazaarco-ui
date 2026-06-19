@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { VideoUploadForm } from "@/components/common/video-upload-form";
 import { Button, EmptyState, Icon, Spinner, VideoPlayer } from "@/components/ui";
 import { useDeleteSellerVideo, useUpdateSellerVideo } from "@/hooks/use-media-upload";
@@ -18,6 +19,7 @@ function VideoEditModal({
   onClose: () => void;
   onSaved: (message: string) => void;
 }) {
+  const { t } = useTranslation();
   const update = useUpdateSellerVideo();
   // Seller's OWN inventory (auth-scoped) — the public catalog endpoint 404s
   // until the store is verified and hides non-active listings, leaving the
@@ -41,7 +43,7 @@ function VideoEditModal({
     setError(null);
     const selectedProduct = products?.find((p) => p.id === productId);
     if (!selectedProduct) {
-      setError("Select which product this video is for.");
+      setError(t("seller.videoLibrary.selectProductError"));
       return;
     }
     try {
@@ -51,10 +53,14 @@ function VideoEditModal({
         product: selectedProduct.name,
         status,
       });
-      onSaved(status === "published" ? "Video updated & published" : "Draft updated");
+      onSaved(
+        status === "published"
+          ? t("seller.videoLibrary.updatedPublished")
+          : t("seller.videoLibrary.draftUpdated"),
+      );
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save changes");
+      setError(err instanceof Error ? err.message : t("seller.videoLibrary.saveFailed"));
     }
   };
 
@@ -87,13 +93,15 @@ function VideoEditModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ margin: "0 0 14px", fontSize: "1.125rem", fontWeight: 800 }}>Edit video</h2>
+        <h2 style={{ margin: "0 0 14px", fontSize: "1.125rem", fontWeight: 800 }}>
+          {t("seller.videoLibrary.editVideo")}
+        </h2>
 
         <label
           htmlFor="bz-edit-video-product"
           style={{ display: "block", fontSize: ".8125rem", fontWeight: 600, marginBottom: 6 }}
         >
-          Product
+          {t("seller.videoLibrary.product")}
         </label>
         <select
           id="bz-edit-video-product"
@@ -110,7 +118,9 @@ function VideoEditModal({
           }}
         >
           <option value="">
-            {productsLoading ? "Loading your products…" : "Select a product…"}
+            {productsLoading
+              ? t("seller.videoLibrary.loadingProducts")
+              : t("seller.videoLibrary.selectProduct")}
           </option>
           {products?.map((p) => (
             <option key={p.id} value={p.id}>
@@ -120,13 +130,13 @@ function VideoEditModal({
         </select>
 
         <label style={{ display: "block", fontSize: ".8125rem", fontWeight: 600, marginBottom: 8 }}>
-          Visibility
+          {t("seller.videoLibrary.visibility")}
         </label>
         {/* Sliding segmented switch — one control with a single active state,
             instead of two same-shaped pills where it's unclear which is "on". */}
         <div
           role="radiogroup"
-          aria-label="Visibility"
+          aria-label={t("seller.videoLibrary.visibility")}
           style={{
             position: "relative",
             display: "grid",
@@ -155,8 +165,12 @@ function VideoEditModal({
           />
           {(
             [
-              { value: "draft", label: "Draft", dot: "var(--saffron)" },
-              { value: "published", label: "Published", dot: "var(--success)" },
+              { value: "draft", label: t("seller.videoLibrary.draft"), dot: "var(--saffron)" },
+              {
+                value: "published",
+                label: t("seller.videoLibrary.published"),
+                dot: "var(--success)",
+              },
             ] as const
           ).map((opt) => {
             const active = status === opt.value;
@@ -203,8 +217,8 @@ function VideoEditModal({
         </div>
         <p style={{ margin: "0 0 14px", fontSize: ".75rem", color: "var(--ink-400)" }}>
           {status === "published"
-            ? "Live — buyers can see this video."
-            : "Draft — only you can see this video."}
+            ? t("seller.videoLibrary.publishedHint")
+            : t("seller.videoLibrary.draftHint")}
         </p>
 
         {error && (
@@ -218,10 +232,10 @@ function VideoEditModal({
             disabled={update.isPending}
             onClick={() => void save()}
           >
-            {update.isPending ? <Spinner size={18} /> : "Save changes"}
+            {update.isPending ? <Spinner size={18} /> : t("seller.videoLibrary.saveChanges")}
           </Button>
           <Button variant="ghost" disabled={update.isPending} onClick={onClose}>
-            Cancel
+            {t("seller.videoLibrary.cancel")}
           </Button>
         </div>
       </div>
@@ -240,6 +254,7 @@ function VideoCard({
   onDeleted: () => void;
   onToast: (msg: string) => void;
 }) {
+  const { t } = useTranslation();
   const del = useDeleteSellerVideo();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -247,10 +262,10 @@ function VideoCard({
     try {
       await del.mutateAsync(video.id);
       setConfirmingDelete(false);
-      onToast("Video deleted");
+      onToast(t("seller.videoLibrary.videoDeleted"));
       onDeleted();
     } catch (err) {
-      onToast(err instanceof Error ? err.message : "Delete failed");
+      onToast(err instanceof Error ? err.message : t("seller.videoLibrary.deleteFailed"));
     }
   };
 
@@ -274,15 +289,18 @@ function VideoCard({
       </div>
       <div className="bz-seller-video-card__body">
         <div className="bz-seller-video-card__for">
-          For: <span>{video.productLabel}</span>
+          {t("seller.videoLibrary.forLabel")} <span>{video.productLabel}</span>
         </div>
         <div className="bz-seller-video-card__views">
           <Icon name="eye" size={13} />
-          {video.views.toLocaleString("en-IN")} {video.views === 1 ? "view" : "views"}
+          {t("seller.videoLibrary.viewCount", {
+            count: video.views,
+            formatted: video.views.toLocaleString("en-IN"),
+          })}
         </div>
         <div className="bz-seller-video-card__actions">
           <Button variant="secondary" size="sm" icon="edit" full onClick={onEdit}>
-            Edit
+            {t("seller.videoLibrary.edit")}
           </Button>
           <Button
             variant="ghost"
@@ -292,7 +310,7 @@ function VideoCard({
             disabled={del.isPending}
             onClick={() => setConfirmingDelete(true)}
           >
-            Delete
+            {t("seller.videoLibrary.delete")}
           </Button>
         </div>
       </div>
@@ -320,13 +338,14 @@ export function SellerVideoLibrary({
   onRefetch: () => void;
   onToast: (msg: string) => void;
 }) {
+  const { t } = useTranslation();
   const [editing, setEditing] = useState<SellerVideoItem | null>(null);
 
   return (
     <>
       <SellerPageHeader
-        title="Videos"
-        subtitle="Products with video sell 2× more. Keep videos under 30 seconds."
+        title={t("seller.videoLibrary.title")}
+        subtitle={t("seller.videoLibrary.subtitle")}
         actions={
           <Button
             variant="primary"
@@ -335,7 +354,7 @@ export function SellerVideoLibrary({
             onClick={onToggleUpload}
             style={{ flexShrink: 0 }}
           >
-            Add video
+            {t("seller.videoLibrary.addVideo")}
           </Button>
         }
       />
@@ -345,7 +364,7 @@ export function SellerVideoLibrary({
           className="bz-upload-sheet-overlay"
           role="dialog"
           aria-modal="true"
-          aria-label="Add product video"
+          aria-label={t("seller.videoLibrary.addVideoDialog")}
           onClick={onToggleUpload}
         >
           <div className="bz-upload-sheet" onClick={(e) => e.stopPropagation()}>
@@ -354,7 +373,11 @@ export function SellerVideoLibrary({
               onSuccess={(status) => {
                 onToggleUpload();
                 onRefetch();
-                onToast(status === "published" ? "Video published" : "Draft saved");
+                onToast(
+                  status === "published"
+                    ? t("seller.videoLibrary.videoPublished")
+                    : t("seller.videoLibrary.draftSaved"),
+                );
               }}
             />
           </div>
@@ -364,8 +387,8 @@ export function SellerVideoLibrary({
       {videos.length === 0 && !showUpload ? (
         <EmptyState
           icon="video"
-          title="No videos yet"
-          message="Add a short vertical clip to help buyers discover your products. Tap “Add video” at the top to upload your first one."
+          title={t("seller.videoLibrary.emptyTitle")}
+          message={t("seller.videoLibrary.emptyMessage")}
         />
       ) : (
         <div className="bz-seller-video-library-grid">

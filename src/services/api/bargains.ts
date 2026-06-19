@@ -1,6 +1,5 @@
 import type { Product } from "@/types";
-import { apiClient, getData, postData } from "./http";
-import type { ApiSuccessResponse } from "./types";
+import { getData, patchData, postData } from "./http";
 import { mapProduct } from "./catalog";
 
 export interface BargainOffer {
@@ -69,16 +68,12 @@ export const bargainsApi = {
     return mapOffer(raw);
   },
   async accept(id: string): Promise<BargainOffer> {
-    const { data } = await apiClient.patch<ApiSuccessResponse<BargainOffer>>(
-      `/bargains/${id}/accept`,
-    );
-    return mapOffer(data.data);
+    const raw = await patchData<BargainOffer>(`/bargains/${id}/accept`);
+    return mapOffer(raw);
   },
   async reject(id: string): Promise<BargainOffer> {
-    const { data } = await apiClient.patch<ApiSuccessResponse<BargainOffer>>(
-      `/bargains/${id}/reject`,
-    );
-    return mapOffer(data.data);
+    const raw = await patchData<BargainOffer>(`/bargains/${id}/reject`);
+    return mapOffer(raw);
   },
   /**
    * Buyer accepts the seller's counter. This is what arms the offer for
@@ -92,10 +87,9 @@ export const bargainsApi = {
     return mapOffer(raw);
   },
   async counter(id: string, counterAmount: number): Promise<BargainOffer> {
-    const { data } = await apiClient.patch<ApiSuccessResponse<BargainOffer>>(
-      `/bargains/${id}/counter`,
-      { counter: counterAmount },
-    );
-    return mapOffer(data.data);
+    const raw = await patchData<BargainOffer>(`/bargains/${id}/counter`, {
+      counter: counterAmount,
+    });
+    return mapOffer(raw);
   },
 };

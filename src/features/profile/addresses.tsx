@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Button, Icon, LandmarkAddress, Spinner, AppLink } from "@/components/ui";
 import { pathFromScreen } from "@/config/routes";
 import { useBz } from "@/components/common";
@@ -50,6 +51,7 @@ export function SavedAddressPicker({
   onUseNew,
   onManage,
 }: SavedAddressPickerProps) {
+  const { t } = useTranslation();
   if (!addresses.length) return null;
 
   return (
@@ -63,7 +65,7 @@ export function SavedAddressPicker({
         }}
       >
         <span style={{ fontSize: ".8125rem", fontWeight: 700, color: "var(--ink-700)" }}>
-          Saved addresses
+          {t("profile.savedAddresses")}
         </span>
         {onManage && (
           <button
@@ -81,7 +83,7 @@ export function SavedAddressPicker({
               padding: "4px 8px",
             }}
           >
-            Manage
+            {t("profile.addresses.manage")}
           </button>
         )}
       </div>
@@ -123,7 +125,7 @@ export function SavedAddressPicker({
                 <span style={{ fontWeight: 800, color: "var(--ink-900)" }}>{addr.label}</span>
                 {addr.isDefault && (
                   <span style={{ fontSize: ".6875rem", fontWeight: 700, color: "var(--blue)" }}>
-                    Default
+                    {t("profile.addresses.default")}
                   </span>
                 )}
               </div>
@@ -149,7 +151,7 @@ export function SavedAddressPicker({
             color: useNew ? "var(--blue)" : "var(--ink-600)",
           }}
         >
-          + Deliver to a different address
+          {t("profile.addresses.deliverDifferent")}
         </button>
       </div>
     </div>
@@ -157,6 +159,7 @@ export function SavedAddressPicker({
 }
 
 export function AddressesPage() {
+  const { t } = useTranslation();
   const { nav, toast } = useBz();
   const { data: addresses = [], isLoading, isError } = useAddresses();
   const createAddress = useCreateAddress();
@@ -184,11 +187,11 @@ export function AddressesPage() {
 
   const save = async () => {
     if (!form.label.trim()) {
-      toast("Choose a label (e.g. Home or Office)");
+      toast(t("profile.addresses.chooseLabel"));
       return;
     }
     if (!isAddressComplete(form.location)) {
-      toast("Complete city, area, and landmark");
+      toast(t("profile.addresses.completeFields"));
       return;
     }
     if (!isDeliverableCity(form.location.city)) {
@@ -199,33 +202,33 @@ export function AddressesPage() {
       const payload = deliveryToSavePayload(form.location, form.label, editing === "new");
       if (editing === "new") {
         await createAddress.mutateAsync(payload);
-        toast("Address saved");
+        toast(t("profile.addresses.saved"));
       } else if (editing) {
         await updateAddress.mutateAsync({ id: editing.id, payload });
-        toast("Address updated");
+        toast(t("profile.addresses.updated"));
       }
       closeForm();
     } catch (e) {
-      toast(e instanceof ApiRequestError ? e.message : "Could not save address");
+      toast(e instanceof ApiRequestError ? e.message : t("profile.addresses.saveFailed"));
     }
   };
 
   const remove = async (id: string) => {
     try {
       await deleteAddress.mutateAsync(id);
-      toast("Address removed");
+      toast(t("profile.addresses.removed"));
       if (editing && editing !== "new" && editing.id === id) closeForm();
     } catch (e) {
-      toast(e instanceof ApiRequestError ? e.message : "Could not remove address");
+      toast(e instanceof ApiRequestError ? e.message : t("profile.addresses.removeFailed"));
     }
   };
 
   const makeDefault = async (id: string) => {
     try {
       await setDefault.mutateAsync(id);
-      toast("Default address updated");
+      toast(t("profile.addresses.defaultUpdated"));
     } catch (e) {
-      toast(e instanceof ApiRequestError ? e.message : "Could not update default");
+      toast(e instanceof ApiRequestError ? e.message : t("profile.addresses.defaultFailed"));
     }
   };
 
@@ -255,7 +258,7 @@ export function AddressesPage() {
           marginBottom: 16,
         }}
       >
-        <Icon name="chevronLeft" size={16} /> Back to profile
+        <Icon name="chevronLeft" size={16} /> {t("profile.addresses.backToProfile")}
       </AppLink>
 
       <div
@@ -269,15 +272,15 @@ export function AddressesPage() {
       >
         <div>
           <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, color: "var(--blue-deep)" }}>
-            Saved addresses
+            {t("profile.savedAddresses")}
           </h1>
           <p style={{ margin: "6px 0 0", color: "var(--ink-500)", fontSize: ".875rem" }}>
-            Saved addresses — choose at checkout
+            {t("profile.addresses.subtitle")}
           </p>
         </div>
         {!editing && addresses.length > 0 && addresses.length < 10 && (
           <Button variant="primary" size="sm" icon="plus" onClick={openNew}>
-            Add
+            {t("profile.addresses.add")}
           </Button>
         )}
       </div>
@@ -289,7 +292,9 @@ export function AddressesPage() {
       )}
 
       {isError && (
-        <p style={{ color: "var(--danger)", fontWeight: 600 }}>Could not load your addresses.</p>
+        <p style={{ color: "var(--danger)", fontWeight: 600 }}>
+          {t("profile.addresses.loadError")}
+        </p>
       )}
 
       {!isLoading && !editing && addresses.length === 0 && (
@@ -304,10 +309,10 @@ export function AddressesPage() {
         >
           <Icon name="mapPin" size={36} color="var(--ink-300)" style={{ margin: "0 auto" }} />
           <p style={{ margin: "12px 0 16px", color: "var(--ink-500)" }}>
-            No saved addresses yet. Add Home, Office, or other spots for faster checkout.
+            {t("profile.addresses.emptyMessage")}
           </p>
           <Button variant="primary" icon="plus" onClick={openNew}>
-            Add your first address
+            {t("profile.addresses.addFirst")}
           </Button>
         </div>
       )}
@@ -390,7 +395,7 @@ export function AddressesPage() {
                     disabled={busy}
                     onClick={() => void makeDefault(addr.id)}
                   >
-                    Set as default
+                    {t("profile.addresses.setDefault")}
                   </Button>
                 )}
                 <Button
@@ -399,7 +404,7 @@ export function AddressesPage() {
                   disabled={busy}
                   onClick={() => openEdit(addr)}
                 >
-                  Edit
+                  {t("profile.edit")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -408,7 +413,7 @@ export function AddressesPage() {
                   onClick={() => void remove(addr.id)}
                   style={{ color: "var(--danger)" }}
                 >
-                  Delete
+                  {t("profile.addresses.delete")}
                 </Button>
               </div>
             </div>
@@ -426,7 +431,7 @@ export function AddressesPage() {
           }}
         >
           <h2 style={{ margin: "0 0 16px", fontSize: "1.125rem", fontWeight: 800 }}>
-            {editing === "new" ? "Add address" : "Edit address"}
+            {editing === "new" ? t("profile.addresses.addTitle") : t("profile.addresses.editTitle")}
           </h2>
 
           <label
@@ -438,7 +443,7 @@ export function AddressesPage() {
               marginBottom: 8,
             }}
           >
-            Label
+            {t("profile.addresses.label")}
           </label>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
             {ADDRESS_LABEL_PRESETS.map((preset) => (
@@ -465,7 +470,7 @@ export function AddressesPage() {
           <input
             value={form.label}
             onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))}
-            placeholder="e.g. Parents' house"
+            placeholder={t("profile.addresses.labelPlaceholder")}
             style={{
               width: "100%",
               height: 44,
@@ -484,7 +489,7 @@ export function AddressesPage() {
 
           <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
             <Button variant="secondary" full disabled={busy} onClick={closeForm}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               variant="primary"
@@ -492,7 +497,7 @@ export function AddressesPage() {
               disabled={busy || !isDeliverableCity(form.location.city)}
               onClick={() => void save()}
             >
-              {busy ? "Saving…" : "Save address"}
+              {busy ? t("profile.addresses.saving") : t("profile.addresses.saveAddress")}
             </Button>
           </div>
         </div>

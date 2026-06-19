@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useRef, useContext, createContext } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { ASSETS } from "@/config/assets";
 import { postalForCity, isDeliverableCity, DELIVERY_AREA_MESSAGE } from "@/lib/delivery-location";
 import { reverseGeocode } from "@/lib/reverse-geocode";
@@ -1330,11 +1330,12 @@ export function StoreAvatar({
   name?: string | null;
   size?: number;
 }) {
+  const { t: translate } = useTranslation();
   const t = STORE_TINTS[tintForName(name)] ?? STORE_TINTS.slate;
   return (
     <div
       role="img"
-      aria-label={name?.trim() || "Store"}
+      aria-label={name?.trim() || translate("common.store")}
       style={{
         width: size,
         height: size,
@@ -1499,6 +1500,7 @@ export function VideoPlayer({
   deferStream?: boolean;
   streamProfile?: "auto" | "hd" | "sd" | "full_hd" | "full_hd_wifi";
 }) {
+  const { t: translate } = useTranslation();
   const videoRef = useRef(null);
   const cloudinaryPlayerRef = useRef(null);
   const [hlsReady, setHlsReady] = useState(false);
@@ -1799,7 +1801,7 @@ export function VideoPlayer({
               letterSpacing: ".03em",
             }}
           >
-            <Icon name="video" size={13} /> {label || "VIDEO"}
+            <Icon name="video" size={13} /> {label || translate("common.videoTag")}
           </span>
         </div>
       )}
@@ -1881,7 +1883,7 @@ export function VideoPlayer({
         {!compact && (
           <div style={{ display: "flex", alignItems: "center", gap: 12, color: "#fff" }}>
             <button
-              aria-label={playing ? "Pause" : "Play"}
+              aria-label={playing ? translate("common.a11y.pause") : translate("common.a11y.play")}
               onClick={() => setPlaying((p) => !p)}
               style={{
                 background: "none",
@@ -1895,7 +1897,7 @@ export function VideoPlayer({
               <Icon name={playing ? "pause" : "play"} size={18} fill="#fff" />
             </button>
             <button
-              aria-label={muted ? "Unmute" : "Mute"}
+              aria-label={muted ? translate("common.a11y.unmute") : translate("common.a11y.mute")}
               onClick={() => setMuted((m) => !m)}
               style={{
                 background: "none",
@@ -2108,6 +2110,7 @@ const TOAST_EXIT_MS = 320;
 type ToastData = { msg: string; id: number; variant: string; undo?: () => void };
 
 export function Toast({ toast }: { toast: ToastData | null }) {
+  const { t } = useTranslation();
   const [shown, setShown] = useState<ToastData | null>(null);
   const [leaving, setLeaving] = useState(false);
   const shownRef = useRef(shown);
@@ -2160,13 +2163,13 @@ export function Toast({ toast }: { toast: ToastData | null }) {
           <button
             type="button"
             className="bz-toast__undo"
-            aria-label="Undo save to wishlist"
+            aria-label={t("common.a11y.undoSaveWishlist")}
             onClick={(e) => {
               e.stopPropagation();
               shown.undo?.();
             }}
           >
-            Undo
+            {t("common.undo")}
           </button>
         )}
       </div>
@@ -2360,6 +2363,7 @@ export function LoadMore({
   style,
   size = "lg",
 }: LoadMoreProps) {
+  const { t } = useTranslation();
   if (!paged || paged.total === 0) return null;
   const { shown, total, hasMore, nextBatch, pageSize } = paged;
   // Everything fit on the first page — never paginated, so skip the end-state chrome.
@@ -2385,13 +2389,13 @@ export function LoadMore({
             iconRight="chevronDown"
             className={size === "sm" ? undefined : "bz-loadmore"}
           >
-            Show {nextBatch} more {noun}
+            {t("common.showMoreNoun", { count: nextBatch, noun })}
           </Button>
           <div
             className="tnum"
             style={{ fontSize: ".8125rem", color: "var(--ink-400)", fontWeight: 600 }}
           >
-            Showing {shown} of {total} {noun}
+            {t("common.showingOf", { shown, total, noun })}
           </div>
         </>
       ) : (
@@ -2404,15 +2408,15 @@ export function LoadMore({
               textAlign: "center",
             }}
           >
-            You've seen all {total} {noun}
+            {t("common.seenAll", { total, noun })}
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
             <Button variant="ghost" icon="chevronUp" onClick={scrollTop}>
-              Back to top
+              {t("common.backToTop")}
             </Button>
             {onClear && (
               <Button variant="secondary" onClick={onClear}>
-                Clear filters
+                {t("common.clearFilters")}
               </Button>
             )}
           </div>
@@ -2434,6 +2438,7 @@ export function PageBar({
   onPage: (n: number) => void;
   alwaysShow?: boolean;
 }) {
+  const { t } = useTranslation();
   if (pageCount <= 1) return null;
   const nums = [];
   for (let i = 1; i <= pageCount; i++) {
@@ -2461,7 +2466,7 @@ export function PageBar({
     <div
       className={alwaysShow ? "" : "bz-hide-mobile"}
       role="navigation"
-      aria-label="Pagination"
+      aria-label={t("common.a11y.pagination")}
       style={{
         display: "flex",
         alignItems: "center",
@@ -2472,7 +2477,7 @@ export function PageBar({
       }}
     >
       <button onClick={() => onPage(page - 1)} disabled={page <= 1} style={cell(false, page <= 1)}>
-        <Icon name="chevronLeft" size={16} /> Previous
+        <Icon name="chevronLeft" size={16} /> {t("common.previous")}
       </button>
       {nums.map((n, i) =>
         n === "…" ? (
@@ -2495,13 +2500,14 @@ export function PageBar({
         disabled={page >= pageCount}
         style={cell(false, page >= pageCount)}
       >
-        Next <Icon name="chevronRight" size={16} />
+        {t("common.next")} <Icon name="chevronRight" size={16} />
       </button>
     </div>
   );
 }
 /* Floating back-to-top — appears after scrolling, stacked ABOVE the green Help Lifeline FAB. */
 export function BackToTop({ threshold = 1200 }) {
+  const { t } = useTranslation();
   const [show, setShow] = useState(false);
   useEffect(() => {
     const onScroll = () => setShow(window.scrollY > threshold);
@@ -2513,8 +2519,8 @@ export function BackToTop({ threshold = 1200 }) {
   return (
     <button
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-      aria-label="Back to top"
-      title="Back to top"
+      aria-label={t("common.backToTop")}
+      title={t("common.backToTop")}
       style={{
         position: "fixed",
         right: 22,
@@ -2540,6 +2546,7 @@ export function BackToTop({ threshold = 1200 }) {
 
 /* ---------- All-in price card (guide §3.6) ---------- */
 export function AllInPriceCard({ price, delivery = 60, area = "Chabahil", onEditArea }) {
+  const { t } = useTranslation();
   const total = price + delivery;
   return (
     <div
@@ -2562,7 +2569,7 @@ export function AllInPriceCard({ price, delivery = 60, area = "Chabahil", onEdit
           color: "var(--blue-deep)",
         }}
       >
-        <Icon name="truck" size={16} color="var(--blue-deep)" /> Delivered to{" "}
+        <Icon name="truck" size={16} color="var(--blue-deep)" /> {t("common.deliveredTo")}{" "}
         <button
           onClick={onEditArea}
           style={{
@@ -2580,8 +2587,15 @@ export function AllInPriceCard({ price, delivery = 60, area = "Chabahil", onEdit
         </button>
       </div>
       <div className="tnum" style={{ fontSize: ".9375rem" }}>
-        {formatNPR(price)} for item + {formatNPR(delivery)} delivery ={" "}
-        <b style={{ color: "var(--blue-deep)" }}>{formatNPR(total)} to pay</b>
+        <Trans
+          i18nKey="common.priceBreakdown"
+          values={{
+            item: formatNPR(price),
+            delivery: formatNPR(delivery),
+            total: formatNPR(total),
+          }}
+          components={{ strong: <b style={{ color: "var(--blue-deep)" }} /> }}
+        />
       </div>
     </div>
   );
@@ -2589,6 +2603,7 @@ export function AllInPriceCard({ price, delivery = 60, area = "Chabahil", onEdit
 
 /* ---------- OTP input ---------- */
 export function OTPInput({ length = 4, onComplete }) {
+  const { t } = useTranslation();
   const [vals, setVals] = useState(Array(length).fill(""));
   const refs = useRef([]);
   const handle = (i, v) => {
@@ -2609,7 +2624,7 @@ export function OTPInput({ length = 4, onComplete }) {
           onChange={(e) => handle(i, e.target.value)}
           inputMode="numeric"
           maxLength={1}
-          aria-label={`Digit ${i + 1}`}
+          aria-label={t("common.a11y.digit", { position: i + 1 })}
           style={{
             width: 56,
             height: 56,
@@ -2716,6 +2731,7 @@ export function OptionChip({
   trailing?: React.ReactNode;
   onClick?: () => void;
 }) {
+  const { t } = useTranslation();
   const hasImg = Boolean(image);
   const fg = unavailable
     ? "var(--ink-300)"
@@ -2796,7 +2812,7 @@ export function OptionChip({
             borderRadius: "var(--r-sm)",
           }}
         >
-          sold out
+          {t("common.soldOut")}
         </span>
       )}
     </button>
@@ -2860,7 +2876,7 @@ export function MobileBuyBar({
           }}
         >
           <Icon name="bargain" size={18} />
-          <span>Offer</span>
+          <span>{t("common.offer")}</span>
         </button>
       ) : null}
       {/* Add to cart — outlined navy, secondary to the solid Buy now. */}
@@ -2900,7 +2916,7 @@ export function MobileBuyBar({
           fontSize: ".9375rem",
         }}
       >
-        {disabled ? "Unavailable" : t("common.buyNow")}
+        {disabled ? t("common.unavailable") : t("common.buyNow")}
       </Button>
     </div>
   );
@@ -2999,6 +3015,7 @@ export function BottomNav({
 
 /* ---------- Landmark address picker ---------- */
 export function LandmarkAddress({ value, onChange }) {
+  const { t } = useTranslation();
   // Normalize per-field, not just when `value` is missing entirely: a partial
   // address (e.g. { city } with no area/landmark) must still yield defined
   // strings, or the inputs flip from controlled to uncontrolled.
@@ -3049,7 +3066,7 @@ export function LandmarkAddress({ value, onChange }) {
 
   const useMyLocation = () => {
     if (!navigator.geolocation) {
-      setGeoError("Your browser does not support location.");
+      setGeoError(t("common.address.geoUnsupported"));
       return;
     }
     setGeoError(null);
@@ -3065,7 +3082,7 @@ export function LandmarkAddress({ value, onChange }) {
       },
       () => {
         setGeoLoading(false);
-        setGeoError("Could not get your location. Allow location access or drop a pin manually.");
+        setGeoError(t("common.address.geoFailed"));
       },
       { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 },
     );
@@ -3111,7 +3128,7 @@ export function LandmarkAddress({ value, onChange }) {
             marginBottom: 6,
           }}
         >
-          City
+          {t("common.address.city")}
         </label>
         <div style={{ position: "relative" }}>
           <Icon
@@ -3144,12 +3161,12 @@ export function LandmarkAddress({ value, onChange }) {
               color: v.city ? "var(--ink-900)" : "var(--ink-400)",
             }}
           >
-            <option value="">Select city…</option>
+            <option value="">{t("common.address.selectCity")}</option>
             {cities.map((c) => {
               const deliverable = isDeliverableCity(c);
               return (
                 <option key={c} value={c} disabled={!deliverable}>
-                  {deliverable ? c : `${c} — coming soon`}
+                  {deliverable ? c : t("common.address.cityComingSoon", { city: c })}
                 </option>
               );
             })}
@@ -3180,7 +3197,7 @@ export function LandmarkAddress({ value, onChange }) {
             marginBottom: 6,
           }}
         >
-          Area / Ward
+          {t("common.address.areaWard")}
         </label>
         <div style={{ position: "relative" }}>
           <Icon
@@ -3200,7 +3217,11 @@ export function LandmarkAddress({ value, onChange }) {
             value={v.area}
             onChange={(e) => onChange({ ...v, area: e.target.value })}
             disabled={!v.city}
-            placeholder={v.city ? "e.g. Mahalaxmi, Chabahil — or pick below" : "Select city first"}
+            placeholder={
+              v.city
+                ? t("common.address.areaPlaceholder")
+                : t("common.address.areaPlaceholderNoCity")
+            }
             style={{
               width: "100%",
               height: 48,
@@ -3231,7 +3252,10 @@ export function LandmarkAddress({ value, onChange }) {
             marginBottom: 6,
           }}
         >
-          Landmark <span style={{ fontWeight: 400, color: "var(--ink-400)" }}>(optional)</span>
+          {t("common.address.landmark")}{" "}
+          <span style={{ fontWeight: 400, color: "var(--ink-400)" }}>
+            {t("common.address.optional")}
+          </span>
         </label>
         <div style={{ position: "relative" }}>
           <Icon
@@ -3249,7 +3273,7 @@ export function LandmarkAddress({ value, onChange }) {
           <input
             value={v.landmark}
             onChange={(e) => onChange({ ...v, landmark: e.target.value })}
-            placeholder='e.g. "Next to Bhatbhateni, opposite the petrol pump"'
+            placeholder={t("common.address.landmarkPlaceholder")}
             style={{
               width: "100%",
               height: 48,
@@ -3291,7 +3315,7 @@ export function LandmarkAddress({ value, onChange }) {
           }}
         >
           <Icon name="locate" size={16} />
-          {geoLoading ? "Locating…" : "Use my location"}
+          {geoLoading ? t("common.address.locating") : t("common.address.useMyLocation")}
         </button>
         <button
           type="button"
@@ -3314,7 +3338,7 @@ export function LandmarkAddress({ value, onChange }) {
           }}
         >
           <Icon name={mapOpen ? "eyeOff" : "eye"} size={16} />
-          {mapOpen ? "Hide map" : "Show map"}
+          {mapOpen ? t("common.address.hideMap") : t("common.address.showMap")}
         </button>
       </div>
       {geoError && (
@@ -3328,7 +3352,7 @@ export function LandmarkAddress({ value, onChange }) {
             color="var(--success)"
             style={{ verticalAlign: "middle", marginRight: 4 }}
           />
-          Pin saved ({v.lat.toFixed(5)}, {v.lng.toFixed(5)})
+          {t("common.address.pinSaved", { lat: v.lat.toFixed(5), lng: v.lng.toFixed(5) })}
         </p>
       )}
       {mapOpen &&
@@ -3357,7 +3381,7 @@ export function LandmarkAddress({ value, onChange }) {
             }}
           >
             <Icon name="mapPin" size={22} color="var(--ink-400)" />
-            <span style={{ fontSize: ".8125rem" }}>Select a city to load the map.</span>
+            <span style={{ fontSize: ".8125rem" }}>{t("common.address.selectCityForMap")}</span>
           </div>
         ))}
     </div>
@@ -3366,6 +3390,7 @@ export function LandmarkAddress({ value, onChange }) {
 
 /* ---------- Deliver-to modal (navbar) ---------- */
 export function DeliverToModal({ open, value, onClose, onSave }) {
+  const { t } = useTranslation();
   const [draft, setDraft] = useState(value);
 
   useEffect(() => {
@@ -3435,7 +3460,7 @@ export function DeliverToModal({ open, value, onClose, onSave }) {
                 color: "var(--blue-deep)",
               }}
             >
-              Deliver to
+              {t("delivery.deliverTo")}
             </h2>
             <p
               style={{
@@ -3445,13 +3470,13 @@ export function DeliverToModal({ open, value, onClose, onSave }) {
                 lineHeight: 1.45,
               }}
             >
-              We use this for delivery fees and estimated arrival on product pages.
+              {t("common.deliverTo.description")}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("common.close")}
             style={{
               background: "var(--line-100)",
               border: "none",
@@ -3492,7 +3517,7 @@ export function DeliverToModal({ open, value, onClose, onSave }) {
               marginBottom: 6,
             }}
           >
-            Postal code
+            {t("common.deliverTo.postalCode")}
           </label>
           <input
             value={draft.postal ?? ""}
@@ -3516,7 +3541,7 @@ export function DeliverToModal({ open, value, onClose, onSave }) {
 
         <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
           <Button variant="ghost" full onClick={onClose}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             variant="primary"
@@ -3524,7 +3549,7 @@ export function DeliverToModal({ open, value, onClose, onSave }) {
             disabled={!canSave}
             onClick={() => canSave && onSave(draft)}
           >
-            Save location
+            {t("delivery.saveLocation")}
           </Button>
         </div>
       </div>
@@ -3534,10 +3559,11 @@ export function DeliverToModal({ open, value, onClose, onSave }) {
 
 /* ---------- Voice mic button ---------- */
 export function VoiceMicButton({ onClick, size = 36 }) {
+  const { t } = useTranslation();
   return (
     <button
       onClick={onClick}
-      aria-label="Voice search"
+      aria-label={t("common.a11y.voiceSearch")}
       style={{
         width: size,
         height: size,

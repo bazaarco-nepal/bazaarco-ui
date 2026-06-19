@@ -85,6 +85,7 @@ export function CategoryAttrFields({
   values: Record<string, unknown>;
   onChange: (next: Record<string, unknown>) => void;
 }) {
+  const { t } = useTranslation();
   const { data: categories = [] } = useCategories();
   const [otherText, setOtherText] = useState<Record<string, string>>({});
   const [customLabels, setCustomLabels] = useState<Record<string, string>>({});
@@ -229,7 +230,7 @@ export function CategoryAttrFields({
             fontWeight: values[f.k] ? 600 : 400,
           }}
         >
-          <option value="">Choose…</option>
+          <option value="">{t("seller.addProduct.choosePlaceholder")}</option>
           {(f.o ?? []).map((o) => (
             <option key={o} value={o}>
               {o}
@@ -283,7 +284,7 @@ export function CategoryAttrFields({
                     addOther(f.k);
                   }
                 }}
-                placeholder="Other…"
+                placeholder={t("seller.addProduct.otherPlaceholder")}
                 style={{
                   width: 120,
                   minHeight: 40,
@@ -313,7 +314,7 @@ export function CategoryAttrFields({
                   opacity: (otherText[f.k] || "").trim() ? 1 : 0.4,
                 }}
               >
-                + Add
+                + {t("seller.addProduct.add")}
               </button>
             </span>
           )}
@@ -376,7 +377,7 @@ export function CategoryAttrFields({
         onChange={(e) =>
           set(f.k, f.t === "num" ? e.target.value.replace(/\D/g, "") : e.target.value)
         }
-        placeholder="Type here"
+        placeholder={t("seller.addProduct.typeHerePlaceholder")}
         aria-label={f.en}
         style={cellInput}
       />
@@ -395,7 +396,7 @@ export function CategoryAttrFields({
           <div className="bz-spec-row__label">
             {f.en}
             {f.u && <span className="bz-spec-row__unit">({f.u})</span>}
-            {f.req && <span className="bz-spec-row__req">Required</span>}
+            {f.req && <span className="bz-spec-row__req">{t("seller.addProduct.required")}</span>}
           </div>
           <div className="bz-spec-row__control">{renderControl(f)}</div>
           {!f.req && (
@@ -403,7 +404,7 @@ export function CategoryAttrFields({
               type="button"
               onClick={() => removeField(f.k)}
               className="bz-spec-row__remove"
-              aria-label={`Remove ${f.en}`}
+              aria-label={t("seller.addProduct.removeField", { field: f.en })}
             >
               <SellerIcon name="x" size={16} />
             </button>
@@ -421,20 +422,20 @@ export function CategoryAttrFields({
             onBlur={() => commitCustomLabel(key)}
             className="bz-spec-row__label"
             style={cellInput}
-            aria-label="Detail name"
+            aria-label={t("seller.addProduct.detailName")}
           />
           <input
             value={String(values[key] ?? "")}
             onChange={(e) => set(key, e.target.value)}
             className="bz-spec-row__control"
             style={cellInput}
-            aria-label="Detail value"
+            aria-label={t("seller.addProduct.detailValue")}
           />
           <button
             type="button"
             onClick={() => remove(key)}
             className="bz-spec-row__remove"
-            aria-label="Remove custom detail"
+            aria-label={t("seller.addProduct.removeCustomDetail")}
           >
             <SellerIcon name="x" size={16} />
           </button>
@@ -450,9 +451,9 @@ export function CategoryAttrFields({
             onKeyDown={(e) => {
               if (e.key === "Escape") cancelCustom();
             }}
-            placeholder="Detail name (e.g. Fabric origin)"
+            placeholder={t("seller.addProduct.customDetailNamePlaceholder")}
             style={inputStyle}
-            aria-label="Custom detail name"
+            aria-label={t("seller.addProduct.customDetailName")}
             autoFocus
           />
           <input
@@ -465,9 +466,9 @@ export function CategoryAttrFields({
               }
               if (e.key === "Escape") cancelCustom();
             }}
-            placeholder="Value"
+            placeholder={t("seller.addProduct.customDetailValuePlaceholder")}
             style={inputStyle}
-            aria-label="Custom detail value"
+            aria-label={t("seller.addProduct.customDetailValue")}
           />
           <div style={{ display: "flex", gap: 8 }}>
             <button
@@ -482,7 +483,7 @@ export function CategoryAttrFields({
                 opacity: newMetaLabel.trim() && newMetaValue.trim() ? 1 : 0.45,
               }}
             >
-              Add
+              {t("seller.addProduct.add")}
             </button>
             <button
               type="button"
@@ -490,7 +491,7 @@ export function CategoryAttrFields({
               className="bz-hover-border"
               style={buttonStyle}
             >
-              Cancel
+              {t("common.cancel")}
             </button>
           </div>
         </div>
@@ -506,8 +507,8 @@ export function CategoryAttrFields({
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setSearchFocused(true)}
             onBlur={() => window.setTimeout(() => setSearchFocused(false), 150)}
-            placeholder="Search a detail to add…"
-            aria-label="Search a detail to add"
+            placeholder={t("seller.addProduct.searchDetailPlaceholder")}
+            aria-label={t("seller.addProduct.searchDetail")}
             style={inputStyle}
           />
           {showResults && (
@@ -562,7 +563,7 @@ export function CategoryAttrFields({
                 <div
                   style={{ padding: "11px 14px", fontSize: ".8125rem", color: "var(--ink-400)" }}
                 >
-                  No matching suggestion — add it as a custom detail below.
+                  {t("seller.addProduct.noMatchingSuggestion")}
                 </div>
               )}
               {/* Custom detail — name the label yourself. Pre-fills with the query. */}
@@ -593,7 +594,9 @@ export function CategoryAttrFields({
                 onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
               >
                 <SellerIcon name="edit" size={15} color="var(--blue)" />
-                {q.length > 0 ? `Add “${query.trim()}” as a custom detail` : "Custom detail"}
+                {q.length > 0
+                  ? t("seller.addProduct.addAsCustomDetail", { query: query.trim() })
+                  : t("seller.addProduct.customDetail")}
               </button>
             </div>
           )}
@@ -601,7 +604,7 @@ export function CategoryAttrFields({
       )}
 
       <p style={{ margin: "2px 0 0", fontSize: ".8125rem", color: "var(--ink-400)" }}>
-        Tap any suggestion to add it as a field. More detail builds buyer trust.
+        {t("seller.addProduct.specSuggestionHint")}
       </p>
     </div>
   );
@@ -1015,13 +1018,17 @@ export function SellerAddProduct({
   }): string | null => {
     if (!v.allowBargaining) return null;
     const raw = (v.minimumPrice ?? "").trim();
-    if (raw === "") return "Enter a lowest price to enable bargaining";
+    if (raw === "") return t("seller.addProduct.enterLowestPrice");
     const floor = Number(raw);
-    if (!Number.isInteger(floor) || floor <= 0) return "Enter a whole number above 0";
+    if (!Number.isInteger(floor) || floor <= 0) return t("seller.addProduct.enterWholeNumber");
     const listed = variantListedPrice(v);
     const maxAllowed = maxAllowedBargainMinimum(listed);
     if (listed > 0 && floor > maxAllowed)
-      return `Must be ${formatNPR(maxAllowed)} or lower (at least ${BARGAIN_MIN_GAP_PERCENT}% below ${formatNPR(listed)})`;
+      return t("seller.addProduct.bargainFloorTooHigh", {
+        max: formatNPR(maxAllowed),
+        percent: BARGAIN_MIN_GAP_PERCENT,
+        listed: formatNPR(listed),
+      });
     return null;
   };
   const bargainFloorOk = hasVariants
@@ -1082,10 +1089,10 @@ export function SellerAddProduct({
     bargain: bargainFloorOk,
   };
   const SECTION_DEFS: Array<{ id: string; label: string; key: keyof typeof sectionDone }> = [
-    { id: "sec-media", label: "Photos", key: "media" },
-    { id: "sec-basics", label: "Product details", key: "basics" },
-    { id: "sec-variants", label: "Variants & pricing", key: "variants" },
-    { id: "sec-bargain", label: "Bargaining", key: "bargain" },
+    { id: "sec-media", label: t("seller.addProduct.sectionPhotos"), key: "media" },
+    { id: "sec-basics", label: t("seller.addProduct.sectionProductDetails"), key: "basics" },
+    { id: "sec-variants", label: t("seller.addProduct.sectionVariantsPricing"), key: "variants" },
+    { id: "sec-bargain", label: t("seller.addProduct.sectionBargaining"), key: "bargain" },
   ];
   const navIds = [...SECTION_DEFS.map((s) => s.id), "sec-review"];
   // Paged wizard: one step visible at a time. `step` is the index into navIds;
@@ -1117,69 +1124,73 @@ export function SellerAddProduct({
   // Publish-readiness checklist — one source of truth, shared by the Review
   // step and the sticky live-preview panel so they can never drift apart.
   const publishChecks: Array<{ ok: boolean; label: string; id: string }> = [
-    { ok: mainPhoto.length === 1, label: "Main product photo added", id: "sec-media" },
+    { ok: mainPhoto.length === 1, label: t("seller.addProduct.checkMainPhoto"), id: "sec-media" },
     {
       ok: galleryPhotos.length >= 2 && galleryPhotos.length <= 5,
-      label: "Gallery photos added (2–5)",
+      label: t("seller.addProduct.checkGalleryPhotos"),
       id: "sec-media",
     },
     {
       ok: titleOk && descriptionOk,
-      label: "Product name & description complete",
+      label: t("seller.addProduct.checkNameDescription"),
       id: "sec-basics",
     },
-    { ok: categoryOk, label: "Category selected", id: "sec-basics" },
+    { ok: categoryOk, label: t("seller.addProduct.checkCategory"), id: "sec-basics" },
     {
       ok: hasVariants ? variantsOk : Boolean(price && stock),
-      label: hasVariants ? "Every version has a price & stock" : "Price & stock added",
+      label: hasVariants
+        ? t("seller.addProduct.checkVariantPriceStock")
+        : t("seller.addProduct.checkPriceStock"),
       id: "sec-variants",
     },
-    { ok: bargainFloorOk, label: "Bargaining configured", id: "sec-bargain" },
+    { ok: bargainFloorOk, label: t("seller.addProduct.checkBargaining"), id: "sec-bargain" },
   ];
 
   // What still needs fixing, grouped by section (frontend display only).
   const validationItems: Array<{ section: string; id: string; msg: string }> = [];
   if (!photosOk)
     validationItems.push({
-      section: "Photos",
+      section: t("seller.addProduct.sectionPhotos"),
       id: "sec-media",
-      msg: "Add 1 main photo and 2–5 gallery photos.",
+      msg: t("seller.addProduct.validationPhotos"),
     });
   if (!titleOk)
     validationItems.push({
-      section: "Product details",
+      section: t("seller.addProduct.sectionProductDetails"),
       id: "sec-basics",
-      msg: "Product title needs at least 3 characters.",
+      msg: t("seller.addProduct.validationTitle"),
     });
   if (!descriptionOk)
     validationItems.push({
-      section: "Product details",
+      section: t("seller.addProduct.sectionProductDetails"),
       id: "sec-basics",
-      msg: "Description needs at least 10 characters.",
+      msg: t("seller.addProduct.validationDescription"),
     });
   if (!categoryOk)
     validationItems.push({
-      section: "Product details",
+      section: t("seller.addProduct.sectionProductDetails"),
       id: "sec-basics",
-      msg: "Choose a category.",
+      msg: t("seller.addProduct.validationCategory"),
     });
   if (hasVariants ? !variantsOk : !(price && stock))
     validationItems.push({
-      section: "Variants & pricing",
+      section: t("seller.addProduct.sectionVariantsPricing"),
       id: "sec-variants",
-      msg: hasVariants ? "Every version needs a price and stock." : "Set a price and stock.",
+      msg: hasVariants
+        ? t("seller.addProduct.validationVariantPriceStock")
+        : t("seller.addProduct.validationPriceStock"),
     });
   if (!saleValid)
     validationItems.push({
-      section: "Variants & pricing",
+      section: t("seller.addProduct.sectionVariantsPricing"),
       id: "sec-variants",
-      msg: "Sale price must be below the listed price.",
+      msg: t("seller.addProduct.validationSalePrice"),
     });
   if (!bargainFloorOk)
     validationItems.push({
-      section: "Bargaining",
+      section: t("seller.addProduct.sectionBargaining"),
       id: "sec-bargain",
-      msg: "Set a valid minimum price (below the listed price).",
+      msg: t("seller.addProduct.validationBargain"),
     });
 
   // Local draft (new product only — editing already loads the real product).
@@ -1334,7 +1345,7 @@ export function SellerAddProduct({
     setGalleryPhotos([]);
     setSubmitAttempted(false);
     setStep(0);
-    toast("Started a fresh product");
+    toast(t("seller.addProduct.toastStartedFresh"));
   };
 
   // Submit gate: surface the validation summary when something's missing,
@@ -1351,10 +1362,10 @@ export function SellerAddProduct({
 
   const imageModeLabel =
     variantImageMode === "exact"
-      ? "Separate image for every exact variant"
+      ? t("seller.addProduct.imageModeExact")
       : variantImageMode === "option"
-        ? "Image changes by color/style"
-        : "Same image for all variants";
+        ? t("seller.addProduct.imageModeOption")
+        : t("seller.addProduct.imageModeProduct");
   const variantPriceNums = variants.map((v) => Number(v.price)).filter((n) => n > 0);
   const reviewPriceRange = hasVariants
     ? variantPriceNums.length === 0
@@ -1396,7 +1407,7 @@ export function SellerAddProduct({
       : undefined;
   const previewProduct: Product = {
     id: editing?.id ?? "preview",
-    name: title.trim() || "Untitled product",
+    name: title.trim() || t("seller.addProduct.untitledProduct"),
     ne: editingProduct?.ne,
     price: previewPrice,
     original: previewOriginal,
@@ -1692,8 +1703,8 @@ export function SellerAddProduct({
   // after the option that actually drives the image (e.g. "One photo per Colour").
   const photoOptionsExpanded = showPhotoOptions || variantImageMode !== "product";
   const optionPhotoLabel = activeOptionImageAttr
-    ? `One photo per ${activeOptionImageAttr}`
-    : "One photo per option";
+    ? t("seller.addProduct.onePhotoPerAttr", { attr: activeOptionImageAttr })
+    : t("seller.addProduct.onePhotoPerOption");
 
   /** Option-level images for the driving attribute, only in "option" mode.
    *  Omitted entirely otherwise so a normal edit never wipes server-side images. */
@@ -1830,10 +1841,10 @@ export function SellerAddProduct({
               : null,
           ...buildPdpFields(),
         });
-        toast("Product updated");
+        toast(t("seller.addProduct.toastProductUpdated"));
         nav("s-products");
       } catch (err) {
-        toast(err instanceof Error ? err.message : "Could not save changes. Please try again.");
+        toast(err instanceof Error ? err.message : t("seller.addProduct.toastSaveFailed"));
       }
       return;
     }
@@ -1862,11 +1873,11 @@ export function SellerAddProduct({
             : null,
         ...buildPdpFields(),
       });
-      toast("Product published!");
+      toast(t("seller.addProduct.toastProductPublished"));
       draft.clear();
       nav("s-products");
     } catch (err) {
-      toast(err instanceof Error ? err.message : "Could not publish. Please try again.");
+      toast(err instanceof Error ? err.message : t("seller.addProduct.toastPublishFailed"));
     }
   };
 
@@ -1875,7 +1886,7 @@ export function SellerAddProduct({
       <div className="bz-seller-page">
         <SellerHelpBar />
         <SellerVerificationBlocked
-          actionLabel="add products"
+          actionLabel={t("seller.addProduct.verificationActionLabel")}
           status={vStatus}
           note={verification?.note}
           onAction={vStatus === "pending" ? undefined : () => nav("s-onboarding")}
@@ -1892,13 +1903,13 @@ export function SellerAddProduct({
         <div className="bz-seller-page">
           <SellerHelpBar />
           <EmptyState
-            title="Couldn't load this product"
+            title={t("seller.addProduct.loadErrorTitle")}
             message={
               editingErr instanceof Error
                 ? editingErr.message
-                : "It may have been removed. Go back to Inventory and try again."
+                : t("seller.addProduct.loadErrorMessage")
             }
-            cta="Back to Inventory"
+            cta={t("seller.addProduct.backToInventory")}
             onCta={() => nav("s-products")}
           />
         </div>
@@ -1939,7 +1950,9 @@ export function SellerAddProduct({
             }}
           >
             <SellerIcon name="chevronLeft" size={16} />{" "}
-            {isEdit ? "Back to Inventory" : "Back to dashboard"}
+            {isEdit
+              ? t("seller.addProduct.backToInventory")
+              : t("seller.addProduct.backToDashboard")}
           </AppLink>
 
           {isEdit &&
@@ -1958,7 +1971,7 @@ export function SellerAddProduct({
                 }}
               >
                 <div style={{ fontWeight: 600, color: "var(--danger)", marginBottom: 6 }}>
-                  This listing was taken down
+                  {t("seller.addProduct.listingTakenDown")}
                 </div>
                 <p
                   style={{
@@ -1972,8 +1985,7 @@ export function SellerAddProduct({
                 </p>
                 {editing.listingStatus === "frozen" && (
                   <p style={{ margin: "8px 0 0", fontSize: ".8125rem", color: "var(--ink-500)" }}>
-                    Update the product below, then acknowledge from Inventory so our team can
-                    restore it.
+                    {t("seller.addProduct.frozenRestoreHint")}
                   </p>
                 )}
               </div>
@@ -1993,22 +2005,21 @@ export function SellerAddProduct({
           {resumedDraft && (
             <MessageBar
               tone="info"
-              title="Resumed your saved draft"
+              title={t("seller.addProduct.resumedDraftTitle")}
               onDismiss={() => setResumedDraft(false)}
               actions={
                 <Button size="sm" variant="secondary" onClick={discardDraft}>
-                  Start fresh
+                  {t("seller.addProduct.startFresh")}
                 </Button>
               }
             >
-              Picked up where you left off. Photos aren&apos;t saved with drafts — re-add them
-              before publishing.
+              {t("seller.addProduct.resumedDraftBody")}
             </MessageBar>
           )}
 
           {submitAttempted && !canPublish && validationItems.length > 0 && (
             <div id="sec-validation" className="bz-form-section">
-              <MessageBar tone="error" title="Fix these before publishing">
+              <MessageBar tone="error" title={t("seller.addProduct.fixBeforePublishing")}>
                 <ul
                   style={{
                     margin: "4px 0 0",
@@ -2072,8 +2083,10 @@ export function SellerAddProduct({
                 </span>
                 <div>
                   <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 600 }}>
-                    {isEdit ? "Photos" : "Add photos"}{" "}
-                    <InfoTip text="The main photo is your product's cover — it represents the listing in search, feeds and the BazaarCo hub. Add 1 main photo + 2–5 gallery photos." />
+                    {isEdit
+                      ? t("seller.addProduct.photosTitle")
+                      : t("seller.addProduct.addPhotosTitle")}{" "}
+                    <InfoTip text={t("seller.addProduct.photosInfoTip")} />
                   </h3>
                 </div>
               </div>
@@ -2088,11 +2101,13 @@ export function SellerAddProduct({
                     marginBottom: 2,
                   }}
                 >
-                  Main product image{" "}
-                  <span style={{ color: "var(--red)", fontWeight: 600 }}>· required</span>
+                  {t("seller.addProduct.mainImageLabel")}{" "}
+                  <span style={{ color: "var(--red)", fontWeight: 600 }}>
+                    {t("seller.addProduct.requiredBadge")}
+                  </span>
                 </div>
                 <p style={{ margin: "0 0 10px", fontSize: ".75rem", color: "var(--ink-500)" }}>
-                  The cover shoppers see first in search, the storefront and the cart.
+                  {t("seller.addProduct.mainImageHint")}
                 </p>
                 <ProductPhotoPicker photos={mainPhoto} onChange={setMainPhoto} min={1} max={1} />
               </div>
@@ -2107,12 +2122,16 @@ export function SellerAddProduct({
                     marginBottom: 2,
                   }}
                 >
-                  Gallery images{" "}
-                  <span style={{ color: "var(--red)", fontWeight: 600 }}>· required</span>{" "}
-                  <span style={{ color: "var(--ink-400)", fontWeight: 600 }}>· 2 to 5</span>
+                  {t("seller.addProduct.galleryImagesLabel")}{" "}
+                  <span style={{ color: "var(--red)", fontWeight: 600 }}>
+                    {t("seller.addProduct.requiredBadge")}
+                  </span>{" "}
+                  <span style={{ color: "var(--ink-400)", fontWeight: 600 }}>
+                    {t("seller.addProduct.galleryCountBadge")}
+                  </span>
                 </div>
                 <p style={{ margin: "0 0 10px", fontSize: ".75rem", color: "var(--ink-500)" }}>
-                  More angles, details and the product in use.
+                  {t("seller.addProduct.galleryImagesHint")}
                 </p>
                 <ProductPhotoPicker
                   photos={galleryPhotos}
@@ -2157,7 +2176,7 @@ export function SellerAddProduct({
                 </span>
                 <div>
                   <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 600 }}>
-                    Describe your product
+                    {t("seller.addProduct.describeTitle")}
                   </h3>
                 </div>
               </div>
@@ -2171,12 +2190,12 @@ export function SellerAddProduct({
                   marginBottom: 6,
                 }}
               >
-                Product name
+                {t("seller.addProduct.productNameLabel")}
               </label>
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Oversized Cotton T-Shirt or Handwoven Pashmina Shawl"
+                placeholder={t("seller.addProduct.productNamePlaceholder")}
                 style={{
                   width: "100%",
                   maxWidth: 440,
@@ -2192,12 +2211,12 @@ export function SellerAddProduct({
               />
               {!titleOk && title.length > 0 && (
                 <p style={{ fontSize: ".75rem", color: "var(--ink-500)", margin: "0 0 12px" }}>
-                  Add at least {3 - title.trim().length} more character(s).
+                  {t("seller.addProduct.addMoreCharacters", { count: 3 - title.trim().length })}
                 </p>
               )}
               {!titleOk && title.length === 0 && (
                 <p style={{ fontSize: ".75rem", color: "var(--ink-400)", margin: "0 0 12px" }}>
-                  Required — buyers see this name first.
+                  {t("seller.addProduct.titleRequiredHint")}
                 </p>
               )}
 
@@ -2210,12 +2229,13 @@ export function SellerAddProduct({
                   marginBottom: 6,
                 }}
               >
-                Description <span style={{ color: "var(--red)", fontWeight: 600 }}>*</span>
+                {t("seller.addProduct.descriptionLabel")}{" "}
+                <span style={{ color: "var(--red)", fontWeight: 600 }}>*</span>
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="e.g. Handwoven pashmina shawl in charcoal grey, made from 100% Himalayan cashmere by artisans in Kathmandu. Soft, lightweight and warm — perfect for everyday wear or gifting. Measures 200×70 cm and comes in five colours to match any outfit."
+                placeholder={t("seller.addProduct.descriptionPlaceholder")}
                 rows={4}
                 required
                 minLength={10}
@@ -2233,12 +2253,14 @@ export function SellerAddProduct({
               />
               {!descriptionOk && description.length > 0 && (
                 <p style={{ fontSize: ".75rem", color: "var(--ink-500)", margin: "0 0 12px" }}>
-                  Add at least {10 - description.trim().length} more character(s).
+                  {t("seller.addProduct.addMoreCharacters", {
+                    count: 10 - description.trim().length,
+                  })}
                 </p>
               )}
               {!descriptionOk && description.length === 0 && (
                 <p style={{ fontSize: ".75rem", color: "var(--ink-400)", margin: "0 0 12px" }}>
-                  Required — shown to buyers on the product page.
+                  {t("seller.addProduct.descriptionRequiredHint")}
                 </p>
               )}
 
@@ -2251,7 +2273,7 @@ export function SellerAddProduct({
                   marginBottom: 6,
                 }}
               >
-                Category
+                {t("seller.addProduct.categoryLabel")}
               </label>
               <select
                 value={category}
@@ -2273,7 +2295,7 @@ export function SellerAddProduct({
                   cursor: isEdit ? "not-allowed" : "pointer",
                 }}
               >
-                <option value="">Pick a category</option>
+                <option value="">{t("seller.addProduct.pickCategoryPlaceholder")}</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.en}
@@ -2282,13 +2304,13 @@ export function SellerAddProduct({
               </select>
               {!categoryOk && !isEdit && submitAttempted && (
                 <p style={{ fontSize: ".75rem", color: "var(--danger)", marginTop: 6 }}>
-                  Required — pick a category.
+                  {t("seller.addProduct.categoryRequiredHint")}
                 </p>
               )}
               <p style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 6 }}>
                 {isEdit
-                  ? "Category can't be changed after a product is listed."
-                  : "Picking the right category shows buyers the right details — and helps them find you."}
+                  ? t("seller.addProduct.categoryLockedHint")
+                  : t("seller.addProduct.categoryPickHint")}
               </p>
             </div>
 
@@ -2319,11 +2341,11 @@ export function SellerAddProduct({
                     <SellerIcon name="sliders" size={18} color="var(--blue)" />
                   </span>
                   <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 600 }}>
-                    Specifications{" "}
+                    {t("seller.addProduct.specificationsTitle")}{" "}
                     <span
                       style={{ fontSize: ".8125rem", fontWeight: 400, color: "var(--ink-400)" }}
                     >
-                      · optional, add only what matters
+                      {t("seller.addProduct.specificationsOptionalHint")}
                     </span>
                   </h3>
                 </div>
@@ -2360,11 +2382,11 @@ export function SellerAddProduct({
                     <SellerIcon name="tag" size={18} color="var(--blue)" />
                   </span>
                   <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 600 }}>
-                    Product identity{" "}
+                    {t("seller.addProduct.productIdentityTitle")}{" "}
                     <span
                       style={{ fontSize: ".8125rem", fontWeight: 400, color: "var(--ink-400)" }}
                     >
-                      · optional
+                      {t("seller.addProduct.optionalBadge")}
                     </span>
                   </h3>
                 </div>
@@ -2378,11 +2400,11 @@ export function SellerAddProduct({
                   }}
                 >
                   <div>
-                    <label style={pdpLabelStyle}>Brand</label>
+                    <label style={pdpLabelStyle}>{t("seller.addProduct.brandLabel")}</label>
                     <input
                       value={brand}
                       onChange={(e) => setBrand(e.target.value)}
-                      placeholder="e.g. Samsung"
+                      placeholder={t("seller.addProduct.brandPlaceholder")}
                       maxLength={128}
                       style={pdpFieldStyle}
                     />
@@ -2391,7 +2413,7 @@ export function SellerAddProduct({
 
                 {/* Search keywords (SEO) */}
                 <div>
-                  <label style={pdpLabelStyle}>Search keywords</label>
+                  <label style={pdpLabelStyle}>{t("seller.addProduct.searchKeywordsLabel")}</label>
                   <div className="bz-keyword-builder">
                     {keywordTags.map((tag) => (
                       <span className="bz-keyword-chip" key={tag}>
@@ -2399,7 +2421,7 @@ export function SellerAddProduct({
                         <button
                           type="button"
                           onClick={() => removeKeywordTag(tag)}
-                          aria-label={`Remove ${tag}`}
+                          aria-label={t("seller.addProduct.removeField", { field: tag })}
                         >
                           <SellerIcon name="x" size={12} />
                         </button>
@@ -2424,13 +2446,15 @@ export function SellerAddProduct({
                       }}
                       onBlur={() => addKeywordTag(keywordDraft)}
                       placeholder={
-                        keywordTags.length ? "Add another keyword" : "Type keyword, press Enter"
+                        keywordTags.length
+                          ? t("seller.addProduct.keywordAddAnotherPlaceholder")
+                          : t("seller.addProduct.keywordFirstPlaceholder")
                       }
                       maxLength={80}
                     />
                   </div>
                   <p style={{ margin: "6px 0 0", fontSize: ".75rem", color: "var(--ink-400)" }}>
-                    If you add this, it becomes more visible to the buyers.
+                    {t("seller.addProduct.keywordsHint")}
                   </p>
                 </div>
               </div>
@@ -2464,11 +2488,11 @@ export function SellerAddProduct({
                     <SellerIcon name="shieldCheck" size={18} color="var(--blue)" />
                   </span>
                   <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 600 }}>
-                    Warranty{" "}
+                    {t("seller.addProduct.warrantyTitle")}{" "}
                     <span
                       style={{ fontSize: ".8125rem", fontWeight: 400, color: "var(--ink-400)" }}
                     >
-                      · optional
+                      {t("seller.addProduct.optionalBadge")}
                     </span>
                   </h3>
                 </div>
@@ -2477,17 +2501,17 @@ export function SellerAddProduct({
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: ".9375rem", fontWeight: 600, color: "var(--ink-900)" }}>
-                      This product comes with a warranty
+                      {t("seller.addProduct.warrantyToggleLabel")}
                     </div>
                     <div style={{ fontSize: ".8125rem", color: "var(--ink-400)", marginTop: 2 }}>
-                      Turn on to add the coverage details buyers ask about.
+                      {t("seller.addProduct.warrantyToggleHint")}
                     </div>
                   </div>
                   <button
                     type="button"
                     role="switch"
                     aria-checked={warrantyAvailable}
-                    aria-label="This product comes with a warranty"
+                    aria-label={t("seller.addProduct.warrantyToggleLabel")}
                     onClick={() => setWarrantyAvailable((v) => !v)}
                     style={{
                       flexShrink: 0,
@@ -2528,33 +2552,39 @@ export function SellerAddProduct({
                     }}
                   >
                     <div>
-                      <label style={pdpLabelStyle}>Warranty period (months)</label>
+                      <label style={pdpLabelStyle}>
+                        {t("seller.addProduct.warrantyPeriodLabel")}
+                      </label>
                       <input
                         type="number"
                         min={1}
                         max={240}
                         value={warrantyMonths}
                         onChange={(e) => setWarrantyMonths(e.target.value)}
-                        placeholder="e.g. 12"
+                        placeholder={t("seller.addProduct.warrantyPeriodPlaceholder")}
                         style={pdpFieldStyle}
                       />
                     </div>
                     <div>
-                      <label style={pdpLabelStyle}>Who covers it (optional)</label>
+                      <label style={pdpLabelStyle}>
+                        {t("seller.addProduct.warrantyCoveredByLabel")}
+                      </label>
                       <input
                         value={warrantyType}
                         onChange={(e) => setWarrantyType(e.target.value)}
-                        placeholder="e.g. Manufacturer"
+                        placeholder={t("seller.addProduct.warrantyCoveredByPlaceholder")}
                         maxLength={64}
                         style={pdpFieldStyle}
                       />
                     </div>
                     <div style={{ gridColumn: "1 / -1" }}>
-                      <label style={pdpLabelStyle}>What&rsquo;s covered (optional)</label>
+                      <label style={pdpLabelStyle}>
+                        {t("seller.addProduct.warrantyCoverageLabel")}
+                      </label>
                       <input
                         value={warrantyNotes}
                         onChange={(e) => setWarrantyNotes(e.target.value)}
-                        placeholder="What the warranty covers"
+                        placeholder={t("seller.addProduct.warrantyCoveragePlaceholder")}
                         maxLength={2000}
                         style={pdpFieldStyle}
                       />
@@ -2569,22 +2599,27 @@ export function SellerAddProduct({
             <div id="sec-variants" className="bz-form-section" aria-hidden="true" />
             <div className="bz-variant-step">
               <section className="bz-variant-card">
-                <h3 className="bz-variant-card__title">Does this come in different versions?</h3>
-                <p className="bz-variant-card__helper">
-                  Like the same shirt in different colours or sizes.
-                </p>
+                <h3 className="bz-variant-card__title">
+                  {t("seller.addProduct.versionsQuestion")}
+                </h3>
+                <p className="bz-variant-card__helper">{t("seller.addProduct.versionsHelper")}</p>
                 <div
                   className="bz-version-choice-grid"
                   role="radiogroup"
-                  aria-label="Product versions"
+                  aria-label={t("seller.addProduct.productVersionsAria")}
                 >
                   {(
                     [
-                      [false, "No, just one", "One price and stock.", "package"],
+                      [
+                        false,
+                        t("seller.addProduct.versionNoLabel"),
+                        t("seller.addProduct.versionNoDesc"),
+                        "package",
+                      ],
                       [
                         true,
-                        "Yes, a few versions",
-                        "Different colours, sizes, and so on.",
+                        t("seller.addProduct.versionYesLabel"),
+                        t("seller.addProduct.versionYesDesc"),
                         "sliders",
                       ],
                     ] as const
@@ -2612,13 +2647,15 @@ export function SellerAddProduct({
 
               {!hasVariants ? (
                 <section className="bz-variant-card">
-                  <h3 className="bz-variant-card__title">Price &amp; stock</h3>
+                  <h3 className="bz-variant-card__title">
+                    {t("seller.addProduct.priceStockTitle")}
+                  </h3>
                   <p className="bz-variant-card__helper">
-                    Set one price and stock count for this product.
+                    {t("seller.addProduct.priceStockSingleHelper")}
                   </p>
                   <div className="bz-single-price-grid">
                     <label className="bz-field-plain">
-                      <span>Price (Rs.)</span>
+                      <span>{t("seller.addProduct.priceRsLabel")}</span>
                       <input
                         value={price}
                         onChange={(e) => setPrice(e.target.value.replace(/[^\d.]/g, ""))}
@@ -2629,7 +2666,7 @@ export function SellerAddProduct({
                       />
                     </label>
                     <label className="bz-field-plain">
-                      <span>Stock</span>
+                      <span>{t("seller.addProduct.stockLabel")}</span>
                       <input
                         value={stock}
                         onChange={(e) => setStock(e.target.value.replace(/\D/g, ""))}
@@ -2648,14 +2685,14 @@ export function SellerAddProduct({
                         onChange={(e) => setOnSale(e.target.checked)}
                       />
                       <span>
-                        <strong>Add a discount</strong>
-                        <small>Optional. Buyers see the lower price.</small>
+                        <strong>{t("seller.addProduct.addDiscount")}</strong>
+                        <small>{t("seller.addProduct.addDiscountHint")}</small>
                       </span>
                     </label>
                     {onSale && (
                       <div className="bz-single-price-grid">
                         <label className="bz-field-plain">
-                          <span>Discount (%)</span>
+                          <span>{t("seller.addProduct.discountPctLabel")}</span>
                           <input
                             value={salePct}
                             onChange={(e) =>
@@ -2667,11 +2704,13 @@ export function SellerAddProduct({
                           />
                         </label>
                         <div className="bz-buyer-pay">
-                          <span>Buyer pays</span>
+                          <span>{t("seller.addProduct.buyerPays")}</span>
                           {saleValid && price ? (
                             <>
                               <strong>{formatNPR(saleEffectivePrice)}</strong>
-                              <small>Was {formatNPR(baseNum)}</small>
+                              <small>
+                                {t("seller.addProduct.wasPrice", { price: formatNPR(baseNum) })}
+                              </small>
                             </>
                           ) : (
                             <strong>—</strong>
@@ -2684,9 +2723,11 @@ export function SellerAddProduct({
               ) : (
                 <>
                   <section className="bz-variant-card">
-                    <h3 className="bz-variant-card__title">What versions?</h3>
+                    <h3 className="bz-variant-card__title">
+                      {t("seller.addProduct.whatVersionsTitle")}
+                    </h3>
                     <p className="bz-variant-card__helper">
-                      Pick the choices — we make a row for every combination automatically.
+                      {t("seller.addProduct.whatVersionsHelper")}
                     </p>
 
                     <div className="bz-option-groups">
@@ -2704,15 +2745,17 @@ export function SellerAddProduct({
                               <input
                                 value={group.name}
                                 onChange={(e) => updateGroupName(group.id, e.target.value)}
-                                placeholder="Option name"
+                                placeholder={t("seller.addProduct.optionNamePlaceholder")}
                                 className="bz-option-name"
-                                aria-label="Option name"
+                                aria-label={t("seller.addProduct.optionNameAria")}
                               />
                               <button
                                 type="button"
                                 className="bz-option-remove"
                                 onClick={() => removeGroupDef(group.id)}
-                                aria-label={`Remove ${group.name || "option"}`}
+                                aria-label={t("seller.addProduct.removeField", {
+                                  field: group.name || t("seller.addProduct.optionFallback"),
+                                })}
                               >
                                 <SellerIcon name="trash" size={14} />
                               </button>
@@ -2724,7 +2767,7 @@ export function SellerAddProduct({
                                   type="button"
                                   className="bz-choice-chip is-selected"
                                   onClick={() => removeAttributeValue(group.id, value)}
-                                  title={`Remove ${value}`}
+                                  title={t("seller.addProduct.removeField", { field: value })}
                                 >
                                   {value}
                                 </button>
@@ -2751,14 +2794,14 @@ export function SellerAddProduct({
                                     submitChoiceInput(group.id);
                                   }
                                 }}
-                                placeholder="Add a choice"
+                                placeholder={t("seller.addProduct.addChoicePlaceholder")}
                               />
                               <button
                                 type="button"
                                 onClick={() => submitChoiceInput(group.id)}
                                 className="bz-hover-border"
                               >
-                                Add
+                                {t("seller.addProduct.add")}
                               </button>
                             </div>
                           </div>
@@ -2793,9 +2836,11 @@ export function SellerAddProduct({
                       <span className="bz-photo-card-head__num">4</span>
                       <div>
                         <h3 className="bz-variant-card__title">
-                          Do the versions look different in photos?
+                          {t("seller.addProduct.versionPhotosQuestion")}
                         </h3>
-                        <p className="bz-variant-card__helper">You can change this anytime.</p>
+                        <p className="bz-variant-card__helper">
+                          {t("seller.addProduct.versionPhotosHelper")}
+                        </p>
                       </div>
                     </div>
                     <div className="bz-radio-stack">
@@ -2803,20 +2848,26 @@ export function SellerAddProduct({
                         [
                           [
                             "product",
-                            "No, the photo is the same",
-                            "Every version shows your main product photo.",
+                            t("seller.addProduct.photoModeProductLabel"),
+                            t("seller.addProduct.photoModeProductDesc"),
                           ],
                           [
                             "option",
                             activeOptionImageAttr
-                              ? `Yes — different by ${activeOptionImageAttr.toLowerCase()}`
-                              : "Yes — different by option",
-                            `Add one photo per ${activeOptionImageAttr.toLowerCase() || "option"}. Sizes share it.`,
+                              ? t("seller.addProduct.photoModeOptionLabelAttr", {
+                                  attr: activeOptionImageAttr.toLowerCase(),
+                                })
+                              : t("seller.addProduct.photoModeOptionLabel"),
+                            t("seller.addProduct.photoModeOptionDesc", {
+                              attr:
+                                activeOptionImageAttr.toLowerCase() ||
+                                t("seller.addProduct.optionFallback"),
+                            }),
                           ],
                           [
                             "exact",
-                            "Each version has its own photo",
-                            "Add a photo to each row in the table below.",
+                            t("seller.addProduct.photoModeExactLabel"),
+                            t("seller.addProduct.photoModeExactDesc"),
                           ],
                         ] as const
                       ).map(([mode, label, desc]) => {
@@ -2875,7 +2926,7 @@ export function SellerAddProduct({
                                 ) : (
                                   <>
                                     <SellerIcon name="camera" size={18} />
-                                    <span>Add photo</span>
+                                    <span>{t("seller.addProduct.addPhoto")}</span>
                                   </>
                                 )}
                               </label>
@@ -2909,7 +2960,7 @@ export function SellerAddProduct({
                                 ) : (
                                   <>
                                     <SellerIcon name="camera" size={18} />
-                                    <span>Add photo</span>
+                                    <span>{t("seller.addProduct.addPhoto")}</span>
                                   </>
                                 )}
                               </label>
@@ -2922,33 +2973,34 @@ export function SellerAddProduct({
                   </section>
 
                   <section className="bz-variant-card">
-                    <h3 className="bz-variant-card__title">Price &amp; stock</h3>
+                    <h3 className="bz-variant-card__title">
+                      {t("seller.addProduct.priceStockTitle")}
+                    </h3>
                     <p className="bz-variant-card__helper">
-                      Set a price for each version. A discount is optional — buyers see the lower
-                      price.
+                      {t("seller.addProduct.priceStockVariantHelper")}
                     </p>
 
                     <div className="bz-vbulk">
                       <label className="bz-vbulk__field">
-                        <span>Price for all (Rs.)</span>
+                        <span>{t("seller.addProduct.priceForAllLabel")}</span>
                         <input
                           value={bulkPrice}
                           onChange={(e) => setBulkPrice(e.target.value.replace(/[^\d.]/g, ""))}
                           inputMode="numeric"
                           placeholder="1200"
                           className="tnum"
-                          aria-label="Price for all versions"
+                          aria-label={t("seller.addProduct.priceForAllAria")}
                         />
                       </label>
                       <label className="bz-vbulk__field">
-                        <span>Stock for all</span>
+                        <span>{t("seller.addProduct.stockForAllLabel")}</span>
                         <input
                           value={bulkStock}
                           onChange={(e) => setBulkStock(e.target.value.replace(/\D/g, ""))}
                           inputMode="numeric"
                           placeholder="10"
                           className="tnum"
-                          aria-label="Stock for all versions"
+                          aria-label={t("seller.addProduct.stockForAllAria")}
                         />
                       </label>
                       <button
@@ -2957,17 +3009,17 @@ export function SellerAddProduct({
                         onClick={applyBulkPriceStock}
                         disabled={!bulkPrice.trim() && !bulkStock.trim()}
                       >
-                        Apply to all {variants.length}
+                        {t("seller.addProduct.applyToAllCount", { count: variants.length })}
                       </button>
                     </div>
 
                     <div className="bz-vtable">
                       <div className="bz-vrow bz-vhead">
-                        <span>Version</span>
-                        <span>Price (Rs.)</span>
-                        <span>Discount</span>
-                        <span>Buyer pays</span>
-                        <span>Stock</span>
+                        <span>{t("seller.addProduct.versionLabel")}</span>
+                        <span>{t("seller.addProduct.priceRsLabel")}</span>
+                        <span>{t("seller.addProduct.discountLabel")}</span>
+                        <span>{t("seller.addProduct.buyerPays")}</span>
+                        <span>{t("seller.addProduct.stockLabel")}</span>
                       </div>
                       {variants.map((v) => {
                         const label = variantDisplayName(v.optionValues, v.name);
@@ -2979,11 +3031,15 @@ export function SellerAddProduct({
                         return (
                           <div key={v.id} className="bz-vrow">
                             <div className="bz-vcell bz-vcell--version">
-                              <span className="bz-vcell__lbl">Version</span>
+                              <span className="bz-vcell__lbl">
+                                {t("seller.addProduct.versionLabel")}
+                              </span>
                               <strong>{label}</strong>
                             </div>
                             <label className="bz-vcell">
-                              <span className="bz-vcell__lbl">Price (Rs.)</span>
+                              <span className="bz-vcell__lbl">
+                                {t("seller.addProduct.priceRsLabel")}
+                              </span>
                               <input
                                 value={v.price}
                                 onChange={(e) =>
@@ -2996,11 +3052,15 @@ export function SellerAddProduct({
                                 inputMode="numeric"
                                 placeholder="0"
                                 className="tnum bz-vcell__input"
-                                aria-label={`Price for ${label}`}
+                                aria-label={t("seller.addProduct.priceForVersion", {
+                                  version: label,
+                                })}
                               />
                             </label>
                             <label className="bz-vcell bz-vcell--discount">
-                              <span className="bz-vcell__lbl">Discount</span>
+                              <span className="bz-vcell__lbl">
+                                {t("seller.addProduct.discountLabel")}
+                              </span>
                               <span className="bz-percent-input">
                                 <input
                                   value={v.onSale ? (v.salePct ?? "") : ""}
@@ -3008,27 +3068,35 @@ export function SellerAddProduct({
                                   inputMode="numeric"
                                   placeholder="0"
                                   className="tnum bz-vcell__input"
-                                  aria-label={`Discount for ${label}`}
+                                  aria-label={t("seller.addProduct.discountForVersion", {
+                                    version: label,
+                                  })}
                                 />
                                 <span>%</span>
                               </span>
                             </label>
                             <div className="bz-vcell bz-vcell--buyer">
-                              <span className="bz-vcell__lbl">Buyer pays</span>
+                              <span className="bz-vcell__lbl">
+                                {t("seller.addProduct.buyerPays")}
+                              </span>
                               {!priceNum ? (
                                 <strong>—</strong>
                               ) : discount ? (
                                 <>
                                   <small className="bz-was">{formatNPR(priceNum)}</small>
                                   <strong>{formatNPR(buyerPays)}</strong>
-                                  <small className="bz-save">Save {discount}%</small>
+                                  <small className="bz-save">
+                                    {t("seller.addProduct.savePercent", { percent: discount })}
+                                  </small>
                                 </>
                               ) : (
                                 <strong>{formatNPR(priceNum)}</strong>
                               )}
                             </div>
                             <label className="bz-vcell">
-                              <span className="bz-vcell__lbl">Stock</span>
+                              <span className="bz-vcell__lbl">
+                                {t("seller.addProduct.stockLabel")}
+                              </span>
                               <input
                                 value={v.stock}
                                 onChange={(e) =>
@@ -3037,7 +3105,9 @@ export function SellerAddProduct({
                                 inputMode="numeric"
                                 placeholder="0"
                                 className="tnum bz-vcell__input"
-                                aria-label={`Stock for ${label}`}
+                                aria-label={t("seller.addProduct.stockForVersion", {
+                                  version: label,
+                                })}
                               />
                             </label>
                           </div>
@@ -3086,8 +3156,8 @@ export function SellerAddProduct({
                 </span>
                 <div style={{ flex: 1 }}>
                   <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 600 }}>
-                    Options
-                    <InfoTip text="A version is one thing a buyer can pick and buy — e.g. Red / Medium — with its own price and stock. Turn this on when the same product sells in different colours, sizes, and so on." />
+                    {t("seller.addProduct.optionsTitle")}
+                    <InfoTip text={t("seller.addProduct.optionsInfoTip")} />
                   </h3>
                 </div>
               </div>
@@ -3102,10 +3172,10 @@ export function SellerAddProduct({
                   color: "var(--ink-800)",
                 }}
               >
-                Does this come in different versions?
+                {t("seller.addProduct.versionsQuestion")}
               </p>
               <p style={{ margin: "0 0 10px", fontSize: ".75rem", color: "var(--ink-400)" }}>
-                Like a t-shirt in different sizes, or a phone in different colours.
+                {t("seller.addProduct.versionsLegacyHelper")}
               </p>
               <div
                 style={{
@@ -3119,13 +3189,13 @@ export function SellerAddProduct({
                   [
                     [
                       false,
-                      "No — just one version",
-                      "One price and one stock for the whole product.",
+                      t("seller.addProduct.versionNoLegacyLabel"),
+                      t("seller.addProduct.versionNoLegacyDesc"),
                     ],
                     [
                       true,
-                      "Yes — different colours, sizes, etc.",
-                      "Set a price and stock for each version.",
+                      t("seller.addProduct.versionYesLegacyLabel"),
+                      t("seller.addProduct.versionYesLegacyDesc"),
                     ],
                   ] as const
                 ).map(([value, label, desc]) => {
@@ -3188,7 +3258,7 @@ export function SellerAddProduct({
                           marginBottom: 6,
                         }}
                       >
-                        Price (Rs.)
+                        {t("seller.addProduct.priceRsLabel")}
                       </label>
                       <input
                         value={price}
@@ -3217,7 +3287,7 @@ export function SellerAddProduct({
                             margin: "6px 0 0",
                           }}
                         >
-                          Required
+                          {t("seller.addProduct.requiredShort")}
                         </p>
                       )}
                     </div>
@@ -3231,7 +3301,7 @@ export function SellerAddProduct({
                           marginBottom: 6,
                         }}
                       >
-                        Stock
+                        {t("seller.addProduct.stockLabel")}
                       </label>
                       <input
                         value={stock}
@@ -3260,7 +3330,7 @@ export function SellerAddProduct({
                             margin: "6px 0 0",
                           }}
                         >
-                          Required
+                          {t("seller.addProduct.requiredShort")}
                         </p>
                       )}
                     </div>
@@ -3292,7 +3362,7 @@ export function SellerAddProduct({
                         checked={onSale}
                         onChange={(e) => setOnSale(e.target.checked)}
                       />
-                      Put this product on sale
+                      {t("seller.addProduct.putOnSale")}
                     </label>
 
                     {onSale && (
@@ -3300,8 +3370,8 @@ export function SellerAddProduct({
                         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
                           {(
                             [
-                              ["percent", "% off"],
-                              ["amount", "Set sale price"],
+                              ["percent", t("seller.addProduct.saleModePercent")],
+                              ["amount", t("seller.addProduct.saleModeAmount")],
                             ] as const
                           ).map(([mode, label]) => (
                             <button
@@ -3339,7 +3409,7 @@ export function SellerAddProduct({
                                 marginBottom: 6,
                               }}
                             >
-                              Discount (%)
+                              {t("seller.addProduct.discountPctLabel")}
                             </label>
                             <input
                               value={salePct}
@@ -3347,7 +3417,7 @@ export function SellerAddProduct({
                                 setSalePct(e.target.value.replace(/\D/g, "").slice(0, 2))
                               }
                               inputMode="numeric"
-                              placeholder="e.g. 20"
+                              placeholder={t("seller.addProduct.discountPctPlaceholder")}
                               className="tnum"
                               style={{
                                 width: "100%",
@@ -3372,13 +3442,13 @@ export function SellerAddProduct({
                                 marginBottom: 6,
                               }}
                             >
-                              Sale price (Rs.)
+                              {t("seller.addProduct.salePriceRsLabel")}
                             </label>
                             <input
                               value={salePrice}
                               onChange={(e) => setSalePrice(e.target.value.replace(/[^\d.]/g, ""))}
                               inputMode="numeric"
-                              placeholder="e.g. 960"
+                              placeholder={t("seller.addProduct.salePricePlaceholder")}
                               className="tnum"
                               style={{
                                 width: "100%",
@@ -3403,14 +3473,16 @@ export function SellerAddProduct({
                         >
                           {!saleValid
                             ? saleMode === "percent"
-                              ? "Enter a percentage between 1 and 99."
-                              : "Sale price must be a positive number below the regular price."
-                            : `Buyers pay ${formatNPR(saleEffectivePrice)} ` +
-                              `(was ${formatNPR(baseNum)}, −${
-                                baseNum > 0
-                                  ? Math.round((1 - saleEffectivePrice / baseNum) * 100)
-                                  : 0
-                              }%).`}
+                              ? t("seller.addProduct.salePercentInvalid")
+                              : t("seller.addProduct.saleAmountInvalid")
+                            : t("seller.addProduct.buyersPaySummary", {
+                                price: formatNPR(saleEffectivePrice),
+                                was: formatNPR(baseNum),
+                                percent:
+                                  baseNum > 0
+                                    ? Math.round((1 - saleEffectivePrice / baseNum) * 100)
+                                    : 0,
+                              })}
                         </p>
                       </div>
                     )}
@@ -3426,11 +3498,10 @@ export function SellerAddProduct({
                       color: "var(--ink-800)",
                     }}
                   >
-                    What's different between versions?
+                    {t("seller.addProduct.whatsDifferentTitle")}
                   </h4>
                   <p style={{ margin: "0 0 12px", fontSize: ".8125rem", color: "var(--ink-500)" }}>
-                    Pick what changes — like colour or size — then add the choices. The price list
-                    below updates on its own as you go.
+                    {t("seller.addProduct.whatsDifferentHelper")}
                   </p>
 
                   {/* Quick-add option types */}
@@ -3469,7 +3540,7 @@ export function SellerAddProduct({
                   {/* Option (attribute) cards */}
                   {variantGroupDefs.length === 0 ? (
                     <p style={{ margin: "0 0 6px", fontSize: ".8125rem", color: "var(--ink-400)" }}>
-                      Pick an option type above to start building variants.
+                      {t("seller.addProduct.pickOptionTypeHint")}
                     </p>
                   ) : (
                     <div
@@ -3509,7 +3580,7 @@ export function SellerAddProduct({
                               <input
                                 value={group.name}
                                 onChange={(e) => updateGroupName(group.id, e.target.value)}
-                                placeholder="Option name (e.g. Color, Size)"
+                                placeholder={t("seller.addProduct.optionNameLegacyPlaceholder")}
                                 style={{
                                   flex: 1,
                                   height: 38,
@@ -3524,7 +3595,7 @@ export function SellerAddProduct({
                               <button
                                 type="button"
                                 onClick={() => removeGroupDef(group.id)}
-                                aria-label="Remove option"
+                                aria-label={t("seller.addProduct.removeOption")}
                                 style={{
                                   width: 34,
                                   height: 34,
@@ -3568,7 +3639,9 @@ export function SellerAddProduct({
                                     <button
                                       type="button"
                                       onClick={() => removeAttributeValue(group.id, value)}
-                                      aria-label={`Remove ${value}`}
+                                      aria-label={t("seller.addProduct.removeField", {
+                                        field: value,
+                                      })}
                                       style={{
                                         width: 18,
                                         height: 18,
@@ -3588,7 +3661,7 @@ export function SellerAddProduct({
                                 ))
                               ) : (
                                 <span style={{ fontSize: ".75rem", color: "var(--ink-400)" }}>
-                                  No choices yet.
+                                  {t("seller.addProduct.noChoicesYet")}
                                 </span>
                               )}
                             </div>
@@ -3638,7 +3711,7 @@ export function SellerAddProduct({
                                     submitChoiceInput(group.id);
                                   }
                                 }}
-                                placeholder="Add a choice, e.g. Red"
+                                placeholder={t("seller.addProduct.addChoiceLegacyPlaceholder")}
                                 style={{
                                   flex: 1,
                                   height: 34,
@@ -3665,7 +3738,7 @@ export function SellerAddProduct({
                                   cursor: "pointer",
                                 }}
                               >
-                                Add
+                                {t("seller.addProduct.add")}
                               </button>
                             </div>
                           </div>
@@ -3698,12 +3771,12 @@ export function SellerAddProduct({
                           color: "var(--ink-700)",
                         }}
                       >
-                        Photos for each version
+                        {t("seller.addProduct.photosForEachVersion")}
                       </p>
 
                       {!photoOptionsExpanded ? (
                         <p style={{ margin: 0, fontSize: ".8125rem", color: "var(--ink-500)" }}>
-                          All versions use your main photo.{" "}
+                          {t("seller.addProduct.allVersionsUseMainPhoto")}{" "}
                           <button
                             type="button"
                             onClick={() => setShowPhotoOptions(true)}
@@ -3719,7 +3792,7 @@ export function SellerAddProduct({
                               fontSize: ".8125rem",
                             }}
                           >
-                            Want different photos? Choose below.
+                            {t("seller.addProduct.wantDifferentPhotos")}
                           </button>
                         </p>
                       ) : (
@@ -3731,26 +3804,25 @@ export function SellerAddProduct({
                               color: "var(--ink-500)",
                             }}
                           >
-                            Pick how photos work. Each version falls back to its own photo first,
-                            then its colour photo, then your main photo.
+                            {t("seller.addProduct.photoFallbackHint")}
                           </p>
                           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                             {(
                               [
                                 [
                                   "product",
-                                  "Same photo for all",
-                                  "Every version shows your main product photo.",
+                                  t("seller.addProduct.photoModeProductLabelLegacy"),
+                                  t("seller.addProduct.photoModeProductDesc"),
                                 ],
                                 [
                                   "option",
                                   optionPhotoLabel,
-                                  "Add one photo per choice — it shows on every matching version.",
+                                  t("seller.addProduct.photoModeOptionDescLegacy"),
                                 ],
                                 [
                                   "exact",
-                                  "A different photo for each version",
-                                  "Upload a separate photo for every version in the list below.",
+                                  t("seller.addProduct.photoModeExactLabelLegacy"),
+                                  t("seller.addProduct.photoModeExactDescLegacy"),
                                 ],
                               ] as const
                             ).map(([mode, label, desc]) => {
@@ -3819,7 +3891,7 @@ export function SellerAddProduct({
                                   marginBottom: 6,
                                 }}
                               >
-                                Image changes by
+                                {t("seller.addProduct.imageChangesByLabel")}
                               </label>
                               <select
                                 value={activeOptionImageAttr}
@@ -3842,7 +3914,7 @@ export function SellerAddProduct({
                                     </option>
                                   ))
                                 ) : (
-                                  <option value="">Add an option first</option>
+                                  <option value="">{t("seller.addProduct.addOptionFirst")}</option>
                                 )}
                               </select>
                               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -3867,7 +3939,7 @@ export function SellerAddProduct({
                                           {activeOptionImageAttr}: {value}
                                         </span>
                                         <label
-                                          title={`Photo for ${value}`}
+                                          title={t("seller.addProduct.photoForValue", { value })}
                                           style={{
                                             width: 44,
                                             height: 44,
@@ -3928,7 +4000,7 @@ export function SellerAddProduct({
                                       color: "var(--ink-400)",
                                     }}
                                   >
-                                    Add choices to this option to upload images.
+                                    {t("seller.addProduct.addChoicesToUpload")}
                                   </p>
                                 )}
                               </div>
@@ -3961,8 +4033,9 @@ export function SellerAddProduct({
                               color: "var(--ink-700)",
                             }}
                           >
-                            {variants.length} version{variants.length !== 1 ? "s" : ""} — set a
-                            price and stock for each
+                            {t("seller.addProduct.versionCountSetPriceStock", {
+                              count: variants.length,
+                            })}
                           </p>
                           <p
                             style={{
@@ -3971,14 +4044,13 @@ export function SellerAddProduct({
                               color: "var(--ink-400)",
                             }}
                           >
-                            This list updates on its own when you change options. Edit any row
-                            below.
+                            {t("seller.addProduct.listUpdatesHint")}
                           </p>
 
                           {/* Bulk fill — one price + one stock applied to every version */}
                           <div className="bz-vbulk">
                             <span className="bz-vbulk__title">
-                              Set the same price &amp; stock for all
+                              {t("seller.addProduct.setSamePriceStock")}
                             </span>
                             <div className="bz-vbulk__row">
                               <input
@@ -3987,17 +4059,17 @@ export function SellerAddProduct({
                                   setBulkPrice(e.target.value.replace(/[^\d.]/g, ""))
                                 }
                                 inputMode="numeric"
-                                placeholder="Price (Rs.)"
+                                placeholder={t("seller.addProduct.priceRsLabel")}
                                 className="tnum bz-vbulk__input"
-                                aria-label="Price for all versions"
+                                aria-label={t("seller.addProduct.priceForAllAria")}
                               />
                               <input
                                 value={bulkStock}
                                 onChange={(e) => setBulkStock(e.target.value.replace(/\D/g, ""))}
                                 inputMode="numeric"
-                                placeholder="Stock"
+                                placeholder={t("seller.addProduct.stockLabel")}
                                 className="tnum bz-vbulk__input"
-                                aria-label="Stock for all versions"
+                                aria-label={t("seller.addProduct.stockForAllAria")}
                               />
                               <Button
                                 variant="secondary"
@@ -4005,12 +4077,10 @@ export function SellerAddProduct({
                                 onClick={applyBulkPriceStock}
                                 disabled={!bulkPrice.trim() && !bulkStock.trim()}
                               >
-                                Apply to all
+                                {t("seller.addProduct.applyToAll")}
                               </Button>
                             </div>
-                            <p className="bz-vbulk__hint">
-                              Fills every version below — you can still change any row after.
-                            </p>
+                            <p className="bz-vbulk__hint">{t("seller.addProduct.bulkFillHint")}</p>
                           </div>
 
                           <div
@@ -4019,9 +4089,13 @@ export function SellerAddProduct({
                           >
                             <div className="bz-vrow bz-vhead">
                               {showImg && <span aria-hidden />}
-                              <span>Version</span>
-                              <span style={{ textAlign: "center" }}>Price (Rs.)</span>
-                              <span style={{ textAlign: "center" }}>Stock</span>
+                              <span>{t("seller.addProduct.versionLabel")}</span>
+                              <span style={{ textAlign: "center" }}>
+                                {t("seller.addProduct.priceRsLabel")}
+                              </span>
+                              <span style={{ textAlign: "center" }}>
+                                {t("seller.addProduct.stockLabel")}
+                              </span>
                             </div>
                             {variants.map((v) => {
                               const pairs = Object.entries(v.optionValues ?? {});
@@ -4041,7 +4115,7 @@ export function SellerAddProduct({
                                   {showImg &&
                                     (variantImageMode === "exact" ? (
                                       <label
-                                        title="Photo for this version"
+                                        title={t("seller.addProduct.photoForThisVersion")}
                                         className="bz-vrow__photo"
                                         style={{
                                           width: 36,
@@ -4123,12 +4197,16 @@ export function SellerAddProduct({
                                     ))}
 
                                   <div className="bz-vcell">
-                                    <span className="bz-vcell__lbl">Version</span>
+                                    <span className="bz-vcell__lbl">
+                                      {t("seller.addProduct.versionLabel")}
+                                    </span>
                                     <span className="bz-vrow__name">{label}</span>
                                   </div>
 
                                   <div className="bz-vcell">
-                                    <span className="bz-vcell__lbl">Price (Rs.)</span>
+                                    <span className="bz-vcell__lbl">
+                                      {t("seller.addProduct.priceRsLabel")}
+                                    </span>
                                     <input
                                       value={v.price}
                                       onChange={(e) =>
@@ -4146,12 +4224,16 @@ export function SellerAddProduct({
                                       }}
                                     />
                                     {!v.price && (
-                                      <span className="bz-vcell__hint">Add a price</span>
+                                      <span className="bz-vcell__hint">
+                                        {t("seller.addProduct.addAPrice")}
+                                      </span>
                                     )}
                                   </div>
 
                                   <div className="bz-vcell">
-                                    <span className="bz-vcell__lbl">Stock</span>
+                                    <span className="bz-vcell__lbl">
+                                      {t("seller.addProduct.stockLabel")}
+                                    </span>
                                     <input
                                       value={v.stock}
                                       onChange={(e) =>
@@ -4168,7 +4250,11 @@ export function SellerAddProduct({
                                         border: `1.5px solid ${v.stock ? "var(--line-200)" : "var(--warning, #f59e0b)"}`,
                                       }}
                                     />
-                                    {!v.stock && <span className="bz-vcell__hint">Add stock</span>}
+                                    {!v.stock && (
+                                      <span className="bz-vcell__hint">
+                                        {t("seller.addProduct.addStock")}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                               );
@@ -4200,7 +4286,7 @@ export function SellerAddProduct({
                                 fontFamily: "var(--font-sans)",
                               }}
                             >
-                              Reset table
+                              {t("seller.addProduct.resetTable")}
                             </button>
                           </div>
                         </div>
@@ -4239,9 +4325,9 @@ export function SellerAddProduct({
                 </span>
                 <div style={{ flex: 1 }}>
                   <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 600 }}>
-                    Allow bargaining?{" "}
+                    {t("seller.addProduct.allowBargainingTitle")}{" "}
                     <span style={{ fontSize: ".75rem", color: "var(--ink-400)", fontWeight: 600 }}>
-                      Optional
+                      {t("seller.addProduct.optionalShort")}
                     </span>
                   </h3>
                 </div>
@@ -4267,7 +4353,9 @@ export function SellerAddProduct({
                         color: bargainOk ? "var(--blue)" : "var(--ink-400)",
                       }}
                     >
-                      {bargainOk ? "ON" : "OFF"}
+                      {bargainOk
+                        ? t("seller.addProduct.toggleOn")
+                        : t("seller.addProduct.toggleOff")}
                     </span>
                   </label>
                 )}
@@ -4276,7 +4364,7 @@ export function SellerAddProduct({
               {hasVariants ? (
                 <>
                   <p style={{ fontSize: ".8125rem", color: "var(--ink-500)", margin: "0 0 12px" }}>
-                    Allow bargaining on each version — each can have its own lowest price.
+                    {t("seller.addProduct.bargainVariantsIntro")}
                   </p>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     {variants
@@ -4315,6 +4403,9 @@ export function SellerAddProduct({
                                 onChange={(e) =>
                                   updateVariant(v.id, "allowBargaining", e.target.checked)
                                 }
+                                aria-label={t("seller.addProduct.allowBargainingOn", {
+                                  name: v.name,
+                                })}
                                 style={{ width: 16, height: 16, accentColor: "var(--blue)" }}
                               />
                               <span style={{ fontWeight: 600, fontSize: ".875rem", flex: 1 }}>
@@ -4337,16 +4428,19 @@ export function SellerAddProduct({
                                     marginBottom: 4,
                                   }}
                                 >
-                                  Min. price (Rs.)
+                                  {t("seller.addProduct.minPriceRsLabel")}
                                 </label>
                                 <input
                                   type="number"
                                   min={1}
-                                  placeholder="e.g. 800"
+                                  placeholder={t("seller.addProduct.minPricePlaceholder")}
                                   value={v.minimumPrice ?? ""}
                                   onChange={(e) =>
                                     updateVariant(v.id, "minimumPrice", e.target.value)
                                   }
+                                  aria-label={t("seller.addProduct.lowestPriceForVersion", {
+                                    name: v.name,
+                                  })}
                                   aria-invalid={floorError ? true : undefined}
                                   style={{
                                     width: "100%",
@@ -4366,7 +4460,13 @@ export function SellerAddProduct({
                                   }}
                                 >
                                   {floorError ??
-                                    `Max allowed: ${formatNPR(maxAllowedBargainMinimum(variantListedPrice(v)))} (at least ${BARGAIN_MIN_GAP_PERCENT}% below ${formatNPR(variantListedPrice(v))})`}
+                                    t("seller.addProduct.maxAllowedBargain", {
+                                      max: formatNPR(
+                                        maxAllowedBargainMinimum(variantListedPrice(v)),
+                                      ),
+                                      percent: BARGAIN_MIN_GAP_PERCENT,
+                                      listed: formatNPR(variantListedPrice(v)),
+                                    })}
                                 </span>
                               </div>
                             )}
@@ -4375,8 +4475,7 @@ export function SellerAddProduct({
                       })}
                   </div>
                   <p style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 8 }}>
-                    Offers below the min price are declined automatically. Offers at or above it
-                    come to you to accept, counter, or decline. Buyers never see this limit.
+                    {t("seller.addProduct.bargainOffersHintVariant")}
                   </p>
                 </>
               ) : (
@@ -4390,18 +4489,20 @@ export function SellerAddProduct({
                         marginBottom: 6,
                       }}
                     >
-                      Lowest price you'll accept (Rs.)
+                      {t("seller.addProduct.lowestPriceAcceptLabel")}
                     </label>
                     {productListedPrice > 0 && (
                       <p style={{ fontSize: ".75rem", color: "var(--ink-500)", margin: "0 0 6px" }}>
-                        Must be at least {BARGAIN_MIN_GAP_PERCENT}% below the listed price. Max
-                        allowed: {formatNPR(maxAllowedBargainMinimum(productListedPrice))}.
+                        {t("seller.addProduct.bargainGapHint", {
+                          percent: BARGAIN_MIN_GAP_PERCENT,
+                          max: formatNPR(maxAllowedBargainMinimum(productListedPrice)),
+                        })}
                       </p>
                     )}
                     <input
                       type="number"
                       min={1}
-                      placeholder="e.g. 800"
+                      placeholder={t("seller.addProduct.minPricePlaceholder")}
                       value={bargainMinPrice}
                       aria-invalid={!bargainFloorOk ? true : undefined}
                       onChange={(e) => setBargainMinPrice(e.target.value)}
@@ -4416,13 +4517,15 @@ export function SellerAddProduct({
                     {!bargainFloorOk && submitAttempted && (
                       <p style={{ fontSize: ".75rem", color: "var(--danger)", margin: "6px 0 0" }}>
                         {!bargainMinPrice || Number(bargainMinPrice) <= 0
-                          ? "Required — set a lowest price to enable bargaining."
-                          : `Must be ${formatNPR(maxAllowedBargainMinimum(productListedPrice))} or lower (at least ${BARGAIN_MIN_GAP_PERCENT}% below the listed price).`}
+                          ? t("seller.addProduct.bargainRequiredError")
+                          : t("seller.addProduct.bargainTooHighError", {
+                              max: formatNPR(maxAllowedBargainMinimum(productListedPrice)),
+                              percent: BARGAIN_MIN_GAP_PERCENT,
+                            })}
                       </p>
                     )}
                     <p style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 4 }}>
-                      Offers below this price are declined automatically. Offers at or above it come
-                      to you to accept, counter, or decline. Buyers never see this limit.
+                      {t("seller.addProduct.bargainOffersHintSingle")}
                     </p>
                   </>
                 )
@@ -4460,11 +4563,14 @@ export function SellerAddProduct({
                 </span>
                 <div>
                   <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 600 }}>
-                    Review &amp; {isEdit ? "save" : "publish"}
+                    {isEdit
+                      ? t("seller.addProduct.reviewSaveTitle")
+                      : t("seller.addProduct.reviewPublishTitle")}
                   </h3>
                   <p style={{ margin: "2px 0 0", fontSize: ".8125rem", color: "var(--ink-500)" }}>
-                    One last look before {isEdit ? "saving your changes" : "your product goes live"}
-                    .
+                    {isEdit
+                      ? t("seller.addProduct.reviewSaveSubtitle")
+                      : t("seller.addProduct.reviewPublishSubtitle")}
                   </p>
                 </div>
               </div>
@@ -4525,7 +4631,7 @@ export function SellerAddProduct({
                           fontWeight: 600,
                         }}
                       >
-                        Add
+                        {t("seller.addProduct.add")}
                       </button>
                     )}
                   </li>
@@ -4550,7 +4656,7 @@ export function SellerAddProduct({
                   {mainPhoto[0] ? (
                     <img
                       src={mainPhoto[0].previewUrl}
-                      alt="Main product"
+                      alt={t("seller.addProduct.mainProductAlt")}
                       style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />
                   ) : (
@@ -4567,25 +4673,58 @@ export function SellerAddProduct({
                   }}
                 >
                   {[
-                    { label: "Title", value: title || "—", id: "sec-basics" },
-                    { label: "Category", value: categoryMeta?.en || "—", id: "sec-basics" },
-                    { label: "Gallery photos", value: `${galleryPhotos.length}`, id: "sec-media" },
                     {
-                      label: "Variants",
-                      value: hasVariants ? `${variants.length}` : "Single product",
-                      id: "sec-variants",
-                    },
-                    { label: "Price", value: reviewPriceRange, id: "sec-variants" },
-                    { label: "Total stock", value: `${reviewTotalStock}`, id: "sec-variants" },
-                    { label: "Photo mode", value: imageModeLabel, id: "sec-variants" },
-                    {
-                      label: "Warranty",
-                      value: warrantyAvailable
-                        ? `${warrantyMonths || "?"} mo${warrantyType ? ` · ${warrantyType}` : ""}`
-                        : "None",
+                      label: t("seller.addProduct.reviewTitle"),
+                      value: title || "—",
                       id: "sec-basics",
                     },
-                    { label: "Brand", value: brand || "—", id: "sec-basics" },
+                    {
+                      label: t("seller.addProduct.reviewCategory"),
+                      value: categoryMeta?.en || "—",
+                      id: "sec-basics",
+                    },
+                    {
+                      label: t("seller.addProduct.reviewGalleryPhotos"),
+                      value: `${galleryPhotos.length}`,
+                      id: "sec-media",
+                    },
+                    {
+                      label: t("seller.addProduct.reviewVariants"),
+                      value: hasVariants
+                        ? `${variants.length}`
+                        : t("seller.addProduct.reviewSingleProduct"),
+                      id: "sec-variants",
+                    },
+                    {
+                      label: t("seller.addProduct.reviewPrice"),
+                      value: reviewPriceRange,
+                      id: "sec-variants",
+                    },
+                    {
+                      label: t("seller.addProduct.reviewTotalStock"),
+                      value: `${reviewTotalStock}`,
+                      id: "sec-variants",
+                    },
+                    {
+                      label: t("seller.addProduct.reviewPhotoMode"),
+                      value: imageModeLabel,
+                      id: "sec-variants",
+                    },
+                    {
+                      label: t("seller.addProduct.reviewWarranty"),
+                      value: warrantyAvailable
+                        ? t("seller.addProduct.reviewWarrantyValue", {
+                            months: warrantyMonths || "?",
+                            type: warrantyType ? ` · ${warrantyType}` : "",
+                          })
+                        : t("seller.addProduct.reviewWarrantyNone"),
+                      id: "sec-basics",
+                    },
+                    {
+                      label: t("seller.addProduct.reviewBrand"),
+                      value: brand || "—",
+                      id: "sec-basics",
+                    },
                   ].map((r) => (
                     <div key={r.label}>
                       <div
@@ -4602,7 +4741,7 @@ export function SellerAddProduct({
                       <button
                         type="button"
                         onClick={() => goToSection(r.id)}
-                        title="Edit this section"
+                        title={t("seller.addProduct.editThisSection")}
                         style={{
                           background: "none",
                           border: "none",
@@ -4623,8 +4762,12 @@ export function SellerAddProduct({
 
               {!canPublish && (
                 <p style={{ margin: "12px 0 0", fontSize: ".8125rem", color: "var(--danger)" }}>
-                  {validationItems.length} field{validationItems.length === 1 ? "" : "s"} still need
-                  attention — press {isEdit ? "Update" : "Publish"} to see the list.
+                  {t("seller.addProduct.fieldsNeedAttention", {
+                    count: validationItems.length,
+                    action: isEdit
+                      ? t("seller.addProduct.actionUpdate")
+                      : t("seller.addProduct.actionPublish"),
+                  })}
                 </p>
               )}
             </div>
@@ -4644,14 +4787,14 @@ export function SellerAddProduct({
                     // so the two can't disagree.
                     const next = buildDraft();
                     if (!productDraftHasContent(next)) {
-                      toast("Fill in a product detail before saving a draft", "warning");
+                      toast(t("seller.addProduct.toastFillDetailFirst"), "warning");
                       return;
                     }
                     draft.write(next);
-                    toast("Draft saved — find it in your Inventory to continue");
+                    toast(t("seller.addProduct.toastDraftSaved"));
                   }}
                 >
-                  Save draft
+                  {t("seller.addProduct.saveDraft")}
                 </Button>
               ) : undefined
             }
@@ -4664,7 +4807,7 @@ export function SellerAddProduct({
                     icon="chevronLeft"
                     onClick={() => goToNav(step - 1)}
                   >
-                    Back
+                    {t("common.back")}
                   </Button>
                 )}
                 {step < navIds.length - 1 ? (
@@ -4675,17 +4818,17 @@ export function SellerAddProduct({
                     disabled={!canAdvance}
                     onClick={() => goToNav(step + 1)}
                   >
-                    Next
+                    {t("common.next")}
                   </Button>
                 ) : (
                   <Button size="md" variant="primary" loading={publishing} onClick={attemptPublish}>
                     {isEdit
                       ? publishing
-                        ? "Saving…"
-                        : "Update product"
+                        ? t("seller.common.saving")
+                        : t("seller.addProduct.updateProduct")
                       : publishing
-                        ? "Publishing…"
-                        : "Publish"}
+                        ? t("seller.addProduct.publishing")
+                        : t("seller.addProduct.publish")}
                   </Button>
                 )}
               </>
@@ -4696,7 +4839,7 @@ export function SellerAddProduct({
         {/* Right gutter — sticky live preview + publish checklist. On ≤1100 this
            drops beneath the form, on ≤980 it stacks under the strip rail (see
            form-workflow.css). Pure read-out of the form state; no inputs here. */}
-        <aside className="bz-seller-add-preview" aria-label="Live preview">
+        <aside className="bz-seller-add-preview" aria-label={t("seller.addProduct.livePreview")}>
           <div
             className="bz-seller-add-livepreview"
             style={{
@@ -4717,10 +4860,10 @@ export function SellerAddProduct({
             >
               <SellerIcon name="eye" size={15} color="var(--ink-500)" />
               <span style={{ fontSize: ".8125rem", fontWeight: 600, color: "var(--ink-700)" }}>
-                Live preview
+                {t("seller.addProduct.livePreview")}
               </span>
               <span style={{ fontSize: ".6875rem", color: "var(--ink-400)", marginLeft: "auto" }}>
-                How buyers see it
+                {t("seller.addProduct.howBuyersSeeIt")}
               </span>
             </div>
             <div style={{ padding: 14 }}>
@@ -4745,7 +4888,7 @@ export function SellerAddProduct({
               }}
             >
               <span style={{ fontSize: ".8125rem", fontWeight: 600, color: "var(--ink-700)" }}>
-                Publish checklist
+                {t("seller.addProduct.publishChecklist")}
               </span>
               <span
                 className="tnum"
@@ -4760,7 +4903,7 @@ export function SellerAddProduct({
                   <button
                     type="button"
                     onClick={() => goToSection(c.id)}
-                    title="Go to this step"
+                    title={t("seller.addProduct.goToThisStep")}
                     style={{
                       display: "flex",
                       alignItems: "center",

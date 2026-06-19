@@ -1055,7 +1055,6 @@ export function PDP({ p: pProp }: PdpProps) {
                           soldOut={available && !inStock}
                           image={swatchImg}
                           imageAlt={opt}
-                          onImageClick={swatchImg ? () => openPhotoLightbox(swatchImg) : undefined}
                           // Tapping the active option unselects it — nothing is forced.
                           onClick={() =>
                             setSelDimensions((prev) => toggleOption(prev, group.name, opt))
@@ -1092,7 +1091,6 @@ export function PDP({ p: pProp }: PdpProps) {
                     soldOut={(v.stock ?? 0) <= 0}
                     image={swatchImg}
                     imageAlt={v.name}
-                    onImageClick={swatchImg ? () => openPhotoLightbox(swatchImg) : undefined}
                     onClick={() => setSelVariantId(v.id)}
                   />
                 );

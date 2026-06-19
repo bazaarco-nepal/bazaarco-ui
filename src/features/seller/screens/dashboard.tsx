@@ -1082,8 +1082,8 @@ export function SellerDashboard() {
           </div>
         </div>
 
-        {/* Unread messages preview */}
-        {unreadChats.length > 0 && (
+        {/* Recent messages — always visible, unread rows highlighted */}
+        {chatThreads.length > 0 && (
           <div
             style={{
               background: "#fff",
@@ -1113,12 +1113,14 @@ export function SellerDashboard() {
                 }}
               >
                 <SellerIcon name="message" size={18} color="var(--blue)" />
-                Unread messages
+                Messages
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <Chip tone="red" size="sm">
-                  {totalUnread}
-                </Chip>
+                {totalUnread > 0 && (
+                  <Chip tone="red" size="sm">
+                    {totalUnread} unread
+                  </Chip>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -1129,100 +1131,96 @@ export function SellerDashboard() {
                 </Button>
               </div>
             </div>
-            {unreadChats.slice(0, 3).map((ct) => (
-              <AppLink
-                key={ct.id}
-                href={pathFromScreen("s-chat")}
-                onNavigate={() => nav("s-chat")}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  padding: "12px 16px",
-                  borderBottom: "1px solid var(--line-100)",
-                  textDecoration: "none",
-                  cursor: "pointer",
-                }}
-              >
-                <BuyerAvatar
-                  src={ct.avatarUrl}
-                  name={ct.buyer}
-                  size={36}
-                  fontSize=".8125rem"
+            {chatThreads.slice(0, 3).map((ct, i) => {
+              const hasUnread = (ct.unread ?? 0) > 0;
+              return (
+                <AppLink
+                  key={ct.id}
+                  href={pathFromScreen("s-chat")}
+                  onNavigate={() => nav("s-chat")}
                   style={{
-                    background: TINTS[ct.tone as keyof typeof TINTS]?.[0] ?? TINTS.blue[0],
-                    color: TINTS[ct.tone as keyof typeof TINTS]?.[2] ?? TINTS.blue[2],
-                  }}
-                />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      gap: 8,
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontWeight: 700,
-                        fontSize: ".875rem",
-                        color: "var(--ink-900)",
-                      }}
-                    >
-                      {ct.buyer}
-                    </span>
-                    <span style={{ fontSize: ".7rem", color: "var(--ink-400)", flexShrink: 0 }}>
-                      {ct.time}
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      fontSize: ".8125rem",
-                      color: "var(--ink-700)",
-                      fontWeight: 600,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      marginTop: 2,
-                    }}
-                  >
-                    {ct.last}
-                  </div>
-                </div>
-                <span
-                  style={{
-                    minWidth: 22,
-                    height: 22,
-                    padding: "0 6px",
-                    borderRadius: 999,
-                    background: "var(--danger)",
-                    color: "#fff",
-                    fontSize: ".7rem",
-                    fontWeight: 700,
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
+                    gap: 12,
+                    padding: "12px 16px",
+                    borderBottom:
+                      i < Math.min(chatThreads.length, 3) - 1
+                        ? "1px solid var(--line-100)"
+                        : "none",
+                    background: hasUnread ? "var(--tint-blue-50)" : "transparent",
+                    textDecoration: "none",
+                    cursor: "pointer",
                   }}
                 >
-                  {ct.unread}
-                </span>
-              </AppLink>
-            ))}
-            {unreadChats.length > 3 && (
-              <div
-                style={{
-                  padding: "10px 16px",
-                  textAlign: "center",
-                  fontSize: ".8125rem",
-                  color: "var(--ink-500)",
-                  fontWeight: 600,
-                }}
-              >
-                +{unreadChats.length - 3} more conversations
-              </div>
-            )}
+                  <BuyerAvatar
+                    src={ct.avatarUrl}
+                    name={ct.buyer}
+                    size={36}
+                    fontSize=".8125rem"
+                    style={{
+                      background: TINTS[ct.tone as keyof typeof TINTS]?.[0] ?? TINTS.blue[0],
+                      color: TINTS[ct.tone as keyof typeof TINTS]?.[2] ?? TINTS.blue[2],
+                    }}
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: 8,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontWeight: hasUnread ? 700 : 500,
+                          fontSize: ".875rem",
+                          color: "var(--ink-900)",
+                        }}
+                      >
+                        {ct.buyer}
+                      </span>
+                      <span style={{ fontSize: ".7rem", color: "var(--ink-400)", flexShrink: 0 }}>
+                        {ct.time}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: ".8125rem",
+                        color: hasUnread ? "var(--ink-800)" : "var(--ink-500)",
+                        fontWeight: hasUnread ? 600 : 400,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        marginTop: 2,
+                      }}
+                    >
+                      {ct.last}
+                    </div>
+                  </div>
+                  {hasUnread && (
+                    <span
+                      style={{
+                        minWidth: 22,
+                        height: 22,
+                        padding: "0 6px",
+                        borderRadius: 999,
+                        background: "var(--danger)",
+                        color: "#fff",
+                        fontSize: ".7rem",
+                        fontWeight: 700,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {ct.unread}
+                    </span>
+                  )}
+                </AppLink>
+              );
+            })}
           </div>
         )}
 

@@ -337,6 +337,10 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
               <button
                 key={t.id}
                 onClick={() => {
+                  if (active?.id === t.id) {
+                    if (isMobile) setMobileInThread(true);
+                    return;
+                  }
                   setActive(t);
                   setMessages([]);
                   setPeerTyping(false);

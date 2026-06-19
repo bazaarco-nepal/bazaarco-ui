@@ -1161,33 +1161,17 @@ export function SellerDashboard() {
                       cursor: "pointer",
                     }}
                   >
-                    <div style={{ position: "relative", flexShrink: 0 }}>
-                      <BuyerAvatar
-                        src={ct.avatarUrl}
-                        name={ct.buyer}
-                        size={38}
-                        fontSize=".8125rem"
-                        style={{
-                          background: TINTS[ct.tone as keyof typeof TINTS]?.[0] ?? TINTS.blue[0],
-                          color: TINTS[ct.tone as keyof typeof TINTS]?.[2] ?? TINTS.blue[2],
-                          border: hasUnread ? "2px solid var(--blue)" : "2px solid var(--line-200)",
-                        }}
-                      />
-                      {hasUnread && (
-                        <span
-                          style={{
-                            position: "absolute",
-                            bottom: -1,
-                            right: -1,
-                            width: 12,
-                            height: 12,
-                            borderRadius: "50%",
-                            background: "var(--blue)",
-                            border: "2px solid #fff",
-                          }}
-                        />
-                      )}
-                    </div>
+                    <BuyerAvatar
+                      src={ct.avatarUrl}
+                      name={ct.buyer}
+                      size={38}
+                      fontSize=".8125rem"
+                      style={{
+                        background: TINTS[ct.tone as keyof typeof TINTS]?.[0] ?? TINTS.blue[0],
+                        color: TINTS[ct.tone as keyof typeof TINTS]?.[2] ?? TINTS.blue[2],
+                        flexShrink: 0,
+                      }}
+                    />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div
                         style={{
@@ -1199,9 +1183,9 @@ export function SellerDashboard() {
                       >
                         <span
                           style={{
-                            fontWeight: hasUnread ? 800 : 400,
+                            fontWeight: hasUnread ? 800 : 600,
                             fontSize: ".8125rem",
-                            color: hasUnread ? "var(--ink-900)" : "var(--ink-500)",
+                            color: "var(--ink-900)",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
@@ -1212,8 +1196,7 @@ export function SellerDashboard() {
                         <span
                           style={{
                             fontSize: ".65rem",
-                            color: hasUnread ? "var(--ink-700)" : "var(--ink-400)",
-                            fontWeight: hasUnread ? 600 : 400,
+                            color: "var(--ink-400)",
                             flexShrink: 0,
                           }}
                         >
@@ -1223,8 +1206,8 @@ export function SellerDashboard() {
                       <div
                         style={{
                           fontSize: ".75rem",
-                          color: hasUnread ? "var(--ink-900)" : "var(--ink-400)",
-                          fontWeight: hasUnread ? 700 : 400,
+                          color: hasUnread ? "var(--ink-900)" : "var(--ink-600)",
+                          fontWeight: hasUnread ? 700 : 500,
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
@@ -1234,7 +1217,7 @@ export function SellerDashboard() {
                         {ct.last || "No messages yet"}
                       </div>
                     </div>
-                    {hasUnread ? (
+                    {hasUnread && (
                       <span
                         style={{
                           minWidth: 22,
@@ -1253,8 +1236,6 @@ export function SellerDashboard() {
                       >
                         {ct.unread}
                       </span>
-                    ) : (
-                      <SellerIcon name="check" size={14} color="var(--ink-300)" />
                     )}
                   </AppLink>
                 );

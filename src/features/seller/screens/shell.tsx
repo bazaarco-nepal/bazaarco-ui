@@ -12,6 +12,8 @@ import { type SellerStoreSummary } from "@/services/api/seller-organization";
 import { useSellerInbox, useSellerBargains, useSellerOrganization } from "@/hooks/use-seller";
 import { useChatInbox } from "@/hooks/use-chat";
 import { useBz, LogoutConfirmModal, LanguageToggle } from "@/components/common";
+import { connectChatSocket } from "@/lib/chat-socket";
+import { useInvalidateChat } from "@/hooks/use-chat";
 import { bargainStatus } from "../_shared/bargain";
 import { SELLER_NAV } from "../_shared/nav";
 import { type SellerInboxOrderItem } from "../_shared/types";
@@ -175,6 +177,7 @@ export function SellerShell({ screen, children }: { screen: string; children: Re
   const { data: inbox = [] } = useSellerInbox();
   const { data: bargains = [] } = useSellerBargains();
   const { data: chatInbox } = useChatInbox();
+  const { invalidateInbox } = useInvalidateChat();
   const chatThreads = chatInbox?.threads ?? [];
   const newOrders = inbox.filter(
     (o: SellerInboxOrderItem) => o.status === "placed" && !o.awaitingOtherSellers,
@@ -237,6 +240,19 @@ export function SellerShell({ screen, children }: { screen: string; children: Re
       window.scrollTo(0, scrollY);
     };
   }, [openMobile]);
+
+  useEffect(() => {
+    const socket = connectChatSocket();
+    const onInboxUpdated = () => {
+      void invalidateInbox();
+    };
+    socket.on("inbox_updated", onInboxUpdated);
+    socket.on("message_new", onInboxUpdated);
+    return () => {
+      socket.off("inbox_updated", onInboxUpdated);
+      socket.off("message_new", onInboxUpdated);
+    };
+  }, [invalidateInbox]);
 
   useEffect(() => {
     if (orgLoading || screen === "s-onboarding") return;

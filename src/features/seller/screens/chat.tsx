@@ -7,7 +7,6 @@ import { SellerIcon } from "../_shared/icons";
 import { useChatInbox, useChatMessages, useInvalidateChat } from "@/hooks/use-chat";
 import {
   connectChatSocket,
-  disconnectChatSocket,
   emitTypingStart,
   emitTypingStop,
   joinConversation,
@@ -97,9 +96,6 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
 
   useEffect(() => {
     connectChatSocket();
-    return () => {
-      disconnectChatSocket();
-    };
   }, []);
 
   useEffect(() => {

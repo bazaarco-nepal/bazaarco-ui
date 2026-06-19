@@ -663,7 +663,7 @@ export function ReviewsSection({ productId, rating, reviewCount }: ReviewsSectio
             <div
               style={{
                 marginTop: 16,
-                fontSize: ".875rem",
+                fontSize: ".8125rem",
                 color: "var(--ink-400)",
                 textAlign: "center",
                 padding: "16px 0",
@@ -744,7 +744,7 @@ export function ReviewsSection({ productId, rating, reviewCount }: ReviewsSectio
                     style={{
                       margin: 0,
                       color: "var(--ink-600)",
-                      fontSize: ".875rem",
+                      fontSize: ".8125rem",
                       lineHeight: 1.6,
                     }}
                   >
@@ -785,7 +785,7 @@ export function ReviewsSection({ productId, rating, reviewCount }: ReviewsSectio
       ) : (
         !loading &&
         !composerOpen && (
-          <div style={{ marginTop: 14, fontSize: ".9375rem", color: "var(--ink-500)" }}>
+          <div style={{ marginTop: 14, fontSize: ".8125rem", color: "var(--ink-500)" }}>
             {canWriteReview ? t("reviews.noReviewsYet") : t("reviews.noReviewsEmpty")}
           </div>
         )

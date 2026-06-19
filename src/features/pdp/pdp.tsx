@@ -1771,6 +1771,7 @@ export function PDP({ p: pProp }: PdpProps) {
                 <p
                   style={{
                     color: "var(--ink-600)",
+                    fontSize: ".8125rem",
                     lineHeight: 1.75,
                     margin: 0,
                     whiteSpace: "pre-line",
@@ -1792,7 +1793,7 @@ export function PDP({ p: pProp }: PdpProps) {
                       fontWeight: 700,
                       cursor: "pointer",
                       padding: "10px 0 0",
-                      fontSize: ".875rem",
+                      fontSize: ".8125rem",
                     }}
                   >
                     {descOpen ? "Read less" : "Read more"}
@@ -1800,7 +1801,7 @@ export function PDP({ p: pProp }: PdpProps) {
                 )}
               </>
             ) : (
-              <p style={{ color: "var(--ink-400)", margin: 0, fontSize: ".875rem" }}>
+              <p style={{ color: "var(--ink-400)", margin: 0, fontSize: ".8125rem" }}>
                 No product description has been added yet.
               </p>
             )}
@@ -1821,7 +1822,7 @@ export function PDP({ p: pProp }: PdpProps) {
                         style={{
                           padding: "10px 12px",
                           color: "var(--ink-500)",
-                          fontSize: ".875rem",
+                          fontSize: ".8125rem",
                           width: 200,
                           verticalAlign: "top",
                         }}
@@ -1832,7 +1833,7 @@ export function PDP({ p: pProp }: PdpProps) {
                         style={{
                           padding: "10px 12px",
                           color: "var(--ink-800)",
-                          fontSize: ".875rem",
+                          fontSize: ".8125rem",
                           fontWeight: 500,
                         }}
                       >
@@ -1843,7 +1844,7 @@ export function PDP({ p: pProp }: PdpProps) {
                 </tbody>
               </table>
             ) : (
-              <p style={{ color: "var(--ink-400)", margin: 0, fontSize: ".875rem" }}>
+              <p style={{ color: "var(--ink-400)", margin: 0, fontSize: ".8125rem" }}>
                 No specifications have been added for this product yet.
               </p>
             )}

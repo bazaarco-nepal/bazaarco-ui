@@ -24,7 +24,8 @@ import {
   useSellerOrganization,
   useUpdateStoreHandle,
 } from "@/hooks/use-seller";
-import { useBz } from "@/components/common";
+import { useBz, BuyerAvatar } from "@/components/common";
+import { useChatInbox } from "@/hooks/use-chat";
 import { pathFromScreen, storeShareUrl } from "@/config/routes";
 import { SellerBarChart, SellerSparkline } from "../_shared/charts";
 import {
@@ -239,6 +240,10 @@ export function SellerDashboard() {
   const { data: dashboard, isLoading, isError, error } = useSellerDashboard(range);
   const { data: inbox = [] } = useSellerInbox();
   const { data: inventory = [] } = useSellerInventory();
+  const { data: chatInbox } = useChatInbox();
+  const chatThreads = chatInbox?.threads ?? [];
+  const unreadChats = chatThreads.filter((ct) => (ct.unread ?? 0) > 0);
+  const totalUnread = unreadChats.reduce((sum, ct) => sum + (ct.unread ?? 0), 0);
   const rangeLabel =
     range === "today"
       ? t("seller.common.today")
@@ -363,6 +368,17 @@ export function SellerDashboard() {
       to: "s-inbox",
       urgent: true,
       action: { label: t("seller.common.viewOrders"), onAct: () => nav("s-inbox") },
+    },
+    totalUnread > 0 && {
+      icon: "message",
+      tint: "blue",
+      label:
+        unreadChats.length === 1
+          ? `${totalUnread} unread message from ${unreadChats[0]?.buyer ?? "a buyer"}`
+          : `${totalUnread} unread messages from ${unreadChats.length} buyers`,
+      to: "s-chat",
+      urgent: true,
+      action: { label: "Reply", onAct: () => nav("s-chat") },
     },
     lowStock > 0 && {
       icon: "zap",
@@ -1065,6 +1081,150 @@ export function SellerDashboard() {
             )}
           </div>
         </div>
+
+        {/* Unread messages preview */}
+        {unreadChats.length > 0 && (
+          <div
+            style={{
+              background: "#fff",
+              border: "1px solid var(--line-200)",
+              borderRadius: "var(--r-lg)",
+              overflow: "hidden",
+              marginBottom: 18,
+            }}
+          >
+            <div
+              style={{
+                padding: "14px 16px",
+                borderBottom: "1px solid var(--line-200)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  fontWeight: 600,
+                  fontSize: ".9375rem",
+                  color: "var(--ink-900)",
+                }}
+              >
+                <SellerIcon name="message" size={18} color="var(--blue)" />
+                Unread messages
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Chip tone="red" size="sm">
+                  {totalUnread}
+                </Chip>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  href={pathFromScreen("s-chat")}
+                  iconRight="chevronRight"
+                >
+                  Open chat
+                </Button>
+              </div>
+            </div>
+            {unreadChats.slice(0, 3).map((ct) => (
+              <AppLink
+                key={ct.id}
+                href={pathFromScreen("s-chat")}
+                onNavigate={() => nav("s-chat")}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "12px 16px",
+                  borderBottom: "1px solid var(--line-100)",
+                  textDecoration: "none",
+                  cursor: "pointer",
+                }}
+              >
+                <BuyerAvatar
+                  src={ct.avatarUrl}
+                  name={ct.buyer}
+                  size={36}
+                  fontSize=".8125rem"
+                  style={{
+                    background: TINTS[ct.tone as keyof typeof TINTS]?.[0] ?? TINTS.blue[0],
+                    color: TINTS[ct.tone as keyof typeof TINTS]?.[2] ?? TINTS.blue[2],
+                  }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontWeight: 700,
+                        fontSize: ".875rem",
+                        color: "var(--ink-900)",
+                      }}
+                    >
+                      {ct.buyer}
+                    </span>
+                    <span style={{ fontSize: ".7rem", color: "var(--ink-400)", flexShrink: 0 }}>
+                      {ct.time}
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      fontSize: ".8125rem",
+                      color: "var(--ink-700)",
+                      fontWeight: 600,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      marginTop: 2,
+                    }}
+                  >
+                    {ct.last}
+                  </div>
+                </div>
+                <span
+                  style={{
+                    minWidth: 22,
+                    height: 22,
+                    padding: "0 6px",
+                    borderRadius: 999,
+                    background: "var(--danger)",
+                    color: "#fff",
+                    fontSize: ".7rem",
+                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  {ct.unread}
+                </span>
+              </AppLink>
+            ))}
+            {unreadChats.length > 3 && (
+              <div
+                style={{
+                  padding: "10px 16px",
+                  textAlign: "center",
+                  fontSize: ".8125rem",
+                  color: "var(--ink-500)",
+                  fontWeight: 600,
+                }}
+              >
+                +{unreadChats.length - 3} more conversations
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Recent activity */}
         <div

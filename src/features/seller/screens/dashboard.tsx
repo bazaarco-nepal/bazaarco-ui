@@ -1151,26 +1151,43 @@ export function SellerDashboard() {
                       display: "flex",
                       alignItems: "center",
                       gap: 10,
-                      padding: "10px 16px",
+                      padding: "10px 14px",
                       borderBottom:
                         i < Math.min(chatThreads.length, 3) - 1
                           ? "1px solid var(--line-100)"
                           : "none",
-                      background: hasUnread ? "var(--tint-blue-50)" : "transparent",
+                      background: hasUnread ? "rgba(0,98,204,.06)" : "transparent",
                       textDecoration: "none",
                       cursor: "pointer",
                     }}
                   >
-                    <BuyerAvatar
-                      src={ct.avatarUrl}
-                      name={ct.buyer}
-                      size={34}
-                      fontSize=".8125rem"
-                      style={{
-                        background: TINTS[ct.tone as keyof typeof TINTS]?.[0] ?? TINTS.blue[0],
-                        color: TINTS[ct.tone as keyof typeof TINTS]?.[2] ?? TINTS.blue[2],
-                      }}
-                    />
+                    <div style={{ position: "relative", flexShrink: 0 }}>
+                      <BuyerAvatar
+                        src={ct.avatarUrl}
+                        name={ct.buyer}
+                        size={38}
+                        fontSize=".8125rem"
+                        style={{
+                          background: TINTS[ct.tone as keyof typeof TINTS]?.[0] ?? TINTS.blue[0],
+                          color: TINTS[ct.tone as keyof typeof TINTS]?.[2] ?? TINTS.blue[2],
+                          border: hasUnread ? "2px solid var(--blue)" : "2px solid var(--line-200)",
+                        }}
+                      />
+                      {hasUnread && (
+                        <span
+                          style={{
+                            position: "absolute",
+                            bottom: -1,
+                            right: -1,
+                            width: 12,
+                            height: 12,
+                            borderRadius: "50%",
+                            background: "var(--blue)",
+                            border: "2px solid #fff",
+                          }}
+                        />
+                      )}
+                    </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div
                         style={{
@@ -1182,9 +1199,9 @@ export function SellerDashboard() {
                       >
                         <span
                           style={{
-                            fontWeight: hasUnread ? 700 : 500,
+                            fontWeight: hasUnread ? 800 : 400,
                             fontSize: ".8125rem",
-                            color: "var(--ink-900)",
+                            color: hasUnread ? "var(--ink-900)" : "var(--ink-500)",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
@@ -1193,7 +1210,12 @@ export function SellerDashboard() {
                           {ct.buyer}
                         </span>
                         <span
-                          style={{ fontSize: ".65rem", color: "var(--ink-400)", flexShrink: 0 }}
+                          style={{
+                            fontSize: ".65rem",
+                            color: hasUnread ? "var(--ink-700)" : "var(--ink-400)",
+                            fontWeight: hasUnread ? 600 : 400,
+                            flexShrink: 0,
+                          }}
                         >
                           {ct.time}
                         </span>
@@ -1201,28 +1223,28 @@ export function SellerDashboard() {
                       <div
                         style={{
                           fontSize: ".75rem",
-                          color: hasUnread ? "var(--ink-800)" : "var(--ink-500)",
-                          fontWeight: hasUnread ? 600 : 400,
+                          color: hasUnread ? "var(--ink-900)" : "var(--ink-400)",
+                          fontWeight: hasUnread ? 700 : 400,
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           whiteSpace: "nowrap",
                           marginTop: 1,
                         }}
                       >
-                        {ct.last}
+                        {ct.last || "No messages yet"}
                       </div>
                     </div>
-                    {hasUnread && (
+                    {hasUnread ? (
                       <span
                         style={{
-                          minWidth: 20,
-                          height: 20,
-                          padding: "0 5px",
+                          minWidth: 22,
+                          height: 22,
+                          padding: "0 6px",
                           borderRadius: 999,
-                          background: "var(--danger)",
+                          background: "var(--blue)",
                           color: "#fff",
                           fontSize: ".65rem",
-                          fontWeight: 700,
+                          fontWeight: 800,
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -1231,6 +1253,8 @@ export function SellerDashboard() {
                       >
                         {ct.unread}
                       </span>
+                    ) : (
+                      <SellerIcon name="check" size={14} color="var(--ink-300)" />
                     )}
                   </AppLink>
                 );

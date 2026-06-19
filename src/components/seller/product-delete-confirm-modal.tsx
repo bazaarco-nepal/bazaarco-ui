@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useTranslation, Trans } from "react-i18next";
 
 import { Button } from "@/components/ui";
 
@@ -20,6 +21,7 @@ export function ProductDeleteConfirmModal({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -82,7 +84,7 @@ export function ProductDeleteConfirmModal({
             color: "var(--ink-900)",
           }}
         >
-          Delete this product?
+          {t("seller.productDelete.title")}
         </h3>
         <p
           style={{
@@ -92,16 +94,19 @@ export function ProductDeleteConfirmModal({
             lineHeight: 1.55,
           }}
         >
-          <strong>{productName}</strong> and its reviews, questions and ratings will be permanently
-          removed. This can&rsquo;t be undone.
+          <Trans
+            i18nKey="seller.productDelete.message"
+            values={{ productName }}
+            components={{ strong: <strong /> }}
+          />
         </p>
 
         <div className="bz-product-delete__actions">
           <Button variant="ghost" full disabled={pending} onClick={onCancel}>
-            Cancel
+            {t("seller.productDelete.cancel")}
           </Button>
           <Button variant="danger" full loading={pending} onClick={onConfirm}>
-            {pending ? "Deleting…" : "Delete product"}
+            {pending ? t("seller.productDelete.deleting") : t("seller.productDelete.confirm")}
           </Button>
         </div>
       </div>

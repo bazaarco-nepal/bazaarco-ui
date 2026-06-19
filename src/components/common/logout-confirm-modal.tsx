@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui";
 
@@ -20,6 +21,7 @@ export function LogoutConfirmModal({
   // neutral-outline Cancel). The buyer leaves this unset and keeps its own look.
   skin?: "fluent";
 }) {
+  const { t } = useTranslation();
   const fluent = skin === "fluent";
   const confirmRef = useRef<HTMLButtonElement>(null);
 
@@ -96,7 +98,7 @@ export function LogoutConfirmModal({
             color: "var(--ink-900)",
           }}
         >
-          Log out?
+          {t("common.logout.title")}
         </h3>
         <p
           style={{
@@ -106,7 +108,7 @@ export function LogoutConfirmModal({
             lineHeight: 1.55,
           }}
         >
-          Are you sure you want to log out?
+          {t("common.logout.message")}
         </p>
 
         <div className="bz-logout-confirm__actions">
@@ -119,10 +121,10 @@ export function LogoutConfirmModal({
             disabled={pending}
             onClick={onCancel}
           >
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button variant="danger" full loading={pending} onClick={onConfirm}>
-            {pending ? "Logging out…" : "Log out"}
+            {pending ? t("common.logout.pending") : t("nav.logOut")}
           </Button>
         </div>
       </div>

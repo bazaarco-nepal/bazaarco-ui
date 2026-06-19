@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useTranslation, Trans } from "react-i18next";
 
 import { Button } from "@/components/ui";
 
@@ -20,6 +21,7 @@ export function VideoDeleteConfirmModal({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -82,7 +84,7 @@ export function VideoDeleteConfirmModal({
             color: "var(--ink-900)",
           }}
         >
-          Delete this video?
+          {t("seller.videoDelete.title")}
         </h3>
         <p
           style={{
@@ -92,16 +94,19 @@ export function VideoDeleteConfirmModal({
             lineHeight: 1.55,
           }}
         >
-          The video for <strong>{productLabel}</strong> will be permanently removed and buyers will
-          no longer see it. This can&rsquo;t be undone.
+          <Trans
+            i18nKey="seller.videoDelete.message"
+            values={{ productLabel }}
+            components={{ strong: <strong /> }}
+          />
         </p>
 
         <div className="bz-video-delete__actions">
           <Button variant="ghost" full disabled={pending} onClick={onCancel}>
-            Cancel
+            {t("seller.videoDelete.cancel")}
           </Button>
           <Button variant="danger" full loading={pending} onClick={onConfirm}>
-            {pending ? "Deleting…" : "Delete video"}
+            {pending ? t("seller.videoDelete.deleting") : t("seller.videoDelete.confirm")}
           </Button>
         </div>
       </div>

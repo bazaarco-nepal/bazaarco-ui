@@ -146,6 +146,14 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
       setTooLowHint("Enter an offer amount to continue.");
       return;
     }
+    // A bargain must beat the listed price — at or above it, the buyer can just
+    // buy directly. Block here for UX; the backend re-checks authoritatively.
+    if (offerValue >= listed) {
+      setTooLowHint(
+        `This item is already listed at ${formatNPR(listed)}. Enter a lower amount to bargain.`,
+      );
+      return;
+    }
     setTooLowHint(null);
     setStage("thinking");
     try {
@@ -375,8 +383,8 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
                 }}
               >
                 {attemptsLeft === 0
-                  ? "No bargain attempts left on this item today."
-                  : `${attemptsLeft} bargain ${attemptsLeft === 1 ? "attempt" : "attempts"} left on this item today.`}
+                  ? "No bargain attempts left today."
+                  : `${attemptsLeft} bargain ${attemptsLeft === 1 ? "attempt" : "attempts"} left today.`}
               </p>
             )}
             <div style={{ marginTop: 20 }}>
@@ -392,7 +400,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
                 marginTop: 12,
               }}
             >
-              Sellers usually reply within a few minutes. You're not charged until you accept.
+              The seller has 12 hours to respond. You're not charged until you accept.
             </p>
           </>
         )}
@@ -428,7 +436,9 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
               can accept, counter, or decline — we'll show their reply in My Offers.
             </p>
             <p style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 6 }}>
-              Sellers usually reply within a few minutes.
+              {bargainExpiryLabel(offerExpires)
+                ? `The seller has 12 hours to respond · ${bargainExpiryLabel(offerExpires)}`
+                : "The seller has 12 hours to respond."}
             </p>
             <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
               <Button variant="secondary" full onClick={onClose}>

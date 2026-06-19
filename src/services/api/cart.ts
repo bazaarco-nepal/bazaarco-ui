@@ -16,6 +16,7 @@ function mapCartResponse(raw: { items: unknown[] }): CartResponse {
         qty: r.qty,
         variantId: r.variantId ?? null,
         variantName: r.variantName ?? null,
+        availableStock: typeof r.availableStock === "number" ? r.availableStock : undefined,
         bargained: r.bargained === true,
         bargainExpiresAt: r.bargainExpiresAt ?? null,
         // unitPrice is the server's line-level override — today that means a

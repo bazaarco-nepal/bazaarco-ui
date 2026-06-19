@@ -12,7 +12,7 @@ const compat = new FlatCompat({
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript", "prettier"),
   {
-    ignores: ["bazaarco-design/**", ".next/**", "node_modules/**"],
+    ignores: ["bazaarco-design/**", ".next/**", ".next-prod/**", "node_modules/**"],
   },
   {
     files: ["src/components/ui/**", "src/features/**"],

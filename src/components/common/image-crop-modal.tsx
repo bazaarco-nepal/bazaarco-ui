@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export type ImageCropModalProps = {
   objectUrl: string;
@@ -84,15 +85,19 @@ export function ImageCropModal({
   aspectRatio = 1,
   outputWidth,
   outputHeight,
-  title = "Crop & adjust",
-  subtitle = "Drag to position · use zoom to fit",
-  confirmLabel = "Use image",
+  title,
+  subtitle,
+  confirmLabel,
   showBrightness = true,
   maskShape = "rect",
   fileNamePrefix = "image",
   onConfirm,
   onCancel,
 }: ImageCropModalProps) {
+  const { t } = useTranslation();
+  const resolvedTitle = title ?? t("common.imageCrop.title");
+  const resolvedSubtitle = subtitle ?? t("common.imageCrop.subtitle");
+  const resolvedConfirmLabel = confirmLabel ?? t("common.imageCrop.confirm");
   const viewW = VIEW_SIZE;
   const viewH = Math.round(VIEW_SIZE / aspectRatio);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -189,7 +194,7 @@ export function ImageCropModal({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={title}
+      aria-label={resolvedTitle}
       style={{
         position: "fixed",
         inset: 0,
@@ -221,10 +226,10 @@ export function ImageCropModal({
             color: "var(--blue-deep)",
           }}
         >
-          {title}
+          {resolvedTitle}
         </h3>
         <p style={{ margin: "0 0 16px", fontSize: ".8125rem", color: "var(--ink-500)" }}>
-          {subtitle}
+          {resolvedSubtitle}
         </p>
 
         <div
@@ -284,7 +289,7 @@ export function ImageCropModal({
             color: "var(--ink-600)",
           }}
         >
-          Zoom
+          {t("common.imageCrop.zoom")}
         </label>
         <input
           type="range"
@@ -307,7 +312,7 @@ export function ImageCropModal({
                 color: "var(--ink-600)",
               }}
             >
-              Brightness
+              {t("common.imageCrop.brightness")}
             </label>
             <input
               type="range"
@@ -337,7 +342,7 @@ export function ImageCropModal({
               cursor: "pointer",
             }}
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             type="button"
@@ -355,7 +360,7 @@ export function ImageCropModal({
               opacity: loaded && !busy ? 1 : 0.6,
             }}
           >
-            {busy ? "Saving…" : confirmLabel}
+            {busy ? t("common.imageCrop.saving") : resolvedConfirmLabel}
           </button>
         </div>
       </div>

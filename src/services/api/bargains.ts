@@ -1,6 +1,5 @@
 import type { Product } from "@/types";
-import { apiClient, getData, postData } from "./http";
-import type { ApiSuccessResponse } from "./types";
+import { getData, patchData, postData } from "./http";
 import { mapProduct } from "./catalog";
 
 export interface BargainOffer {
@@ -17,7 +16,13 @@ export interface BargainOffer {
   status: string;
   age: string;
   expires: string | null;
-  /** Daily bargain attempts left on this product — present on the create response only. */
+  /** Step 5 — set when a pending offer lapsed because the seller never responded. */
+  expiredAt?: string | null;
+  /** Step 5 — why it expired, e.g. "seller_no_response". Safe enum; no seller floor. */
+  expiryReason?: string | null;
+  /** Step 5 — true when the buyer's valid attempt was refunded on expiry. */
+  attemptRefunded?: boolean;
+  /** Daily bargain attempts left (platform-wide) — present on the create response only. */
   attemptsRemaining?: number;
   p: Product;
 }
@@ -37,6 +42,9 @@ function mapOffer(raw: any): BargainOffer {
     variantName: raw.variantName ?? null,
     sellerCounter: raw.sellerCounter ?? null,
     agreed: raw.agreed ?? null,
+    expiredAt: raw.expiredAt ?? null,
+    expiryReason: raw.expiryReason ?? null,
+    attemptRefunded: raw.attemptRefunded === true,
     attemptsRemaining:
       typeof raw.attemptsRemaining === "number" ? raw.attemptsRemaining : undefined,
     p: raw.p ? mapProduct(raw.p) : raw.p,
@@ -60,16 +68,12 @@ export const bargainsApi = {
     return mapOffer(raw);
   },
   async accept(id: string): Promise<BargainOffer> {
-    const { data } = await apiClient.patch<ApiSuccessResponse<BargainOffer>>(
-      `/bargains/${id}/accept`,
-    );
-    return mapOffer(data.data);
+    const raw = await patchData<BargainOffer>(`/bargains/${id}/accept`);
+    return mapOffer(raw);
   },
   async reject(id: string): Promise<BargainOffer> {
-    const { data } = await apiClient.patch<ApiSuccessResponse<BargainOffer>>(
-      `/bargains/${id}/reject`,
-    );
-    return mapOffer(data.data);
+    const raw = await patchData<BargainOffer>(`/bargains/${id}/reject`);
+    return mapOffer(raw);
   },
   /**
    * Buyer accepts the seller's counter. This is what arms the offer for
@@ -83,10 +87,9 @@ export const bargainsApi = {
     return mapOffer(raw);
   },
   async counter(id: string, counterAmount: number): Promise<BargainOffer> {
-    const { data } = await apiClient.patch<ApiSuccessResponse<BargainOffer>>(
-      `/bargains/${id}/counter`,
-      { counter: counterAmount },
-    );
-    return mapOffer(data.data);
+    const raw = await patchData<BargainOffer>(`/bargains/${id}/counter`, {
+      counter: counterAmount,
+    });
+    return mapOffer(raw);
   },
 };

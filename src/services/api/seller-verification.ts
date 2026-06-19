@@ -9,7 +9,6 @@ export interface SellerVerification {
   docUrl: string | null;
   docIdNumber: string | null;
   ownerName: string | null;
-  address: string | null;
   submittedAt: string | null;
   reviewedAt: string | null;
   note: string | null;
@@ -21,7 +20,6 @@ export interface SubmitSellerVerificationPayload {
   docType: "pan" | "nid";
   docIdNumber?: string;
   ownerName?: string;
-  address?: string;
 }
 
 export const sellerVerificationApi = {
@@ -31,7 +29,6 @@ export const sellerVerificationApi = {
     form.append("docType", payload.docType);
     if (payload.docIdNumber) form.append("docIdNumber", payload.docIdNumber);
     if (payload.ownerName) form.append("ownerName", payload.ownerName);
-    if (payload.address) form.append("address", payload.address);
     const { data } = await apiClient.post<ApiSuccessResponse<SellerVerification>>(
       "/seller/verification/document",
       form,

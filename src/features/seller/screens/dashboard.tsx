@@ -317,7 +317,7 @@ export function SellerDashboard() {
         },
       ]
     : [];
-  const sellerName = displayName(user, "Seller");
+  const ownerName = displayName(user, "Seller");
   const todaySales = kpis[0]?.value ?? "Rs. 0";
   const ordersPlaced = funnel.length > 0 ? (funnel[funnel.length - 1]?.value ?? 0) : 0;
   const pendingOrders = inbox.filter(
@@ -427,8 +427,7 @@ export function SellerDashboard() {
                 lineHeight: 1.5,
               }}
             >
-              Fix the issues described in each product, then acknowledge so our team can review and
-              restore your listing.
+              {t("seller.dashboard.frozenHint")}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {frozenListings.map((fl) => (
@@ -498,7 +497,7 @@ export function SellerDashboard() {
                 color: "var(--ink-900)",
               }}
             >
-              {t("seller.dashboard.greeting", { name: sellerName })}{" "}
+              {t("seller.dashboard.greeting", { name: ownerName })}{" "}
               <span style={{ fontSize: "1.5rem" }}>🙏</span>
             </h1>
             <p style={{ margin: "4px 0 0", color: "var(--ink-500)", fontSize: ".875rem" }}>
@@ -510,7 +509,7 @@ export function SellerDashboard() {
               value={range}
               onChange={setRange}
               icon="clock"
-              ariaLabel="Date range"
+              ariaLabel={t("seller.dashboard.dateRange")}
               options={[
                 { value: "today", label: t("seller.common.today") },
                 { value: "week", label: t("seller.common.week7") },
@@ -537,7 +536,7 @@ export function SellerDashboard() {
               style={{ gridColumn: "1 / -1" }}
               icon="trendingUp"
               title={t("seller.dashboard.noSalesYet")}
-              message="Your sales metrics will appear here once orders start coming in."
+              message={t("seller.dashboard.noSalesMetricsMessage")}
             />
           )}
           {kpis.map((k) => (
@@ -758,10 +757,10 @@ export function SellerDashboard() {
               </div>
               {tasks.length > 0 ? (
                 <Chip tone="red" size="sm">
-                  {tasks.length} to do
+                  {t("seller.dashboard.tasksToDo", { count: tasks.length })}
                 </Chip>
               ) : (
-                <Chip size="sm">All clear</Chip>
+                <Chip size="sm">{t("seller.dashboard.allClear")}</Chip>
               )}
             </div>
             {tasks.length === 0 && (
@@ -773,7 +772,7 @@ export function SellerDashboard() {
                   fontSize: ".875rem",
                 }}
               >
-                No pending tasks. You are up to date.
+                {t("seller.dashboard.noPendingTasks")}
               </div>
             )}
             {tasks.map((t) => (
@@ -905,7 +904,7 @@ export function SellerDashboard() {
                     color: "var(--ink-900)",
                   }}
                 >
-                  Sales trend
+                  {t("seller.dashboard.salesTrend")}
                 </h3>
               </div>
               <div
@@ -921,13 +920,13 @@ export function SellerDashboard() {
                   <span
                     style={{ width: 10, height: 10, borderRadius: 2, background: "var(--blue)" }}
                   />
-                  Sales
+                  {t("seller.dashboard.legendSales")}
                 </span>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
                   <span
                     style={{ width: 10, height: 10, borderRadius: 2, background: "var(--red)" }}
                   />
-                  Today
+                  {t("seller.dashboard.legendToday")}
                 </span>
               </div>
             </div>
@@ -935,8 +934,8 @@ export function SellerDashboard() {
               <SellerEmptyState
                 style={{ minHeight: 200, padding: "24px" }}
                 icon="trendingUp"
-                title="No sales yet"
-                message="Your daily sales will chart here once buyers start ordering. Share your store to land the first one."
+                title={t("seller.dashboard.noSalesChartTitle")}
+                message={t("seller.dashboard.noSalesChartMessage")}
               />
             ) : (
               <SellerBarChart
@@ -944,10 +943,10 @@ export function SellerDashboard() {
                 height={200}
                 summaryTotalLabel={
                   range === "today"
-                    ? "Today's total"
+                    ? t("seller.dashboard.todayTotal")
                     : range === "month"
-                      ? "30-day total"
-                      : "7-day total"
+                      ? t("seller.dashboard.total30Day")
+                      : t("seller.dashboard.total7Day")
                 }
               />
             )}
@@ -970,7 +969,7 @@ export function SellerDashboard() {
               }}
             >
               <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 600, color: "var(--ink-900)" }}>
-                Bargaining
+                {t("seller.dashboard.bargaining")}
               </h3>
               <Button
                 variant="ghost"
@@ -978,7 +977,7 @@ export function SellerDashboard() {
                 href={pathFromScreen("s-bargain")}
                 iconRight="chevronRight"
               >
-                Open
+                {t("seller.dashboard.open")}
               </Button>
             </div>
             {bargainGlance && bargainGlance.pending > 0 && (
@@ -1002,7 +1001,7 @@ export function SellerDashboard() {
                 <SellerIcon name="bargain" size={22} color="var(--red)" />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 600, color: "var(--red)", fontSize: ".875rem" }}>
-                    {bargainGlance.pending} offer waiting
+                    {t("seller.dashboard.offersWaiting", { count: bargainGlance.pending })}
                   </div>
                 </div>
                 <SellerIcon name="chevronRight" size={18} color="var(--red)" />
@@ -1023,7 +1022,9 @@ export function SellerDashboard() {
                   >
                     {bargainGlance.accepted}
                   </div>
-                  <div style={{ fontSize: ".7rem", color: "var(--ink-500)" }}>Accepted today</div>
+                  <div style={{ fontSize: ".7rem", color: "var(--ink-500)" }}>
+                    {t("seller.dashboard.acceptedToday")}
+                  </div>
                 </div>
                 <div
                   style={{
@@ -1038,7 +1039,9 @@ export function SellerDashboard() {
                   >
                     {bargainGlance.avgGiven}%
                   </div>
-                  <div style={{ fontSize: ".7rem", color: "var(--ink-500)" }}>Avg discount</div>
+                  <div style={{ fontSize: ".7rem", color: "var(--ink-500)" }}>
+                    {t("seller.dashboard.avgDiscount")}
+                  </div>
                 </div>
                 <div
                   style={{
@@ -1055,7 +1058,7 @@ export function SellerDashboard() {
                     {formatNPR(bargainGlance.marginGiven)}
                   </div>
                   <div style={{ fontSize: ".7rem", color: "var(--ink-500)" }}>
-                    Margin given via bargain (this week)
+                    {t("seller.dashboard.marginGivenWeek")}
                   </div>
                 </div>
               </div>
@@ -1081,7 +1084,7 @@ export function SellerDashboard() {
               color: "var(--ink-900)",
             }}
           >
-            Recent activity
+            {t("seller.dashboard.recentActivity")}
           </h3>
           <div
             style={{
@@ -1133,7 +1136,7 @@ export function SellerDashboard() {
         {/* Top products — a data table that reflows into stacked cards on phones
             via the shared bz-dtable pattern (label-on-top under 600px). */}
         <Card
-          title="Top products"
+          title={t("seller.dashboard.topProducts")}
           action={
             <Button
               variant="ghost"
@@ -1141,7 +1144,7 @@ export function SellerDashboard() {
               href={pathFromScreen("s-products")}
               iconRight="chevronRight"
             >
-              See all
+              {t("seller.dashboard.seeAll")}
             </Button>
           }
         >
@@ -1150,10 +1153,10 @@ export function SellerDashboard() {
             style={{ "--bz-dtable-cols": "1fr 110px 130px 120px" } as React.CSSProperties}
           >
             <div className="bz-dtable__head">
-              <span>Product</span>
-              <span>Units sold</span>
-              <span>Revenue</span>
-              <span>Trend</span>
+              <span>{t("seller.dashboard.colProduct")}</span>
+              <span>{t("seller.dashboard.colUnitsSold")}</span>
+              <span>{t("seller.dashboard.colRevenue")}</span>
+              <span>{t("seller.dashboard.colTrend")}</span>
             </div>
             {topProducts.map((p) => (
               <div className="bz-dtable__row" key={p.name}>
@@ -1170,19 +1173,19 @@ export function SellerDashboard() {
                   <span style={{ fontWeight: 600, fontSize: ".875rem" }}>{p.name}</span>
                 </div>
                 <div>
-                  <span className="bz-dtable__lab">Units sold</span>
+                  <span className="bz-dtable__lab">{t("seller.dashboard.colUnitsSold")}</span>
                   <span className="tnum" style={{ fontWeight: 600 }}>
                     {p.units}
                   </span>
                 </div>
                 <div>
-                  <span className="bz-dtable__lab">Revenue</span>
+                  <span className="bz-dtable__lab">{t("seller.dashboard.colRevenue")}</span>
                   <span className="tnum" style={{ fontWeight: 600, color: "var(--success)" }}>
                     {formatNPR(Number(p.rev))}
                   </span>
                 </div>
                 <div>
-                  <span className="bz-dtable__lab">Trend</span>
+                  <span className="bz-dtable__lab">{t("seller.dashboard.colTrend")}</span>
                   <SellerSparkline data={p.spark ?? []} color="var(--blue)" height={24} />
                 </div>
               </div>
@@ -1279,7 +1282,7 @@ export function SellerDashboard() {
         {/* Store health — trust signals as calm metric tiles (shared MetricGrid).
             Only shown once we have trust data, so there's no empty bordered box. */}
         {trustStrip.length > 0 && (
-          <Card title="Store health">
+          <Card title={t("seller.dashboard.storeHealth")}>
             <MetricGrid>
               {trustStrip.map((s) => (
                 <Metric key={s.k} label={s.k} value={s.v} />

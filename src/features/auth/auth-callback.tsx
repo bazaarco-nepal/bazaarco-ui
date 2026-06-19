@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 
 import { useBz } from "@/components/common";
 import { Spinner } from "@/components/ui";
@@ -12,17 +13,18 @@ import { establishBrowserSession, fetchCurrentUser } from "@/services/api/auth";
 import { useBazaarStore } from "@/store/bazaar-store";
 
 export function AuthCallback() {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { nav, toast } = useBz();
   const setAuthed = useBazaarStore((s) => s.setAuthed);
   const setUser = useBazaarStore((s) => s.setUser);
-  const [message, setMessage] = useState("Signing you in…");
+  const [message, setMessage] = useState(t("auth.signingIn"));
 
   useEffect(() => {
     const error = searchParams.get("error");
     if (error) {
-      setMessage("Sign-in failed");
+      setMessage(t("auth.signInFailed"));
       toast(decodeURIComponent(error));
       nav("auth");
       return;
@@ -86,8 +88,8 @@ export function AuthCallback() {
         }
       } catch {
         if (cancelled) return;
-        setMessage("Could not load your session");
-        toast("Sign-in failed. Please try again.");
+        setMessage(t("auth.sessionLoadFailed"));
+        toast(t("auth.signInFailedRetry"));
         nav("auth");
       }
     })();
@@ -95,7 +97,7 @@ export function AuthCallback() {
     return () => {
       cancelled = true;
     };
-  }, [nav, router, searchParams, setAuthed, setUser, toast]);
+  }, [nav, router, searchParams, setAuthed, setUser, toast, t]);
 
   return (
     <div

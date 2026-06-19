@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui";
 import { SellerIcon } from "@/features/seller/_shared/icons";
@@ -12,7 +13,7 @@ export function ConfirmModal({
   message,
   confirmLabel,
   confirmVariant = "danger",
-  cancelLabel = "Cancel",
+  cancelLabel,
   icon,
   onConfirm,
   onCancel,
@@ -28,6 +29,7 @@ export function ConfirmModal({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -114,7 +116,7 @@ export function ConfirmModal({
 
         <div className="bz-confirm__actions">
           <Button variant="ghost" full disabled={pending} onClick={onCancel}>
-            {cancelLabel}
+            {cancelLabel ?? t("common.cancel")}
           </Button>
           <Button variant={confirmVariant} full loading={pending} onClick={onConfirm}>
             {confirmLabel}

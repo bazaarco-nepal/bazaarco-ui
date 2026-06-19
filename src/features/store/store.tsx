@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { usePathname } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import {
   Icon,
   Button,
@@ -24,9 +25,23 @@ import { storeIdFromPath, pathFromScreen } from "@/config/routes";
 import { formatStoreAddress } from "@/lib/store-address";
 import type { Seller } from "@/types";
 
-const RATING_LABELS = ["", "Bad", "Not great", "Okay", "Good", "Excellent"];
+const RATING_LABEL_KEYS = [
+  "",
+  "store.ratingBad",
+  "store.ratingNotGreat",
+  "store.ratingOkay",
+  "store.ratingGood",
+  "store.ratingExcellent",
+];
+
+function formatReviewDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
 
 function RateStoreModal({ seller, onClose }: { seller: Seller; onClose: () => void }) {
+  const { t } = useTranslation();
   const { toast } = useBz();
   const createReview = useCreateSellerReview(seller.id);
   const [stars, setStars] = useState(0);
@@ -39,10 +54,10 @@ function RateStoreModal({ seller, onClose }: { seller: Seller; onClose: () => vo
     if (!canSubmit) return;
     try {
       await createReview.mutateAsync({ stars, text: text.trim() });
-      toast("Thanks! Your review is posted.");
+      toast(t("store.reviewPosted"));
       onClose();
     } catch {
-      toast("Could not post review. Try again.");
+      toast(t("store.reviewPostFailed"));
     }
   };
 
@@ -76,11 +91,11 @@ function RateStoreModal({ seller, onClose }: { seller: Seller; onClose: () => vo
       >
         <div style={{ display: "flex", alignItems: "center", marginBottom: 4 }}>
           <h2 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "var(--ink-900)" }}>
-            Rate {seller.name}
+            {t("store.rateSeller", { name: seller.name })}
           </h2>
           <button
             type="button"
-            aria-label="Close"
+            aria-label={t("common.close")}
             onClick={onClose}
             style={{
               marginLeft: "auto",
@@ -100,7 +115,7 @@ function RateStoreModal({ seller, onClose }: { seller: Seller; onClose: () => vo
           </button>
         </div>
         <p style={{ margin: "0 0 18px", fontSize: ".875rem", color: "var(--ink-500)" }}>
-          Your honest review helps other shoppers in Nepal.
+          {t("store.reviewHelpHint")}
         </p>
 
         <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 6 }}>
@@ -108,7 +123,7 @@ function RateStoreModal({ seller, onClose }: { seller: Seller; onClose: () => vo
             <button
               key={s}
               type="button"
-              aria-label={`${s} star${s > 1 ? "s" : ""}`}
+              aria-label={t("store.starsAria", { count: s })}
               onClick={() => setStars(s)}
               onMouseEnter={() => setHover(s)}
               onMouseLeave={() => setHover(0)}
@@ -133,7 +148,7 @@ function RateStoreModal({ seller, onClose }: { seller: Seller; onClose: () => vo
             color: "var(--ink-500)",
           }}
         >
-          {RATING_LABELS[shown]}
+          {shown ? t(RATING_LABEL_KEYS[shown] ?? "") : ""}
         </div>
 
         <textarea
@@ -141,7 +156,7 @@ function RateStoreModal({ seller, onClose }: { seller: Seller; onClose: () => vo
           onChange={(e) => setText(e.target.value)}
           rows={4}
           maxLength={2000}
-          placeholder="Share your experience with this store…"
+          placeholder={t("store.reviewPlaceholder")}
           style={{
             width: "100%",
             resize: "vertical",
@@ -157,7 +172,7 @@ function RateStoreModal({ seller, onClose }: { seller: Seller; onClose: () => vo
 
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
           <Button variant="secondary" onClick={onClose}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             variant="primary"
@@ -166,7 +181,7 @@ function RateStoreModal({ seller, onClose }: { seller: Seller; onClose: () => vo
             loading={createReview.isPending}
             onClick={() => void submit()}
           >
-            Post review
+            {t("store.postReview")}
           </Button>
         </div>
       </div>
@@ -175,6 +190,7 @@ function RateStoreModal({ seller, onClose }: { seller: Seller; onClose: () => vo
 }
 
 export function Store() {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const storeId = storeIdFromPath(pathname);
   const { openProduct, nav, authed, promptLogin } = useBz();
@@ -196,7 +212,7 @@ export function Store() {
 
   const openRate = () => {
     if (!authed) {
-      promptLogin("Please sign in to review this store.");
+      promptLogin(t("store.signInToReview"));
       return;
     }
     setRating(true);
@@ -205,7 +221,7 @@ export function Store() {
   const openChat = () => {
     if (!seller) return;
     if (!authed) {
-      promptLogin("Please sign in to chat with this store.");
+      promptLogin(t("store.signInToChat"));
       return;
     }
     if (typeof sessionStorage !== "undefined") {
@@ -252,7 +268,7 @@ export function Store() {
             }}
           >
             <AppLink href={pathFromScreen("home")} className="bz-crumb">
-              Home
+              {t("common.home")}
             </AppLink>
             <Icon name="chevronRight" size={13} color="var(--ink-300)" />
             <span style={{ color: "var(--ink-700)" }}>{seller.name}</span>
@@ -313,7 +329,7 @@ export function Store() {
                   <RatingStars value={seller.rating} size={15} showVal count={seller.reviews} />
                 ) : (
                   <span style={{ fontSize: ".8125rem", color: "var(--ink-400)" }}>
-                    No ratings yet
+                    {t("store.noRatings")}
                   </span>
                 )}
               </div>
@@ -323,10 +339,10 @@ export function Store() {
               style={{ display: "flex", gap: 10, flexShrink: 0, flexWrap: "wrap" }}
             >
               <Button variant="primary" size="sm" icon="messageDots" onClick={openChat}>
-                Chat with seller
+                {t("store.chatWithSeller")}
               </Button>
               <Button variant="secondary" size="sm" icon="star" onClick={openRate}>
-                Rate store
+                {t("store.rateStore")}
               </Button>
             </div>
           </div>
@@ -343,8 +359,18 @@ export function Store() {
           >
             {(
               [
-                { id: "products", label: "Products", icon: "store", count: products.length },
-                { id: "reviews", label: "Reviews", icon: "star", count: reviews.length },
+                {
+                  id: "products",
+                  label: t("store.tabProducts"),
+                  icon: "store",
+                  count: products.length,
+                },
+                {
+                  id: "reviews",
+                  label: t("store.tabReviews"),
+                  icon: "star",
+                  count: reviews.length,
+                },
               ] as const
             ).map((t) => {
               const active = tab === t.id;
@@ -396,8 +422,8 @@ export function Store() {
             <div style={{ marginBottom: 40 }}>
               {products.length === 0 ? (
                 <EmptyState
-                  title="No products yet"
-                  message="This store hasn't listed any products."
+                  title={t("store.noProductsTitle")}
+                  message={t("store.noProductsMessage")}
                 />
               ) : (
                 <div
@@ -421,9 +447,9 @@ export function Store() {
             <div style={{ marginBottom: 40 }}>
               {reviews.length === 0 ? (
                 <EmptyState
-                  title="No reviews yet"
-                  message="Be the first to review this store."
-                  cta="Write a review"
+                  title={t("store.noReviewsTitle")}
+                  message={t("store.noReviewsMessage")}
+                  cta={t("reviews.writeReview")}
                   onCta={openRate}
                 />
               ) : (
@@ -459,7 +485,7 @@ export function Store() {
                         </div>
                       </div>
                       <div style={{ fontSize: ".75rem", color: "var(--ink-400)", marginBottom: 8 }}>
-                        {r.product} · {r.time}
+                        {formatReviewDate(r.time)}
                       </div>
                       <p
                         style={{
@@ -489,7 +515,7 @@ export function Store() {
                               marginBottom: 3,
                             }}
                           >
-                            Reply from {seller.name}
+                            {t("store.replyFrom", { name: seller.name })}
                           </div>
                           <p
                             style={{

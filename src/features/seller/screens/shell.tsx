@@ -11,7 +11,7 @@ import { isSellerOnboardingDeferred } from "@/lib/seller-onboarding";
 import { type SellerStoreSummary } from "@/services/api/seller-organization";
 import { useSellerInbox, useSellerBargains, useSellerOrganization } from "@/hooks/use-seller";
 import { useChatInbox } from "@/hooks/use-chat";
-import { useBz, LogoutConfirmModal } from "@/components/common";
+import { useBz, LogoutConfirmModal, LanguageToggle } from "@/components/common";
 import { bargainStatus } from "../_shared/bargain";
 import { SELLER_NAV } from "../_shared/nav";
 import { type SellerInboxOrderItem } from "../_shared/types";
@@ -141,6 +141,10 @@ export function SellerSidebar({
         </div>
 
         <div className="bz-side-foot">
+          <div className="bz-side-lang">
+            <span className="bz-side-en">{t("language.label")}</span>
+            <LanguageToggle compact />
+          </div>
           <button
             className="bz-side-item bz-side-logout"
             onClick={() => setConfirmLogout(true)}

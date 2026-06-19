@@ -1,5 +1,5 @@
 import type { CartLine, Product } from "@/types/catalog";
-import type { CheckoutPayload } from "@/services/api/orders";
+import type { CheckoutPayload, EsewaPaymentInit } from "@/services/api/orders";
 import type { ToastVariant } from "@/lib/toast-variant";
 
 export type { ToastVariant };
@@ -54,6 +54,8 @@ export interface BazaarContextValue {
   submitSearch: () => void;
   clearSearch: () => void;
   placeOrder: (payload: CheckoutPayload) => Promise<void>;
+  /** Start an eSewa payment: returns signed gateway form data (or null if not signed in). */
+  checkoutEsewa: (payload: CheckoutPayload) => Promise<EsewaPaymentInit | null>;
   authed: boolean;
   setAuthed: (authed: boolean) => void;
   product: Product | null;

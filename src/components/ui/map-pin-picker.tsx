@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Map as LeafletMap, Marker as LeafletMarker } from "leaflet";
 import { centerForCity } from "@/lib/nepal-map-centers";
 
@@ -24,6 +25,7 @@ function fixLeafletIcons(L: typeof import("leaflet")) {
 }
 
 export function MapPinPicker({ city, lat, lng, onPick, height = 220 }: MapPinPickerProps) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const markerRef = useRef<LeafletMarker | null>(null);
@@ -107,7 +109,7 @@ export function MapPinPicker({ city, lat, lng, onPick, height = 220 }: MapPinPic
         });
         setReady(true);
       } catch {
-        if (!cancelled) setError("Map could not load. Check your connection and try again.");
+        if (!cancelled) setError(t("common.mapPin.loadError"));
       }
     }
 
@@ -153,14 +155,14 @@ export function MapPinPicker({ city, lat, lng, onPick, height = 220 }: MapPinPic
           zIndex: 0,
           isolation: "isolate",
         }}
-        aria-label="Map — tap to place your delivery pin"
+        aria-label={t("common.mapPin.ariaLabel")}
       />
       {error && (
         <p style={{ margin: "8px 0 0", fontSize: ".8125rem", color: "var(--danger)" }}>{error}</p>
       )}
       {!error && (
         <p style={{ margin: "8px 0 0", fontSize: ".75rem", color: "var(--ink-500)" }}>
-          {ready ? "Tap the map or drag the pin to mark your exact spot." : "Loading map…"}
+          {ready ? t("common.mapPin.hint") : t("common.mapPin.loading")}
         </p>
       )}
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Icon } from "@/components/ui/kit";
 
 type PasswordInputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> & {
@@ -8,6 +9,7 @@ type PasswordInputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "typ
 };
 
 export function PasswordInput({ inputStyle, style, ...props }: PasswordInputProps) {
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
 
   return (
@@ -24,7 +26,7 @@ export function PasswordInput({ inputStyle, style, ...props }: PasswordInputProp
       <button
         type="button"
         onClick={() => setVisible((v) => !v)}
-        aria-label={visible ? "Hide password" : "Show password"}
+        aria-label={visible ? t("common.a11y.hidePassword") : t("common.a11y.showPassword")}
         className="bz-hover-tint"
         style={{
           position: "absolute",

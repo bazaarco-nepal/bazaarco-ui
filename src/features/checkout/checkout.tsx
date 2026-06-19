@@ -38,7 +38,7 @@ import {
   BackToTop,
 } from "@/components/ui";
 import { useCatalog } from "@/hooks/use-catalog";
-import { formatNPR } from "@/lib/money";
+import { formatNPR, roundRs } from "@/lib/money";
 import { bargainExpiryLabel } from "@/lib/bargain-expiry";
 import { useAddresses, pickDefaultAddress } from "@/hooks/use-addresses";
 import { SavedAddressPicker } from "@/features/profile/addresses";
@@ -74,6 +74,8 @@ import {
   deliveryTypeLabel,
 } from "@/lib/delivery-options";
 import { useOrder } from "@/hooks/use-orders";
+import { EsewaRedirectForm } from "@/components/payment/esewa-redirect-form";
+import type { EsewaPaymentInit } from "@/services/api/orders";
 import {
   selectedLines,
   allSelected,
@@ -83,8 +85,19 @@ import {
   toggleAll,
 } from "@/lib/cart-selection";
 
+// Cap the quantity stepper at the stock the server reports for this line, the
+// same rule the PDP uses. Falls back to 99 when stock is unknown; checkout
+// re-validates against live stock server-side regardless.
+function lineMaxQty(line) {
+  return typeof line.availableStock === "number" && line.availableStock > 0
+    ? Math.min(line.availableStock, 99)
+    : 99;
+}
+
 export function priceBreakdown(cart, deliveryTier = "standard") {
-  const subtotal = cart.reduce((s, it) => s + it.price * it.qty, 0);
+  // Snap every line and the total to 2dp so float dust from non-integer
+  // (e.g. bargained) unit prices never reaches the displayed total.
+  const subtotal = roundRs(cart.reduce((s, it) => s + roundRs(it.price * it.qty), 0));
   // Launch delivery pricing: a flat tier fee (Standard/Premium), auto-combined
   // when the cart spans 2+ sellers. No more free-over-Rs1000 threshold.
   const resolved = resolveDelivery(cart, deliveryTier);
@@ -94,7 +107,7 @@ export function priceBreakdown(cart, deliveryTier = "standard") {
     subtotal,
     delivery,
     discount,
-    total: subtotal + delivery - discount,
+    total: roundRs(subtotal + delivery - discount),
     deliveryLabel: resolved.label,
     deliveryType: resolved.type,
     combined: resolved.combined,
@@ -592,7 +605,11 @@ export function Cart() {
                       marginTop: 12,
                     }}
                   >
-                    <QtyStepper value={it.qty} onChange={(q) => setQty(it, q)} />
+                    <QtyStepper
+                      value={it.qty}
+                      onChange={(q) => setQty(it, q)}
+                      max={lineMaxQty(it)}
+                    />
                     <button
                       onClick={() => setConfirm(it)}
                       style={{
@@ -895,7 +912,7 @@ function isValidNpPhone(digits) {
 
 /* ---------- CHECKOUT (single page, 3 collapsed sections) ---------- */
 export function Checkout() {
-  const { cart, nav, placeOrder, updateCartQty, toast } = useBz();
+  const { cart, nav, placeOrder, checkoutEsewa, updateCartQty, toast } = useBz();
   const queryClient = useQueryClient();
   const authed = useBazaarStore((s) => s.authed);
   const buyerPhone = useBazaarStore((s) => s.buyerPhone);
@@ -926,9 +943,14 @@ export function Checkout() {
   const [saveNewAddress, setSaveNewAddress] = useState(true);
   const [newAddressLabel, setNewAddressLabel] = useState("Home");
   const [loading, setLoading] = useState(false);
+  // COD stays the default (safest). eSewa creates an awaiting_payment order and
+  // redirects to the gateway; the order is only placed after server verification.
+  const [payMethod, setPayMethod] = useState<"cod" | "esewa">("cod");
+  // Set once the backend returns eSewa form fields — triggers the redirect form.
+  const [esewaInit, setEsewaInit] = useState<EsewaPaymentInit | null>(null);
   const bd = priceBreakdown(selectedCart, deliveryTier);
   const total = bd.total;
-  const pay = "cod";
+  const pay = payMethod;
 
   // When there are no saved addresses, the buyer is entering their first one.
   const enteringNewAddress = useNewAddress || !savedAddresses.length;
@@ -968,7 +990,7 @@ export function Checkout() {
       setBuyerPhone(phoneDigits);
       const payload = {
         phone: phoneDigits,
-        paymentMethod: "cod",
+        paymentMethod: payMethod,
         deliveryTier,
         addressId: !enteringNewAddress && selectedAddressId ? selectedAddressId : undefined,
         deliveryAddress: {
@@ -984,6 +1006,17 @@ export function Checkout() {
               }
             : undefined,
       } as const;
+
+      if (payMethod === "esewa") {
+        // Create the awaiting_payment order + get signed fields, then redirect.
+        const init = await checkoutEsewa(payload);
+        if (payload.saveAddress) {
+          await queryClient.invalidateQueries({ queryKey: queryKeys.addresses.all });
+        }
+        if (init) setEsewaInit(init); // mounts EsewaRedirectForm → auto-submits
+        return;
+      }
+
       await placeOrder(payload);
       if (payload.saveAddress) {
         await queryClient.invalidateQueries({ queryKey: queryKeys.addresses.all });
@@ -995,13 +1028,17 @@ export function Checkout() {
     }
   };
 
-  const payLabel = "Place order";
+  const payLabel = payMethod === "esewa" ? "Pay with eSewa" : "Place order";
 
   return (
     <div
       className="bz-container-pad"
       style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 80px" }}
     >
+      {/* eSewa hand-off: full-screen overlay that auto-submits to the gateway. */}
+      {esewaInit && (
+        <EsewaRedirectForm paymentUrl={esewaInit.paymentUrl} fields={esewaInit.fields} />
+      )}
       <AppLink
         href={pathFromScreen("cart")}
         className="bz-back-link"
@@ -1185,6 +1222,7 @@ export function Checkout() {
                         <QtyStepper
                           value={it.qty}
                           onChange={(q) => updateCartQty(it.id, q, it.variantId)}
+                          max={lineMaxQty(it)}
                         />
                         <button
                           type="button"
@@ -1452,98 +1490,130 @@ export function Checkout() {
             <CheckoutSection
               n={3}
               title="Payment method"
-              summary="Cash on Delivery"
+              summary={payMethod === "esewa" ? "eSewa Wallet" : "Cash on Delivery"}
               complete
               open={openSec === 2}
               onToggle={() => setOpenSec(openSec === 2 ? -1 : 2)}
             >
               <div
-                aria-disabled="true"
-                style={{
-                  width: "100%",
-                  textAlign: "left",
-                  display: "flex",
-                  gap: 14,
-                  padding: 14,
-                  borderRadius: "var(--r-md)",
-                  border: "1.5px solid var(--line-200)",
-                  background: "var(--line-100)",
-                  alignItems: "center",
-                  cursor: "not-allowed",
-                  opacity: 0.92,
-                }}
+                role="radiogroup"
+                aria-label="Payment method"
+                style={{ display: "flex", flexDirection: "column", gap: 10 }}
               >
-                <span
+                {[
+                  {
+                    id: "cod" as const,
+                    label: "Cash on Delivery",
+                    desc: `Pay ${formatNPR(total)} when your order is delivered`,
+                  },
+                  {
+                    id: "esewa" as const,
+                    label: "eSewa Wallet",
+                    desc: "Pay now via eSewa — you'll be redirected to complete payment securely",
+                  },
+                ].map((opt) => {
+                  const active = payMethod === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => setPayMethod(opt.id)}
+                      style={{
+                        width: "100%",
+                        textAlign: "left",
+                        display: "flex",
+                        gap: 14,
+                        padding: 14,
+                        borderRadius: "var(--r-md)",
+                        border: `1.5px solid ${active ? "var(--blue)" : "var(--line-200)"}`,
+                        background: active ? "var(--tint-blue-50)" : "#fff",
+                        alignItems: "center",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: "50%",
+                          border: `2px solid ${active ? "var(--blue)" : "var(--ink-400)"}`,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {active && (
+                          <span
+                            style={{
+                              width: 10,
+                              height: 10,
+                              borderRadius: "50%",
+                              background: "var(--blue)",
+                            }}
+                          />
+                        )}
+                      </span>
+                      <span
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: "var(--r-sm)",
+                          background: active ? "var(--blue)" : "var(--line-200)",
+                          color: active ? "#fff" : "var(--ink-500)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Icon name="wallet" size={20} color={active ? "#fff" : "var(--ink-500)"} />
+                      </span>
+                      <span style={{ flex: 1 }}>
+                        <b
+                          style={{
+                            fontSize: ".9375rem",
+                            color: "var(--ink-900)",
+                            display: "block",
+                          }}
+                        >
+                          {opt.label}
+                        </b>
+                        <span style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}>
+                          {opt.desc}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {payMethod === "cod" && (
+                <div
                   style={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: "50%",
-                    border: "2px solid var(--ink-400)",
+                    marginTop: 14,
+                    background: "var(--tint-blue-50)",
+                    borderRadius: "var(--r-md)",
+                    padding: 12,
+                    fontSize: ".8125rem",
+                    color: "var(--blue)",
                     display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
+                    gap: 8,
                   }}
                 >
-                  <span
-                    style={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: "50%",
-                      background: "var(--ink-400)",
-                    }}
+                  <Icon
+                    name="shieldCheck"
+                    size={18}
+                    color="var(--blue)"
+                    style={{ flexShrink: 0 }}
                   />
-                </span>
-                <span
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: "var(--r-sm)",
-                    background: "var(--line-200)",
-                    color: "var(--ink-500)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  <Icon name="wallet" size={20} color="var(--ink-500)" />
-                </span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                    <b style={{ fontSize: ".9375rem", color: "var(--ink-700)" }}>
-                      Cash on Delivery
-                    </b>
-                    <Chip tone="neutral" size="sm">
-                      Only option
-                    </Chip>
-                  </div>
-                  <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 2 }}>
-                    Pay {formatNPR(total)} when your order is delivered
-                  </div>
+                  <span>
+                    Our delivery partner may call to confirm your address. Please keep your phone
+                    reachable.
+                  </span>
                 </div>
-              </div>
-              <p style={{ fontSize: ".8125rem", color: "var(--ink-400)", margin: "12px 0 0" }}>
-                eSewa, Khalti, and card payments are coming soon.
-              </p>
-              <div
-                style={{
-                  marginTop: 14,
-                  background: "var(--tint-blue-50)",
-                  borderRadius: "var(--r-md)",
-                  padding: 12,
-                  fontSize: ".8125rem",
-                  color: "var(--blue)",
-                  display: "flex",
-                  gap: 8,
-                }}
-              >
-                <Icon name="shieldCheck" size={18} color="var(--blue)" style={{ flexShrink: 0 }} />
-                <span>
-                  Our delivery partner may call to confirm your address. Please keep your phone
-                  reachable.
-                </span>
-              </div>
+              )}
             </CheckoutSection>
           </div>
 
@@ -1606,7 +1676,11 @@ export function Checkout() {
                 onClick={submit}
                 disabled={!canPlaceOrder}
               >
-                {loading ? "Placing order…" : payLabel}
+                {loading
+                  ? payMethod === "esewa"
+                    ? "Starting eSewa…"
+                    : "Placing order…"
+                  : payLabel}
               </Button>
               {!canPlaceOrder && (
                 <p

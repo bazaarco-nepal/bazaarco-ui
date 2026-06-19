@@ -25,7 +25,7 @@ export function SellerProfile() {
   const user = useBazaarStore((s) => s.user);
   const { data: storefront } = useSellerStorefront();
   const shopName = (storefront as { shopName?: string })?.shopName?.trim() || "Your shop";
-  const sellerName = displayName(user, "Seller");
+  const ownerName = displayName(user, "Seller");
 
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -85,7 +85,7 @@ export function SellerProfile() {
           {userInitial(user)}
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 600, fontSize: "1.125rem" }}>{sellerName}</div>
+          <div style={{ fontWeight: 600, fontSize: "1.125rem" }}>{ownerName}</div>
           <div style={{ fontSize: ".875rem", color: "var(--ink-500)" }}>
             {shopName} · {user?.email ?? "—"}
           </div>
@@ -116,7 +116,7 @@ export function SellerProfile() {
         }}
       >
         {[
-          { icon: "user", en: "Owner name", sub: sellerName, onAct: editOwnerName },
+          { icon: "user", en: "Owner name", sub: ownerName, onAct: editOwnerName },
           { icon: "mail", en: "Email", sub: user?.email ?? "—", onAct: undefined },
           {
             icon: "lock",

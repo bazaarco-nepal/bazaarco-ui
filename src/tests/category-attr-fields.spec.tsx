@@ -12,10 +12,11 @@ import { render, screen, fireEvent } from "@testing-library/react";
 // These tests pin that behaviour so a future tweak to the form can't silently
 // regress sellers back into the wall-of-empty-inputs (or the chip cloud) it replaced.
 
-// Keep i18n's real bootstrap but echo keys so any t() calls stay stable.
+// Use i18n's real bootstrap so t() resolves to actual English copy (the test
+// setup primes the singleton). Echoing keys would break assertions on visible text.
 vi.mock("react-i18next", async (importOriginal) => {
   const actual = await importOriginal<typeof import("react-i18next")>();
-  return { ...actual, useTranslation: () => ({ t: (key: string) => key }) };
+  return { ...actual };
 });
 
 // seller.tsx pulls in SPA-link helpers that reach for the Next router.

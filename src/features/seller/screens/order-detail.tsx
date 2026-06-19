@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslation, Trans } from "react-i18next";
 import { Button, Placeholder, EmptyState, AppLink } from "@/components/ui";
 import { SellerIcon } from "../_shared/icons";
 import { formatNPR } from "@/lib/money";
@@ -15,6 +16,7 @@ import { ConfirmModal } from "@/components/seller/confirm-modal";
 
 /* ---------- 4.3b Order detail — full-screen, one big action ---------- */
 export function SellerOrderDetail() {
+  const { t } = useTranslation();
   const { nav, toast } = useBz();
   const { data: inboxOrders = [] } = useSellerInbox();
   const o = sellerOrderRef.current || inboxOrders[0];
@@ -33,9 +35,9 @@ export function SellerOrderDetail() {
       >
         <EmptyState
           icon="package"
-          title="No order selected"
-          message="Open an order from the seller orders list."
-          cta="Back to orders"
+          title={t("seller.orderDetail.noOrderTitle")}
+          message={t("seller.orderDetail.noOrderMessage")}
+          cta={t("seller.orderDetail.backToOrders")}
           ctaHref={pathFromScreen("s-inbox")}
         />
       </div>
@@ -53,20 +55,20 @@ export function SellerOrderDetail() {
   };
 
   const nextLabel: Partial<Record<OrderStatus, string>> = {
-    placed: "Accept order",
-    accepted: "Start packaging",
-    packaging_started: "Mark ready for pickup",
-    ready_for_pickup: "Mark picked up",
-    picked_up: "Mark arrived at hub",
-    arrived_at_hub: "Mark out for delivery",
-    out_for_delivery: "Mark delivered",
+    placed: t("seller.orderDetail.actionAccept"),
+    accepted: t("seller.orderDetail.actionStartPackaging"),
+    packaging_started: t("seller.orderDetail.actionMarkReady"),
+    ready_for_pickup: t("seller.orderDetail.actionMarkPickedUp"),
+    picked_up: t("seller.orderDetail.actionMarkAtHub"),
+    arrived_at_hub: t("seller.orderDetail.actionMarkOutForDelivery"),
+    out_for_delivery: t("seller.orderDetail.actionMarkDelivered"),
   };
 
   const moveOrder = async (status: OrderStatus) => {
     try {
       const updated = await updateStatus.mutateAsync({ id: o.id, status });
       sellerOrderRef.current = updated;
-      toast(`Order ${o.id} updated to ${INBOX_LABEL[status].en}`);
+      toast(t("seller.orderDetail.statusUpdated", { id: o.id, status: INBOX_LABEL[status].en }));
       nav("s-inbox");
     } catch {
       /* API layer surfaces the error */
@@ -109,7 +111,7 @@ export function SellerOrderDetail() {
             textDecoration: "none",
           }}
         >
-          <SellerIcon name="chevronLeft" size={16} /> Back to orders
+          <SellerIcon name="chevronLeft" size={16} /> {t("seller.orderDetail.backToOrders")}
         </AppLink>
 
         {(() => {
@@ -185,7 +187,7 @@ export function SellerOrderDetail() {
                   {INBOX_LABEL[o.status].en}
                 </div>
                 <div style={{ fontSize: ".8125rem", color: "var(--ink-700)" }}>
-                  {o.time} · Order #{o.id}
+                  {o.time} · {t("seller.orderDetail.orderNumber", { id: o.id })}
                 </div>
               </div>
             </div>
@@ -212,7 +214,7 @@ export function SellerOrderDetail() {
               marginBottom: 8,
             }}
           >
-            Buyer
+            {t("seller.orderDetail.buyer")}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <BuyerAvatar
@@ -265,7 +267,7 @@ export function SellerOrderDetail() {
               marginBottom: 8,
             }}
           >
-            Item
+            {t("seller.orderDetail.item")}
           </div>
           <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
             <Placeholder
@@ -280,7 +282,7 @@ export function SellerOrderDetail() {
                 className="tnum"
                 style={{ fontSize: ".875rem", color: "var(--ink-500)", marginTop: 2 }}
               >
-                Qty {o.qty}
+                {t("seller.orderDetail.qty", { count: o.qty })}
               </div>
             </div>
           </div>
@@ -306,7 +308,7 @@ export function SellerOrderDetail() {
               marginBottom: 10,
             }}
           >
-            Payment
+            {t("seller.orderDetail.payment")}
           </div>
           <div
             style={{
@@ -316,7 +318,7 @@ export function SellerOrderDetail() {
               marginBottom: 6,
             }}
           >
-            <span style={{ color: "var(--ink-700)" }}>Buyer pays</span>
+            <span style={{ color: "var(--ink-700)" }}>{t("seller.orderDetail.buyerPays")}</span>
             <span
               className="tnum"
               style={{ fontWeight: 600, fontSize: "1.25rem", color: "var(--ink-900)" }}
@@ -333,7 +335,9 @@ export function SellerOrderDetail() {
               alignItems: "center",
             }}
           >
-            <span style={{ fontWeight: 600, color: "var(--ink-900)" }}>You get</span>
+            <span style={{ fontWeight: 600, color: "var(--ink-900)" }}>
+              {t("seller.orderDetail.youGet")}
+            </span>
             <span
               className="tnum"
               style={{ fontWeight: 600, fontSize: "1.375rem", color: "var(--success)" }}
@@ -342,7 +346,7 @@ export function SellerOrderDetail() {
             </span>
           </div>
           <div style={{ marginTop: 8, fontSize: ".75rem", color: "var(--ink-500)" }}>
-            Method: {o.pay}
+            {t("seller.orderDetail.method", { method: o.pay })}
           </div>
         </div>
 
@@ -359,7 +363,7 @@ export function SellerOrderDetail() {
               fontWeight: 600,
             }}
           >
-            <SellerIcon name="check" size={18} /> Accepted — waiting for other sellers to confirm
+            <SellerIcon name="check" size={18} /> {t("seller.orderDetail.awaitingOtherSellers")}
           </div>
         ) : nextStatus[o.status] ? (
           <Button
@@ -396,7 +400,7 @@ export function SellerOrderDetail() {
               textUnderlineOffset: 2,
             }}
           >
-            Can't fulfill this order
+            {t("seller.orderDetail.cantFulfill")}
           </button>
         )}
 
@@ -404,15 +408,16 @@ export function SellerOrderDetail() {
           open={cancelOpen}
           pending={updateStatus.isPending}
           icon="package"
-          title="Cancel this order?"
+          title={t("seller.orderDetail.cancelTitle")}
           message={
-            <>
-              Order <strong>#{o.id}</strong> for <strong>{o.buyer}</strong> will be cancelled. The
-              buyer will be notified and refunded. This cannot be undone.
-            </>
+            <Trans
+              i18nKey="seller.orderDetail.cancelMessage"
+              values={{ id: o.id, buyer: o.buyer }}
+              components={{ strong: <strong /> }}
+            />
           }
-          confirmLabel="Cancel order"
-          cancelLabel="Keep order"
+          confirmLabel={t("seller.orderDetail.cancelConfirm")}
+          cancelLabel={t("seller.orderDetail.cancelKeep")}
           onConfirm={() => {
             setCancelOpen(false);
             void moveOrder("cancelled");

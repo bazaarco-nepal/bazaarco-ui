@@ -12,8 +12,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 // flow in store-switcher.tsx), the store name + location are captured at
 // creation and then they're sent into KYC. The KYC "Confirm your details" step
 // must NOT ask for the same store name/location again — it pre-fills them from
-// the already-saved storefront. The document address (printed on the ID) stays
-// its own separate field.
+// the already-saved storefront.
 //
 // Hooks are mocked so the page renders without react-query or a network.
 
@@ -100,10 +99,6 @@ describe("SellerOnboarding — store address pre-fill", () => {
     expect(screen.getByDisplayValue("Bhaktapur Handicraft")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Kathmandu")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Chabahil")).toBeInTheDocument();
-    // The document address is still empty — it's a separate field.
-    expect(screen.getByPlaceholderText(/address exactly as printed on your document/i)).toHaveValue(
-      "",
-    );
   });
 
   it("leaves the fields blank for a first-time seller with no store yet", () => {

@@ -57,6 +57,24 @@ export function useCartMutations() {
       qty: number;
       variantId?: string | null;
     }) => cartApi.updateItem(productId, qty, variantId),
+    // Optimistically reflect the new quantity so the stepper derives its next
+    // value from the pending qty — two rapid clicks accumulate (1→2→3) instead
+    // of both reading a stale 1 and losing an increment.
+    onMutate: ({ productId, qty, variantId }) => {
+      const store = useBazaarStore.getState();
+      const prevCart = store.cart;
+      store.setCart(
+        prevCart.map((line) =>
+          line.id === productId && (line.variantId ?? null) === (variantId ?? null)
+            ? { ...line, qty }
+            : line,
+        ),
+      );
+      return { prevCart };
+    },
+    onError: (_error, _vars, context) => {
+      if (context?.prevCart) useBazaarStore.getState().setCart(context.prevCart);
+    },
     onSuccess: (data) => {
       syncCartToStore(data.items);
       void invalidate();

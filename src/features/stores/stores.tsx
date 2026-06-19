@@ -10,6 +10,7 @@ import {
   AppLink,
   StoreAvatar,
 } from "@/components/ui";
+import { useTranslation } from "react-i18next";
 import { useBz } from "@/components/common";
 import { useSellers } from "@/hooks/use-catalog";
 import { pathFromScreen } from "@/config/routes";
@@ -17,14 +18,15 @@ import type { Seller } from "@/types";
 
 type SortKey = "top" | "az";
 
-const SORTS: { value: SortKey; label: string }[] = [
-  { value: "top", label: "Top rated" },
-  { value: "az", label: "Name A–Z" },
+const SORTS: { value: SortKey; labelKey: string }[] = [
+  { value: "top", labelKey: "stores.sortTop" },
+  { value: "az", labelKey: "stores.sortAz" },
 ];
 
 /** Buyer-facing store directory: every seller, searchable by shop name or city,
  *  sortable, laid out as a dense brand grid (2-up on mobile, 4-up on desktop). */
 export function Stores() {
+  const { t } = useTranslation();
   const { openStore } = useBz();
   const sellersQuery = useSellers();
   const sellers = useMemo(() => sellersQuery.data ?? [], [sellersQuery.data]);
@@ -84,10 +86,10 @@ export function Stores() {
           }}
         >
           <AppLink href={pathFromScreen("home")} className="bz-crumb">
-            Home
+            {t("common.home")}
           </AppLink>
           <Icon name="chevronRight" size={13} color="var(--ink-300)" />
-          <span style={{ color: "var(--ink-700)" }}>All Stores</span>
+          <span style={{ color: "var(--ink-700)" }}>{t("screens.stores")}</span>
         </div>
 
         <h1
@@ -99,10 +101,10 @@ export function Stores() {
             letterSpacing: "-.01em",
           }}
         >
-          All Stores
+          {t("screens.stores")}
         </h1>
         <p style={{ margin: "0 0 18px", color: "var(--ink-500)", fontSize: ".9375rem" }}>
-          Discover every seller on BazaarCo.
+          {t("stores.subtitle")}
         </p>
 
         {/* search */}
@@ -122,8 +124,8 @@ export function Stores() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search stores by name or city"
-            aria-label="Search stores"
+            placeholder={t("stores.searchPlaceholder")}
+            aria-label={t("stores.searchAria")}
             style={{
               width: "100%",
               padding: "11px 38px 11px 42px",
@@ -137,7 +139,7 @@ export function Stores() {
           {q && (
             <button
               type="button"
-              aria-label="Clear search"
+              aria-label={t("stores.clearSearch")}
               onClick={() => setQ("")}
               className="bz-hover-tint"
               style={{
@@ -178,9 +180,10 @@ export function Stores() {
             className="tnum"
             style={{ color: "var(--ink-700)", fontSize: ".875rem", fontWeight: 600 }}
           >
-            {filtered.length === 1
-              ? "1 store"
-              : `${filtered.length.toLocaleString("en-IN")} stores`}
+            {t("stores.count", {
+              count: filtered.length,
+              formatted: filtered.length.toLocaleString("en-IN"),
+            })}
           </span>
           <label style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
             <span
@@ -192,12 +195,12 @@ export function Stores() {
                 letterSpacing: ".06em",
               }}
             >
-              Sort
+              {t("stores.sort")}
             </span>
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as SortKey)}
-              aria-label="Sort stores"
+              aria-label={t("stores.sortAria")}
               className="bz-hover-border"
               style={{
                 padding: "8px 12px",
@@ -212,7 +215,7 @@ export function Stores() {
             >
               {SORTS.map((o) => (
                 <option key={o.value} value={o.value}>
-                  {o.label}
+                  {t(o.labelKey)}
                 </option>
               ))}
             </select>
@@ -221,8 +224,8 @@ export function Stores() {
 
         {filtered.length === 0 ? (
           <EmptyState
-            title={q ? "No stores match your search" : "No stores yet"}
-            message={q ? "Try a different name or city." : "Check back soon for new sellers."}
+            title={q ? t("stores.noMatchTitle") : t("stores.emptyTitle")}
+            message={q ? t("stores.noMatchMessage") : t("stores.emptyMessage")}
           />
         ) : (
           <div className="bz-stores-grid" style={{ paddingBottom: 8 }}>
@@ -237,13 +240,14 @@ export function Stores() {
 }
 
 function StoreCard({ seller, onOpen }: { seller: Seller; onOpen: () => void }) {
+  const { t } = useTranslation();
   const hasReviews = seller.reviews > 0;
   return (
     <AppLink
       href={pathFromScreen("store", seller.id)}
       onNavigate={onOpen}
       className="bz-store-card"
-      ariaLabel={`Visit ${seller.name} store`}
+      ariaLabel={t("stores.visitStoreAria", { name: seller.name })}
     >
       <div className="bz-store-card__head">
         <StoreAvatar src={seller.avatar} name={seller.name} size={48} />
@@ -265,12 +269,12 @@ function StoreCard({ seller, onOpen }: { seller: Seller; onOpen: () => void }) {
         {hasReviews ? (
           <RatingStars value={seller.rating} size={14} showVal count={seller.reviews} />
         ) : (
-          <span className="bz-store-card__noreviews">No reviews yet</span>
+          <span className="bz-store-card__noreviews">{t("stores.noReviews")}</span>
         )}
       </div>
 
       <span className="bz-store-card__cta" aria-hidden="true">
-        Visit store <Icon name="arrowRight" size={14} />
+        {t("stores.visitStore")} <Icon name="arrowRight" size={14} />
       </span>
     </AppLink>
   );

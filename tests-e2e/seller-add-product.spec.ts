@@ -44,9 +44,9 @@ test.describe("seller add-product guided workflow", () => {
     await page.goto("/seller/products/add", { waitUntil: "domcontentloaded" });
     // The page should land on the form, not bounce to onboarding (which would
     // mean the account isn't a verified seller).
-    await expect(
-      page.getByRole("heading", { name: /add a product|add product/i }),
-    ).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("heading", { name: /add a product|add product/i })).toBeVisible({
+      timeout: 15_000,
+    });
   });
 
   test("renders the section navigator, applies the Fluent skin, and lists every section", async ({
@@ -87,6 +87,44 @@ test.describe("seller add-product guided workflow", () => {
     await nav.getByRole("button", { name: /review/i }).click();
     await expect(page.getByRole("heading", { name: /review & (publish|save)/i })).toBeVisible();
     await expect(page.locator("#sec-review")).toBeInViewport({ timeout: 5_000 });
+  });
+
+  test("per-variant bargaining: one variant on with its own floor, the rest off", async ({
+    page,
+  }) => {
+    // Reach the variant matrix: choose "a few versions" so the form seeds option
+    // groups and a priced row per combination.
+    const nav = page.getByRole("navigation", { name: "Form sections" });
+    await nav.getByRole("button", { name: /variants & pricing/i }).click();
+    await page.getByRole("radio", { name: /a few versions/i }).click();
+
+    // Give every generated version a price (the Bargaining step only lists
+    // priced versions).
+    const priceInputs = page.getByLabel(/^Price for /);
+    const count = await priceInputs.count();
+    expect(count).toBeGreaterThan(1);
+    for (let i = 0; i < count; i++) await priceInputs.nth(i).fill("1000");
+
+    // Bargaining step: one toggle per version, all off to start.
+    await nav.getByRole("button", { name: /bargaining/i }).click();
+    const toggles = page.getByRole("checkbox", { name: /^Allow bargaining on / });
+    const toggleCount = await toggles.count();
+    expect(toggleCount).toBe(count);
+    expect(await page.getByLabel(/^Lowest price for /).count()).toBe(0);
+
+    // Turn bargaining ON for the first version only — its floor input appears,
+    // the others stay off with no floor input.
+    await toggles.first().check();
+    const floors = page.getByLabel(/^Lowest price for /);
+    await expect(floors).toHaveCount(1);
+    await expect(toggles.nth(1)).not.toBeChecked();
+
+    // A floor that isn't far enough below the price is rejected inline…
+    await floors.first().fill("950");
+    await expect(floors.first()).toHaveAttribute("aria-invalid", "true");
+    // …and a valid floor (≥20% below Rs. 1000) clears the error.
+    await floors.first().fill("700");
+    await expect(floors.first()).not.toHaveAttribute("aria-invalid", "true");
   });
 
   test("offers to restore a local draft after a reload", async ({ page }) => {

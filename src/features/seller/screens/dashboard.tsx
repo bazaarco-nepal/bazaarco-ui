@@ -1123,13 +1123,27 @@ export function SellerDashboard() {
                 >
                   <SellerIcon name="message" size={18} color="var(--blue)" />
                   Messages
+                  {totalUnread > 0 && (
+                    <span
+                      style={{
+                        minWidth: 20,
+                        height: 20,
+                        padding: "0 6px",
+                        borderRadius: 999,
+                        background: "var(--danger)",
+                        color: "#fff",
+                        fontSize: ".7rem",
+                        fontWeight: 800,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {totalUnread}
+                    </span>
+                  )}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  {totalUnread > 0 && (
-                    <Chip tone="red" size="sm">
-                      {totalUnread}
-                    </Chip>
-                  )}
                   <Button
                     variant="ghost"
                     size="sm"

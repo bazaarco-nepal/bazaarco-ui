@@ -7,7 +7,6 @@ import {
   Logo,
   Button,
   Spinner,
-  IconButton,
   Chip,
   StatusPill,
   Price,
@@ -36,7 +35,6 @@ import { ASSETS } from "@/config/assets";
 import { useHome } from "@/hooks/use-home";
 import { useHomeExploreFeed } from "@/hooks/use-home-explore";
 import { useBazaarStore } from "@/store/bazaar-store";
-import { displayName } from "@/lib/display";
 import {
   BazaarCtx,
   useBz,
@@ -48,12 +46,11 @@ import {
   Navbar,
   Footer,
   DevViewSwitcher,
-  BuyerAvatar,
 } from "@/components/common";
 import { PicksSections } from "./_components/picks-tabs";
-import { SearchOverlay } from "./_components/search-overlay";
 import type { Product } from "@/types";
-import { BestPicksHero, BestPicksBanner } from "./_components/best-picks-hero";
+import { HomeHero } from "./_components/home-hero";
+import { FlashSaleRail, FlashSaleMobile } from "./_components/flash-sale";
 
 function Countdown({ initial = 3 * 3600 + 42 * 60 + 9 }) {
   const [s, setS] = useState(initial);
@@ -175,16 +172,12 @@ function SkeletonRail({ cols = 5 }) {
 export function Home() {
   const { t } = useTranslation();
   const { nav, openProduct, cartCount } = useBz();
-  const user = useBazaarStore((s) => s.user);
-  const [searchOpen, setSearchOpen] = useState(false);
   const { data: homeData, isLoading: homeLoading, isError: homeError, error: homeErr } = useHome();
   const exploreFeed = useHomeExploreFeed(homeData?.explore);
   const loading = homeLoading;
   const isError = homeError;
   const error = homeErr;
   const categories = homeData?.categories;
-  const hasHeroBanners = (homeData?.heroSlides?.length ?? 0) > 0;
-  const buyerGreeting = user ? displayName(user, "there") : null;
   const W = ({
     children,
     style,
@@ -209,82 +202,13 @@ export function Home() {
     <>
       <div style={{ paddingBottom: 8 }}>
         <BackToTop />
-        {/* Desktop hero — admin-managed banners only, hidden on phones. The whole
-            section (and its spacing) is omitted when the API returns no banners. */}
-        {hasHeroBanners && (
-          <div className="bz-hide-mobile">
-            <W className="bz-home-hero" style={{ paddingTop: 22 }}>
-              <BestPicksHero slides={homeData?.heroSlides} />
-            </W>
-          </div>
-        )}
-
-        {/* Mobile-only header — greeting + wishlist on top, search below.
-            Sticky so the name row + search bar stay pinned while content scrolls. */}
-        <div
-          className="bz-show-mobile"
-          style={{ position: "sticky", top: 0, zIndex: 50, background: "var(--page)" }}
-        >
-          <W style={{ paddingTop: 18, paddingBottom: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-              <AppLink
-                href={pathFromScreen("profile")}
-                ariaLabel="Your profile"
-                style={{ display: "inline-flex", flexShrink: 0 }}
-              >
-                <BuyerAvatar user={user} size={44} fontSize={18} />
-              </AppLink>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", fontWeight: 600 }}>
-                  {t("home.hello")} 🙏
-                </div>
-                <div
-                  style={{
-                    fontSize: "1.0625rem",
-                    fontWeight: 800,
-                    color: "var(--blue-deep)",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {buyerGreeting ?? "there"}
-                </div>
-              </div>
-              <IconButton
-                name="cart"
-                label={t("nav.cart")}
-                badge={cartCount}
-                href={pathFromScreen("cart")}
-                size={44}
-              />
+        {/* Desktop hero — carousel beside the Flash Sale rail. Hidden on phones. */}
+        <div className="bz-hide-mobile">
+          <W className="bz-home-hero" style={{ paddingTop: 22 }}>
+            <div className="bz-home-herorow">
+              <HomeHero />
+              <FlashSaleRail />
             </div>
-
-            {/* Search — tapping opens the full search overlay (no inline typing on home) */}
-            <button
-              type="button"
-              aria-label={t("home.searchAria")}
-              onClick={() => setSearchOpen(true)}
-              className="bz-hover-border"
-              style={{
-                width: "100%",
-                height: 50,
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                border: "1.5px solid var(--line-200)",
-                borderRadius: "var(--r-full)",
-                padding: "0 16px",
-                background: "#fff",
-                cursor: "pointer",
-                textAlign: "left",
-              }}
-            >
-              <Icon name="search" size={19} color="var(--ink-400)" />
-              <span style={{ color: "var(--ink-400)", fontSize: ".9375rem" }}>
-                {t("home.searchPlaceholder")}
-              </span>
-            </button>
           </W>
         </div>
 
@@ -362,58 +286,49 @@ export function Home() {
           </div>
         </W> */}
 
-        {/* categories — desktop wraps header + grid in a card (.bz-cat-card);
-            on mobile the card is `display:contents` so the layout is unchanged. */}
-        <W className="bz-home-section" style={{ paddingTop: 28 }}>
-          <div className="bz-cat-card">
-            <SectionHead
-              title={t("home.shopByCategory")}
-              action={t("home.allCategories")}
-              actionHref={browsePath({ view: "categories" })}
-            />
-            <div className="bz-cat-row">
-              {catalogLoading && !categories
-                ? Array.from({ length: 12 }).map((_, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        gap: 8,
-                      }}
-                    >
-                      <div
-                        className="skel"
-                        style={{ width: 64, height: 64, borderRadius: "50%" }}
-                      />
-                      <div className="skel" style={{ height: 10, width: 48, borderRadius: 4 }} />
-                    </div>
-                  ))
-                : (categories ?? [])
-                    .slice(0, 12)
-                    .map((c) => (
-                      <CategoryTile
-                        key={c.id}
-                        c={c}
-                        href={browsePath({ cat: c.id })}
-                        onClick={() => nav("browse", { cat: c.id })}
-                        shortOnMobile
-                      />
-                    ))}
-            </div>
+        {/* Hero carousel — mobile placement (under the header, above categories). */}
+        <div className="bz-show-mobile">
+          <W style={{ paddingTop: 14 }}>
+            <HomeHero />
+          </W>
+        </div>
+
+        {/* Shop by categories — bordered card tiles (revamp). */}
+        <W className="bz-home-section bz-home-categories" style={{ paddingTop: 28 }}>
+          <SectionHead
+            title={t("home.shopByCategory")}
+            action={t("home.allCategories")}
+            actionHref={browsePath({ view: "categories" })}
+          />
+          <div className="bz-homecat-grid">
+            {catalogLoading && !categories
+              ? Array.from({ length: 12 }).map((_, i) => (
+                  <div key={i} className="bz-cat__card" aria-hidden="true">
+                    <div className="bz-cat__card-thumb skel" />
+                    <span className="bz-cat__card-label">
+                      <span className="skel" style={{ width: 54, height: 10, borderRadius: 6 }} />
+                    </span>
+                  </div>
+                ))
+              : (categories ?? []).map((c) => (
+                  <CategoryTile
+                    key={c.id}
+                    c={c}
+                    variant="card"
+                    href={browsePath({ cat: c.id })}
+                    onClick={() => nav("browse", { cat: c.id })}
+                    shortOnMobile
+                  />
+                ))}
           </div>
         </W>
 
-        {/* Hero banner — mobile placement (after categories, per layout). Only
-            shown when the API returns admin-published banners. */}
-        {hasHeroBanners && (
-          <div className="bz-show-mobile">
-            <W style={{ paddingTop: 32 }}>
-              <BestPicksBanner slides={homeData?.heroSlides} />
-            </W>
-          </div>
-        )}
+        {/* Flash Sale — mobile placement (after categories, per the revamp). */}
+        <div className="bz-show-mobile">
+          <W style={{ paddingTop: 24 }}>
+            <FlashSaleMobile />
+          </W>
+        </div>
 
         <PicksSections
           newArrivals={homeData?.newArrivals}
@@ -571,7 +486,6 @@ export function Home() {
           )}
         </W>
       </div>
-      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   );
 }

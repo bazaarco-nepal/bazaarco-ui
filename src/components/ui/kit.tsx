@@ -2939,10 +2939,10 @@ export function BottomNav({
   const { t } = useTranslation();
   const buyerItems = [
     { id: "home", icon: "home", label: t("bottomNav.home") },
-    { id: "bargains", icon: "bargain", label: t("bottomNav.bargain") },
-    { id: "video", icon: "video", label: t("bottomNav.watch") },
-    { id: "orders", icon: "package", label: t("bottomNav.orders") },
-    { id: "profile", icon: "user", label: t("bottomNav.profile") },
+    { id: "browse", icon: "grid", label: t("bottomNav.categories") },
+    { id: "video", icon: "play", label: t("bottomNav.watch"), elevated: true },
+    { id: "cart", icon: "cart", label: t("bottomNav.cart"), badge: cartCount },
+    { id: "profile", icon: "user", label: t("bottomNav.account") },
   ];
   const sellerItems = [
     { id: "s-dashboard", icon: "home", label: t("bottomNav.home") },
@@ -2979,34 +2979,46 @@ export function BottomNav({
             onNav(it.id);
           }}
           aria-current={active === it.id ? "page" : undefined}
-          className={`bz-bnav__item${active === it.id ? " bz-bnav__item--active" : ""}`}
+          className={`bz-bnav__item${active === it.id ? " bz-bnav__item--active" : ""}${
+            "elevated" in it && it.elevated ? " bz-bnav__item--raised" : ""
+          }`}
         >
-          {it.id === "profile" && avatarUrl && !avatarFailed ? (
-            <img
-              src={avatarUrl}
-              alt=""
-              referrerPolicy="no-referrer"
-              onError={() => setAvatarFailed(true)}
-              style={{
-                width: 24,
-                height: 24,
-                borderRadius: "50%",
-                objectFit: "cover",
-                border: active === it.id ? "2px solid var(--blue)" : "2px solid var(--line-200)",
-              }}
-            />
-          ) : seller ? (
-            // Fluent icons (filled when active) to match the seller sidebar.
-            <SellerIcon name={it.icon} size={22} filled={active === it.id} />
+          {"elevated" in it && it.elevated ? (
+            // Center "Watch" — a raised red disc that floats above the bar.
+            <span className="bz-bnav__raise">
+              <Icon name={it.icon} size={26} fill="currentColor" color="#fff" />
+            </span>
           ) : (
-            <Icon name={it.icon} size={22} />
+            <span className="bz-bnav__ic">
+              {it.id === "profile" && avatarUrl && !avatarFailed ? (
+                <img
+                  src={avatarUrl}
+                  alt=""
+                  referrerPolicy="no-referrer"
+                  onError={() => setAvatarFailed(true)}
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    border:
+                      active === it.id ? "2px solid var(--blue)" : "2px solid var(--line-200)",
+                  }}
+                />
+              ) : seller ? (
+                // Fluent icons (filled when active) to match the seller sidebar.
+                <SellerIcon name={it.icon} size={22} filled={active === it.id} />
+              ) : (
+                <Icon name={it.icon} size={22} />
+              )}
+              {"badge" in it && it.badge > 0 ? (
+                <span className="bz-bnav__badge tnum" aria-hidden>
+                  {it.badge > 9 ? "9+" : it.badge}
+                </span>
+              ) : null}
+            </span>
           )}
           <span className="bz-bnav__label">{it.label}</span>
-          {"badge" in it && it.badge > 0 ? (
-            <span className="bz-bnav__badge tnum" aria-hidden>
-              {it.badge > 9 ? "9+" : it.badge}
-            </span>
-          ) : null}
         </button>
       ))}
     </nav>

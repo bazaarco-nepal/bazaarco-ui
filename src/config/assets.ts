@@ -5,24 +5,16 @@
 export const ASSETS = {
   logo: "/assets/bazaarco-logo.png",
   logoBlue: "/assets/bazaarco-logo-blue.png",
-  logoHighQuality: "/assets/logos/logo-high-quality.png",
   mascot: "/Hiro%20Background%20Removed.png",
   skyline: "/assets/kathmandu-skyline.png",
-  companySeal: "/assets/company-seal.png",
-  companySealEssentials: "/assets/logos/company-seal-essentials.png",
-  companyStamp: "/assets/logos/company-stamp.png",
-  logos: {
-    variant1: "/assets/logos/variant-1.png",
-    variant2: "/assets/logos/variant-2.png",
-    variant3: "/assets/logos/variant-3.png",
-    variant4: "/assets/logos/variant-4.png",
-    variant5: "/assets/logos/variant-5.png",
-    variant6: "/assets/logos/variant-6.png",
-    variant7: "/assets/logos/variant-7.png",
-    variant8: "/assets/logos/variant-8.png",
-    variant9: "/assets/logos/variant-9.png",
-    fluxHq: "/assets/logos/logo-flux-hq.jpeg",
+  // Homepage hero slides (from the revamp prototype). DEBT: hardcoded marketing
+  // slides — owner to wire admin-managed hero banners later.
+  hero: {
+    bargain: "/assets/hero/hero-bargain.png",
+    watch: "/assets/hero/hero-watch.png",
+    delivery: "/assets/hero/hero-delivery.png",
   },
+  companySeal: "/assets/company-seal.png",
   promotions: {
     hiro: "/Hiro%20Background%20Removed.png",
     promo7870: "/assets/promotions/promo-7870.png",

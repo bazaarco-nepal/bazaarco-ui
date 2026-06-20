@@ -1,17 +1,7 @@
 import type { Category, Product } from "@/types";
-import type { HeroBannerContent } from "@bazaarco/hero-banner/types";
 import { getData } from "./http";
 import { mapProduct } from "./catalog";
 import type { PaginatedData } from "./types";
-
-export interface HeroSlide {
-  id: string;
-  content: HeroBannerContent;
-  sponsored: boolean;
-  campaignLabel: string | null;
-  sponsorName: string | null;
-  endsAt: string | null;
-}
 
 export interface TrustItem {
   icon: string;
@@ -20,7 +10,6 @@ export interface TrustItem {
 }
 
 export interface HomeData {
-  heroSlides: HeroSlide[];
   trendingProductIds: string[];
   trending: Product[];
   trustItems: TrustItem[];
@@ -44,7 +33,6 @@ export const homeApi = {
     const raw = await getData<any>("/home");
     return {
       ...raw,
-      heroSlides: raw.heroSlides ?? [],
       trending: (raw.trending ?? []).map(mapProduct),
       categories: raw.categories ?? [],
       newArrivals: mapProductPage(

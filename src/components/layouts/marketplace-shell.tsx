@@ -40,11 +40,14 @@ function BottomNavBridge() {
   const user = useBazaarStore((s) => s.user);
 
   const bottomNavActive = (() => {
-    if (screen === "home" || screen === "browse") return "home";
-    if (screen === "bargains") return "bargains";
+    if (screen === "home") return "home";
+    if (screen === "browse" || screen === "search") return "browse";
+    if (screen === "video") return "video";
     if (screen === "cart" || screen === "checkout") return "cart";
-    if (screen === "orders" || screen === "tracking") return "orders";
+    // Account groups the buyer's personal screens, including orders.
     if (
+      screen === "orders" ||
+      screen === "tracking" ||
       screen === "profile" ||
       screen === "profile-edit" ||
       screen === "wishlist" ||

@@ -51,7 +51,8 @@ export interface BazaarContextValue {
   promptLogin: (message?: string) => void;
   query: string;
   setQuery: (query: string) => void;
-  submitSearch: () => void;
+  /** Submit the current query; pass a category id to scope results to it. */
+  submitSearch: (cat?: string) => void;
   clearSearch: () => void;
   placeOrder: (payload: CheckoutPayload) => Promise<void>;
   /** Start an eSewa payment: returns signed gateway form data (or null if not signed in). */

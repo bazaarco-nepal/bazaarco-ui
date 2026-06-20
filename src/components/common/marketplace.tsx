@@ -9,7 +9,6 @@ import {
   Logo,
   Button,
   Spinner,
-  IconButton,
   Chip,
   Price,
   Placeholder,
@@ -18,8 +17,11 @@ import {
   DeliverToModal,
   AppLink,
 } from "@/components/ui";
-import { pathFromScreen } from "@/config/routes";
+import { browsePath, pathFromScreen } from "@/config/routes";
+import { categoryImageBySlug } from "@/config/category-images";
 import { useLogout } from "@/hooks/use-auth";
+import { useCategories } from "@/hooks/use-catalog";
+import { formatNPR, roundRs } from "@/lib/money";
 import { useAddresses, useCreateAddress } from "@/hooks/use-addresses";
 import { deliveryToSavePayload } from "@/lib/saved-address";
 import { displayName } from "@/lib/display";
@@ -569,12 +571,14 @@ export function CategoryTile({
   compact = false,
   href,
   shortOnMobile = false,
+  variant = "circle",
 }: {
   c: Category;
   onClick: (c: Category) => void;
   compact?: boolean;
   href?: string;
   shortOnMobile?: boolean;
+  variant?: "circle" | "card";
 }) {
   const [hov, setHov] = useState(false);
   const locale = useBazaarStore((s) => s.locale);
@@ -583,8 +587,39 @@ export function CategoryTile({
   const shortLabel = shortOnMobile ? CATEGORY_SHORT_NAME[c.id] : undefined;
   const iconName = CATEGORY_ICON[c.id] ?? "tag";
   const iconSrc = CATEGORY_ICON_SRC[c.id];
+  const image = categoryImageBySlug[c.id];
   const Tag: React.ElementType = href ? AppLink : "button";
   const tagProps = href ? { href, onNavigate: () => onClick(c) } : { onClick: () => onClick(c) };
+
+  // Card variant — bordered tile holding a square category photo over its label
+  // (revamp home). The image label is decorative: the visible text label below
+  // gives the link its accessible name, so the photo stays aria-hidden to avoid
+  // a double announcement. Falls back to the line icon only if a slug has no
+  // curated image (e.g. an unknown backend category).
+  if (variant === "card") {
+    return (
+      <Tag {...tagProps} className="bz-cat__card">
+        <div className="bz-cat__card-thumb">
+          {image ? (
+            <img src={image.imageSrc} alt="" aria-hidden="true" draggable={false} loading="lazy" />
+          ) : (
+            <Icon name={iconName} size={30} color={tint.fg} stroke={1.8} />
+          )}
+        </div>
+        <span className="bz-cat__card-label">
+          {shortLabel ? (
+            <>
+              <span className="bz-hide-mobile">{label}</span>
+              <span className="bz-show-mobile">{shortLabel}</span>
+            </>
+          ) : (
+            label
+          )}
+        </span>
+      </Tag>
+    );
+  }
+
   return (
     <Tag
       {...tagProps}
@@ -864,10 +899,41 @@ function AccountMenuPanel({
   );
 }
 
+/* Inline EN / नेपाली switch for the navy utility bar — text style per the
+   prototype, with the active language highlighted. */
+function NavLang() {
+  const locale = useBazaarStore((s) => s.locale);
+  const setLocale = useBazaarStore((s) => s.setLocale);
+  return (
+    <span className="bz-navbar__lang" role="group" aria-label="Language">
+      <button
+        type="button"
+        lang="en"
+        aria-pressed={locale === "en"}
+        className={locale === "en" ? "is-active" : ""}
+        onClick={() => setLocale("en")}
+      >
+        EN
+      </button>
+      <span aria-hidden="true">/</span>
+      <button
+        type="button"
+        lang="ne"
+        aria-pressed={locale === "ne"}
+        className={locale === "ne" ? "is-active" : ""}
+        onClick={() => setLocale("ne")}
+      >
+        नेपाली
+      </button>
+    </span>
+  );
+}
+
 export function Navbar() {
   const { t } = useTranslation();
   const {
     nav,
+    cart,
     cartCount,
     wish,
     wishSellers,
@@ -880,30 +946,33 @@ export function Navbar() {
   } = useBz();
   const user = useBazaarStore((s) => s.user);
   const authed = useBazaarStore((s) => s.authed);
+  const locale = useBazaarStore((s) => s.locale);
   const logoutMutation = useLogout();
   const navLabel = displayName(user, "Account");
+  const { data: categories = [] } = useCategories();
+  // Cart subtotal shown in the navbar — recomputed from the live cart lines the
+  // same way checkout does (rupees, snapped per line) so it always matches.
+  const cartTotal = roundRs(cart.reduce((sum, line) => sum + roundRs(line.price * line.qty), 0));
+  const savedCount = wish.length + wishSellers.length;
   const [menuOpen, setMenuOpen] = useState(false);
+  // Search category scope (the "All ▾" selector). null = all categories.
+  const [scope, setScope] = useState<string | null>(null);
+  const [scopeOpen, setScopeOpen] = useState(false);
   const [deliverOpen, setDeliverOpen] = useState(false);
   const deliveryLocation = useBazaarStore((s) => s.deliveryLocation);
   const setDeliveryLocation = useBazaarStore((s) => s.setDeliveryLocation);
   const deliverLabel = formatDeliverToLabel(deliveryLocation);
   const { data: savedAddresses = [] } = useAddresses(authed);
   const createAddress = useCreateAddress();
-  // Only offer the navbar "Deliver to" picker while the buyer has no saved
-  // address yet. Once one exists, the profile is the source of truth.
+  // Only open the "Deliver to" picker while the buyer has no saved address yet.
+  // Once one exists, the profile is the source of truth, so the chip links there.
   const hasSavedAddress = savedAddresses.length > 0;
   const desktopMenuRef = useRef<HTMLDivElement | null>(null);
-  const mobileSheetRef = useRef<HTMLDivElement | null>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!menuOpen) return;
-    const isMobile = window.matchMedia("(max-width: 768px)").matches;
-    const prevOverflow = document.body.style.overflow;
-    if (isMobile) document.body.style.overflow = "hidden";
     const onDocClick = (e: MouseEvent) => {
-      const t = e.target as Node;
-      if (desktopMenuRef.current?.contains(t) || mobileSheetRef.current?.contains(t)) return;
+      if (desktopMenuRef.current?.contains(e.target as Node)) return;
       setMenuOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
@@ -912,11 +981,35 @@ export function Navbar() {
     document.addEventListener("mousedown", onDocClick);
     document.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = prevOverflow;
       document.removeEventListener("mousedown", onDocClick);
       document.removeEventListener("keydown", onKey);
     };
   }, [menuOpen]);
+
+  useEffect(() => {
+    if (!scopeOpen) return;
+    const onDocClick = (e: MouseEvent) => {
+      // searchField renders on both breakpoints, so match the scope by class
+      // rather than a single ref (which would bind to the hidden mobile copy).
+      if ((e.target as HTMLElement).closest?.(".bz-navbar__scope-wrap")) return;
+      setScopeOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setScopeOpen(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [scopeOpen]);
+
+  const openDeliver = () => (hasSavedAddress ? nav("profile") : setDeliverOpen(true));
+  const runSearch = () => submitSearch(scope ?? undefined);
+  const scopeLabel = scope
+    ? (CATEGORY_SHORT_NAME[scope] ?? categories.find((c) => c.id === scope)?.en ?? t("nav.search"))
+    : t("nav.all");
 
   const goAndClose = (s: string) => {
     setMenuOpen(false);
@@ -939,260 +1032,305 @@ export function Navbar() {
     });
   };
 
-  return (
-    <header className={`bz-navbar${screen === "home" ? " bz-hide-mobile" : ""}`}>
-      <div className="bz-navbar__trust bz-hide-mobile">
-        <div className="bz-navbar__trust-inner">
-          {/* suppressHydrationWarning: text is locale-sensitive; server may render
-              "en" on first visit before the locale cookie is set, while the client
-              immediately uses the stored locale. The cookie approach eliminates this
-              after the first visit; the prop silences the warning on that first load. */}
-          <span
-            suppressHydrationWarning
-            style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
-          >
-            <Icon name="video" size={13} color="#fff" /> {t("trust.shopping")}
-          </span>
-          <span style={{ opacity: 0.35 }}>·</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-            <Icon name="play" size={13} color="#fff" /> {t("trust.videos")}
-          </span>
-          <span style={{ opacity: 0.35 }}>·</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-            <Icon name="bargain" size={13} color="#fff" /> {t("trust.bargain")}
-          </span>
-          <span style={{ opacity: 0.35 }}>·</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-            <Icon name="truck" size={13} color="#fff" /> {t("trust.delivery")}
-          </span>
-        </div>
-      </div>
-
-      <div className="bz-navbar__inner">
-        <AppLink
-          href={pathFromScreen("home")}
-          ariaLabel={t("nav.homeAria")}
-          className="bz-navbar__brand bz-hide-mobile"
+  const onSearchKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") runSearch();
+  };
+  const deliverChip = (
+    <button
+      type="button"
+      onClick={openDeliver}
+      aria-haspopup={hasSavedAddress ? undefined : "dialog"}
+      aria-expanded={hasSavedAddress ? undefined : deliverOpen}
+      aria-label={t("common.deliverToAria", { label: deliverLabel })}
+      className="bz-navbar__deliver"
+    >
+      <Icon name="mapPin" size={14} color="var(--gold)" />
+      <span>
+        {t("nav.deliverTo")} <strong>{deliverLabel}</strong>
+      </span>
+      {!hasSavedAddress && <span className="bz-navbar__deliver-change">{t("common.change")}</span>}
+    </button>
+  );
+  const searchField = (
+    <div className="bz-navbar__search">
+      {/* Category scope — desktop only, mirrors the prototype's "All ▾". */}
+      <div className="bz-navbar__scope-wrap bz-hide-mobile">
+        <button
+          type="button"
+          className="bz-navbar__scope"
+          aria-haspopup="menu"
+          aria-expanded={scopeOpen}
+          onClick={() => setScopeOpen((o) => !o)}
         >
-          <Logo height={38} />
-        </AppLink>
-
-        {/* Mobile-only: buyer's profile picture replaces the logo and links to the profile page */}
-        <AppLink
-          href={pathFromScreen("profile")}
-          ariaLabel={t("nav.profileAria")}
-          className="bz-navbar__brand bz-show-mobile"
-        >
-          <BuyerAvatar user={user} size={40} fontSize={16} />
-        </AppLink>
-
-        {!hasSavedAddress && (
-          <>
+          <span>{scopeLabel}</span>
+          <Icon name="chevronDown" size={13} />
+        </button>
+        {scopeOpen && (
+          <div role="menu" className="bz-navbar__scope-menu no-scrollbar">
             <button
               type="button"
-              onClick={() => setDeliverOpen(true)}
-              aria-haspopup="dialog"
-              aria-expanded={deliverOpen}
-              aria-label={t("common.deliverToAria", { label: deliverLabel })}
-              className="bz-navbar__deliver bz-hide-mobile"
-            >
-              <Icon name="mapPin" size={16} color="var(--red)" />
-              <div style={{ textAlign: "left", lineHeight: 1.15 }}>
-                <div
-                  style={{
-                    fontSize: ".625rem",
-                    color: "var(--ink-400)",
-                    fontWeight: 700,
-                    letterSpacing: ".06em",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  {t("nav.deliverTo")}
-                </div>
-                <div>{deliverLabel}</div>
-              </div>
-              <Icon name="chevronDown" size={14} color="var(--ink-500)" />
-            </button>
-
-            <DeliverToModal
-              open={deliverOpen}
-              value={deliveryLocation}
-              onClose={() => setDeliverOpen(false)}
-              onSave={async (loc: DeliveryLocation) => {
-                setDeliveryLocation(loc);
-                setDeliverOpen(false);
-                toast(t("delivery.deliveringTo", { label: formatDeliverToLabel(loc) }));
-                // Mirror checkout: persist the entered address to the buyer's
-                // profile so it becomes their (first, default) saved address.
-                if (authed) {
-                  try {
-                    await createAddress.mutateAsync(deliveryToSavePayload(loc, "Home", true));
-                  } catch {
-                    /* local delivery location already set; ignore sync error */
-                  }
-                }
-              }}
-            />
-          </>
-        )}
-
-        <div className="bz-navbar__search">
-          <button
-            type="button"
-            aria-label={t("nav.search")}
-            onClick={submitSearch}
-            className="bz-navbar__search-btn"
-          >
-            <Icon name="search" size={19} />
-          </button>
-          <input
-            ref={searchInputRef}
-            className={`bz-navbar__search-input${query ? " has-clear" : ""}`}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") submitSearch();
-            }}
-            placeholder={t("nav.search")}
-            aria-label={t("nav.searchProducts")}
-          />
-          {query && (
-            <button
-              type="button"
-              aria-label={t("common.a11y.clearSearch")}
-              className="bz-navbar__search-clear"
+              role="menuitemradio"
+              aria-checked={scope === null}
+              className={`bz-navbar__scope-item${scope === null ? " is-active" : ""}`}
               onClick={() => {
-                clearSearch();
-                searchInputRef.current?.focus();
+                setScope(null);
+                setScopeOpen(false);
               }}
             >
-              <Icon name="x" size={16} />
+              {t("home.allCategories")}
             </button>
-          )}
-        </div>
-
-        <div className="bz-navbar__mobile-actions">
-          <IconButton
-            name="cart"
-            label={t("nav.cart")}
-            badge={cartCount}
-            href={pathFromScreen("cart")}
-            size={40}
-          />
-        </div>
-
-        <nav className="bz-navbar__nav bz-navbar__nav--desktop">
-          <AppLink
-            href={pathFromScreen("stores")}
-            className={`bz-navbar__link${screen === "stores" ? " is-active" : ""}`}
-          >
-            <Icon name="store" size={19} /> {t("nav.stores")}
-          </AppLink>
-          <AppLink
-            href={pathFromScreen("video")}
-            className={`bz-navbar__link bz-navbar__link--video${screen === "video" ? " is-active" : ""}`}
-          >
-            <Icon name="video" size={19} /> {t("nav.watch")}
-          </AppLink>
-          <IconButton
-            name="heart"
-            label={t("nav.wishlist")}
-            badge={wish.length + wishSellers.length}
-            href={pathFromScreen("wishlist")}
-          />
-          <AppLink
-            href={pathFromScreen("bargains")}
-            ariaLabel={t("nav.bargain")}
-            title={t("nav.bargain")}
-            className="bz-navbar__link bz-navbar__link--bargain"
-          >
-            <Icon name="bargain" size={19} color="#fff" /> {t("nav.bargain")}
-          </AppLink>
-          <IconButton
-            name="cart"
-            label={t("nav.cart")}
-            badge={cartCount}
-            href={pathFromScreen("cart")}
-          />
-          <div ref={desktopMenuRef} className="bz-navbar__account-wrap">
-            <button
-              type="button"
-              onClick={() => setMenuOpen((o) => !o)}
-              aria-haspopup="menu"
-              aria-expanded={menuOpen}
-              className={`bz-navbar__account-btn${menuOpen ? " is-open" : ""}`}
-            >
-              <BuyerAvatar user={user} size={26} fontSize={12} />
-              <span
-                className="bz-hide-mobile"
-                style={{ fontSize: ".8125rem", fontWeight: 600, color: "var(--ink-700)" }}
-              >
-                {navLabel}
-              </span>
-              <Icon name="chevronDown" size={14} color="var(--ink-500)" />
-            </button>
-            {menuOpen && (
-              <div role="menu" className="bz-navbar__menu bz-hide-mobile">
-                <AccountMenuPanel
-                  navLabel={navLabel}
-                  user={user}
-                  authed={authed}
-                  goAndClose={goAndClose}
-                  onLogout={requestLogout}
-                />
-              </div>
-            )}
-          </div>
-        </nav>
-      </div>
-
-      {menuOpen && (
-        <>
-          <div
-            className="bz-navbar__overlay bz-show-mobile"
-            aria-hidden
-            onClick={() => setMenuOpen(false)}
-          />
-          <div
-            ref={mobileSheetRef}
-            className="bz-navbar__sheet bz-show-mobile"
-            role="dialog"
-            aria-modal="true"
-            aria-label={t("common.a11y.accountMenu")}
-          >
-            <div className="bz-navbar__sheet-head">
-              <h2 className="bz-navbar__sheet-title">{t("nav.menu")}</h2>
+            {categories.map((c) => (
               <button
+                key={c.id}
                 type="button"
-                aria-label={t("common.a11y.closeMenu")}
-                onClick={() => setMenuOpen(false)}
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: "50%",
-                  border: "none",
-                  background: "var(--line-100)",
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                role="menuitemradio"
+                aria-checked={scope === c.id}
+                className={`bz-navbar__scope-item${scope === c.id ? " is-active" : ""}`}
+                onClick={() => {
+                  setScope(c.id);
+                  setScopeOpen(false);
                 }}
               >
-                <Icon name="x" size={18} />
+                {displayCategoryLabel(c, locale)}
               </button>
-            </div>
-            <div role="menu">
-              <AccountMenuPanel
-                navLabel={navLabel}
-                user={user}
-                authed={authed}
-                goAndClose={goAndClose}
-                onLogout={requestLogout}
-              />
+            ))}
+          </div>
+        )}
+      </div>
+      {/* Leading magnifier — mobile only (desktop puts the icon in the red button). */}
+      <span className="bz-navbar__search-lead bz-show-mobile" aria-hidden="true">
+        <Icon name="search" size={17} color="var(--ink-400)" />
+      </span>
+      <input
+        className="bz-navbar__search-input"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={onSearchKey}
+        placeholder={t("home.searchPlaceholder")}
+        aria-label={t("nav.searchProducts")}
+      />
+      {query && (
+        <button
+          type="button"
+          aria-label={t("common.a11y.clearSearch")}
+          className="bz-navbar__search-clear"
+          onClick={(e) => {
+            clearSearch();
+            // Refocus the input in THIS search field (the component renders one
+            // per breakpoint, so target the sibling rather than a shared ref).
+            e.currentTarget.closest(".bz-navbar__search")?.querySelector("input")?.focus();
+          }}
+        >
+          <Icon name="x" size={16} />
+        </button>
+      )}
+      <button
+        type="button"
+        aria-label={t("nav.search")}
+        onClick={runSearch}
+        className="bz-navbar__search-btn"
+      >
+        <Icon name="search" size={18} color="#fff" className="bz-hide-mobile" />
+        <span className="bz-show-mobile">{t("nav.go")}</span>
+      </button>
+    </div>
+  );
+  const navCategories = categories.slice(0, 10);
+  const categoryStrip = (
+    <>
+      <AppLink
+        href={browsePath({ view: "categories" })}
+        onNavigate={() => nav("browse")}
+        className="bz-navbar__allcats"
+      >
+        <Icon name="menu" size={16} className="bz-hide-mobile" />
+        <span className="bz-hide-mobile">{t("home.allCategories")}</span>
+        <span className="bz-show-mobile">{t("nav.all")}</span>
+      </AppLink>
+      {navCategories.map((c) => (
+        <AppLink
+          key={c.id}
+          href={browsePath({ cat: c.id })}
+          onNavigate={() => nav("browse", { cat: c.id })}
+          className="bz-navbar__cat"
+        >
+          {displayCategoryLabel(c, locale)}
+        </AppLink>
+      ))}
+    </>
+  );
+
+  return (
+    <header className="bz-navbar">
+      {/* ===================== DESKTOP ===================== */}
+      <div className="bz-navbar__desktop bz-hide-mobile">
+        {/* Tier 1 — utility */}
+        <div className="bz-navbar__utility">
+          <div className="bz-navbar__utility-inner">
+            {deliverChip}
+            <div className="bz-navbar__utility-links">
+              <AppLink href={pathFromScreen("s-onboarding")} className="bz-navbar__util-link">
+                {t("footer.becomeSeller")}
+              </AppLink>
+              <AppLink href={pathFromScreen("tracking")} className="bz-navbar__util-link">
+                {t("footer.trackOrder")}
+              </AppLink>
+              <AppLink href={pathFromScreen("help")} className="bz-navbar__util-link">
+                {t("footer.helpCol")}
+              </AppLink>
+              <NavLang />
             </div>
           </div>
-        </>
-      )}
+        </div>
+
+        {/* Tier 2 — brand + search + actions */}
+        <div className="bz-navbar__main">
+          <div className="bz-navbar__main-inner">
+            <AppLink
+              href={pathFromScreen("home")}
+              ariaLabel={t("nav.homeAria")}
+              className="bz-navbar__brand"
+            >
+              <Logo height={38} />
+            </AppLink>
+            {searchField}
+            <div className="bz-navbar__actions">
+              <AppLink href={pathFromScreen("cart")} className="bz-navbar__action">
+                <span className="bz-navbar__action-ic">
+                  <Icon name="cart" size={23} color="#fff" />
+                  {cartCount > 0 && <span className="bz-navbar__action-badge">{cartCount}</span>}
+                </span>
+                <span className="bz-navbar__action-text">
+                  <span className="bz-navbar__action-cap">{t("nav.cart")}</span>
+                  <span className="bz-navbar__action-main tnum">{formatNPR(cartTotal)}</span>
+                </span>
+              </AppLink>
+              <AppLink
+                href={pathFromScreen("video")}
+                className={`bz-navbar__action${screen === "video" ? " is-active" : ""}`}
+              >
+                <Icon name="video" size={22} color="var(--on-navy-300)" />
+                <span className="bz-navbar__action-text">
+                  <span className="bz-navbar__action-cap">BazaarCo</span>
+                  <span className="bz-navbar__action-main">{t("nav.watch")}</span>
+                </span>
+              </AppLink>
+              <AppLink href={pathFromScreen("wishlist")} className="bz-navbar__action">
+                <span className="bz-navbar__action-ic">
+                  <Icon name="heart" size={22} color="var(--on-navy-300)" />
+                  {savedCount > 0 && (
+                    <span className="bz-navbar__action-badge bz-navbar__action-badge--gold">
+                      {savedCount}
+                    </span>
+                  )}
+                </span>
+                <span className="bz-navbar__action-text">
+                  <span className="bz-navbar__action-cap">{t("nav.your")}</span>
+                  <span className="bz-navbar__action-main">{t("nav.saved")}</span>
+                </span>
+              </AppLink>
+              <div ref={desktopMenuRef} className="bz-navbar__account-wrap">
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen((o) => !o)}
+                  aria-haspopup="menu"
+                  aria-expanded={menuOpen}
+                  className={`bz-navbar__action bz-navbar__account-btn${menuOpen ? " is-open" : ""}`}
+                >
+                  {authed ? (
+                    <BuyerAvatar user={user} size={26} fontSize={12} />
+                  ) : (
+                    <Icon name="user" size={22} color="var(--on-navy-300)" />
+                  )}
+                  <span className="bz-navbar__action-text">
+                    <span className="bz-navbar__action-cap">{t("nav.account")}</span>
+                    <span className="bz-navbar__action-main">
+                      {authed ? navLabel : t("nav.signIn")}{" "}
+                      <Icon name="chevronDown" size={13} color="currentColor" />
+                    </span>
+                  </span>
+                </button>
+                {menuOpen && (
+                  <div role="menu" className="bz-navbar__menu">
+                    <AccountMenuPanel
+                      navLabel={navLabel}
+                      user={user}
+                      authed={authed}
+                      goAndClose={goAndClose}
+                      onLogout={requestLogout}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tier 3 — category nav */}
+        <div className="bz-navbar__cats">
+          <div className="bz-navbar__cats-inner no-scrollbar">{categoryStrip}</div>
+        </div>
+      </div>
+
+      {/* ===================== MOBILE ===================== */}
+      <div className="bz-navbar__mobile bz-show-mobile">
+        <div className="bz-navbar__m-bar">
+          <div className="bz-navbar__m-top">
+            <AppLink
+              href={pathFromScreen("home")}
+              ariaLabel={t("nav.homeAria")}
+              className="bz-navbar__brand"
+            >
+              <Logo height={24} />
+            </AppLink>
+            <div className="bz-navbar__m-icons">
+              <AppLink
+                href={pathFromScreen("wishlist")}
+                ariaLabel={t("nav.wishlist")}
+                className="bz-navbar__m-icon"
+              >
+                <Icon name="heart" size={22} color="var(--on-navy-300)" />
+                {savedCount > 0 && (
+                  <span className="bz-navbar__action-badge bz-navbar__action-badge--gold">
+                    {savedCount}
+                  </span>
+                )}
+              </AppLink>
+              <AppLink
+                href={pathFromScreen("cart")}
+                ariaLabel={t("nav.cart")}
+                className="bz-navbar__m-icon"
+              >
+                <Icon name="cart" size={22} color="#fff" />
+                {cartCount > 0 && <span className="bz-navbar__action-badge">{cartCount}</span>}
+              </AppLink>
+            </div>
+          </div>
+          {searchField}
+          {deliverChip}
+        </div>
+        <div className="bz-navbar__cats-strip no-scrollbar">{categoryStrip}</div>
+      </div>
+
+      <DeliverToModal
+        open={deliverOpen}
+        value={deliveryLocation}
+        onClose={() => setDeliverOpen(false)}
+        onSave={async (loc: DeliveryLocation) => {
+          setDeliveryLocation(loc);
+          setDeliverOpen(false);
+          toast(t("delivery.deliveringTo", { label: formatDeliverToLabel(loc) }));
+          // Mirror checkout: persist the entered address to the buyer's profile
+          // so it becomes their (first, default) saved address.
+          if (authed) {
+            try {
+              await createAddress.mutateAsync(deliveryToSavePayload(loc, "Home", true));
+            } catch {
+              /* local delivery location already set; ignore sync error */
+            }
+          }
+        }}
+      />
 
       {/* Shared logout confirmation — every logout entry point opens this. */}
       <LogoutConfirmModal

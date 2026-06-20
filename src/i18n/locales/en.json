@@ -27,7 +27,11 @@
     "profileAria": "Your profile",
     "viewProfile": "View profile",
     "bargains": "Bargains",
-    "messages": "Messages"
+    "messages": "Messages",
+    "your": "Your",
+    "saved": "Saved",
+    "all": "All",
+    "go": "Go"
   },
   "trust": {
     "shopping": "TikTok-style shopping",
@@ -41,12 +45,16 @@
     "watch": "Watch",
     "orders": "Orders",
     "profile": "Profile",
+    "categories": "Categories",
+    "cart": "Cart",
+    "account": "Account",
     "add": "Add",
     "more": "More",
     "aria": "Bottom navigation"
   },
   "common": {
     "cancel": "Cancel",
+    "change": "Change",
     "save": "Save",
     "notNow": "Not now",
     "reload": "Reload",
@@ -291,7 +299,7 @@
     "hello": "Namaste",
     "searchPlaceholder": "Search for products, brands…",
     "searchAria": "Search for products, brands",
-    "shopByCategory": "Shop by category",
+    "shopByCategory": "Shop by categories",
     "lovedInNepal": "Loved in Nepal",
     "newArrivals": "New Arrivals",
     "topPicks": "Top Picks",

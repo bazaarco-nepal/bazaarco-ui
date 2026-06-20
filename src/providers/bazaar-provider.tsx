@@ -249,12 +249,15 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
     [router, scrollTop],
   );
 
-  const submitSearch = useCallback(() => {
-    const q = useBazaarStore.getState().query.trim();
-    useBazaarStore.getState().setScreenOverride("search");
-    router.push(searchPath({ q: q || undefined }));
-    setTimeout(scrollTop, 0);
-  }, [router, scrollTop]);
+  const submitSearch = useCallback(
+    (cat?: string) => {
+      const q = useBazaarStore.getState().query.trim();
+      useBazaarStore.getState().setScreenOverride("search");
+      router.push(searchPath({ q: q || undefined, cat: cat || undefined }));
+      setTimeout(scrollTop, 0);
+    },
+    [router, scrollTop],
+  );
 
   const clearSearch = useCallback(() => {
     useBazaarStore.getState().setQuery("");

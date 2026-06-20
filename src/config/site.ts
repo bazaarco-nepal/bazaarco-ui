@@ -17,7 +17,7 @@ export const SITE_DESCRIPTION =
  * keep these in sync if the tokens change.
  */
 export const THEME_COLOR = "#1d4ed8";
-export const BACKGROUND_COLOR = "#f8fafc";
+export const BACKGROUND_COLOR = "#fbf8f2";
 
 /** Default social share image (served from /public). */
 export const OG_IMAGE = "/open-graph.png";

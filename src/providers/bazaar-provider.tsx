@@ -6,7 +6,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { BazaarCtx, LoginPromptModal } from "@/components/common";
 import { BuyerPack, ToastContainer } from "@/components/ui";
-import { useCurrentUser } from "@/hooks/use-auth";
 import { useCartMutations, useCartQuery } from "@/hooks/use-cart";
 import { useSavedMutations, useSavedQuery } from "@/hooks/use-saved";
 import { useProduct } from "@/hooks/use-catalog";
@@ -33,28 +32,9 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   const screen = screenFromPath(pathname);
   const [authPrompt, setAuthPrompt] = useState<string | null>(null);
 
-  const meQuery = useCurrentUser(true);
-  const setAuthReady = useBazaarStore((s) => s.setAuthReady);
-  const hydrateRoleHint = useBazaarStore((s) => s.hydrateRoleHint);
-  const hydrateBuyerPhone = useBazaarStore((s) => s.hydrateBuyerPhone);
-
-  // Seed the persisted role hint as early as possible so a returning seller is
-  // held on a loader (not the buyer homepage) while the /me probe is in flight.
-  useEffect(() => {
-    hydrateRoleHint();
-    hydrateBuyerPhone();
-  }, [hydrateRoleHint, hydrateBuyerPhone]);
-
-  useEffect(() => {
-    if (meQuery.isFetched) {
-      setAuthReady(true);
-    }
-    // Probe failed — no live session. Drop a stale hint so we don't keep
-    // gating a signed-out (e.g. expired) former seller behind a loader.
-    if (meQuery.isError) {
-      useBazaarStore.getState().setRoleHint(null);
-    }
-  }, [meQuery.isFetched, meQuery.isError, setAuthReady]);
+  // The live-session probe and role-hint hydration moved up to SessionProvider
+  // (src/shared/providers) so both the buyer and seller environments share one
+  // probe. This provider keeps only the buyer cart/saved/checkout context.
 
   const searchParams = useSearchParams();
   const urlQuery = searchParams.get("q")?.trim() ?? "";

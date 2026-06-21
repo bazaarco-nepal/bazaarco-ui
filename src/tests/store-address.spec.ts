@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { formatStoreAddress, emptyStoreAddress, type StoreAddress } from "@/shared/lib/store-address";
+import {
+  formatStoreAddress,
+  emptyStoreAddress,
+  type StoreAddress,
+} from "@/shared/lib/store-address";
 
 // ---------------------------------------------------------------------------
 // formatStoreAddress

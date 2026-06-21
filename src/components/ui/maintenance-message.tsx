@@ -2,18 +2,10 @@
 
 import { Button, Icon } from "@/shared/ui";
 
-/* Friendly, customer-centric maintenance message shown whenever a feature breaks
-   or the site is intentionally down. One component, two variants:
-   - "page"   → full-page takeover (global maintenance + critical error.tsx)
-   - "inline" → compact card for a single crashed widget (LocalErrorBoundary)
-   Copy is English-only and hardcoded (NOT i18n): this renders inside global-error
-   too, which is outside I18nProvider, so useTranslation() would fail there. */
-
-const HEADING = "Making Bazaarco better for you";
+const HEADING = "Making BazaarCo better for you";
 const BODY =
-  "Bazaarco is taking a quick break for maintenance. We are working hard to give you a better shopping experience. Please check back in a few minutes!";
+  "BazaarCo is taking a quick break for maintenance. We are working hard to give you a better shopping experience. Please check back in a few minutes!";
 
-// Single source of truth for support contacts. wa.me wants digits only.
 const SUPPORT_EMAIL = "support@bazaarconepal.com";
 const SUPPORT_WHATSAPP_DISPLAY = "+977 9700053075";
 const SUPPORT_WHATSAPP_HREF = "https://wa.me/9779700053075";
@@ -23,8 +15,6 @@ interface MaintenanceMessageProps {
 }
 
 export function MaintenanceMessage({ variant = "page" }: MaintenanceMessageProps) {
-  // Send the shopper back to the homepage — a clean, always-valid entry point
-  // that re-runs the whole app from a fresh load.
   const goToRoot = () => {
     if (typeof window !== "undefined") window.location.assign("/");
   };

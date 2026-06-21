@@ -60,6 +60,7 @@
     "seeAll": "See All",
     "loadMore": "Load more",
     "addToCart": "Add to Cart",
+    "remove": "Remove",
     "buyNow": "Buy Now",
     "previous": "Previous",
     "next": "Next",
@@ -310,6 +311,7 @@
     "allCategories": "All categories",
     "moreToExplore": "More to explore",
     "recommendedForYou": "Recommended for you",
+    "browseAll": "Browse all",
     "popularStores": "Popular stores",
     "viewAllStores": "View all stores",
     "watchTheirFeed": "Watch their feed",
@@ -366,6 +368,7 @@
     "applyFilters": "Apply filters",
     "sort": "Sort",
     "sortRelevance": "Relevancy",
+    "sortNewest": "Newest",
     "sortTopRated": "Top rated",
     "sortPriceLow": "Price: low to high",
     "sortPriceHigh": "Price: high to low",
@@ -1357,6 +1360,14 @@
     "message": "Sign in to access your account, orders, bargains, messages, and more.",
     "cta": "Log in"
   },
+  "guestSignIn": {
+    "newCustomer": "New customer?",
+    "mobileHeadline": "Sign in to save, bargain & track.",
+    "benefitSave": "Save favourites",
+    "benefitBargain": "Bargain with sellers",
+    "benefitTrack": "Track orders",
+    "createAccount": "Create account"
+  },
   "payment": {
     "callback": {
       "backToCart": "Back to cart",
@@ -1427,6 +1438,7 @@
   },
   "toast": {
     "addedToCart": "Added to cart",
+    "removedFromCart": "Removed from cart",
     "couldNotAddToCart": "Could not add to cart",
     "couldNotPlaceOrder": "Could not place order",
     "couldNotRemoveItem": "Could not remove item",

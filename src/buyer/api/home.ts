@@ -44,7 +44,7 @@ export const homeApi = {
       trending: (raw.trending ?? []).map(mapProduct),
       categories: raw.categories ?? [],
       newArrivals: mapProductPage(
-        raw.newArrivals ?? { items: [], total: 0, page: 1, limit: 12, totalPages: 0 },
+        raw.newArrivals ?? { items: [], total: 0, page: 1, limit: 20, totalPages: 0 },
       ),
       topPicks: mapProductPage(
         raw.topPicks ?? { items: [], total: 0, page: 1, limit: 12, totalPages: 0 },

@@ -12,6 +12,7 @@ import { toSearchEnvelope, toSearchFacets } from "./response-mapper";
 
 const SORT_MAP: Record<NonNullable<SearchParams["sort"]>, AlgoliaSort> = {
   relevance: "",
+  newest: "created:desc",
   price_low: "price:asc",
   price_high: "price:desc",
   rating: "rating:desc",

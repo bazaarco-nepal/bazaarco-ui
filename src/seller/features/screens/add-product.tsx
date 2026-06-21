@@ -24,7 +24,11 @@ import { useCategories, useProduct } from "@/shared/hooks/use-catalog";
 import { useUploadImage } from "@/shared/hooks/use-media-upload";
 import { type SellerInventoryItem } from "@/seller/api/seller";
 import { type CategoryAttributeField, type Product } from "@/types";
-import { useCreateProduct, useUpdateProduct, useSellerOrganization } from "@/seller/hooks/use-seller";
+import {
+  useCreateProduct,
+  useUpdateProduct,
+  useSellerOrganization,
+} from "@/seller/hooks/use-seller";
 import { useBz, ProductCard } from "@/components/common";
 import { pathFromScreen } from "@/config/routes";
 import { SellerHelpBar } from "../_shared/components";

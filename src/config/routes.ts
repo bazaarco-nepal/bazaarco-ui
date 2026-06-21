@@ -162,20 +162,19 @@ export type BrowsePathOptions = {
   view?: "categories";
 };
 
-const SEARCH_SORTS = new Set(["relevance", "rating", "price_low", "price_high"]);
+const SEARCH_SORTS = new Set(["relevance", "newest", "rating", "price_low", "price_high"]);
 
 /** Map legacy browse sort keys to faceted search sort keys. */
 export function searchSortFromBrowseParam(
   sort: string | null | undefined,
-): "relevance" | "rating" | "price_low" | "price_high" | undefined {
+): "relevance" | "newest" | "rating" | "price_low" | "price_high" | undefined {
   const raw = sort?.trim();
   if (!raw) return undefined;
   if (SEARCH_SORTS.has(raw)) {
-    return raw as "relevance" | "rating" | "price_low" | "price_high";
+    return raw as "relevance" | "newest" | "rating" | "price_low" | "price_high";
   }
-  const mapped: Record<string, "relevance" | "rating" | "price_low" | "price_high"> = {
+  const mapped: Record<string, "relevance" | "newest" | "rating" | "price_low" | "price_high"> = {
     popular: "relevance",
-    newest: "relevance",
     low: "price_low",
     high: "price_high",
     rating: "rating",
@@ -187,6 +186,8 @@ export type SearchPathOptions = {
   q?: string;
   cat?: string | string[];
   sort?: string;
+  price_min?: number;
+  price_max?: number;
 };
 
 /** Build `/search` with optional query, category, and sort params. */
@@ -201,26 +202,22 @@ export function searchPath(options?: SearchPathOptions): string {
   }
   const sort = searchSortFromBrowseParam(options?.sort);
   if (sort && sort !== "relevance") params.set("sort", sort);
+  if (typeof options?.price_min === "number") params.set("price_min", String(options.price_min));
+  if (typeof options?.price_max === "number") params.set("price_max", String(options.price_max));
   const qs = params.toString();
   return qs ? `/search?${qs}` : "/search";
 }
 
-/** Build `/browse` — product listings delegate to `/search`; category browsing
-    and the all-products newest listing stay on Browse because Search has no
-    newest-created sort. */
+/** Build `/browse` — only the category browser lives on Browse now; every
+    product listing (queries, category/price/rating filters, and newest) is one
+    faceted page on `/search`. */
 export function browsePath(options?: BrowsePathOptions): string {
   if (options?.view === "categories") {
     return "/browse?view=categories";
   }
-  const q = options?.q?.trim();
-  const cats = options?.cat;
-  const joinedCats = cats ? (Array.isArray(cats) ? cats : [cats]).filter(Boolean).join(",") : "";
-  if (!q && !joinedCats && options?.sort?.trim() === "newest") {
-    return "/browse?sort=newest";
-  }
   return searchPath({
-    q,
-    cat: joinedCats ? cats : undefined,
+    q: options?.q,
+    cat: options?.cat,
     sort: options?.sort,
   });
 }

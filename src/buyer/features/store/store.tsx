@@ -447,94 +447,96 @@ export function Store() {
           {tab === "reviews" && (
             <LocalErrorBoundary label="store-reviews">
               <div style={{ marginBottom: 40 }}>
-              {reviews.length === 0 ? (
-                <EmptyState
-                  title={t("store.noReviewsTitle")}
-                  message={t("store.noReviewsMessage")}
-                  cta={t("reviews.writeReview")}
-                  onCta={openRate}
-                />
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                  {reviews.map((r) => (
-                    <div
-                      key={r.id}
-                      style={{
-                        padding: "16px 18px",
-                        borderRadius: "var(--r-md)",
-                        border: "1px solid var(--line-200)",
-                        background: "#fff",
-                      }}
-                    >
+                {reviews.length === 0 ? (
+                  <EmptyState
+                    title={t("store.noReviewsTitle")}
+                    message={t("store.noReviewsMessage")}
+                    cta={t("reviews.writeReview")}
+                    onCta={openRate}
+                  />
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    {reviews.map((r) => (
                       <div
+                        key={r.id}
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 10,
-                          marginBottom: 8,
+                          padding: "16px 18px",
+                          borderRadius: "var(--r-md)",
+                          border: "1px solid var(--line-200)",
+                          background: "#fff",
                         }}
                       >
-                        <BuyerAvatar
-                          src={r.avatar}
-                          name={r.buyer}
-                          size={34}
-                          fontSize=".875rem"
-                          border="1.5px solid var(--line-200)"
-                        />
-                        <div style={{ fontWeight: 700, fontSize: ".9375rem" }}>{r.buyer}</div>
-                        <div style={{ marginLeft: "auto" }}>
-                          <RatingStars value={r.stars} size={13} />
-                        </div>
-                      </div>
-                      <div style={{ fontSize: ".75rem", color: "var(--ink-400)", marginBottom: 8 }}>
-                        {formatReviewDate(r.time)}
-                      </div>
-                      <p
-                        style={{
-                          margin: 0,
-                          color: "var(--ink-700)",
-                          fontSize: ".875rem",
-                          lineHeight: 1.6,
-                        }}
-                      >
-                        {r.text}
-                      </p>
-                      {r.replied && r.reply && (
                         <div
                           style={{
-                            marginTop: 12,
-                            padding: "10px 14px",
-                            borderRadius: "var(--r-sm)",
-                            background: "var(--line-100)",
-                            borderLeft: "3px solid var(--blue)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                            marginBottom: 8,
                           }}
                         >
+                          <BuyerAvatar
+                            src={r.avatar}
+                            name={r.buyer}
+                            size={34}
+                            fontSize=".875rem"
+                            border="1.5px solid var(--line-200)"
+                          />
+                          <div style={{ fontWeight: 700, fontSize: ".9375rem" }}>{r.buyer}</div>
+                          <div style={{ marginLeft: "auto" }}>
+                            <RatingStars value={r.stars} size={13} />
+                          </div>
+                        </div>
+                        <div
+                          style={{ fontSize: ".75rem", color: "var(--ink-400)", marginBottom: 8 }}
+                        >
+                          {formatReviewDate(r.time)}
+                        </div>
+                        <p
+                          style={{
+                            margin: 0,
+                            color: "var(--ink-700)",
+                            fontSize: ".875rem",
+                            lineHeight: 1.6,
+                          }}
+                        >
+                          {r.text}
+                        </p>
+                        {r.replied && r.reply && (
                           <div
                             style={{
-                              fontSize: ".75rem",
-                              fontWeight: 700,
-                              color: "var(--ink-500)",
-                              marginBottom: 3,
+                              marginTop: 12,
+                              padding: "10px 14px",
+                              borderRadius: "var(--r-sm)",
+                              background: "var(--line-100)",
+                              borderLeft: "3px solid var(--blue)",
                             }}
                           >
-                            {t("store.replyFrom", { name: seller.name })}
+                            <div
+                              style={{
+                                fontSize: ".75rem",
+                                fontWeight: 700,
+                                color: "var(--ink-500)",
+                                marginBottom: 3,
+                              }}
+                            >
+                              {t("store.replyFrom", { name: seller.name })}
+                            </div>
+                            <p
+                              style={{
+                                margin: 0,
+                                fontSize: ".8125rem",
+                                color: "var(--ink-700)",
+                                lineHeight: 1.55,
+                              }}
+                            >
+                              {r.reply}
+                            </p>
                           </div>
-                          <p
-                            style={{
-                              margin: 0,
-                              fontSize: ".8125rem",
-                              color: "var(--ink-700)",
-                              lineHeight: 1.55,
-                            }}
-                          >
-                            {r.reply}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </LocalErrorBoundary>
           )}

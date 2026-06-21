@@ -6,10 +6,11 @@ import { queryKeys } from "@/shared/api/query-keys";
 
 const STALE_TIME = 60 * 1000;
 
-export function useOrders() {
+export function useOrders(enabled = true) {
   return useQuery({
     queryKey: queryKeys.orders.list,
     queryFn: () => ordersApi.list(),
+    enabled,
     staleTime: STALE_TIME,
   });
 }

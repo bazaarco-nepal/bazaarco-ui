@@ -15,7 +15,11 @@ import { ImageCropModal } from "@/components/common/image-crop-modal";
 import { pathFromScreen } from "@/config/routes";
 import { toast } from "@/shared/lib/toast";
 import { ApiRequestError } from "@/shared/api/http";
-import { emptyStoreAddress, formatStoreAddress, type StoreAddress } from "@/shared/lib/store-address";
+import {
+  emptyStoreAddress,
+  formatStoreAddress,
+  type StoreAddress,
+} from "@/shared/lib/store-address";
 import { SellerHelpBar, SellerPageHeader, Card, Field } from "../_shared/components";
 import { useIsNarrow } from "../_shared/hooks";
 

@@ -1,6 +1,10 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/config/site";
-import { fetchSitemapProducts, fetchSitemapSellers, type SitemapEntry } from "@/shared/lib/seo/catalog";
+import {
+  fetchSitemapProducts,
+  fetchSitemapSellers,
+  type SitemapEntry,
+} from "@/shared/lib/seo/catalog";
 
 // Rebuild at most hourly — fresh enough for new products/sellers, cheap enough
 // not to hammer the catalog API on every crawl.

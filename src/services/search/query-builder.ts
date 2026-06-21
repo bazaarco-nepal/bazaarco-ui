@@ -6,7 +6,7 @@ const MAX_FACET_VALUES = 100;
 
 export interface SearchCriteria {
   query: string;
-  sort: "" | "price:asc" | "price:desc" | "rating:desc";
+  sort: "" | "price:asc" | "price:desc" | "rating:desc" | "created:desc";
   categories: string[];
   sellers: string[];
   verified?: boolean;

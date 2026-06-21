@@ -796,6 +796,34 @@ export function NavMenuItem({
   );
 }
 
+function GuestSignInPopover({ onSignIn }: { onSignIn: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <Button variant="primary" full size="md" onClick={onSignIn}>
+        {t("auth.signIn")}
+      </Button>
+      <p
+        style={{
+          margin: "10px 0 0",
+          textAlign: "center",
+          fontSize: ".8125rem",
+          color: "var(--ink-500)",
+        }}
+      >
+        {t("guestSignIn.newCustomer")}{" "}
+        <AppLink
+          href={pathFromScreen("auth")}
+          onNavigate={onSignIn}
+          className="bz-guest-popover__link"
+        >
+          {t("guestSignIn.createAccount")}
+        </AppLink>
+      </p>
+    </>
+  );
+}
+
 function AccountMenuPanel({
   navLabel,
   user,
@@ -961,6 +989,7 @@ export function Navbar() {
   } = useBz();
   const user = useBazaarStore((s) => s.user);
   const authed = useBazaarStore((s) => s.authed);
+  const authReady = useBazaarStore((s) => s.authReady);
   const locale = useBazaarStore((s) => s.locale);
   const logoutMutation = useLogout();
   const navLabel = displayName(user, "Account");
@@ -974,6 +1003,9 @@ export function Navbar() {
   const cartTotal = roundRs(cart.reduce((sum, line) => sum + roundRs(line.price * line.qty), 0));
   const savedCount = savedProducts.length + savedSellers.length;
   const [menuOpen, setMenuOpen] = useState(false);
+  // Guest sign-in popover — auto-opens once auth settles on a guest session.
+  const [guestPopoverOpen, setGuestPopoverOpen] = useState(false);
+  const didAutoOpen = useRef(false);
   // Search category scope (the "All ▾" selector). null = all categories.
   const [scope, setScope] = useState<string | null>(null);
   const [scopeOpen, setScopeOpen] = useState(false);
@@ -988,14 +1020,32 @@ export function Navbar() {
   const hasSavedAddress = savedAddresses.length > 0;
   const desktopMenuRef = useRef<HTMLDivElement | null>(null);
 
+  // Open the guest popover exactly once when auth settles and the user is a guest.
   useEffect(() => {
-    if (!menuOpen) return;
+    if (authReady && !authed && !didAutoOpen.current) {
+      didAutoOpen.current = true;
+      setGuestPopoverOpen(true);
+    }
+  }, [authReady, authed]);
+
+  // Close the guest popover when the user signs in.
+  useEffect(() => {
+    if (authed) setGuestPopoverOpen(false);
+  }, [authed]);
+
+  const anyAccountOpen = menuOpen || guestPopoverOpen;
+  useEffect(() => {
+    if (!anyAccountOpen) return;
     const onDocClick = (e: MouseEvent) => {
       if (desktopMenuRef.current?.contains(e.target as Node)) return;
       setMenuOpen(false);
+      setGuestPopoverOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMenuOpen(false);
+      if (e.key === "Escape") {
+        setMenuOpen(false);
+        setGuestPopoverOpen(false);
+      }
     };
     document.addEventListener("mousedown", onDocClick);
     document.addEventListener("keydown", onKey);
@@ -1003,7 +1053,7 @@ export function Navbar() {
       document.removeEventListener("mousedown", onDocClick);
       document.removeEventListener("keydown", onKey);
     };
-  }, [menuOpen]);
+  }, [anyAccountOpen]);
 
   useEffect(() => {
     if (!scopeOpen) return;
@@ -1265,10 +1315,17 @@ export function Navbar() {
               <div ref={desktopMenuRef} className="bz-navbar__account-wrap">
                 <button
                   type="button"
-                  onClick={() => setMenuOpen((o) => !o)}
-                  aria-haspopup="menu"
-                  aria-expanded={menuOpen}
-                  className={`bz-navbar__action bz-navbar__account-btn${menuOpen ? " is-open" : ""}`}
+                  onClick={() => {
+                    if (authed) {
+                      setMenuOpen((o) => !o);
+                    } else {
+                      setGuestPopoverOpen((o) => !o);
+                    }
+                  }}
+                  aria-haspopup={authed ? "menu" : "dialog"}
+                  aria-expanded={authed ? menuOpen : guestPopoverOpen}
+                  aria-controls="navbar-account-panel"
+                  className={`bz-navbar__action bz-navbar__account-btn${menuOpen || guestPopoverOpen ? " is-open" : ""}`}
                 >
                   {authed ? (
                     <BuyerAvatar user={user} size={26} fontSize={12} />
@@ -1283,14 +1340,30 @@ export function Navbar() {
                     </span>
                   </span>
                 </button>
-                {menuOpen && (
-                  <div role="menu" className="bz-navbar__menu">
+                {menuOpen && authed && (
+                  <div id="navbar-account-panel" role="menu" className="bz-navbar__menu">
                     <AccountMenuPanel
                       navLabel={navLabel}
                       user={user}
                       authed={authed}
                       goAndClose={goAndClose}
                       onLogout={requestLogout}
+                    />
+                  </div>
+                )}
+                {guestPopoverOpen && !authed && (
+                  <div
+                    id="navbar-account-panel"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={t("auth.signIn")}
+                    className="bz-navbar__menu bz-navbar__menu--guest"
+                  >
+                    <GuestSignInPopover
+                      onSignIn={() => {
+                        setGuestPopoverOpen(false);
+                        nav("auth");
+                      }}
                     />
                   </div>
                 )}

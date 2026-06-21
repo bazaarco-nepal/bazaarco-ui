@@ -9,7 +9,11 @@ import { StoreSwitcherChip } from "../store-switcher";
 import { useLogout } from "@/shared/hooks/use-auth";
 import { isSellerOnboardingDeferred } from "@/seller/lib/seller-onboarding";
 import { type SellerStoreSummary } from "@/seller/api/seller-organization";
-import { useSellerInbox, useSellerBargains, useSellerOrganization } from "@/seller/hooks/use-seller";
+import {
+  useSellerInbox,
+  useSellerBargains,
+  useSellerOrganization,
+} from "@/seller/hooks/use-seller";
 import { useChatInbox } from "@/shared/hooks/use-chat";
 import { useBz, LogoutConfirmModal, LanguageToggle } from "@/components/common";
 import { connectChatSocket } from "@/shared/lib/chat-socket";

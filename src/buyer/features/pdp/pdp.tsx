@@ -39,15 +39,13 @@ import {
 import { pathFromScreen, productShareUrl, searchPath } from "@/config/routes";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { displayCategoryLabel } from "@/shared/lib/locale-display";
-import { useProduct, useCategories, useSellerTrust, useProductProfile } from "@/shared/hooks/use-catalog";
 import {
-  BazaarCtx,
-  useBz,
-  ProductCard,
-  CategoryTile,
-  Navbar,
-  Footer,
-} from "@/components/common";
+  useProduct,
+  useCategories,
+  useSellerTrust,
+  useProductProfile,
+} from "@/shared/hooks/use-catalog";
+import { BazaarCtx, useBz, ProductCard, CategoryTile, Navbar, Footer } from "@/components/common";
 import { useSimilar } from "@/buyer/hooks/use-search";
 import {
   useAcceptCounterOffer,
@@ -56,8 +54,14 @@ import {
 } from "@/shared/hooks/use-bargains";
 import { bargainExpiryLabel } from "@/shared/lib/bargain-expiry";
 import { formatNPR } from "@/shared/lib/money";
-import { matchSelectedVariants, toggleOption, variantBacksOption } from "@/shared/lib/variant-selection";
+import { recordRecentProduct } from "@/buyer/lib/recent-activity";
+import {
+  matchSelectedVariants,
+  toggleOption,
+  variantBacksOption,
+} from "@/shared/lib/variant-selection";
 import { optionImageFor, selectionHeroImage, variantSwatchImage } from "@/buyer/lib/variant-images";
+import { cartLineKey } from "@/buyer/lib/cart-selection";
 import { ApiRequestError } from "@/shared/api/http";
 import { toast } from "@/shared/lib/toast";
 import type { PdpProps } from "@/types";
@@ -210,6 +214,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
       >
         <button
           onClick={onClose}
+          aria-label="Close"
           style={{
             position: "absolute",
             top: 16,
@@ -721,6 +726,8 @@ export function PDP({ p: pProp }: PdpProps) {
   const { t } = useTranslation();
   const {
     addToCart,
+    removeFromCart,
+    cart,
     buyNow,
     openProduct,
     openStore,
@@ -739,6 +746,10 @@ export function PDP({ p: pProp }: PdpProps) {
   const { data: categories = [] } = useCategories();
   const locale = useBazaarStore((s) => s.locale);
   const p = productFromApi ?? pProp;
+
+  useEffect(() => {
+    recordRecentProduct(p);
+  }, [p]);
   const s = p.sellerInfo ?? null;
   // Seller trust signals for the seller card / verified chip (computed server-side).
   const { data: sellerTrust, isLoading: trustLoading } = useSellerTrust(p.seller || null);
@@ -850,6 +861,28 @@ export function PDP({ p: pProp }: PdpProps) {
   const selVariant = hasPricedVariants
     ? (pricedVariants.find((v) => v.id === resolvedVariantId) ?? null)
     : null;
+
+  // The exact variant line(s) the buy box acts on — one for flat/single-SKU
+  // products, the picked set for a multi-dimension product. Side-effect free
+  // (unlike selectionToBuy, which toasts), so it's safe to derive in render.
+  const selectedVariantIds: Array<string | null> = isMultiDimVariant
+    ? selectedVariants.map((v) => v.id)
+    : [resolvedVariantId];
+
+  // Is the current selection already in the cart? Match on the canonical line
+  // key so a variant of this product is told apart from another. Empty (e.g. a
+  // multi-dim product with nothing picked yet) reads as not-in-cart.
+  const cartLineKeys = new Set(cart.map(cartLineKey));
+  const isInCart =
+    selectedVariantIds.length > 0 &&
+    selectedVariantIds.every((vid) => cartLineKeys.has(cartLineKey({ id: p.id, variantId: vid })));
+
+  // Remove exactly the selected line(s) — symmetric with what "Add to cart"
+  // added. Shared by the buy box and the mobile sticky bar.
+  const removeSelectionFromCart = async () => {
+    for (const vid of selectedVariantIds) await removeFromCart(p.id, vid);
+    toast.success(t("toast.removedFromCart"));
+  };
 
   // The photo to feature for the current selection, resolved through the seller's
   // option-level images when a SKU has no image of its own (see variant-images).
@@ -1124,13 +1157,8 @@ export function PDP({ p: pProp }: PdpProps) {
     setBargain(false);
     setBuyNowSheet(false);
     setLightboxOpen(false);
-    // Scroll to top when product changes so the buyer always starts at the top.
-    const scrollEl = document.getElementById("app-scroll");
-    if (scrollEl) {
-      scrollEl.scrollTop = 0;
-    } else {
-      window.scrollTo({ top: 0, behavior: "instant" });
-    }
+    // #app-scroll is not a scroll container (no overflow-y), so always use window.
+    window.scrollTo({ top: 0, behavior: "instant" });
   }, [productId]);
 
   const isSaved = savedProducts.includes(p.id);
@@ -1618,14 +1646,20 @@ export function PDP({ p: pProp }: PdpProps) {
                   variant="secondary"
                   full
                   size="lg"
-                  icon="cart"
-                  disabled={isOutOfStock}
+                  icon={isInCart ? "trash" : "cart"}
+                  // An item already in the cart stays removable even when it's
+                  // out of stock; only the add path is gated on stock.
+                  disabled={isOutOfStock && !isInCart}
                   onClick={() => {
+                    if (isInCart) {
+                      void removeSelectionFromCart();
+                      return;
+                    }
                     const sel = selectionToBuy();
                     if (sel) void addToCart(p, qty, undefined, sel);
                   }}
                 >
-                  Add to cart
+                  {isInCart ? "Remove from cart" : "Add to cart"}
                 </Button>
 
                 {bargainingAvailable && (
@@ -1897,10 +1931,12 @@ export function PDP({ p: pProp }: PdpProps) {
         {/* Mobile sticky buy bar — Buy Now opens an option sheet when the
             product has choices; otherwise it goes straight to checkout. */}
         <MobileBuyBar
+          inCart={isInCart}
           onAdd={() => {
             const sel = selectionToBuy();
             if (sel) void addToCart(p, qty, undefined, sel);
           }}
+          onRemove={() => void removeSelectionFromCart()}
           onBuy={() => {
             if (hasPricedVariants) {
               setBuyNowSheet(true);

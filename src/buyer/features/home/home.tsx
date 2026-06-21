@@ -47,8 +47,11 @@ import {
 } from "@/components/common";
 import { PicksSections } from "./_components/picks-tabs";
 import type { VideoFeedItem } from "@/types/video";
-import { HomeHero } from "./_components/home-hero";
-import { NewArrivalsRail, NewArrivalsMobile } from "./_components/new-arrivals";
+// Temporarily hidden alongside the Smart Shopping panel — restore with the hero blocks below.
+// import { HomeHero } from "./_components/home-hero";
+import { NewArrivalsSection } from "./_components/new-arrivals";
+// Temporarily hidden — restore alongside the slot in the desktop hero below.
+// import { SmartShoppingPanel } from "./_components/smart-shopping-panel";
 import { ReelCard } from "./_components/reel-card";
 import type { PopularStore } from "@/buyer/api/home";
 
@@ -338,7 +341,7 @@ function PopularStoresSection({ stores }: { stores: PopularStore[] }) {
 
 export function Home() {
   const { t } = useTranslation();
-  const { nav, openProduct, cartCount } = useBz();
+  const { nav, openProduct } = useBz();
   const { data: homeData, isLoading: homeLoading, isError: homeError, error: homeErr } = useHome();
   const exploreFeed = useHomeExploreFeed(homeData?.explore);
   const loading = homeLoading;
@@ -346,6 +349,7 @@ export function Home() {
   const error = homeErr;
   const categories = homeData?.categories;
   const newArrivalItems = homeData?.newArrivals?.items ?? [];
+  const newArrivalTotal = homeData?.newArrivals?.total ?? newArrivalItems.length;
   const popularStores = homeData?.popularStores ?? [];
 
   // "Recommended for you" is an auto-fill grid whose column count shifts with
@@ -392,35 +396,35 @@ export function Home() {
   const catalogLoading = homeLoading && !categories;
   return (
     <>
-      <div className="bz-home">
+      {/* bz-home--no-hero adds the top breathing room the hero used to carry;
+          drop that class when the hero blocks below are restored. */}
+      <div className="bz-home bz-home--no-hero">
         <BackToTop />
-        {/* Desktop hero — carousel beside the New Arrivals rail. Hidden on phones. */}
+        {/* Hero carousel + Smart Shopping panel temporarily hidden. To restore,
+            un-comment this desktop block, the mobile hero block below, and the
+            HomeHero / SmartShoppingPanel imports. Original layout is preserved:
+            hero on the left, Smart Shopping panel on the right.
+
         <div className="bz-hide-mobile">
           <W className="bz-home-hero" style={{ paddingTop: 22 }}>
             <div className="bz-home-herorow">
               <HomeHero />
-              <LocalErrorBoundary label="home-new-arrivals">
-                <NewArrivalsRail products={newArrivalItems} loading={homeLoading} />
-              </LocalErrorBoundary>
+              <div className="bz-home-smart-slot">
+                <SmartShoppingPanel />
+              </div>
             </div>
           </W>
         </div>
+        */}
 
-        {/* Hero carousel — mobile placement (under the header, above categories). */}
+        {/* Mobile hero placement (under the header, above categories) — hidden too.
+
         <div className="bz-show-mobile">
           <W style={{ paddingTop: 14 }}>
             <HomeHero />
           </W>
         </div>
-
-        {/* New arrivals — mobile stacks directly under the hero as a compact rail. */}
-        <div className="bz-show-mobile">
-          <W>
-            <LocalErrorBoundary label="home-new-arrivals">
-              <NewArrivalsMobile products={newArrivalItems} loading={homeLoading} />
-            </LocalErrorBoundary>
-          </W>
-        </div>
+        */}
 
         {/* Shop by categories — bordered card tiles (revamp). */}
         <W className="bz-home-section bz-home-categories">
@@ -468,6 +472,18 @@ export function Home() {
             <BargainSection />
           </LocalErrorBoundary>
         </Band>
+
+        {(homeLoading || newArrivalItems.length > 0) && (
+          <W className="bz-home-section">
+            <LocalErrorBoundary label="home-new-arrivals">
+              <NewArrivalsSection
+                products={newArrivalItems}
+                total={newArrivalTotal}
+                loading={homeLoading}
+              />
+            </LocalErrorBoundary>
+          </W>
+        )}
 
         {/* Endless product feed — shown on both web and mobile */}
         <W className="bz-home-section">

@@ -5,7 +5,10 @@ import { useTranslation } from "react-i18next";
 import { Button, LandmarkAddress, AppLink } from "@/components/ui";
 import { SellerIcon } from "@/seller/ui/icons";
 import { useBazaarStore } from "@/store/bazaar-store";
-import { clearDeferredSellerOnboarding, deferSellerOnboarding } from "@/seller/lib/seller-onboarding";
+import {
+  clearDeferredSellerOnboarding,
+  deferSellerOnboarding,
+} from "@/seller/lib/seller-onboarding";
 import {
   useSellerOrganization,
   useSetupSellerOrganization,

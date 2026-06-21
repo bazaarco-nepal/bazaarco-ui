@@ -3,7 +3,10 @@
 import React from "react";
 import { Button } from "@/components/ui";
 import { useCurrentUser } from "@/shared/hooks/use-auth";
-import { usePendingSellerVerifications, useReviewSellerVerification } from "@/seller/hooks/use-admin";
+import {
+  usePendingSellerVerifications,
+  useReviewSellerVerification,
+} from "@/seller/hooks/use-admin";
 
 /* ---------- Admin: seller verification queue ---------- */
 

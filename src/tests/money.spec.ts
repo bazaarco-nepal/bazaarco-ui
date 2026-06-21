@@ -1,18 +1,19 @@
 import { describe, it, expect } from "vitest";
 
-import { formatNPR, roundRs } from "@/lib/money";
+import { formatNPR, roundRs } from "@/shared/lib/money";
 
-// The single money formatter: rupees, en-IN grouping, up to 2 decimals, whole
-// amounts left clean. Every price on every screen flows through this.
+// The single money formatter: rupees, en-IN grouping, fractional amounts padded
+// to 2 decimals, whole amounts left clean. Every price on every screen flows
+// through this.
 describe("formatNPR", () => {
   it("groups whole rupees with en-IN and drops trailing .00", () => {
     expect(formatNPR(1200)).toBe("Rs. 1,200");
     expect(formatNPR(123456)).toBe("Rs. 1,23,456");
   });
 
-  it("shows decimals when present (e.g. Rs 100.19)", () => {
+  it("pads decimals when present (e.g. Rs. 100.10)", () => {
     expect(formatNPR(100.19)).toBe("Rs. 100.19");
-    expect(formatNPR(100.1)).toBe("Rs. 100.1");
+    expect(formatNPR(100.1)).toBe("Rs. 100.10");
   });
 
   it("falls back to Rs. 0 for nullish/non-finite input", () => {

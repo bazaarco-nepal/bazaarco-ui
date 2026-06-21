@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // Mock the API client module so no network happens; assert the hook reads the
 // right field (`.items`) off the response and syncs it into the zustand store.
-vi.mock("@/services/api/cart", () => ({
+vi.mock("@/buyer/api/cart", () => ({
   cartApi: {
     get: vi.fn(),
     addItem: vi.fn(),
@@ -15,8 +15,8 @@ vi.mock("@/services/api/cart", () => ({
   },
 }));
 
-import { cartApi } from "@/services/api/cart";
-import { useCartQuery, useCartMutations } from "@/hooks/use-cart";
+import { cartApi } from "@/buyer/api/cart";
+import { useCartQuery, useCartMutations } from "@/buyer/hooks/use-cart";
 import { useBazaarStore } from "@/store/bazaar-store";
 import type { Product } from "@/types/catalog";
 

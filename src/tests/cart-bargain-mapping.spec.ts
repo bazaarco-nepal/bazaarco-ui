@@ -1,19 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock only the transport — the mapping under test is real.
-vi.mock("@/services/api/http", () => ({
+vi.mock("@/shared/api/http", () => ({
   getData: vi.fn(),
   postData: vi.fn(),
   patchData: vi.fn(),
   deleteData: vi.fn(),
 }));
-vi.mock("@/services/api/catalog", () => ({
+vi.mock("@/shared/api/catalog", () => ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   mapProduct: (r: any) => ({ id: r.id, name: r.name, price: r.price }),
 }));
 
-import { getData, postData } from "@/services/api/http";
-import { cartApi } from "@/services/api/cart";
+import { getData, postData } from "@/shared/api/http";
+import { cartApi } from "@/buyer/api/cart";
 
 const mockedGet = getData as unknown as ReturnType<typeof vi.fn>;
 const mockedPost = postData as unknown as ReturnType<typeof vi.fn>;

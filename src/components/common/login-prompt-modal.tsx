@@ -118,7 +118,7 @@ export function LoginPromptModal({
         <Button variant="primary" full size="lg" onClick={onSignIn}>
           {t("auth.signIn")}
         </Button>
-        <Button variant="ghost" full style={{ marginTop: 10 }} onClick={onClose}>
+        <Button variant="tertiary" full style={{ marginTop: 10 }} onClick={onClose}>
           {t("common.notNow")}
         </Button>
       </div>

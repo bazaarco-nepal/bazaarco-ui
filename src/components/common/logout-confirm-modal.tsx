@@ -112,18 +112,25 @@ export function LogoutConfirmModal({
         </p>
 
         <div className="bz-logout-confirm__actions">
-          {/* Neutral cancel (stay signed in) vs. red logout confirm — only the
-              destructive action is red, so the two no longer read the same.
-              Fluent prefers a visible neutral-outline button over a bare ghost. */}
+          {/* Cancel (stay signed in) vs. log-out confirm. The seller (Fluent) keeps
+              its enterprise neutral-outline + red-destructive pair. The buyer follows
+              the button system: red is reserved for "Make an offer", so log out — the
+              confirm/lead action of this dialog — is the blue Primary, and Cancel
+              steps down to a quiet Tertiary. */}
           <Button
-            variant={fluent ? "secondary" : "ghost"}
+            variant={fluent ? "secondary" : "tertiary"}
             full
             disabled={pending}
             onClick={onCancel}
           >
             {t("common.cancel")}
           </Button>
-          <Button variant="danger" full loading={pending} onClick={onConfirm}>
+          <Button
+            variant={fluent ? "danger" : "primary"}
+            full
+            loading={pending}
+            onClick={onConfirm}
+          >
             {pending ? t("common.logout.pending") : t("nav.logOut")}
           </Button>
         </div>

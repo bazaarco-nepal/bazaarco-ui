@@ -64,7 +64,7 @@ vi.mock("leaflet", () => {
   return { default: L };
 });
 
-import { MapPinPicker } from "@/components/ui/map-pin-picker";
+import { MapPinPicker } from "@/shared/ui/map-pin-picker";
 
 beforeEach(() => {
   created.length = 0;

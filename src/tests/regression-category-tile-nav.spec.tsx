@@ -38,23 +38,23 @@ vi.mock("next/navigation", () => ({
 vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({ invalidateQueries: vi.fn(), setQueryData: vi.fn() }),
 }));
-vi.mock("@/hooks/use-auth", () => ({
+vi.mock("@/shared/hooks/use-auth", () => ({
   useCurrentUser: () => ({ isFetched: true, isError: false, data: null }),
 }));
-vi.mock("@/hooks/use-cart", () => ({
+vi.mock("@/buyer/hooks/use-cart", () => ({
   useCartQuery: () => ({ isLoading: false, isFetching: false }),
   useCartMutations: () => ({ addItem: {}, updateQty: {}, removeItem: {} }),
 }));
-vi.mock("@/hooks/use-wishlist", () => ({
-  useWishlistQuery: () => ({}),
-  useWishlistMutations: () => ({
+vi.mock("@/buyer/hooks/use-saved", () => ({
+  useSavedQuery: () => ({}),
+  useSavedMutations: () => ({
     addProduct: {},
     removeProduct: {},
     addSeller: {},
     removeSeller: {},
   }),
 }));
-vi.mock("@/hooks/use-catalog", () => ({
+vi.mock("@/shared/hooks/use-catalog", () => ({
   useProduct: () => ({ data: null }),
 }));
 

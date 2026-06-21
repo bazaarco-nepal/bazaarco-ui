@@ -22,26 +22,26 @@ vi.mock("next/navigation", () => ({
 vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({ invalidateQueries: vi.fn(), setQueryData: vi.fn() }),
 }));
-vi.mock("@/hooks/use-auth", () => ({
+vi.mock("@/shared/hooks/use-auth", () => ({
   useCurrentUser: () => ({ isFetched: true, isError: false, data: { id: "u1", name: "Ram" } }),
 }));
-vi.mock("@/hooks/use-cart", () => ({
+vi.mock("@/buyer/hooks/use-cart", () => ({
   useCartQuery: () => ({ isLoading: false, isFetching: false }),
   useCartMutations: () => ({ addItem: {}, updateQty: {}, removeItem: {} }),
 }));
-vi.mock("@/hooks/use-wishlist", () => ({
-  useWishlistQuery: () => ({}),
-  useWishlistMutations: () => ({
+vi.mock("@/buyer/hooks/use-saved", () => ({
+  useSavedQuery: () => ({}),
+  useSavedMutations: () => ({
     addProduct: { mutateAsync: vi.fn() },
     removeProduct: { mutateAsync: vi.fn() },
     addSeller: { mutateAsync: vi.fn() },
     removeSeller: { mutateAsync: vi.fn() },
   }),
 }));
-vi.mock("@/hooks/use-catalog", () => ({ useProduct: () => ({ data: null }) }));
+vi.mock("@/shared/hooks/use-catalog", () => ({ useProduct: () => ({ data: null }) }));
 
 const noopMutation = { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
-vi.mock("@/hooks/use-seller", () => ({
+vi.mock("@/seller/hooks/use-seller", () => ({
   useSellerOrganization: () => ({
     data: { linked: false, verification: { status: "none" } },
     isLoading: false,
@@ -54,7 +54,7 @@ vi.mock("@/hooks/use-seller", () => ({
 }));
 
 import { BazaarProvider } from "@/providers/bazaar-provider";
-import { SellerOnboarding } from "@/features/seller";
+import { SellerOnboarding } from "@/seller/features";
 import { useBazaarStore } from "@/store/bazaar-store";
 
 beforeEach(() => {

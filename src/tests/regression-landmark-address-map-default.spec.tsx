@@ -15,11 +15,11 @@ import { render, screen, fireEvent } from "@testing-library/react";
 // toggle wording don't silently regress.
 
 // Stub the Leaflet picker so the test doesn't touch the map/network.
-vi.mock("@/components/ui/map-pin-picker", () => ({
+vi.mock("@/shared/ui/map-pin-picker", () => ({
   MapPinPicker: () => <div data-testid="map-pin-picker" />,
 }));
 
-import { LandmarkAddress } from "@/components/ui/kit";
+import { LandmarkAddress } from "@/shared/ui/kit";
 
 const baseValue = { city: "Kathmandu", area: "", landmark: "", lat: null, lng: null };
 

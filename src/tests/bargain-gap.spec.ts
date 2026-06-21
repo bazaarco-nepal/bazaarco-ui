@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { BARGAIN_MIN_GAP_PERCENT, maxAllowedBargainMinimum } from "@/lib/bargain-gap";
+import { BARGAIN_MIN_GAP_PERCENT, maxAllowedBargainMinimum } from "@/shared/lib/bargain-gap";
 
 describe("seller bargain gap (display helper)", () => {
   it("defaults the gap to 10% when no env override is set", () => {

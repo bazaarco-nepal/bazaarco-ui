@@ -2,7 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import type { EsewaFormFields } from "@/services/api/orders";
+import { Button, BuyerPack } from "@/components/ui";
+import type { EsewaFormFields } from "@/buyer/api/orders";
 
 /**
  * Auto-submitting hidden form that hands the buyer off to eSewa. The fields are
@@ -25,51 +26,40 @@ export function EsewaRedirectForm({
   }, []);
 
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 1000,
-        background: "rgba(255,255,255,0.96)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 20,
-        padding: 24,
-        textAlign: "center",
-      }}
-    >
-      <div style={{ fontSize: "1.0625rem", fontWeight: 700, color: "var(--ink-900)" }}>
-        {t("payment.redirect.heading")}
-      </div>
-      <p style={{ fontSize: ".875rem", color: "var(--ink-500)", maxWidth: 360, margin: 0 }}>
-        {t("payment.redirect.message")}
-      </p>
+    <BuyerPack>
+      <div
+        role="status"
+        aria-live="polite"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 1000,
+          background: "rgba(255,255,255,0.96)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 20,
+          padding: 24,
+          textAlign: "center",
+        }}
+      >
+        <div style={{ fontSize: "1.0625rem", fontWeight: 700, color: "var(--ink-900)" }}>
+          {t("payment.redirect.heading")}
+        </div>
+        <p style={{ fontSize: ".875rem", color: "var(--ink-500)", maxWidth: 360, margin: 0 }}>
+          {t("payment.redirect.message")}
+        </p>
 
-      <form ref={formRef} method="POST" action={paymentUrl}>
-        {Object.entries(fields).map(([name, value]) => (
-          <input key={name} type="hidden" name={name} value={value} />
-        ))}
-        <button
-          type="submit"
-          style={{
-            marginTop: 4,
-            padding: "12px 20px",
-            borderRadius: "var(--r-md)",
-            border: "none",
-            background: "var(--blue)",
-            color: "#fff",
-            fontWeight: 700,
-            fontSize: ".9375rem",
-            cursor: "pointer",
-          }}
-        >
-          {t("payment.redirect.continue")}
-        </button>
-      </form>
-    </div>
+        <form ref={formRef} method="POST" action={paymentUrl}>
+          {Object.entries(fields).map(([name, value]) => (
+            <input key={name} type="hidden" name={name} value={value} />
+          ))}
+          <Button type="submit" variant="primary" size="lg" style={{ marginTop: 4 }}>
+            {t("payment.redirect.continue")}
+          </Button>
+        </form>
+      </div>
+    </BuyerPack>
   );
 }

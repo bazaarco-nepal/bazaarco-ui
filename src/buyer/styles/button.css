@@ -1,0 +1,169 @@
+/* ============================================================================
+   Buyer button system — one component, six variants, one color rule.
+   Blue = proceed (primary). Red = bargain ("Make an offer") only.
+   Neutral = supporting. See button-system.md. Tune here, never per-call.
+
+   Scoped to [data-pack="buyer"] (mirrors the seller's [data-skin="fluent"]) so
+   the seller console is never affected. The <Button> component only emits these
+   classes inside a buyer pack; seller keeps its own inline rendering.
+   ========================================================================== */
+
+[data-pack="buyer"] .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  border-radius: var(--btn-radius);
+  border: 1px solid transparent;
+  cursor: pointer;
+  user-select: none;
+  text-decoration: none;
+  transition:
+    background var(--dur-standard) var(--ease),
+    border-color var(--dur-standard) var(--ease),
+    color var(--dur-standard) var(--ease);
+}
+[data-pack="buyer"] .btn:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--btn-surface),
+    0 0 0 4px var(--btn-focus-ring);
+}
+[data-pack="buyer"] .btn[disabled],
+[data-pack="buyer"] .btn[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+[data-pack="buyer"] .btn--full {
+  width: 100%;
+}
+
+/* Sizes */
+[data-pack="buyer"] .btn--sm {
+  height: var(--btn-h-sm);
+  padding: 0 12px;
+  font-size: 13px;
+}
+[data-pack="buyer"] .btn--md {
+  height: var(--btn-h-md);
+  padding: 0 16px;
+  font-size: 14px;
+}
+[data-pack="buyer"] .btn--lg {
+  height: var(--btn-h-lg);
+  padding: 0 20px;
+  font-size: 15px;
+}
+
+/* Variants */
+[data-pack="buyer"] .btn--primary {
+  background: var(--btn-blue);
+  color: var(--btn-on-fill);
+}
+[data-pack="buyer"] .btn--primary:hover {
+  background: var(--btn-blue-hover);
+}
+[data-pack="buyer"] .btn--primary:active {
+  background: var(--blue-deep);
+}
+
+[data-pack="buyer"] .btn--secondary {
+  background: var(--btn-surface);
+  color: var(--btn-ink);
+  border-color: var(--btn-border);
+}
+[data-pack="buyer"] .btn--secondary:hover {
+  background: var(--btn-surface-tint);
+}
+
+[data-pack="buyer"] .btn--tertiary {
+  background: transparent;
+  color: var(--btn-blue);
+}
+[data-pack="buyer"] .btn--tertiary:hover {
+  background: var(--btn-surface-tint);
+}
+
+[data-pack="buyer"] .btn--bargain {
+  background: var(--btn-red);
+  color: var(--btn-on-fill);
+}
+[data-pack="buyer"] .btn--bargain:hover {
+  background: var(--btn-red-hover);
+}
+
+[data-pack="buyer"] .btn--bargainOutline {
+  background: var(--btn-surface);
+  color: var(--btn-red);
+  border-color: var(--btn-red);
+}
+[data-pack="buyer"] .btn--bargainOutline:hover {
+  background: var(--btn-red-tint);
+}
+
+[data-pack="buyer"] .btn--link {
+  background: transparent;
+  color: var(--btn-blue);
+  height: auto;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  font-weight: 700;
+  /* Fixed size so every "See all" link reads the same regardless of its
+     surrounding text size (the variant skips the .btn--{size} font rule). */
+  font-size: 0.8125rem;
+}
+[data-pack="buyer"] .btn--link:hover {
+  color: var(--blue-deep);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Legacy fallbacks — the buyer UI uses the six variants above, but shared
+   components reused on a buyer screen (e.g. SellerChat in buyerMode) may still
+   ask for these. Kept so nothing renders unstyled; not part of the contract. */
+[data-pack="buyer"] .btn--ghost {
+  background: transparent;
+  color: var(--ink-500);
+}
+[data-pack="buyer"] .btn--ghost:hover {
+  background: var(--line-100);
+  color: var(--ink-700);
+}
+[data-pack="buyer"] .btn--blue {
+  background: var(--btn-blue);
+  color: var(--btn-on-fill);
+}
+[data-pack="buyer"] .btn--blue:hover {
+  background: var(--btn-blue-hover);
+}
+[data-pack="buyer"] .btn--danger {
+  background: var(--btn-surface);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+[data-pack="buyer"] .btn--danger:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+/* Mobile — a comfortable tap target on phones (min 44px tall) even for sm/md,
+   per the brief's "min touch target: 40px on mobile even for sm". Full-width
+   buttons already stack with the 12px gaps set by their containers. */
+@media (max-width: 640px) {
+  [data-pack="buyer"] .btn--sm,
+  [data-pack="buyer"] .btn--md {
+    min-height: 44px;
+  }
+  [data-pack="buyer"] .btn--lg {
+    min-height: 48px;
+  }
+  /* On a phone a full-width CTA reads better at the larger label size. */
+  [data-pack="buyer"] .btn--full {
+    font-size: 15px;
+  }
+}

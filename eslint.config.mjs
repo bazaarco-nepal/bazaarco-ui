@@ -9,13 +9,56 @@ const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
+// Buyer ⇄ seller import boundaries. Buyer and seller are two separate products
+// sharing one repo; `shared/` is the only common ground, and the neutral dirs
+// (components, store, types, config, i18n, lib bridges) are importable by both.
+// Enforced at "error" — buyer must not import seller, seller must not import
+// buyer, and shared must import neither.
+const SELLER_PATTERNS = ["@/seller", "@/seller/**"];
+const BUYER_PATTERNS = ["@/buyer", "@/buyer/**"];
+const boundary = (level, patterns, message) => ({
+  "no-restricted-imports": [level, { patterns: [{ group: patterns, message }] }],
+});
+
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript", "prettier"),
   {
     ignores: ["bazaarco-design/**", ".next/**", ".next-prod/**", "node_modules/**"],
   },
   {
-    files: ["src/components/ui/**", "src/features/**"],
+    files: ["src/buyer/**", "src/app/(buyer)/**"],
+    rules: boundary(
+      "error",
+      SELLER_PATTERNS,
+      "Buyer code must not import seller code. Put anything shared in src/shared.",
+    ),
+  },
+  {
+    files: ["src/seller/**", "src/app/(seller)/**"],
+    rules: boundary(
+      "error",
+      BUYER_PATTERNS,
+      "Seller code must not import buyer code. Put anything shared in src/shared.",
+    ),
+  },
+  {
+    files: ["src/shared/**"],
+    rules: boundary(
+      "error",
+      [...BUYER_PATTERNS, ...SELLER_PATTERNS],
+      "Shared code must not import buyer or seller code — invert the dependency instead.",
+    ),
+  },
+  {
+    files: [
+      "src/components/ui/**",
+      "src/features/**",
+      "src/shared/ui/**",
+      "src/buyer/ui/**",
+      "src/buyer/features/**",
+      "src/seller/ui/**",
+      "src/seller/features/**",
+    ],
     rules: {
       "@typescript-eslint/no-unused-vars": "off",
       "@typescript-eslint/no-unused-expressions": "off",

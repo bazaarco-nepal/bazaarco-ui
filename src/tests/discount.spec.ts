@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { saleEffective, saleValid, buildPricing, type SaleInput } from "@/lib/discount";
+import { saleEffective, saleValid, buildPricing, type SaleInput } from "@/shared/lib/discount";
 
 // Mirrors the server's authoritative rules (bazaarco-api catalog.service
 // `resolveDiscount`). `base` is the regular price; on sale it becomes `original`

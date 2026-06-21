@@ -26,12 +26,12 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(""),
 }));
 
-vi.mock("@/hooks/use-media-upload", () => ({
+vi.mock("@/shared/hooks/use-media-upload", () => ({
   useDeleteSellerVideo: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useUpdateSellerVideo: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
 
-vi.mock("@/hooks/use-seller", () => ({
+vi.mock("@/seller/hooks/use-seller", () => ({
   useSellerInventory: () => ({ data: [], isLoading: false }),
 }));
 
@@ -49,8 +49,8 @@ vi.mock("@/components/ui", async () => {
   };
 });
 
-import { SellerVideoLibrary } from "@/components/seller/seller-video-library";
-import type { SellerVideoItem } from "@/services/api/media";
+import { SellerVideoLibrary } from "@/seller/components/seller-video-library";
+import type { SellerVideoItem } from "@/shared/api/media";
 
 const VIDEOS: SellerVideoItem[] = [
   {
@@ -88,7 +88,6 @@ function renderLibrary() {
       showUpload={false}
       onToggleUpload={() => {}}
       onRefetch={() => {}}
-      onToast={() => {}}
     />,
   );
 }

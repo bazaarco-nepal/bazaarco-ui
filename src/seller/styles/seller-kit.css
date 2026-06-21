@@ -1,0 +1,408 @@
+/* ============================================================
+   BazaarCo — Seller structural kit
+   ------------------------------------------------------------
+   The reusable layout primitives the seller console is built
+   from: padded cards with a heading row, constrained form
+   fields, segmented toggles, radio cards, photo tiles, metric
+   grids, checklist rows, and a data-table that reflows into
+   stacked cards on phones.
+
+   Structural only — every colour/radius/shadow/spacing comes
+   from design tokens, so the whole kit inherits whatever skin
+   is active (Fluent in the seller panel today). The shapes are
+   lifted from the add-product mockup; the palette is not — the
+   mockup's green maps onto the existing Fluent variables
+   (--brand → --blue, --brand-tint → --tint-blue-50, …).
+
+   Pairs with the React wrappers in
+   features/seller/_shared/components.tsx (Card, Field, SegToggle,
+   RadioCardGroup, PhotoTile, MetricGrid, ChecklistRow).
+   ============================================================ */
+
+/* ── Card ───────────────────────────────────────────────────────────────
+   Builds on the existing .bz-card surface (fluent.css). .bz-scard only adds
+   the inner padding + bottom rhythm, so the bare .bz-card stays untouched for
+   its current callers. */
+.bz-scard {
+  padding: 18px 20px;
+  margin-bottom: var(--space-md, 16px);
+}
+.bz-scard:last-child {
+  margin-bottom: 0;
+}
+.bz-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.bz-card-head h3 {
+  margin: 0;
+  font-size: 0.96875rem; /* 15.5px */
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink-900);
+}
+.bz-card-head__opt {
+  font-size: 0.78125rem;
+  font-weight: 400;
+  color: var(--ink-400);
+  white-space: nowrap;
+}
+.bz-card-head__action {
+  margin-left: auto;
+}
+
+/* ── Form field ─────────────────────────────────────────────────────────
+   Label + control + hint, with CONSTRAINED widths so inputs never go
+   full-bleed. Width is opt-in via a modifier; default fills the column. */
+.bz-field {
+  margin-bottom: 16px;
+}
+.bz-field:last-child {
+  margin-bottom: 0;
+}
+.bz-field > label {
+  display: block;
+  font-size: 0.84375rem; /* 13.5px */
+  font-weight: 600;
+  margin-bottom: 7px;
+  color: var(--ink-700);
+}
+.bz-field__hint {
+  font-size: 0.78125rem;
+  color: var(--ink-400);
+  margin: 6px 0 0;
+  line-height: 1.45;
+}
+.bz-field__req {
+  color: var(--danger);
+  font-weight: 500;
+}
+/* Constrained widths from the mockup (name ~440, select ~320). */
+.bz-field--name {
+  max-width: 440px;
+}
+.bz-field--select {
+  max-width: 320px;
+}
+.bz-field--sm {
+  max-width: 220px;
+}
+
+/* Shared control styling so inputs/selects/textareas in seller cards match the
+   mockup without each call site re-declaring it. Scoped to .bz-field controls
+   plus the .bz-input opt-in class for one-off controls. */
+.bz-field input,
+.bz-field select,
+.bz-field textarea,
+.bz-input {
+  width: 100%;
+  padding: 10px 12px;
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  color: var(--ink-900);
+  background: var(--card);
+  border: 1px solid var(--line-200);
+  border-radius: var(--r-md);
+  outline: none;
+  transition:
+    border-color 0.15s var(--ease, ease),
+    box-shadow 0.15s var(--ease, ease);
+}
+.bz-field textarea,
+textarea.bz-input {
+  resize: vertical;
+  min-height: 84px;
+  line-height: 1.55;
+}
+.bz-field input::placeholder,
+.bz-field textarea::placeholder,
+.bz-input::placeholder {
+  color: var(--ink-300);
+}
+.bz-field input:focus,
+.bz-field select:focus,
+.bz-field textarea:focus,
+.bz-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--tint-blue-50);
+}
+
+/* ── Segmented toggle (radio-as-cards, 2-up) ────────────────────────────── */
+.bz-seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.bz-seg button {
+  text-align: left;
+  background: var(--card);
+  border: 1.5px solid var(--line-200);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  cursor: pointer;
+  color: var(--ink-900);
+  font-family: var(--font-sans);
+  transition:
+    border-color 0.12s var(--ease, ease),
+    background 0.12s var(--ease, ease);
+}
+.bz-seg button:hover {
+  border-color: var(--blue);
+}
+.bz-seg button.is-on {
+  border-color: var(--blue);
+  background: var(--tint-blue-50);
+}
+.bz-seg__t {
+  font-weight: 600;
+  font-size: 0.90625rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bz-seg__s {
+  font-size: 0.78125rem;
+  color: var(--ink-500);
+  margin-top: 3px;
+}
+.bz-seg button.is-on .bz-seg__s {
+  color: var(--blue-deep);
+}
+
+/* ── Radio cards (stacked single-select) ────────────────────────────────── */
+.bz-radio-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  border: 1.5px solid var(--line-200);
+  border-radius: var(--r-md);
+  padding: 13px 15px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  background: var(--card);
+  transition:
+    border-color 0.12s var(--ease, ease),
+    background 0.12s var(--ease, ease);
+}
+.bz-radio-card:last-child {
+  margin-bottom: 0;
+}
+.bz-radio-card:hover {
+  border-color: var(--blue);
+}
+.bz-radio-card.is-on {
+  border-color: var(--blue);
+  background: var(--tint-blue-50);
+}
+.bz-radio-card__ic {
+  flex: 0 0 22px;
+  color: var(--blue);
+  margin-top: 1px;
+}
+.bz-radio-card__t {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--ink-900);
+}
+.bz-radio-card__s {
+  font-size: 0.78125rem;
+  color: var(--ink-500);
+  margin-top: 2px;
+}
+
+/* ── Photo tile (uploader preview + remove) ─────────────────────────────── */
+.bz-tile {
+  border: 1.5px dashed var(--line-200);
+  border-radius: var(--r-md);
+  background: var(--line-100);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--ink-400);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  transition: border-color 0.15s var(--ease, ease);
+}
+.bz-tile:hover {
+  border-color: var(--blue);
+}
+.bz-tile.is-filled {
+  border-style: solid;
+  border-color: var(--line-200);
+}
+.bz-tile__cap {
+  font-size: 0.75rem;
+}
+.bz-tile__rm {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(27, 26, 25, 0.7);
+  color: #fff;
+  border: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.bz-tile.is-filled .bz-tile__rm {
+  display: flex;
+}
+.bz-tile__rm:hover {
+  background: rgba(27, 26, 25, 0.9);
+}
+.bz-tile--main {
+  width: 190px;
+  height: 150px;
+}
+.bz-tile--gallery {
+  width: 86px;
+  height: 86px;
+}
+
+/* ── Metric grid (review / KPI summaries) ───────────────────────────────── */
+.bz-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+.bz-metric {
+  background: var(--line-100);
+  border-radius: var(--r-md);
+  padding: 14px;
+}
+.bz-metric__k {
+  font-size: 0.78125rem;
+  color: var(--ink-500);
+}
+.bz-metric__v {
+  font-size: 1.3125rem;
+  font-weight: 600;
+  margin-top: 3px;
+  letter-spacing: -0.01em;
+  color: var(--ink-900);
+}
+.bz-metric__v.is-sm {
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+/* ── Checklist row (before-you-publish style) ───────────────────────────── */
+.bz-check {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 0;
+  border-top: 1px solid var(--line-200);
+}
+.bz-check:first-child {
+  border-top: 0;
+}
+.bz-check__label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.90625rem;
+  color: var(--ink-900);
+}
+.bz-check__ok {
+  color: var(--success);
+  flex: 0 0 auto;
+}
+.bz-check__todo {
+  color: var(--warning);
+  flex: 0 0 auto;
+}
+
+/* ── Data table → stacked cards on phones ───────────────────────────────────
+   The reusable list/table pattern for every seller view: a clean header row +
+   body rows on desktop that reflow into label-on-top stacked cards under
+   600px. Callers set the column template via --bz-dtable-cols. */
+.bz-dtable__head,
+.bz-dtable__row {
+  display: grid;
+  grid-template-columns: var(--bz-dtable-cols, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+.bz-dtable__head {
+  padding: 0 2px 8px;
+  font-size: 0.75rem;
+  color: var(--ink-400);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.bz-dtable__row {
+  padding: 11px 2px;
+  border-top: 1px solid var(--line-200);
+}
+.bz-dtable__lab {
+  display: none;
+  font-size: 0.6875rem;
+  color: var(--ink-400);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+@media (max-width: 600px) {
+  .bz-seg {
+    grid-template-columns: 1fr;
+  }
+  .bz-metric-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .bz-field--sm,
+  .bz-field--select,
+  .bz-field--name {
+    max-width: none;
+  }
+  .bz-tile--main {
+    width: 100%;
+    height: 160px;
+  }
+  /* table → stacked cards */
+  .bz-dtable__head {
+    display: none;
+  }
+  .bz-dtable__row {
+    grid-template-columns: 1fr 1fr;
+    border: 1px solid var(--line-200);
+    border-radius: var(--r-md);
+    padding: 13px;
+    margin-bottom: 10px;
+    background: var(--line-100);
+  }
+  .bz-dtable__row > .bz-dtable__full {
+    grid-column: 1 / -1;
+  }
+  .bz-dtable__lab {
+    display: block;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bz-scard,
+  .bz-seg button,
+  .bz-radio-card,
+  .bz-tile,
+  .bz-field input,
+  .bz-field select,
+  .bz-field textarea,
+  .bz-input {
+    transition: none;
+  }
+}

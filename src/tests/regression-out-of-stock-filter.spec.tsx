@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { Product } from "@/types/catalog";
-import { mapProduct } from "@/services/api/catalog";
+import { mapProduct } from "@/shared/api/catalog";
 
 // REGRESSION: out-of-stock products are NOT excluded from home/browse.
 // home.tsx and browse.tsx already filter with `!p.outOfStock`

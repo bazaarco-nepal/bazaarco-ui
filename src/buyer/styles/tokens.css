@@ -1,0 +1,4707 @@
+/* ============================================================
+   BazaarCo — Design Tokens (from brief section C)
+   Single source of truth. No hardcoded hex outside this file.
+   ============================================================ */
+:root {
+  /* Brand — homepage revamp palette */
+  --red: #e2342b;
+  --red-hover: #c92a37;
+  --blue: #1d4ed8;
+  --blue-hover: #1e40af;
+  --blue-deep: #102c65;
+  --white: #ffffff;
+
+  /* Ink */
+  --ink-900: #1a1a24;
+  --ink-700: #1f2937;
+  --ink-500: #4b5563;
+  --ink-400: #6b7280;
+  --ink-300: #9ca3af;
+
+  /* Surface — warm cream page (revamp), white cards sit on top for contrast. */
+  --page: #fbf8f2;
+  --card: #ffffff;
+  --line-200: #e5e7eb;
+  --line-100: #f1f3f5;
+
+  /* Cream surfaces + on-navy text — homepage revamp header/cards */
+  --cream: #fbf8f2;
+  --cream-100: #f3efe5;
+  --cream-line: #ece6da;
+  --cream-ink: #4a4636;
+  --on-navy-100: #ffffff;
+  --on-navy-300: #cdd0dd;
+  --on-navy-400: #9aa0b8;
+  --on-navy-500: #7a8099;
+
+  /* Status */
+  --success: #16a34a;
+  --warning: #f59e0b;
+  --danger: #b91c1c;
+
+  /* Toast — white card + status rail/chip (approved mockup palette). Change a
+     status token here and that variant restyles everywhere. */
+  --bz-navy: #16264a; /* toast title */
+  --bz-blue: #2743b0; /* info rail + action buttons */
+  --bz-card-border: rgba(0, 0, 0, 0.1);
+  --bz-ink-soft: #888780; /* body text */
+  --bz-ink-muted: #b4b2a9; /* dismiss icon */
+  --bz-toast-shadow: 0 4px 16px rgba(22, 38, 74, 0.08);
+  --bz-toast-radius: 14px;
+
+  /* status: rail colour / chip bg / chip icon colour */
+  --toast-success-rail: #0f6e56;
+  --toast-success-bg: #e1f5ee;
+  --toast-success-fg: #0f6e56;
+  --toast-error-rail: #d6402e;
+  --toast-error-bg: #fcebeb;
+  --toast-error-fg: #d6402e;
+  --toast-warning-rail: #ba7517;
+  --toast-warning-bg: #faeeda;
+  --toast-warning-fg: #854f0b;
+  --toast-info-rail: #2743b0;
+  --toast-info-bg: #e6f1fb;
+  --toast-info-fg: #185fa5;
+  --toast-bargain-rail: #d6402e;
+  --toast-bargain-bg: #fcebeb;
+  --toast-bargain-fg: #d6402e;
+
+  /* Accent */
+  --saffron: #f77f00;
+  --gold: #f4b740;
+  --tint-red-50: #fff1f2;
+  --tint-blue-50: #eff6ff;
+
+  /* Featured-section background bands — only BazaarCo Watch + Bargain get a
+     tinted floor (scarcity = the point). Recolor the two zones from here. */
+  --band-watch-bg: #16264a; /* deep navy — the headline video zone */
+  --band-bargain-bg: #f6ecd8; /* warm cream, a faint shift off --page */
+
+  /* Type */
+  --font-sans: var(--font-sans-loaded), "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: var(--font-mono-loaded), "IBM Plex Mono", ui-monospace, monospace;
+  --font-display: var(--font-display-loaded), "Bricolage Grotesque", var(--font-sans);
+  --fs-h1: clamp(20px, 1.4vw + 14px, 26px);
+  --fs-h2: clamp(18px, 1vw + 13px, 22px);
+  --fs-h3: 1.5rem;
+  --fs-base: clamp(13px, 0.3vw + 12px, 15px);
+  --fs-body: var(--fs-base);
+  --fs-small: 0.9375rem;
+  --fs-caption: 0.8125rem;
+  --w-hero: 800;
+  --w-heading: 700;
+  --w-button: 600;
+  --w-emphasis: 500;
+  --lh-tight: 1.2;
+  --lh-normal: 1.5;
+
+  /* Radius */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-full: 999px;
+  /* Two semantic radii so pills and controls never drift apart:
+     --r-pill for badges/status pills, --r-control for inputs/chips/buttons. */
+  --r-pill: var(--r-full);
+  --r-control: var(--r-md);
+
+  /* Button system (button.css) — one source of truth for every CTA.
+     Colors map onto the brand vars above so a skin (Fluent) retints them for free. */
+  --btn-blue: var(--blue);
+  --btn-blue-hover: var(--blue-hover);
+  --btn-red: var(--red);
+  --btn-red-hover: var(--red-hover);
+  --btn-red-tint: var(--tint-red-50);
+  --btn-ink: var(--ink-900);
+  --btn-border: var(--line-200);
+  --btn-surface: #fff;
+  --btn-surface-tint: var(--line-100);
+  --btn-on-fill: #fff;
+  --btn-radius: var(--r-md);
+  --btn-focus-ring: rgba(29, 78, 216, 0.35);
+  --btn-h-sm: 32px;
+  --btn-h-md: 40px;
+  --btn-h-lg: 48px;
+
+  /* Shadow (flat) */
+  --sh-1: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --sh-2: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --sh-3: 0 12px 32px rgba(15, 23, 42, 0.12);
+
+  /* Motion */
+  --dur-micro: 120ms;
+  --dur-standard: 200ms;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  --container-max: 1440px;
+  --container: var(--container-max);
+  --gutter: clamp(16px, 4vw, 40px);
+
+  /* Spacing — modular scale (8px base). Use these for vertical rhythm so every
+     section steps in a uniform, predictable cadence. */
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --sp-3: var(--space-sm);
+  --sp-4: clamp(12px, 0.4vw + 10px, 16px);
+  --sp-5: clamp(16px, 0.5vw + 12px, 20px);
+  --sp-6: clamp(18px, 0.7vw + 14px, 24px);
+  --sp-8: clamp(24px, 1vw + 18px, 32px);
+
+  /* Homepage vertical rhythm. The contrast is the point: the gap BETWEEN
+     sections must read clearly larger than the gaps WITHIN one (card/grid).
+     --section-gap is ~3-4x --grid-gap so sections chunk into separate "rooms".
+     One token, one place — the home stack's flex gap consumes --section-gap. */
+  --home-hero-top: clamp(20px, 1vw + 12px, 28px);
+  --section-gap: clamp(48px, 4vw, 80px); /* between sections */
+  --section-header: clamp(16px, 1.5vw, 24px); /* section title → its content */
+  --grid-gap: var(--sp-4); /* within a grid — stays tight */
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+body {
+  font-family: var(--font-sans);
+  color: var(--ink-900);
+  background: var(--page);
+  font-size: var(--fs-body);
+  line-height: var(--lh-normal);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* utility: scrollbars hidden for rails */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* focus-visible ring per brief: 2px blue outline + 2px offset */
+:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* ── Hover utilities ───────────────────────────────────────────────────────
+   Apply to inline-styled interactive elements that can't use :hover natively.
+   Each includes the transition so callers don't need to set it. */
+.bz-hover-tint {
+  transition:
+    background var(--dur-micro) var(--ease),
+    border-color var(--dur-micro) var(--ease),
+    color var(--dur-micro) var(--ease);
+}
+.bz-hover-tint:hover {
+  background: var(--line-100);
+}
+.bz-hover-border {
+  transition:
+    border-color var(--dur-micro) var(--ease),
+    box-shadow var(--dur-micro) var(--ease);
+}
+.bz-hover-border:hover {
+  border-color: var(--blue);
+}
+.bz-hover-lift {
+  transition:
+    box-shadow var(--dur-standard) var(--ease),
+    transform var(--dur-standard) var(--ease);
+}
+.bz-hover-lift:hover {
+  box-shadow: var(--sh-2);
+  transform: translateY(-1px);
+}
+.bz-hover-dim {
+  transition: opacity var(--dur-micro) var(--ease);
+}
+.bz-hover-dim:hover {
+  opacity: 0.75;
+}
+
+@keyframes bz-skel {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+.skel {
+  background: linear-gradient(90deg, var(--line-100) 25%, #e9edf2 37%, var(--line-100) 63%);
+  background-size: 400% 100%;
+  animation: bz-skel 1.4s ease infinite;
+}
+@keyframes bz-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(247, 127, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(247, 127, 0, 0);
+  }
+}
+@keyframes bz-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-up {
+  animation: bz-fade-up var(--dur-standard) var(--ease) both;
+}
+
+/* Toast notifications — white card with a status-coloured left rail + tinted
+   icon chip. The card is ALWAYS white; status colour lives only in the rail and
+   chip. Variant tokens come from the :root Toast block, so recolouring a status
+   there restyles that variant everywhere. */
+.bz-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  background: #fff;
+  border: 0.5px solid var(--bz-card-border);
+  border-left: 3px solid var(--rail, var(--toast-info-rail));
+  border-radius: var(--bz-toast-radius);
+  padding: 12px 14px;
+  box-shadow: var(--bz-toast-shadow);
+  position: relative;
+  overflow: hidden;
+  max-width: 420px;
+  width: 100%;
+}
+.bz-toast__chip {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  margin-top: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  background: var(--chip-bg, var(--toast-info-bg));
+  color: var(--chip-fg, var(--toast-info-fg));
+}
+.bz-toast__body {
+  flex: 1;
+  min-width: 0;
+}
+.bz-toast__title {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--bz-navy);
+}
+.bz-toast__msg {
+  font-size: 12.5px;
+  color: var(--bz-ink-soft);
+  line-height: 1.4;
+  margin-top: 1px;
+}
+.bz-toast__action {
+  flex: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-top: 1px;
+  color: var(--bz-blue);
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.bz-toast__close {
+  flex: none;
+  display: flex;
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-top: 1px;
+  padding: 0;
+  color: var(--bz-ink-muted);
+}
+.bz-toast__progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--rail, var(--toast-info-rail));
+  opacity: 0.5;
+  border-bottom-left-radius: var(--bz-toast-radius);
+  animation: bz-toast-countdown var(--duration, 4000ms) linear forwards;
+}
+@keyframes bz-toast-countdown {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+/* status variants — rail / chip bg / chip icon colour */
+.bz-toast--success {
+  --rail: var(--toast-success-rail);
+  --chip-bg: var(--toast-success-bg);
+  --chip-fg: var(--toast-success-fg);
+}
+.bz-toast--error {
+  --rail: var(--toast-error-rail);
+  --chip-bg: var(--toast-error-bg);
+  --chip-fg: var(--toast-error-fg);
+}
+.bz-toast--warning {
+  --rail: var(--toast-warning-rail);
+  --chip-bg: var(--toast-warning-bg);
+  --chip-fg: var(--toast-warning-fg);
+}
+.bz-toast--info {
+  --rail: var(--toast-info-rail);
+  --chip-bg: var(--toast-info-bg);
+  --chip-fg: var(--toast-info-fg);
+}
+.bz-toast--bargain {
+  --rail: var(--toast-bargain-rail);
+  --chip-bg: var(--toast-bargain-bg);
+  --chip-fg: var(--toast-bargain-fg);
+}
+
+/* container: top-right, stacked, newest on top (the component reverses) */
+.bz-toast-container {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: none;
+}
+.bz-toast-container .bz-toast {
+  pointer-events: auto;
+}
+
+/* entry/exit: slide-in from the right + fade, transform/opacity only */
+@keyframes bz-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes bz-toast-out {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+.bz-toast--enter {
+  animation: bz-toast-in 180ms ease-out both;
+}
+.bz-toast--leave {
+  animation: bz-toast-out 180ms ease-in both;
+}
+
+@media (max-width: 600px) {
+  .bz-toast-container {
+    left: 16px;
+    right: 16px;
+    top: 12px;
+  }
+  .bz-toast {
+    max-width: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bz-toast__progress {
+    animation: none;
+  }
+  .bz-toast--enter,
+  .bz-toast--leave {
+    animation: none;
+  }
+}
+
+@keyframes bz-mic-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.85;
+  }
+}
+
+/* Top navigation — fluid spacing and mobile-friendly tap targets */
+.bz-navbar {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 100;
+}
+.bz-navbar__desktop,
+.bz-navbar__mobile {
+  width: 100%;
+}
+
+/* Brand mark sits in a cream tile so the colour logo reads on the navy bar. */
+.bz-navbar__brand {
+  flex-shrink: 0;
+  display: inline-flex;
+  padding: 8px;
+  background: var(--cream);
+  border: none;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+/* "Deliver to" chip — shared between the desktop utility bar and mobile header. */
+.bz-navbar__deliver {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--on-navy-300);
+  font-size: 0.75rem;
+}
+.bz-navbar__deliver strong {
+  color: #fff;
+  font-weight: 700;
+}
+.bz-navbar__deliver-change {
+  color: var(--on-navy-500);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Search — white rounded field with a red action button on the right. */
+.bz-navbar__search {
+  position: relative;
+  flex: 1 1 520px;
+  min-width: 0;
+  max-width: 680px;
+  display: flex;
+  align-items: center;
+  height: 48px;
+  background: #fff;
+  border-radius: 11px;
+}
+.bz-navbar__search-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  outline: none;
+  padding: 0 16px;
+  font-size: 0.9375rem;
+  font-family: var(--font-sans);
+  color: var(--ink-900);
+  background: transparent;
+}
+.bz-navbar__search-lead {
+  flex-shrink: 0;
+  align-items: center;
+  padding: 0 2px 0 12px;
+  color: var(--ink-400);
+}
+.bz-navbar__search-btn {
+  flex-shrink: 0;
+  height: 100%;
+  padding: 0 24px;
+  border: none;
+  border-radius: 0 11px 11px 0;
+  background: var(--red);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Search category scope ("All ▾") */
+.bz-navbar__scope-wrap {
+  position: relative;
+  flex-shrink: 0;
+  height: 100%;
+}
+.bz-navbar__scope {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 14px;
+  border: none;
+  border-right: 1px solid var(--cream-line);
+  border-radius: 11px 0 0 11px;
+  background: var(--cream-100);
+  color: var(--cream-ink);
+  font-family: var(--font-sans);
+  font-size: 0.84375rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.bz-navbar__scope-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 220px;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid var(--line-200);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-3);
+  padding: 6px;
+  z-index: 200;
+}
+.bz-navbar__scope-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  border-radius: var(--r-sm);
+  color: var(--ink-700);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.bz-navbar__scope-item:hover,
+.bz-navbar__scope-item.is-active {
+  background: var(--cream-100);
+  color: var(--blue-deep);
+}
+
+/* Inline language switch (utility bar) */
+.bz-navbar__lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+}
+.bz-navbar__lang button {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--on-navy-500);
+}
+.bz-navbar__lang button.is-active {
+  color: #fff;
+  font-weight: 700;
+}
+.bz-navbar__search-btn:hover {
+  background: var(--red-hover);
+}
+.bz-navbar__search-clear {
+  flex-shrink: 0;
+  width: 40px;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: var(--ink-400);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bz-navbar__search-clear:hover {
+  color: var(--ink-700);
+}
+
+/* ---------- Desktop: three stacked tiers ---------- */
+.bz-navbar__utility {
+  width: 100%;
+  background: var(--blue-deep);
+}
+.bz-navbar__utility-inner {
+  padding-top: 7px;
+  padding-bottom: 7px;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+.bz-navbar__utility-links {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  min-width: 0;
+}
+.bz-navbar__util-link {
+  color: var(--on-navy-400);
+  font-size: 0.75rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+.bz-navbar__util-link:hover {
+  color: #fff;
+}
+
+.bz-navbar__main {
+  width: 100%;
+  background: var(--blue-deep);
+}
+.bz-navbar__main-inner {
+  padding-top: 15px;
+  padding-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  min-width: 0;
+}
+.bz-navbar__actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  color: #fff;
+  min-width: 0;
+}
+.bz-navbar__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: none;
+  color: #fff;
+  font-family: var(--font-sans);
+  min-width: 0;
+}
+.bz-navbar__actions > .bz-navbar__action:first-child {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px 16px 8px 13px;
+  border-radius: 11px;
+}
+.bz-navbar__action-ic {
+  position: relative;
+  display: inline-flex;
+}
+.bz-navbar__action-badge {
+  position: absolute;
+  top: -7px;
+  right: -8px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--red);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bz-navbar__action-badge--gold {
+  background: var(--gold);
+  color: #3a2c00;
+}
+.bz-navbar__action-text {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  line-height: 1.18;
+  min-width: 0;
+}
+.bz-navbar__action-cap {
+  font-size: 0.6875rem;
+  color: var(--on-navy-400);
+}
+.bz-navbar__action-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.84375rem;
+  font-weight: 700;
+  min-width: 0;
+  white-space: nowrap;
+}
+.bz-navbar__action-main.tnum {
+  font-family: var(--font-mono);
+}
+
+.bz-navbar__account-wrap {
+  position: relative;
+}
+.bz-navbar__menu {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: 0;
+  min-width: 240px;
+  background: #fff;
+  border: 1px solid var(--line-200);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-3);
+  padding: 6px;
+  z-index: 200;
+}
+
+.bz-navbar__cats {
+  width: 100%;
+  background: #fff;
+  border-bottom: 1px solid var(--cream-line);
+}
+.bz-navbar__cats-inner {
+  padding-top: 9px;
+  padding-bottom: 9px;
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: var(--sp-3);
+  overflow-x: auto;
+  min-width: 0;
+}
+.bz-navbar__cat {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: 0.84375rem;
+  font-weight: 600;
+  color: var(--cream-ink);
+  padding: 8px 13px;
+  border-radius: 9px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.bz-navbar__cat:hover {
+  background: var(--cream-100);
+  color: var(--blue-deep);
+}
+
+/* ---------- Mobile: stacked header + category strip ---------- */
+.bz-navbar__m-bar {
+  width: 100%;
+  background: var(--blue-deep);
+}
+.bz-navbar__m-bar-inner {
+  padding-top: 11px;
+  padding-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.bz-navbar__m-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.bz-navbar__m-icons {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.bz-navbar__m-icon {
+  position: relative;
+  display: inline-flex;
+  text-decoration: none;
+}
+.bz-navbar__cats-strip {
+  width: 100%;
+  background: #fff;
+  border-bottom: 1px solid var(--cream-line);
+}
+.bz-navbar__cats-strip-inner {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 7px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  overflow-x: auto;
+  min-width: 0;
+}
+.bz-navbar__cats-strip .bz-navbar__cat {
+  font-size: 0.78125rem;
+  padding: 6px 12px;
+  border-radius: 18px;
+}
+.bz-navbar__cats-strip .bz-navbar__cat {
+  background: var(--cream-100);
+}
+.bz-navbar__cats-strip .bz-navbar__cat.is-active,
+.bz-navbar__cats-strip .bz-navbar__cat--all {
+  background: var(--blue-deep);
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .bz-navbar__search {
+    flex: none;
+    max-width: none;
+    height: 42px;
+    border-radius: 10px;
+  }
+  .bz-navbar__search-lead {
+    padding-left: 14px;
+    padding-right: 10px;
+  }
+  .bz-navbar__search-input {
+    padding: 0 8px 0 0;
+    font-size: 15px;
+  }
+  .bz-navbar__search-btn {
+    min-width: 62px;
+    padding: 0 15px;
+    border-radius: 0 10px 10px 0;
+    font-size: 14px;
+  }
+  .bz-navbar__mobile .bz-navbar__deliver {
+    display: none;
+  }
+  .bz-navbar__deliver-change {
+    display: none;
+  }
+}
+
+/* Mobile bottom nav */
+.bz-bnav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  display: none;
+  align-items: stretch;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--line-200);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.bz-bnav__item {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 52px;
+  background: none;
+  border: none;
+  padding: 6px 4px max(8px, env(safe-area-inset-bottom, 0));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  color: var(--ink-500);
+  transition: color 0.18s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bz-bnav__item:active {
+  opacity: 0.85;
+}
+
+.bz-bnav__item--active {
+  color: var(--red);
+}
+
+.bz-bnav__item--active::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 28px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--red);
+}
+
+.bz-bnav__label {
+  font-size: 11px;
+  font-weight: 700;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.bz-bnav__ic {
+  position: relative;
+  display: inline-flex;
+}
+
+.bz-bnav__badge {
+  position: absolute;
+  top: -5px;
+  right: -7px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: var(--red);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+}
+
+/* Buyer bottom nav (revamp) — solid warm bar, navy active, elevated red Watch.
+   Seller keeps its Fluent styling (data-skin="fluent"). */
+.bz-bnav:not([data-skin="fluent"]) {
+  background: #fff;
+  border-top-color: var(--cream-line);
+  box-shadow: 0 -2px 12px rgba(16, 24, 58, 0.06);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  align-items: flex-end;
+}
+.bz-bnav:not([data-skin="fluent"]) .bz-bnav__item {
+  color: #8c8677;
+  justify-content: flex-end;
+  gap: 4px;
+}
+.bz-bnav:not([data-skin="fluent"]) .bz-bnav__item--active {
+  color: var(--blue-deep);
+}
+.bz-bnav:not([data-skin="fluent"]) .bz-bnav__item--active::before {
+  display: none;
+}
+.bz-bnav:not([data-skin="fluent"]) .bz-bnav__item--raised {
+  color: var(--red);
+}
+.bz-bnav__raise {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  margin-top: -28px;
+  border-radius: 18px;
+  background: var(--red);
+  color: #fff;
+  border: 4px solid #fff;
+  box-shadow: 0 6px 18px rgba(226, 52, 43, 0.45);
+}
+
+@media (max-width: 768px) {
+  .bz-bnav {
+    display: flex;
+  }
+}
+
+@media (max-width: 360px) {
+  .bz-bnav__label {
+    font-size: 9px;
+  }
+}
+
+/* ============================================================
+   Seller shell — collapsable sidebar (desktop) + drawer (mobile)
+   ============================================================ */
+.bz-seller-shell {
+  display: block;
+  min-height: 100vh;
+  background: #f7f8fb;
+  padding-left: 248px;
+  transition: padding-left 0.22s var(--ease);
+}
+.bz-seller-shell.collapsed {
+  padding-left: 72px;
+}
+.bz-seller-side {
+  width: 248px;
+  background: #fff;
+  border-right: 1px solid var(--line-200);
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.22s var(--ease);
+  z-index: 90;
+}
+.bz-seller-side.collapsed {
+  width: 72px;
+}
+.bz-seller-side .bz-side-label,
+.bz-seller-side .bz-side-group {
+  transition: opacity 0.15s var(--ease);
+}
+.bz-seller-side.collapsed .bz-side-label,
+.bz-seller-side.collapsed .bz-side-group {
+  display: none;
+}
+.bz-seller-side.collapsed .bz-side-item {
+  justify-content: center;
+  padding: 12px 0;
+}
+.bz-seller-side.collapsed .bz-side-item .bz-side-badge {
+  position: absolute;
+  top: 4px;
+  right: 12px;
+}
+
+.bz-side-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: calc(100% - 16px);
+  margin: 2px 8px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--ink-700);
+  font-weight: 600;
+  font-size: 0.9rem;
+  position: relative;
+  min-height: 56px;
+}
+.bz-side-label {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  overflow: hidden;
+}
+.bz-side-en {
+  display: block;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bz-side-item:hover {
+  background: var(--line-100);
+}
+.bz-side-foot {
+  border-top: 1px solid var(--line-200);
+  padding: 8px 0;
+}
+.bz-side-lang {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 2px 8px 8px;
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--ink-700);
+}
+.bz-seller-side.collapsed .bz-side-lang {
+  display: none;
+}
+.bz-side-logout {
+  color: var(--red);
+}
+.bz-side-logout:hover {
+  background: var(--tint-red-50);
+}
+.bz-side-logout:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.bz-side-item.active {
+  background: var(--tint-red-50);
+  color: var(--red);
+}
+.bz-side-item.active::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  background: var(--red);
+  border-radius: 0 3px 3px 0;
+}
+.bz-side-group {
+  padding: 14px 18px 6px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--ink-400);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.bz-side-badge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+}
+.bz-side-scroll {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.bz-side-content {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+}
+
+/* Sidebar header — brand + inline collapse toggle */
+.bz-side-toggle {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--line-100);
+  border: 1px solid var(--line-200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--ink-700);
+  flex-shrink: 0;
+  transition:
+    background 0.15s var(--ease),
+    color 0.15s var(--ease),
+    border-color 0.15s var(--ease);
+}
+.bz-side-toggle:hover {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+.bz-side-toggle:hover svg {
+  color: #fff !important;
+}
+.bz-seller-side.collapsed .bz-side-toggle {
+  margin: 0 auto;
+}
+@media (max-width: 900px) {
+  .bz-side-toggle {
+    display: none;
+  }
+}
+
+.bz-side-mobile-bar {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #fff;
+  border-bottom: 1px solid var(--line-200);
+  padding: 10px 14px;
+  align-items: center;
+  gap: 10px;
+}
+.bz-side-mobile-bar h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--blue-deep);
+}
+
+.bz-side-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 18, 32, 0.5);
+  z-index: 80;
+  display: none;
+}
+.bz-side-overlay.show {
+  display: block;
+}
+
+@media (max-width: 900px) {
+  .bz-seller-shell {
+    padding-left: 0;
+  }
+  .bz-seller-shell.collapsed {
+    padding-left: 0;
+  }
+  .bz-seller-side {
+    transform: translateX(-100%);
+    transition: transform 0.22s var(--ease);
+    box-shadow: 0 0 30px rgba(11, 18, 32, 0.18);
+    height: calc(100dvh - 53px - env(safe-area-inset-bottom, 0px));
+    overflow: hidden;
+    overscroll-behavior: contain;
+  }
+  .bz-seller-side.open {
+    transform: translateX(0);
+  }
+  .bz-seller-side.collapsed {
+    width: 248px;
+  }
+  .bz-side-mobile-bar {
+    display: flex;
+  }
+  .bz-side-foot {
+    padding-bottom: 8px;
+  }
+}
+
+/* ── Store switcher (multi-store) ──────────────────────────────────────────
+   The trigger chip lives in the sidebar header (desktop) and the mobile top bar.
+   On desktop the panel is an anchored popover; on mobile it is a portal'd bottom
+   sheet (JS picks which to render, so these two never overlap). */
+.bz-store-switcher {
+  position: relative;
+}
+.bz-store-switcher--sidebar,
+.bz-store-switcher--mobilebar {
+  flex: 1;
+  min-width: 0;
+}
+
+.bz-store-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: var(--r-md);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--dur-micro, 120ms) var(--ease);
+}
+.bz-store-chip:hover {
+  background: var(--line-100);
+}
+.bz-store-chip--collapsed {
+  width: auto;
+  padding: 2px;
+  justify-content: center;
+}
+.bz-store-chip-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.bz-store-chip-name {
+  font-weight: 800;
+  font-size: 0.875rem;
+  color: var(--blue-deep);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bz-store-chip-role {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+  margin-top: 1px;
+}
+.bz-store-chip--mobilebar .bz-store-chip-name {
+  font-size: 1rem;
+}
+
+.bz-store-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 95;
+  width: 280px;
+  max-width: calc(100vw - 32px);
+  background: #fff;
+  border: 1px solid var(--line-200);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md);
+  padding: 8px;
+}
+.bz-store-switcher--sidebar-collapsed .bz-store-pop {
+  top: 0;
+  left: calc(100% + 8px);
+}
+.bz-store-pop-head {
+  padding: 4px 8px 8px;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+
+.bz-store-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.bz-store-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: var(--r-md);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+.bz-store-row:hover:not(:disabled) {
+  background: var(--line-100);
+}
+.bz-store-row.active {
+  background: var(--tint-blue-50);
+}
+.bz-store-row:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.bz-store-row-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.bz-store-row-name {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: var(--ink-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bz-store-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.bz-store-row-city {
+  font-size: 0.75rem;
+  color: var(--ink-400);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bz-store-pill {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 1px 8px;
+  border-radius: var(--r-full);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.bz-store-pill.ok {
+  color: var(--success);
+  background: rgba(22, 163, 74, 0.12);
+}
+.bz-store-pill.warn {
+  color: var(--warning);
+  background: rgba(245, 158, 11, 0.14);
+}
+
+.bz-store-add {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px;
+  border: none;
+  border-top: 1px solid var(--line-200);
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--blue);
+}
+.bz-store-add:hover {
+  color: var(--blue-hover);
+}
+
+.bz-store-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(11, 18, 32, 0.5);
+}
+.bz-store-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 121;
+  max-height: 80dvh;
+  overflow-y: auto;
+  padding: 8px 14px calc(16px + env(safe-area-inset-bottom, 0px));
+  background: #fff;
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  box-shadow: 0 -8px 30px rgba(11, 18, 32, 0.18);
+  animation: bz-store-sheet-up 0.24s var(--ease);
+}
+@keyframes bz-store-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+.bz-store-sheet-handle {
+  width: 40px;
+  height: 4px;
+  margin: 4px auto 10px;
+  border-radius: var(--r-full);
+  background: var(--line-200);
+}
+.bz-store-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px 8px;
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: var(--ink-900);
+}
+.bz-store-sheet-head button {
+  display: flex;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.bz-store-modal-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(11, 18, 32, 0.45);
+}
+.bz-store-modal {
+  width: 100%;
+  max-width: 420px;
+  max-height: 90dvh;
+  overflow-y: auto;
+  padding: 24px;
+  background: #fff;
+  border-radius: var(--r-lg);
+}
+.bz-store-modal-title {
+  margin: 0 0 16px;
+  font-size: 1.125rem;
+  font-weight: 800;
+}
+.bz-store-field {
+  display: block;
+  margin-bottom: 16px;
+}
+.bz-store-field-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ink-600);
+}
+.bz-store-field-hint {
+  margin: 0 0 10px;
+  font-size: 0.75rem;
+  color: var(--ink-500);
+}
+.bz-store-field-input {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line-200);
+  border-radius: var(--r-sm);
+  font-size: 0.875rem;
+}
+.bz-store-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+/* Seller delete-account confirm dialog — Fluent MessageBar-style danger callout
+   plus the OTP/resend/error bits the generic store-modal classes don't cover. */
+.bz-del-warning {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border-left: 3px solid var(--danger);
+  background: var(--tint-red-50);
+  color: var(--ink-700);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.bz-del-otp {
+  font-family: var(--font-mono, monospace);
+  font-size: 1.125rem;
+  letter-spacing: 6px;
+}
+.bz-del-resend {
+  margin: 10px 0 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--blue);
+  cursor: pointer;
+}
+.bz-del-resend:disabled {
+  color: var(--ink-400);
+  cursor: default;
+}
+.bz-del-error {
+  margin: 14px 0 0;
+  color: var(--danger);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* Seller page layouts — use full content area beside sidebar */
+.bz-seller-page {
+  width: 100%;
+  /* Center seller content to a calm reading column (--seller-max, 1160px in the
+     Fluent skin) so pages line up with the KYC banner above them. Falls back to
+     --container outside the seller skin. Side padding (28px) matches the banner;
+     mobile (<=768px) is forced back to 16px by the media rules below. */
+  max-width: var(--seller-max, var(--container));
+  margin: 0 auto;
+  padding: 20px 28px 100px;
+  box-sizing: border-box;
+}
+
+/* Page-type-aware width. Data-dense pages (dashboards, tables, charts, the
+   three-zone Add Product layout) opt into the wider container so columns fill
+   the space rather than wasting both gutters. */
+.bz-seller-page--wide {
+  max-width: var(--seller-max-wide, var(--container));
+}
+
+/* Seller page header — one shared pattern across every seller screen: a blue
+   accent rail beside a dark title, a helper line, optional breadcrumb, and a
+   right-aligned actions slot. Colors come from tokens so it follows the skin. */
+.bz-seller-pagehead {
+  margin-bottom: 20px;
+}
+.bz-seller-pagehead__crumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--ink-400);
+  margin-bottom: 8px;
+}
+.bz-seller-pagehead__crumbs button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--ink-400);
+  cursor: pointer;
+}
+.bz-seller-pagehead__crumbs button:hover {
+  color: var(--blue);
+  text-decoration: underline;
+}
+.bz-seller-pagehead__crumb-sep {
+  color: var(--ink-300);
+}
+.bz-seller-pagehead__crumb-current {
+  color: var(--ink-700);
+  font-weight: 600;
+}
+.bz-seller-pagehead__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.bz-seller-pagehead__title {
+  min-width: 0;
+}
+.bz-seller-pagehead h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--ink-900);
+}
+.bz-seller-pagehead__sub {
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--ink-500);
+  max-width: 64ch;
+}
+.bz-seller-pagehead__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+@media (max-width: 640px) {
+  .bz-seller-pagehead__actions {
+    width: 100%;
+  }
+}
+
+/* KYC verification — a status/confirmation page that spans the full width of the
+   seller content area on every breakpoint. */
+.bz-kyc {
+  width: 100%;
+}
+.bz-kyc-actions {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+/* Mobile: buttons stack and fill the width (the correct mobile pattern). */
+.bz-kyc-actions > button,
+.bz-kyc-actions > a {
+  width: 100% !important;
+}
+@media (min-width: 721px) {
+  /* Desktop: buttons size to their label instead of stretching edge to edge. */
+  .bz-kyc-actions > button,
+  .bz-kyc-actions > a {
+    width: auto !important;
+    min-width: 150px;
+  }
+}
+
+.bz-seller-analytics-layout {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 18px;
+  width: 100%;
+}
+
+.bz-seller-analytics-span-4 {
+  grid-column: span 4;
+}
+.bz-seller-analytics-span-8 {
+  grid-column: span 8;
+}
+.bz-seller-analytics-span-12 {
+  grid-column: span 12;
+}
+
+.bz-seller-add-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  width: 100%;
+}
+
+/*
+ * Seller "Your library" cards.
+ * Mobile-first: each card is a tight horizontal list item (thumb left, text +
+ * actions right). On wider screens the container reflows into a multi-column
+ * grid and each card stacks vertically (thumb on top, body below).
+ */
+/* Mobile-first: single column. Cards stack video-on-top, info below — the
+   same shape used on desktop, just one per row. The 3-up grid kicks in on
+   wider screens (see the media queries below). */
+.bz-seller-video-library-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  width: 100%;
+}
+
+.bz-seller-video-card {
+  background: #fff;
+  border: 1.5px solid var(--line-200);
+  border-radius: var(--r-lg);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.bz-seller-video-card__media {
+  width: 100%;
+  /* The VideoPlayer paints its own rounded corners; the card clips the top to
+     match, so the clip sits flush edge-to-edge like the watch feed. */
+}
+
+.bz-seller-video-card__body {
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.bz-seller-video-card__for {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink-500);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bz-seller-video-card__for span {
+  font-weight: 800;
+  color: var(--ink-900);
+}
+
+.bz-seller-video-card__views {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ink-500);
+}
+
+.bz-seller-video-card__actions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
+.bz-seller-video-card__actions > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* Tablet: two across. */
+@media (min-width: 640px) {
+  .bz-seller-video-library-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Desktop: the 3-column row from the design. */
+@media (min-width: 960px) {
+  .bz-seller-video-library-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ---------- Seller video upload sheet (mobile-first bottom sheet) ---------- */
+.bz-upload-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: flex-end; /* mobile: dock to bottom */
+  justify-content: center;
+  padding: 0;
+}
+
+.bz-upload-sheet {
+  background: #fff;
+  width: 100%;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .bz-upload-sheet-overlay {
+    align-items: center; /* desktop: centered modal */
+    padding: 24px;
+  }
+
+  .bz-upload-sheet {
+    max-width: 480px;
+    border-radius: var(--r-lg);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+  }
+}
+
+.bz-upload-form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 92vh;
+}
+
+.bz-upload-form__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--line-100);
+  flex-shrink: 0;
+}
+
+.bz-upload-form__title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--blue-deep);
+}
+
+.bz-upload-form__close {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--r-md);
+  background: var(--line-100);
+  color: var(--ink-600);
+  cursor: pointer;
+}
+.bz-upload-form__close:hover {
+  background: var(--line-200);
+}
+.bz-upload-form__close:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bz-upload-form__body {
+  padding: 16px 18px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.bz-upload-form__label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin: 14px 0 6px;
+  color: var(--ink-700);
+}
+.bz-upload-form__label:first-of-type {
+  margin-top: 0;
+}
+
+.bz-upload-form__input {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line-200);
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.bz-upload-form__error {
+  margin: 12px 0 0;
+  color: var(--danger);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.bz-upload-form__hint {
+  margin: 6px 0 0;
+  font-size: 0.75rem;
+  color: var(--ink-400);
+  line-height: 1.45;
+}
+
+.bz-upload-form__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 18px calc(14px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line-100);
+  flex-shrink: 0;
+}
+
+.bz-upload-form__note {
+  margin: 2px 0 0;
+  font-size: 0.7rem;
+  color: var(--ink-400);
+  text-align: center;
+}
+
+/* Real upload control (replaces the native file input) */
+.bz-video-dropzone {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 22px 16px;
+  border: 1.5px dashed var(--blue);
+  border-radius: var(--r-lg);
+  background: var(--tint-blue-50);
+  color: var(--blue-deep);
+  cursor: pointer;
+  text-align: center;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+.bz-video-dropzone:hover {
+  background: rgba(37, 99, 235, 0.1);
+}
+.bz-video-dropzone:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.bz-video-dropzone--filled {
+  border-style: solid;
+  border-color: var(--success);
+  background: rgba(22, 163, 74, 0.08);
+  color: var(--ink-900);
+}
+.bz-video-dropzone__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  margin-bottom: 4px;
+}
+.bz-video-dropzone--filled .bz-video-dropzone__icon {
+  color: var(--success);
+}
+.bz-video-dropzone__name {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  word-break: break-word;
+}
+.bz-video-dropzone__hint {
+  font-size: 0.75rem;
+  color: var(--ink-500);
+}
+
+.bz-upload-preview {
+  margin: 12px auto 0;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: #000;
+  max-width: 240px;
+}
+.bz-upload-preview__video {
+  width: 100%;
+  display: block;
+  max-height: 320px;
+}
+.bz-upload-preview__meta {
+  padding: 8px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(0, 0, 0, 0.6);
+}
+.bz-upload-preview__meta.is-bad {
+  color: #fff;
+  background: var(--danger);
+}
+
+/* Prominent "record upright" callout — plain language, simple visual. */
+.bz-upload-orient {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border-radius: var(--r-md);
+  background: var(--tint-blue-50);
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  margin-bottom: 12px;
+}
+.bz-upload-orient__shapes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.bz-upload-orient__phone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+.bz-upload-orient__phone--good {
+  width: 28px;
+  height: 44px; /* tall = upright (the right way) */
+  background: var(--success);
+}
+.bz-upload-orient__phone--bad {
+  width: 44px;
+  height: 28px; /* wide = sideways (the wrong way) */
+  background: var(--ink-300);
+}
+.bz-upload-orient__title {
+  font-weight: 800;
+  font-size: 0.9375rem;
+  color: var(--blue-deep);
+  line-height: 1.2;
+}
+.bz-upload-orient__sub {
+  font-size: 0.75rem;
+  color: var(--ink-500);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.bz-upload-tips {
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: var(--tint-blue-50);
+  border: 1px solid rgba(37, 99, 235, 0.15);
+  margin-bottom: 16px;
+}
+.bz-upload-tips__head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  color: var(--blue-deep);
+  margin-bottom: 6px;
+}
+.bz-upload-tips__list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.75rem;
+  color: var(--ink-600);
+  line-height: 1.5;
+}
+
+.bz-upload-progress {
+  margin-top: 14px;
+}
+.bz-upload-progress__label {
+  font-size: 0.75rem;
+  color: var(--ink-500);
+  margin-bottom: 4px;
+}
+.bz-upload-progress__track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--line-100);
+  overflow: hidden;
+}
+.bz-upload-progress__bar {
+  height: 100%;
+  background: var(--blue);
+  transition: width 0.2s ease;
+}
+
+/* Seller responsive grid helper */
+@media (max-width: 1100px) {
+  .bz-seller-analytics-span-4,
+  .bz-seller-analytics-span-8 {
+    grid-column: span 12;
+  }
+}
+
+/* The Add Product layout owns its own responsive behaviour in
+   form-workflow.css (three-zone → stacked); no override needed here. */
+
+/* Seller photo grid — reliable thumbnails on narrow screens */
+.bz-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+  /* Stay fluid (3 tiles to a row) on mobile, but cap the grid so each square
+     tile can't balloon to ~440px on wide desktop screens. */
+  max-width: 680px;
+}
+
+/* Page-level "Back to …" navigation links. On desktop the navbar/sidebar
+   already handles getting around, so these are redundant chrome — hide them
+   there and keep them only on mobile, where there's no persistent nav.
+   !important is needed to beat the inline `display: inline-flex` each link sets. */
+@media (min-width: 769px) {
+  .bz-back-link {
+    display: none !important;
+  }
+}
+
+.bz-metadata-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+/* A compact "added detail" row on the Add Product form: label on the left,
+   value control on the right, an X to remove on the far right. The row owns the
+   border + focus ring so the inner control can sit borderless (see cellInput). */
+.bz-spec-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.8fr) minmax(0, 1.5fr) auto;
+  column-gap: 12px;
+  row-gap: 6px;
+  align-items: center;
+  border: 1.5px solid var(--line-200);
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  background: #fff;
+  transition: border-color var(--dur-standard) var(--ease);
+}
+
+.bz-spec-row:focus-within {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--tint-blue-50);
+}
+
+.bz-spec-row__label {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ink-700);
+}
+
+.bz-spec-row__unit {
+  color: var(--ink-400);
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.bz-spec-row__req {
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--saffron);
+  background: var(--line-100);
+  padding: 2px 7px;
+  border-radius: var(--r-full);
+}
+
+.bz-spec-row__control {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+}
+
+.bz-spec-row__remove {
+  grid-column: 3;
+  grid-row: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--ink-400);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background var(--dur-standard) var(--ease),
+    color var(--dur-standard) var(--ease);
+}
+
+@media (hover: hover) {
+  .bz-spec-row__remove:hover {
+    background: var(--line-100);
+    color: var(--ink-700);
+  }
+}
+
+.bz-spec-row__help {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--ink-400);
+}
+
+@media (max-width: 560px) {
+  .bz-spec-row {
+    grid-template-columns: 1fr auto;
+  }
+  .bz-spec-row__label {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .bz-spec-row__remove {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .bz-spec-row__control {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+.bz-photo-cell {
+  position: relative;
+  aspect-ratio: 1;
+  min-height: 0;
+  min-width: 0;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  border: 1.5px solid var(--line-200);
+  background: var(--line-100);
+}
+
+.bz-photo-cell__img {
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.bz-photo-cell__replace {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  opacity: 0;
+  transition: opacity var(--dur-standard) var(--ease);
+}
+
+@media (hover: hover) {
+  .bz-photo-cell:hover .bz-photo-cell__replace {
+    opacity: 1;
+    background: rgba(11, 18, 32, 0.32);
+  }
+}
+
+@media (hover: none) {
+  .bz-photo-cell__replace {
+    opacity: 1;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 10px;
+    background: linear-gradient(to top, rgba(11, 18, 32, 0.55), transparent 55%);
+  }
+  .bz-photo-cell__replace .bz-photo-cell__replace-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 560px) {
+  .bz-metadata-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .bz-metadata-row > button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .bz-photo-grid {
+    gap: 8px;
+  }
+}
+
+/* Seller dashboard — shareable public storefront link card */
+.bz-store-link {
+  margin-bottom: 18px;
+  padding: 16px 18px;
+  border-radius: var(--r-lg);
+  border: 1.5px solid var(--line-200);
+  background: #fff;
+}
+
+.bz-store-link__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bz-store-link__id {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bz-store-link__name {
+  font-size: 1.0625rem;
+  font-weight: 800;
+  color: var(--ink-900);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bz-store-link__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bz-store-link__badge {
+  flex-shrink: 0;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.bz-store-link__badge.is-live {
+  background: rgba(22, 163, 74, 0.12);
+  color: var(--success);
+}
+
+.bz-store-link__badge.is-pending {
+  background: rgba(245, 158, 11, 0.14);
+  color: #b45309;
+}
+
+.bz-store-link__on {
+  font-size: 0.8125rem;
+  color: var(--ink-500);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bz-store-link__share {
+  flex-shrink: 0;
+  border: 1.5px solid var(--line-200) !important;
+  color: var(--ink-700) !important;
+}
+
+.bz-store-link__divider {
+  height: 0;
+  margin: 14px 0;
+  border: 0;
+  border-top: 1px solid var(--line-200);
+}
+
+.bz-store-link__pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px 12px;
+  border-radius: var(--r-md);
+  background: var(--page);
+}
+
+.bz-store-link__url {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--blue);
+  text-decoration: underline;
+  text-decoration-color: rgba(29, 78, 216, 0.35);
+  text-underline-offset: 2px;
+  transition: text-decoration-color var(--dur-standard) var(--ease);
+}
+
+.bz-store-link__url:hover {
+  text-decoration-color: var(--blue);
+}
+
+.bz-store-link__copy {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 6px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--blue);
+  transition: color var(--dur-standard) var(--ease);
+}
+
+.bz-store-link__copy:hover {
+  color: var(--blue-hover);
+}
+
+.bz-store-link__copy.is-copied {
+  color: var(--success);
+}
+
+.bz-store-link__edit-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 6px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink-500);
+  transition: color var(--dur-standard) var(--ease);
+}
+
+.bz-store-link__edit-btn:hover {
+  color: var(--ink-900);
+}
+
+/* Inline handle editor — replaces the pill while the seller renames their link. */
+.bz-store-link__edit-field {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--line-200);
+  border-radius: var(--r-md);
+  background: var(--page);
+}
+
+.bz-store-link__edit-prefix {
+  flex-shrink: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink-500);
+  white-space: nowrap;
+}
+
+.bz-store-link__edit-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: none;
+  outline: none;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink-900);
+}
+
+.bz-store-link__edit-hint {
+  margin: 8px 2px 0;
+  font-size: 0.75rem;
+  color: var(--ink-500);
+}
+
+.bz-store-link__edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* Phone: name truncates, "on BazaarCo" drops to save room, Share stays compact. */
+@media (max-width: 600px) {
+  .bz-store-link {
+    padding: 14px;
+  }
+
+  .bz-store-link__on {
+    display: none;
+  }
+
+  /* Stack the pill: full-width URL on its own line so it isn't crushed, with the
+     Edit/Copy actions dropping to the row below (edit left, copy right). */
+  .bz-store-link__pill {
+    flex-wrap: wrap;
+  }
+
+  .bz-store-link__url {
+    flex: 1 1 100%;
+  }
+
+  .bz-store-link__edit-btn {
+    margin-right: auto;
+    padding-left: 0;
+  }
+}
+
+/* ============================================================
+   Store directory (/stores) — dense brand grid.
+   Mobile leads with 2 columns so shoppers sense the breadth of
+   stores at a glance; desktop opens to 4. One card component,
+   laid out tighter as the viewport grows.
+   ============================================================ */
+.bz-stores-page {
+  padding: 20px clamp(12px, 4vw, 28px) 32px;
+}
+@media (max-width: 768px) {
+  /* Clear the fixed bottom nav so the last row of cards isn't hidden behind it. */
+  .bz-stores-page {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Equal-weight browse grid: 1-up phone → 2-up small tablet → 3-up tablet →
+   4-up desktop. Even gutters at every step; cards stretch to a shared row
+   height (see .bz-store-card). */
+.bz-stores-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+@media (min-width: 480px) {
+  .bz-stores-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+}
+@media (min-width: 768px) {
+  .bz-stores-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+@media (min-width: 1024px) {
+  .bz-stores-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+  }
+}
+
+/* Equal-weight card: fixed internal layout (head → single meta line → footer)
+   so every card is the same height with the CTA pinned to the bottom. No lift
+   or colour-fill on hover — this is a browse grid with no single primary card,
+   so nothing should read as "selected". */
+.bz-store-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  padding: 14px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line-200);
+  background: var(--card);
+  box-shadow: var(--sh-1);
+  text-decoration: none;
+  color: inherit;
+  transition:
+    box-shadow var(--dur-standard) var(--ease),
+    border-color var(--dur-standard) var(--ease);
+}
+.bz-store-card:hover {
+  box-shadow: var(--sh-2);
+  border-color: var(--ink-300);
+}
+@media (min-width: 1024px) {
+  .bz-store-card {
+    gap: 10px;
+    padding: 16px;
+  }
+}
+
+.bz-store-card__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.bz-store-card__id {
+  min-width: 0;
+}
+.bz-store-card__name {
+  font-weight: 800;
+  font-size: 0.9375rem;
+  line-height: 1.3;
+  color: var(--ink-900);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (min-width: 1024px) {
+  .bz-store-card__name {
+    font-size: 1.0625rem;
+  }
+}
+.bz-store-card__loc {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  min-width: 0;
+  font-size: 0.8125rem;
+  color: var(--ink-400);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Single meta line — holds EITHER the rating OR "No reviews yet". Fixed height
+   so both states occupy identical space and the grid stays even. */
+.bz-store-card__meta {
+  display: flex;
+  align-items: center;
+  min-height: 20px;
+}
+.bz-store-card__noreviews {
+  font-size: 0.8125rem;
+  color: var(--ink-400);
+}
+
+/* CTA: one quiet outlined (secondary) treatment on every card and at every
+   breakpoint — matches the shared Button `secondary` variant tokens. Pinned to
+   the card bottom via margin-top:auto. */
+/* Decorative "Visit store" affordance — the whole card is the <AppLink>, so this
+   stays a span. Styled to match the button-system Secondary variant. */
+.bz-store-card__cta {
+  margin-top: auto;
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--btn-border);
+  border-radius: var(--btn-radius);
+  background: var(--btn-surface);
+  color: var(--btn-ink);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  transition:
+    background var(--dur-standard) var(--ease),
+    border-color var(--dur-standard) var(--ease);
+}
+.bz-store-card:hover .bz-store-card__cta {
+  background: var(--btn-surface-tint);
+}
+
+.bz-popular-stores__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+  gap: var(--grid-gap);
+}
+
+.bz-popular-store-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid #e9ebf0;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: 0 1px 2px rgba(20, 30, 60, 0.04);
+  color: inherit;
+  cursor: pointer;
+  transition:
+    box-shadow var(--dur-standard) var(--ease),
+    transform var(--dur-standard) var(--ease);
+}
+
+.bz-popular-store-card:hover,
+.bz-popular-store-card:focus-visible {
+  box-shadow: 0 12px 28px rgba(16, 24, 58, 0.12);
+  transform: translateY(-3px);
+  outline: none;
+}
+
+.bz-popular-store-card__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+}
+
+.bz-popular-store-card__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.bz-popular-store-card__identity {
+  flex: 1;
+  min-width: 0;
+}
+
+.bz-popular-store-card__name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  color: var(--ink-900);
+  font-size: 1.0625rem;
+  font-weight: 800;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bz-popular-store-card__name svg {
+  flex: none;
+}
+
+.bz-popular-store-card__handle {
+  overflow: hidden;
+  margin-top: 3px;
+  color: #8c8677;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bz-popular-store-card__rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: none;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: #fbf1d8;
+  color: #8a6a12;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.bz-popular-store-card__products {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.bz-popular-store-card__product {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 10px;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.5) 0 9px,
+      rgba(255, 255, 255, 0) 9px 18px
+    ),
+    #eef2fb;
+}
+
+.bz-popular-store-card__product img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bz-popular-store-card__product::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(238, 242, 251, 0.08);
+}
+
+.bz-popular-store-card__more {
+  position: relative;
+  z-index: 1;
+  color: #3a5bb0;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  line-height: 1.12;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9);
+}
+
+/* Watch feed + Visit on one row; both grow so they share the width (primary
+   stays wider by its longer label). Wraps to a stacked, full-width pair only
+   when the card is genuinely too narrow to hold both — no clipping. */
+.bz-popular-store-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.bz-popular-store-card__action--grow {
+  flex: 1 1 auto;
+}
+
+/* PDP mobile gallery */
+.bz-pdp-mobile__gallery {
+  width: 100%;
+  min-width: 0;
+}
+
+.bz-pdp-mobile__viewport {
+  position: relative;
+  /* Break out of the PDP page padding so the hero image is edge-to-edge,
+     while the thumbnail strip and content below stay inset. */
+  width: auto;
+  margin: -12px -16px 0;
+  aspect-ratio: 4 / 3;
+  max-height: min(42vh, 340px);
+  overflow: hidden;
+  border-radius: 0;
+  background: var(--ink-50);
+  touch-action: pan-y;
+  user-select: none;
+  isolation: isolate;
+}
+
+.bz-pdp-mobile__track {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  transition: transform 0.35s ease;
+  will-change: transform;
+}
+
+.bz-pdp-mobile__slide {
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 100%;
+  max-width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.bz-pdp-mobile__zoom-hit {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: zoom-in;
+}
+
+.bz-pdp-mobile__slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+.bz-pdp-mobile__thumbs {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.bz-pdp-mobile__thumb {
+  flex: 1 0 0;
+  min-width: 64px;
+  width: auto;
+  height: 52px;
+  padding: 0;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  border: 1px solid var(--line-200);
+  background: var(--line-100);
+  cursor: pointer;
+  position: relative;
+}
+
+.bz-pdp-mobile__thumb[aria-selected="true"] {
+  border-color: var(--blue-deep);
+}
+
+.bz-pdp-mobile__thumb[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-md);
+  box-shadow: inset 0 0 0 2px var(--blue-deep);
+  pointer-events: none;
+}
+
+.bz-pdp-mobile__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.bz-pdp-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.bz-pdp-price-row--desktop {
+  margin-top: 12px;
+  margin-bottom: 6px;
+}
+
+.bz-pdp-price-row__main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.bz-pdp-price-row .bz-pdp-watch-video {
+  --pdp-watch-h: 1.75rem;
+  margin-top: 0;
+  margin-bottom: 0;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.bz-pdp-watch-video {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  height: var(--pdp-watch-h, 1.75rem);
+  width: auto;
+  max-width: 100%;
+  margin-top: 8px;
+  margin-bottom: 2px;
+  padding: 0 10px 0 0;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(230, 57, 70, 0.32);
+  background: rgba(230, 57, 70, 0.07);
+  box-shadow: none;
+  text-decoration: none;
+  color: var(--blue-deep);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-micro) var(--ease),
+    background var(--dur-micro) var(--ease);
+}
+
+.bz-pdp-watch-video:hover {
+  border-color: rgba(230, 57, 70, 0.55);
+  background: rgba(230, 57, 70, 0.12);
+}
+
+.bz-pdp-watch-video__thumb {
+  position: relative;
+  flex-shrink: 0;
+  width: var(--pdp-watch-h, 1.75rem);
+  height: var(--pdp-watch-h, 1.75rem);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--ink-900);
+}
+
+.bz-pdp-watch-video__thumb img,
+.bz-pdp-watch-video__fallback {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.bz-pdp-watch-video__fallback {
+  background: linear-gradient(160deg, var(--ink-700), var(--ink-900));
+}
+
+.bz-pdp-watch-video__play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.38);
+}
+
+.bz-pdp-watch-video__play-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.bz-pdp-watch-video__play-badge svg {
+  width: 8px !important;
+  height: 8px !important;
+}
+
+.bz-pdp-watch-video__text {
+  font-weight: 700;
+  font-size: 0.75rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Overlay variant — a dark pill floating over the gallery image (top-left of media). */
+.bz-pdp-watch-video--overlay {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 2;
+  height: 2rem;
+  margin: 0;
+  padding: 0 12px 0 4px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #fff;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.bz-pdp-watch-video--overlay:hover {
+  background: rgba(15, 23, 42, 0.85);
+  border: none;
+}
+
+.bz-pdp-watch-video--overlay .bz-pdp-watch-video__text {
+  color: #fff;
+}
+
+.bz-pdp-similar {
+  margin-top: 52px;
+}
+
+/* Mobile PDP full-scroll sections — each block is separated by a thick neutral
+   bar (not a hairline), matching the native app layout. The block breaks out of
+   the page's 16px gutter so the divider runs edge-to-edge, then re-pads 16px so
+   its content lines up with every other block (and the homepage). */
+.bz-pdp-msec {
+  margin: 0 -16px;
+  padding: 16px;
+  border-top: 8px solid var(--line-100);
+}
+.bz-pdp-msec > h4 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink-900);
+}
+@media (max-width: 768px) {
+  .bz-pdp-similar {
+    margin: 0 -16px;
+    padding: 16px;
+    border-top: 8px solid var(--line-100);
+  }
+}
+
+@media (max-width: 720px) {
+  .bz-seller-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .bz-seller-page {
+    padding: 16px 16px 88px;
+  }
+}
+
+/* Kanban scroll columns */
+.bz-kanban {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(260px, 1fr));
+  gap: 14px;
+}
+@media (max-width: 900px) {
+  .bz-kanban {
+    grid-template-columns: repeat(4, 84vw);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 8px;
+  }
+  .bz-kanban > * {
+    scroll-snap-align: start;
+  }
+}
+
+/* Chat shell */
+.bz-chat-page {
+  /* Match every other seller screen's reading column (--seller-max, 1160px in
+     Fluent) so Messages lines up with them instead of spanning the wider buyer
+     --container and sitting further left. */
+  max-width: var(--seller-max, var(--container));
+  margin: 0 auto;
+  padding: 20px 28px 100px;
+}
+
+.bz-chat-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 280px) minmax(0, 1fr);
+  gap: 0;
+  height: clamp(480px, calc(100dvh - 220px), 720px);
+  min-height: 480px;
+  border: 1.5px solid var(--line-200);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: #fff;
+}
+
+.bz-chat-shell > * {
+  min-height: 0;
+  min-width: 0;
+}
+
+.bz-chat-shell__threads {
+  display: flex;
+  flex-direction: column;
+  align-content: flex-start;
+  height: 100%;
+  border-right: 1px solid var(--line-200);
+  overflow-y: auto;
+  background: #fff;
+}
+
+.bz-chat-shell__panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #fff;
+}
+
+.bz-chat-shell__messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+  background: #f7f8fb;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bz-chat-shell__composer {
+  flex-shrink: 0;
+  padding: 10px;
+  border-top: 1px solid var(--line-200);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: #fff;
+}
+
+.bz-chat-shell__composer-input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border: 1.5px solid var(--line-200);
+  border-radius: 999px;
+  font-size: max(16px, 0.9375rem);
+  outline: none;
+  font-family: var(--font-sans);
+  background: #fff;
+  color: var(--ink-900);
+}
+
+.bz-chat-shell__composer-input:focus {
+  border-color: var(--blue);
+}
+
+@media (max-width: 720px) {
+  .bz-chat-page {
+    padding: 12px 12px calc(88px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .bz-chat-page__head {
+    margin-bottom: 10px !important;
+  }
+
+  .bz-chat-page__head h1 {
+    font-size: 1.25rem !important;
+  }
+
+  .bz-chat-shell {
+    grid-template-columns: 1fr;
+    height: calc(100dvh - 168px);
+    min-height: 0;
+    border-radius: var(--r-md);
+  }
+
+  .bz-chat-shell.bz-chat-shell--in-thread .bz-chat-shell__threads {
+    display: none;
+  }
+
+  .bz-chat-shell:not(.bz-chat-shell--in-thread) .bz-chat-shell__panel {
+    display: none;
+  }
+
+  .bz-chat-shell__composer {
+    padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Hide buyer bottom nav on seller pages (already controlled via screens; keep) */
+
+/* Menu row (profile list, dropdowns) */
+.bz-menu-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  background: #fff;
+  border: 1px solid var(--line-200);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--dur-standard) var(--ease);
+}
+.bz-menu-row:hover {
+  background: var(--line-100);
+}
+
+/* Footer Links styling and premium hover state */
+.bz-footer-link {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.875rem;
+  cursor: pointer;
+  text-decoration: none;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+  transition: color var(--dur-standard) var(--ease);
+  display: inline-block;
+  align-self: flex-start;
+}
+.bz-footer-link:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+.bz-footer-link:focus-visible {
+  outline: 2px solid var(--white);
+  outline-offset: 4px;
+}
+
+.bz-footer-social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+  transition:
+    background var(--dur-standard) var(--ease),
+    color var(--dur-standard) var(--ease),
+    transform var(--dur-standard) var(--ease);
+}
+.bz-footer-social:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  transform: translateY(-2px);
+}
+.bz-footer-social:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+/* ============================================================
+   Responsive layer — utility classes used to override inline
+   grid-template-columns / fixed widths on small screens.
+   These rules use !important so they beat inline styles.
+   ============================================================ */
+
+/* Stack any grid into a single column below the named breakpoint */
+@media (max-width: 900px) {
+  .bz-stack-900 {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
+@media (max-width: 768px) {
+  /* Cart — fit the line cards to a phone column so nothing spills past the
+     right edge (which `overflow-x: clip` would otherwise hide, leaving the
+     gutters looking lopsided): smaller media, tighter card padding, and the
+     qty/remove row may wrap. Page gutters stay at 28px to match every other
+     buyer screen. */
+  .bz-cart-card {
+    gap: 12px !important;
+    padding: 12px !important;
+  }
+  .bz-cart-card__media,
+  .bz-cart-card__media > * {
+    width: 72px !important;
+    height: 72px !important;
+  }
+  .bz-cart-card__actions {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+}
+
+/* Product / card grids — fixed column counts so desktop lands on exactly 6 per
+   row, stepping down to 2 on phones. Explicit counts (not auto-fill) keep the
+   number predictable across widths. */
+.bz-grid-cards {
+  grid-template-columns: repeat(6, 1fr) !important;
+  gap: 14px !important;
+}
+.bz-grid-cards > * {
+  min-width: 0;
+  overflow: hidden;
+}
+@media (max-width: 1200px) {
+  .bz-grid-cards {
+    grid-template-columns: repeat(5, 1fr) !important;
+  }
+}
+@media (max-width: 992px) {
+  .bz-grid-cards {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+}
+@media (max-width: 768px) {
+  .bz-grid-cards {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+@media (max-width: 480px) {
+  .bz-grid-cards {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+}
+
+/* Footer: brand full-width row, then 2-column link grid on tablet */
+@media (max-width: 900px) {
+  .bz-footer-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 32px 24px !important;
+    padding: 48px 24px 32px !important;
+  }
+  .bz-footer-grid > :first-child {
+    grid-column: 1 / -1;
+    margin-bottom: 8px;
+  }
+  .bz-footer-grid > :first-child p {
+    max-width: none !important;
+    font-size: 0.9375rem !important;
+    line-height: 1.6 !important;
+    margin-top: 12px !important;
+  }
+  /* Decorative landmark fights with text on small screens — drop it */
+  .bz-footer-skyline {
+    display: none !important;
+  }
+}
+
+/* Phones: stack every footer section into a single readable column */
+@media (max-width: 560px) {
+  .bz-footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 28px !important;
+  }
+}
+
+/* Trust strip / 4-up info rows */
+@media (max-width: 768px) {
+  .bz-row-4up {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+}
+@media (max-width: 380px) {
+  .bz-row-4up {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Big hero typography — fluid clamp via class */
+.bz-hero-h2 {
+  font-size: clamp(1.5rem, 5vw, 2.25rem) !important;
+  line-height: 1.15 !important;
+}
+.bz-stat-xl {
+  font-size: clamp(1.875rem, 7vw, 3rem) !important;
+  line-height: 1.05 !important;
+}
+
+/* Containers — kill horizontal overflow on mobile.
+   Single source of truth for the mobile page gutter: every page root (buyer
+   and seller) carries one of these container classes, so the left/right gutter
+   is identical — 16px — across the whole app on mobile. Only touches horizontal
+   padding; each screen keeps its own top/bottom spacing. (bz-store-page and
+   bz-pdp-root already set 16px L/R at this breakpoint via their own rules.) */
+@media (max-width: 768px) {
+  .bz-container-pad,
+  .bz-seller-page,
+  .bz-chat-page {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+}
+
+/* Homepage vertical rhythm. The between-section gap lives in exactly one place:
+   the stack's flex gap. Each section owns no top/bottom margin — they read as
+   distinct "rooms" purely through whitespace, no dividers. Identical on mobile
+   and desktop, so the cadence holds across resolutions. */
+.bz-home {
+  display: flex;
+  flex-direction: column;
+  gap: var(--section-gap);
+  padding-bottom: 8px;
+}
+/* The hero is the first item, so the stack gap can't offset it from the navbar —
+   it carries its own top spacing. (Mobile hero sets this inline.) */
+@media (min-width: 769px) {
+  .bz-home-hero {
+    padding-top: var(--home-hero-top) !important;
+  }
+}
+
+/* Section headings use the display face (Bricolage Grotesque) per the revamp. */
+/* One canonical section-title style — shared by SectionHead and the Watch rail
+   title so every section header is identical (family, size, weight, color).
+   Change it here and every section header moves together. */
+.bz-sec-head__title,
+.bz-watch-rail__title {
+  font-family: var(--font-display);
+  font-size: 1.375rem !important;
+  font-weight: 800;
+  line-height: 1.18;
+  letter-spacing: 0 !important;
+  color: var(--blue-deep);
+}
+.bz-sec-head__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--blue);
+  font-weight: 700;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+}
+.bz-sec-head__action:hover {
+  color: var(--blue-deep);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Image is the tile: it fills the square edge-to-edge (the card's overflow:hidden
+   clips the rounded top corners). Neutral plate shows only if the photo fails. */
+.bz-pcard__img {
+  background: var(--line-100);
+  box-sizing: border-box;
+}
+.bz-pcard__img-el {
+  object-fit: cover;
+}
+
+.bz-pcard__title {
+  font-size: var(--fs-small) !important;
+  line-height: 1.3 !important;
+  min-height: 2.6em !important;
+}
+
+.bz-pcard__body {
+  padding: 9px 10px 10px !important;
+  gap: 4px !important;
+}
+
+.bz-pcard__price .tnum:first-child {
+  font-size: 1rem !important;
+  line-height: 1.35;
+}
+.bz-product-card--compact .bz-pcard__img {
+  aspect-ratio: auto !important;
+  height: 100% !important;
+}
+.bz-product-card--compact .bz-pcard__body {
+  padding: 7px 9px 8px !important;
+  gap: 3px !important;
+}
+.bz-product-card--compact .bz-pcard__title {
+  font-size: 11.5px !important;
+  line-height: 1.2 !important;
+  min-height: 1.2em !important;
+  max-height: 1.2em !important;
+  margin-bottom: 0 !important;
+}
+.bz-product-card--compact .bz-pcard__price .tnum:first-child {
+  font-size: 13px !important;
+  line-height: 1.15 !important;
+}
+
+/* Product-card CTA (e.g. bargain card "Make an offer") — the button itself is the
+   <Button> component; this wrapper just spaces it and lifts it above the card's
+   click overlay. */
+.bz-pcard__cta-wrap {
+  position: relative;
+  z-index: 2;
+  margin-top: 7px;
+}
+
+/* Home "Shop by categories" — bordered card tiles on the page (revamp). */
+.bz-homecat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(118px, 100%), 1fr));
+  gap: var(--sp-5);
+  align-items: stretch;
+}
+.bz-category-browser {
+  padding-bottom: 34px;
+}
+.bz-category-browser .bz-sec-head {
+  margin-bottom: 14px !important;
+}
+.bz-category-browser-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(128px, 100%), 1fr));
+  gap: var(--sp-5);
+  align-items: stretch;
+}
+@media (max-width: 768px) {
+  .bz-home-categories .bz-sec-head__action {
+    display: none !important;
+  }
+  /* Fixed 4-up grid capped to two rows — a tidy "shop by categories" block
+     rather than the full uncapped scroll (revamp-inspired). Tiles stay the
+     frameless circular photos; only the page grid (not the category browser) caps. */
+  .bz-homecat-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--sp-4) var(--sp-3);
+  }
+  .bz-homecat-grid > :nth-child(n + 9) {
+    display: none;
+  }
+  .bz-category-browser {
+    padding-bottom: 24px;
+  }
+  .bz-category-browser-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(88px, 100%), 1fr));
+  }
+}
+/* Card-variant category tile: frameless navigation tile — a circular photo with
+   a centered caption, sitting directly on the page (no surface/border/padding) so
+   it reads as a department menu, not a product card. Shape is driven by
+   --cat-radius (50% circle by default, 16px squircle) so one prop flips them all. */
+.bz-cat__card {
+  --cat-radius: 50%;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+}
+.bz-cat__card:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 4px;
+  border-radius: var(--r-md);
+}
+.bz-cat__card-thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--cat-radius);
+  overflow: hidden;
+  background: var(--cream-2, #f4f1ea);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--dur-micro) var(--ease);
+}
+/* Quiet navigation cue — the image nudges up in scale, no product-card lift. */
+.bz-cat__card:hover .bz-cat__card-thumb {
+  transform: scale(1.04);
+}
+/* Square-crop every photo identically so swapped images stay uniform. */
+.bz-cat__card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* Caption, not a product title: centered, lighter ink, medium weight. A fixed
+   two-line height keeps 1- and 2-line names aligned across the row. */
+.bz-cat__card-label {
+  font-size: var(--fs-caption);
+  font-weight: var(--w-emphasis);
+  color: var(--ink-500);
+  text-align: center;
+  line-height: 1.3;
+  min-height: 2.6em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: color var(--dur-micro) var(--ease);
+}
+.bz-cat__card:hover .bz-cat__card-label {
+  color: var(--blue);
+}
+@media (min-width: 769px) and (max-width: 1180px) {
+  .bz-category-browser-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(128px, 100%), 1fr));
+  }
+}
+@media (min-width: 1181px) {
+  .bz-category-browser-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(128px, 100%), 1fr));
+  }
+}
+
+/* ---------- Homepage hero carousel (hardcoded marketing slides) ---------- */
+@keyframes bz-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+}
+
+.bz-hero {
+  position: relative;
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--blue-deep);
+  box-shadow: var(--sh-1);
+  aspect-ratio: 1672 / 941;
+}
+.bz-hero__track {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.bz-hero__slide {
+  flex: 0 0 100%;
+  display: block;
+  height: 100%;
+}
+.bz-hero__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.bz-hero__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(16, 44, 101, 0.5);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(3px);
+  transition: background var(--dur-standard) var(--ease);
+}
+.bz-hero__arrow:hover {
+  background: rgba(16, 44, 101, 0.85);
+}
+.bz-hero__arrow--prev {
+  left: 14px;
+}
+.bz-hero__arrow--next {
+  right: 14px;
+}
+.bz-hero__dots {
+  position: absolute;
+  bottom: 14px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+}
+.bz-hero__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-full);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: width var(--dur-standard) var(--ease);
+}
+.bz-hero__dot[data-active="true"] {
+  width: 22px;
+  background: #fff;
+}
+
+/* Desktop — hero shares a row with the New Arrivals rail. Row height is capped so
+   the hero stays compact; the carousel sizes itself from its aspect ratio (never
+   cropped) and the rail takes the remaining width. */
+@media (min-width: 769px) {
+  .bz-home-herorow {
+    display: flex;
+    gap: 18px;
+    align-items: stretch;
+    height: 440px;
+  }
+  .bz-home-herorow .bz-hero {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 100%;
+    width: auto;
+  }
+}
+@media (max-width: 768px) {
+  .bz-hero__arrow {
+    width: 30px;
+    height: 30px;
+  }
+  .bz-hero__arrow--prev {
+    left: 8px;
+  }
+  .bz-hero__arrow--next {
+    right: 8px;
+  }
+}
+
+/* ---------- New arrivals (backend-backed) ---------- */
+.bz-arrivals__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.bz-arrivals__title {
+  margin: 2px 0 0;
+  color: var(--blue-deep);
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.bz-arrivals__count {
+  flex-shrink: 0;
+  color: var(--ink-400);
+  font-size: 11.5px;
+  font-weight: 700;
+  padding-top: 5px;
+}
+
+.bz-arrivals-rail {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 clamp(300px, 32vw, 470px);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  width: clamp(300px, 32vw, 470px);
+  min-width: 300px;
+  min-height: 0;
+}
+.bz-arrivals-rail .bz-arrivals__head {
+  flex: 0 0 auto;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.bz-arrivals-rail__grid {
+  flex: 1 1 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-auto-rows: 1fr;
+  gap: 9px;
+  align-content: stretch;
+  overflow: hidden;
+}
+
+.bz-arrivals-mobile__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.bz-arrivals-mobile__grid {
+  display: flex;
+  gap: 9px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.bz-arrivals-mobile__grid::-webkit-scrollbar {
+  display: none;
+}
+.bz-arrivals-mobile__grid > * {
+  flex: 0 0 148px;
+  height: 208px;
+  scroll-snap-align: start;
+}
+.bz-arrivals-mobile__grid > .bz-product-card--compact {
+  height: 208px !important;
+}
+/* ---------- BazaarCo Watch and Bargain panels ---------- */
+.bz-watch-panel,
+.bz-bargain-panel {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+.bz-watch-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 15px;
+}
+
+.bz-watch-panel__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--red);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.bz-watch-panel__title {
+  margin: 4px 0 0;
+  color: var(--blue-deep);
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.12;
+}
+
+.bz-watch-panel__copy {
+  margin: 5px 0 0;
+  color: var(--ink-400);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+/* ── Featured-section bands ───────────────────────────────────────────────
+   Only BazaarCo Watch + Bargain get a full-bleed tinted floor. The <section>
+   spans the viewport (the floor); an inner .container re-aligns the content to
+   the page edges. Vertical padding gives the tint breathing room; the gap
+   BETWEEN sections stays owned by the .bz-home stack gap (no extra margin). */
+.bz-band {
+  width: 100%;
+  padding-block: var(--section-gap);
+}
+.bz-band--watch {
+  background: var(--band-watch-bg);
+}
+.bz-band--bargain {
+  background: var(--band-bargain-bg);
+}
+/* Watch + Bargain are a paired featured run — cancel the stack gap between them
+   so the navy floor flows straight into the warm one (no cream strip). Each band
+   keeps its own padding, so the content still has breathing room at the seam. */
+.bz-band--watch + .bz-band--bargain {
+  margin-top: calc(-1 * var(--section-gap));
+}
+
+/* Dark band → flip only the Watch heading text/link to light variants (the
+   global tokens are untouched; the scope is this band alone). */
+.bz-band--watch .bz-watch-rail__title {
+  color: var(--on-navy-100);
+}
+.bz-band--watch .bz-watch-rail__feed.btn {
+  color: #b8c6e8;
+}
+/* Hover brightens to white — without this the global .btn--link:hover flips to
+   --blue-deep, which is invisible against the navy band. */
+.bz-band--watch .bz-watch-rail__feed.btn:hover {
+  color: #fff;
+}
+
+/* Bargain heading: amber handshake chip + title with a reassurance subline that
+   aligns under the title text (chip sits in its own column). */
+.bz-bargain-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: var(--section-header);
+}
+.bz-bargain-head__note {
+  margin: 4px 0 0;
+  color: var(--cream-ink);
+  font-size: 12.5px;
+  line-height: 1.3;
+}
+
+/* BazaarCo Watch — reel rail (revamp). The floor + gutter now come from the
+   band wrapper; the rail is just the head + horizontal scroll. */
+.bz-watch-rail {
+  padding: 0;
+}
+
+.bz-watch-rail__head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: var(--section-header);
+}
+
+/* Layout only — typography comes from the shared .bz-sec-head__title rule. */
+.bz-watch-rail__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bz-watch-rail__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--red);
+}
+
+.bz-watch-rail__scroll {
+  display: flex;
+  gap: var(--grid-gap);
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.bz-watch-rail__item {
+  flex: none;
+  width: 206px;
+}
+
+/* Reel card — dark video tile with overlaid seller, views, and product pill. */
+.bz-reel-card {
+  position: relative;
+  display: block;
+  aspect-ratio: 9 / 16;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--cream-line);
+  box-shadow: 0 6px 20px rgba(16, 24, 58, 0.13);
+  text-decoration: none;
+  transition: box-shadow var(--dur-standard) var(--ease);
+}
+
+.bz-reel-card:hover {
+  box-shadow: 0 14px 30px rgba(16, 24, 58, 0.2);
+}
+
+.bz-reel-card__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.bz-reel-card__weave {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.07) 0 13px,
+    rgba(255, 255, 255, 0) 13px 26px
+  );
+}
+
+.bz-reel-card__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(8, 14, 30, 0) 56%, rgba(8, 14, 30, 0.86) 100%);
+}
+
+.bz-reel-card__top {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.bz-reel-card__avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--blue-deep);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.bz-reel-card__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bz-reel-card__handle {
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bz-reel-card__views {
+  margin-left: auto;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(8, 14, 30, 0.4);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 7px;
+  border-radius: 20px;
+}
+
+.bz-reel-card__play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(3px);
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bz-reel-card__bottom {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
+}
+
+.bz-reel-card__pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.97);
+  border-radius: 10px;
+  padding: 6px 6px 6px 9px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+}
+
+.bz-reel-card__pill-icon {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: #fbf1d8;
+  color: #8a6a12;
+}
+
+.bz-reel-card__pill-name {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink-900);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bz-reel-card__price {
+  flex: none;
+  white-space: nowrap;
+  background: var(--blue-deep);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 9px;
+  border-radius: 7px;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, monospace);
+}
+
+/* Mobile: collapse the reel pill to just the blue price. */
+@media (max-width: 600px) {
+  .bz-reel-card__pill {
+    background: none;
+    box-shadow: none;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .bz-reel-card__pill-icon,
+  .bz-reel-card__pill-name {
+    display: none;
+  }
+}
+
+.bz-bargain-panel__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #fbf1d8;
+  color: #8a6a12;
+  border: 1px solid #ead9a6;
+  flex: none;
+}
+
+.bz-bargain-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr));
+  gap: var(--grid-gap);
+  align-items: stretch;
+}
+
+/* All-bargainable-products listing screen */
+.bz-bargainable-page {
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding: 24px var(--gutter) 96px;
+}
+
+.bz-bargainable-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.bz-bargainable-page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 10px;
+  color: var(--ink-500);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.bz-bargainable-page__back:hover {
+  color: var(--blue-deep);
+}
+
+.bz-bargainable-page__title {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--blue-deep);
+}
+
+.bz-bargainable-page__copy {
+  margin: 8px 0 0;
+  max-width: 920px;
+  color: var(--ink-500);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.bz-bargainable-page__meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex: none;
+  margin-top: 10px;
+  color: var(--ink-500);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.bz-bargainable-page__more {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+@media (max-width: 768px) {
+  .bz-bargainable-page__head {
+    display: block;
+  }
+
+  .bz-bargainable-page__title {
+    font-size: 20px;
+  }
+
+  .bz-bargainable-page__meta {
+    justify-content: flex-start;
+    margin-top: 12px;
+    text-align: left;
+    white-space: normal;
+  }
+}
+
+.bz-bargain-empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px;
+  border: 1px dashed var(--cream-line);
+  border-radius: 12px;
+  color: var(--ink-400);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+@media (max-width: 991px) {
+  .bz-bargain-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .bz-watch-panel,
+  .bz-bargain-panel {
+    border-radius: 14px;
+    padding: 14px;
+  }
+
+  /* Align the Bargain content to the same left/right edges as "Recommended for
+     you": drop the panel's horizontal inset so only the .container gutter
+     remains (vertical breathing inside the band is kept). */
+  .bz-bargain-panel {
+    padding-inline: 0;
+  }
+
+  .bz-watch-panel__head {
+    gap: 10px;
+  }
+
+  .bz-watch-panel__title {
+    font-size: 18px;
+  }
+
+  .bz-watch-panel__copy {
+    display: none;
+  }
+
+  .bz-watch-rail__badge {
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+  }
+
+  .bz-watch-rail__scroll {
+    gap: 11px;
+  }
+
+  .bz-watch-rail__item {
+    width: 150px;
+  }
+
+  .bz-bargain-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bz-bargain-empty {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+/* Category tile (clickable cell). Base/mobile = transparent, no box — keeps the
+   mobile layout identical to before. Desktop layers a real tile + hover state. */
+.bz-cat__tile {
+  background: none;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+.bz-cat__en {
+  color: var(--ink-700);
+}
+
+/* Modal width — never exceed viewport */
+.bz-modal {
+  max-width: min(560px, calc(100vw - 32px)) !important;
+}
+
+/* Search results: always a 2-column grid on mobile, regardless of result count */
+@media (max-width: 768px) {
+  .bz-search-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Hide on small screens */
+@media (max-width: 768px) {
+  .bz-hide-mobile {
+    display: none !important;
+  }
+  .bz-show-mobile {
+    display: block !important;
+  }
+  .bz-show-mobile.bz-show-mobile--flex {
+    display: flex !important;
+  }
+}
+@media (min-width: 769px) {
+  .bz-show-mobile {
+    display: none !important;
+  }
+}
+
+/* Load-more button — comfortable min width on desktop, full-width on mobile */
+.bz-loadmore {
+  min-width: 260px;
+}
+@media (max-width: 768px) {
+  .bz-loadmore {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Breadcrumb link */
+.bz-crumb {
+  color: var(--ink-400);
+  cursor: pointer;
+  text-decoration: none;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  transition: color var(--dur-standard) var(--ease);
+}
+.bz-crumb:hover {
+  color: var(--blue);
+  text-decoration: underline;
+}
+.bz-crumb:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* PDP mobile hero — floating round buttons over image */
+.bz-pdp-m-fab {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(6px);
+  border: none;
+  color: var(--ink-700);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  z-index: 2;
+}
+.bz-pdp-m-fab:active {
+  transform: scale(0.96);
+}
+
+.bz-pdp-m-fab--back {
+  width: 44px;
+  height: 44px;
+  background: #fff;
+  color: var(--ink-900);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.14);
+}
+
+.bz-pdp-m-fab--back:active {
+  background: var(--ink-50);
+}
+
+/* Tighten PDP container padding on mobile */
+@media (max-width: 768px) {
+  .bz-pdp-root {
+    padding: 12px 16px calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  .bz-seller-ledger-print,
+  .bz-seller-ledger-print * {
+    visibility: visible !important;
+  }
+  .bz-seller-ledger-print {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    padding: 24px !important;
+    background: #fff !important;
+  }
+  .bz-no-print,
+  .bz-no-print * {
+    display: none !important;
+    visibility: hidden !important;
+  }
+}
+
+/* Storefront page — tighter padding, wrapped header, full-width actions on mobile */
+@media (max-width: 768px) {
+  .bz-store-page {
+    padding: 12px 16px 0 !important;
+  }
+  .bz-store-header {
+    flex-wrap: wrap;
+    gap: 14px 16px !important;
+    padding: 16px !important;
+  }
+  /* Push the action buttons onto their own row below avatar + name,
+     keeping them at their natural content size (not stretched). */
+  .bz-store-actions {
+    flex: 1 1 100%;
+  }
+}
+
+/* Inline action link — underline on hover, color preserved */
+.bz-link-hover {
+  text-decoration: none;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+.bz-link-hover:hover {
+  text-decoration: underline;
+}
+
+/* ── Language toggle — segmented switch with a sliding thumb ──────────────
+   Shared by the buyer profile and seller settings. Token-based, so it adopts
+   the buyer (BazaarCo) and seller (Fluent) skins automatically. Large, easy
+   tap targets; the active language slides under a soft elevated thumb. */
+.bz-lang-toggle {
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  gap: 0;
+  padding: 3px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--line-200);
+  background: var(--line-100);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  box-sizing: border-box;
+  min-height: 44px;
+}
+.bz-lang-toggle--compact {
+  min-height: 40px;
+}
+
+/* The elevated pill that sits under the active option. Width is one half of the
+   inner track; it slides by its own width when the second option is active.
+   `--bz-lang-active` (0 or 1) is set inline by the component. */
+.bz-lang-toggle__thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  border-radius: var(--r-full);
+  background: #fff;
+  box-shadow: var(--sh-1, 0 1px 2px rgba(0, 0, 0, 0.08));
+  transform: translateX(calc(var(--bz-lang-active, 0) * 100%));
+  transition: transform var(--dur-standard, 200ms) var(--ease, ease);
+  pointer-events: none;
+}
+
+.bz-lang-toggle__opt {
+  position: relative;
+  z-index: 1;
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 76px;
+  padding: 0 18px;
+  border-radius: var(--r-full);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink-500);
+  transition: color var(--dur-standard, 200ms) var(--ease, ease);
+}
+.bz-lang-toggle--compact .bz-lang-toggle__opt {
+  min-width: 60px;
+  padding: 0 14px;
+  font-size: 0.8125rem;
+}
+.bz-lang-toggle__opt[aria-pressed="true"] {
+  color: var(--blue-deep, var(--blue));
+}
+.bz-lang-toggle__opt[aria-pressed="false"]:hover {
+  color: var(--ink-700);
+}
+.bz-lang-toggle__opt:active {
+  transform: scale(0.97);
+}
+.bz-lang-toggle__opt:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bz-lang-toggle__thumb,
+  .bz-lang-toggle__opt {
+    transition: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 768px) {
+  [data-pack="buyer"] {
+    --chip-group-h: 32px;
+    --chip-group-px: 12px;
+    --chip-group-fs: 0.8125rem;
+  }
+}

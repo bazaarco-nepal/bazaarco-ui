@@ -4,6 +4,7 @@ import { env } from "./src/config/env";
 
 const nextConfig: NextConfig = {
   distDir: process.env.NODE_ENV === "production" && !process.env.VERCEL ? ".next-prod" : ".next",
+  devIndicators: false,
   typescript: {
     ignoreBuildErrors: true,
   },

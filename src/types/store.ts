@@ -1,9 +1,9 @@
 import type { Locale } from "@/i18n";
 import type { AuthIntent, AuthUser } from "@/types/auth";
 import type { CartLine, Product } from "@/types/catalog";
-import type { DeliveryLocation } from "@/lib/delivery-location";
-import type { DeliveryTier } from "@/lib/delivery-options";
-import type { CartSelection } from "@/lib/cart-selection";
+import type { DeliveryLocation } from "@/shared/lib/delivery-location";
+import type { DeliveryTier } from "@/buyer/lib/delivery-options";
+import type { CartSelection } from "@/buyer/lib/cart-selection";
 
 export interface BazaarStoreState {
   authed: boolean;
@@ -14,8 +14,8 @@ export interface BazaarStoreState {
   cart: CartLine[];
   /** Cart lines chosen for the next checkout. `null` = every line selected. */
   selectedCartIds: CartSelection;
-  wish: string[];
-  wishSellers: string[];
+  savedProducts: string[];
+  savedSellers: string[];
   query: string;
   /** Optimistic screen while client navigation catches up (e.g. search → browse). */
   screenOverride: string | null;
@@ -43,8 +43,8 @@ export interface BazaarStoreState {
   setBuyerPhone: (phone: string) => void;
   setCart: (cart: CartLine[] | ((prev: CartLine[]) => CartLine[])) => void;
   setSelectedCartIds: (selection: CartSelection | ((prev: CartSelection) => CartSelection)) => void;
-  setWish: (wish: string[] | ((prev: string[]) => string[])) => void;
-  setWishSellers: (sellerIds: string[] | ((prev: string[]) => string[])) => void;
+  setSavedProducts: (savedProducts: string[] | ((prev: string[]) => string[])) => void;
+  setSavedSellers: (sellerIds: string[] | ((prev: string[]) => string[])) => void;
   setQuery: (query: string) => void;
   setScreenOverride: (screen: string | null) => void;
   setOrderTotal: (total: number) => void;

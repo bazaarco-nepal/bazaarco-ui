@@ -9,7 +9,6 @@ import {
   Logo,
   Button,
   Spinner,
-  IconButton,
   Chip,
   Price,
   Placeholder,
@@ -18,14 +17,19 @@ import {
   DeliverToModal,
   AppLink,
 } from "@/components/ui";
-import { pathFromScreen } from "@/config/routes";
-import { useLogout } from "@/hooks/use-auth";
-import { useAddresses, useCreateAddress } from "@/hooks/use-addresses";
-import { deliveryToSavePayload } from "@/lib/saved-address";
-import { displayName } from "@/lib/display";
-import { displayCategoryLabel, displayProductName } from "@/lib/locale-display";
+import { useSearchParams } from "next/navigation";
+import { browsePath, categoryIdsFromSearchParams, pathFromScreen } from "@/config/routes";
+import { categoryImageBySlug } from "@/config/category-images";
+import { useLogout } from "@/shared/hooks/use-auth";
+import { useCategories } from "@/shared/hooks/use-catalog";
+import { formatNPR, roundRs } from "@/shared/lib/money";
+import { useAddresses, useCreateAddress } from "@/buyer/hooks/use-addresses";
+import { deliveryToSavePayload } from "@/buyer/lib/saved-address";
+import { displayName, firstName } from "@/shared/lib/display";
+import { displayCategoryLabel, displayProductName } from "@/shared/lib/locale-display";
 import { useBazaarStore } from "@/store/bazaar-store";
-import { formatDeliverToLabel } from "@/lib/delivery-location";
+import { formatDeliverToLabel } from "@/shared/lib/delivery-location";
+import { toast } from "@/shared/lib/toast";
 import { ASSETS } from "@/config/assets";
 import { SOCIAL_LINKS } from "@/config/site";
 import { BuyerAvatar } from "@/components/common/buyer-avatar";
@@ -35,7 +39,7 @@ import { LanguageToggle } from "@/components/common/language-toggle";
 import type { BazaarContextValue } from "@/types/bazaar";
 import type { Category, Product, Seller } from "@/types";
 import type { AuthUser } from "@/types/auth";
-import type { DeliveryLocation } from "@/lib/delivery-location";
+import type { DeliveryLocation } from "@/shared/lib/delivery-location";
 
 export const BazaarCtx = createContext<BazaarContextValue | null>(null);
 export const useBz = (): BazaarContextValue => {
@@ -45,81 +49,6 @@ export const useBz = (): BazaarContextValue => {
   }
   return ctx;
 };
-
-/* ---------- Himalayan outline (legacy hero accent) ---------- */
-export function Himalaya({
-  color = "rgba(255,255,255,.18)",
-  height = 90,
-  style,
-}: {
-  color?: string;
-  height?: number;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <svg
-      viewBox="0 0 1280 120"
-      preserveAspectRatio="none"
-      style={{ width: "100%", height, display: "block", ...style }}
-      aria-hidden="true"
-    >
-      <path
-        fill={color}
-        d="M0,120 L0,70 L120,42 L210,78 L330,30 L430,76 L520,18 L610,72 L700,40 L820,84 L900,48 L1010,90 L1110,52 L1190,82 L1280,58 L1280,120 Z"
-      />
-      <path
-        fill="none"
-        stroke={color}
-        strokeWidth="2"
-        d="M0,70 L120,42 L210,78 L330,30 L430,76 L520,18 L610,72 L700,40 L820,84 L900,48 L1010,90 L1110,52 L1190,82 L1280,58"
-      />
-    </svg>
-  );
-}
-
-/* ---------- Kathmandu valley skyline (image-based footer band) ---------- */
-export function KathmanduSkyline({
-  src = ASSETS.skyline,
-  height = 300,
-  opacity = 0.82,
-  scale = 0.82,
-  position = "center 60%",
-  style,
-}: {
-  src?: string;
-  height?: number;
-  opacity?: number;
-  scale?: number;
-  position?: string;
-  style?: React.CSSProperties;
-}) {
-  const mask =
-    "linear-gradient(to bottom, transparent 0%, #000 30%, #000 88%, transparent 100%), linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%)";
-  return (
-    <div
-      aria-hidden="true"
-      style={{
-        width: "100%",
-        height,
-        display: "block",
-        marginBottom: -1,
-        pointerEvents: "none",
-        backgroundImage: `url(${src})`,
-        backgroundSize: `${scale * 100}% auto`,
-        backgroundPosition: position,
-        backgroundRepeat: "no-repeat",
-        opacity,
-        filter: "invert(1) grayscale(1) brightness(1.6) contrast(1.45)",
-        mixBlendMode: "screen",
-        WebkitMaskImage: mask,
-        maskImage: mask,
-        WebkitMaskComposite: "source-in",
-        maskComposite: "intersect",
-        ...style,
-      }}
-    />
-  );
-}
 
 /* ---------- Seller row (PDP, cards) ---------- */
 export function SellerRow({
@@ -232,48 +161,64 @@ export function SellerRow({
 }
 
 /* ---------- Product card ---------- */
+// A discount shows the struck original price always, but the green "Save Rs. N"
+// line only once the saving clears this floor (rupees) — below it a trivial
+// "Save Rs. 17" just adds noise.
+const SAVINGS_THRESHOLD = 50;
+
 export function ProductCard({
   p,
   onClick,
-  sale = false,
   preview = false,
+  savable = true,
+  variant = "default",
+  ctaLabel,
+  ctaIcon,
+  onCta,
 }: {
   p: Product;
   onClick: (p: Product) => void;
-  sale?: boolean;
-  /** Static, non-interactive render (no PDP link, no wishlist toggle) — used by
+  /** Static, non-interactive render (no PDP link, no save toggle) — used by
       the Add Product live preview so sellers see the exact buyer card. */
   preview?: boolean;
+  savable?: boolean;
+  variant?: "default" | "compact";
+  ctaLabel?: string;
+  ctaIcon?: React.ComponentProps<typeof Icon>["name"];
+  onCta?: (p: Product) => void;
 }) {
   const { t } = useTranslation();
-  const { toggleWish, wish } = useBz();
+  const { toggleSaved, savedProducts } = useBz();
   const locale = useBazaarStore((s) => s.locale);
   const productName = displayProductName(p, locale);
   const [hov, setHov] = useState(false);
   const disc = p.original ? Math.round((1 - p.price / p.original) * 100) : 0;
-  const wished = wish.includes(p.id);
-  // Sold count as social proof — sale cards only; derived from reviews × deterministic factor
-  const soldCount = Math.max(p.reviews * 3, 12);
-  const soldLabel =
-    soldCount >= 1000
-      ? `${(soldCount / 1000).toFixed(1).replace(/\.0$/, "")}k sold`
-      : `${soldCount} sold`;
+  const isSaved = savable && savedProducts.includes(p.id);
+  const reviewCount = p.reviews ?? 0;
+  const hasReviews = reviewCount > 0;
+  const savings = p.original ? roundRs(p.original - p.price) : 0;
+  const compact = variant === "compact";
   return (
     <div
+      className={"bz-product-card" + (compact ? " bz-product-card--compact" : "")}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
         position: "relative",
         background: "#fff",
-        border: `1px solid ${hov ? "var(--ink-300)" : "var(--line-200)"}`,
-        borderRadius: "var(--r-lg)",
+        border: compact
+          ? `0.5px solid ${hov ? "var(--ink-300)" : "var(--bz-card-border)"}`
+          : `1px solid ${hov ? "var(--ink-300)" : "var(--line-200)"}`,
+        borderRadius: compact ? 11 : "var(--r-lg)",
         overflow: "hidden",
         cursor: preview ? "default" : "pointer",
         transition:
           "border-color var(--dur-standard) var(--ease), box-shadow var(--dur-standard) var(--ease)",
-        boxShadow: hov ? "var(--sh-1)" : "none",
+        boxShadow: hov && !compact ? "var(--sh-1)" : "none",
         display: "flex",
         flexDirection: "column",
+        minWidth: 0,
+        height: compact ? "100%" : undefined,
       }}
     >
       {/* Stretched link: a real <a> covering the card so the browser can open
@@ -289,81 +234,100 @@ export function ProductCard({
           style={{ position: "absolute", inset: 0, zIndex: 1 }}
         />
       )}
-      <div style={{ position: "relative" }}>
+      <div
+        style={{
+          position: "relative",
+          flex: compact ? "1 1 0" : undefined,
+          minHeight: compact ? 0 : undefined,
+          display: compact ? "flex" : undefined,
+        }}
+      >
         {p.img ? (
           <div
             className="bz-pcard__img"
             style={{
               position: "relative",
               width: "100%",
-              aspectRatio: "1 / 0.8",
+              height: compact ? "100%" : undefined,
+              flex: compact ? "1 1 auto" : undefined,
+              minHeight: compact ? 0 : undefined,
+              aspectRatio: compact ? undefined : "1 / 1",
               overflow: "hidden",
             }}
           >
             <img
               src={p.img}
               alt={productName}
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              className="bz-pcard__img-el"
+              style={{ width: "100%", height: "100%", display: "block", objectFit: "cover" }}
             />
           </div>
         ) : (
-          <Placeholder icon={p.icon} tint={p.tint} radius="0" ratio="1 / 0.8" />
+          <Placeholder
+            icon={p.icon}
+            tint={p.tint}
+            radius="0"
+            ratio={compact ? undefined : "1 / 1"}
+            style={compact ? { width: "100%", height: "100%" } : undefined}
+          />
         )}
         {/* Single discount badge — only one platform-badge style allowed */}
         {disc > 0 && (
-          <div style={{ position: "absolute", top: 10, left: 10 }}>
+          <div style={{ position: "absolute", top: compact ? 7 : 10, left: compact ? 7 : 10 }}>
             <Chip tone="red" size="sm">
               -{disc}%
             </Chip>
           </div>
         )}
-        {/* wishlist — 44×44 per WCAG / Material touch target */}
-        <button
-          onClick={
-            preview
-              ? undefined
-              : (e) => {
-                  e.stopPropagation();
-                  void toggleWish(p.id);
-                }
-          }
-          aria-label={t("common.a11y.addToWishlist")}
-          aria-hidden={preview || undefined}
-          tabIndex={preview ? -1 : undefined}
-          style={{
-            position: "absolute",
-            top: 2,
-            right: 2,
-            zIndex: 2,
-            width: 44,
-            height: 44,
-            borderRadius: "50%",
-            background: "transparent",
-            border: "none",
-            cursor: preview ? "default" : "pointer",
-            pointerEvents: preview ? "none" : undefined,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: wished ? "var(--red)" : "var(--ink-500)",
-          }}
-        >
-          {/* 44px tap target per WCAG; visible circle kept smaller (30px) to lighten the image */}
-          <span
+        {/* save — 44×44 per WCAG / Material touch target */}
+        {savable && (
+          <button
+            onClick={
+              preview
+                ? undefined
+                : (e) => {
+                    e.stopPropagation();
+                    void toggleSaved(p.id, productName);
+                  }
+            }
+            aria-label={t("common.a11y.save")}
+            aria-hidden={preview || undefined}
+            tabIndex={preview ? -1 : undefined}
             style={{
-              width: 30,
-              height: 30,
+              position: "absolute",
+              top: 2,
+              right: 2,
+              zIndex: 2,
+              width: 44,
+              height: 44,
               borderRadius: "50%",
-              background: "rgba(255,255,255,.95)",
-              boxShadow: "var(--sh-1)",
+              background: "transparent",
+              border: "none",
+              cursor: preview ? "default" : "pointer",
+              pointerEvents: preview ? "none" : undefined,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              color: isSaved ? "var(--red)" : "var(--ink-500)",
             }}
           >
-            <Icon name="heart" size={16} fill={wished ? "currentColor" : "none"} />
-          </span>
-        </button>
+            {/* 44px tap target per WCAG; visible circle kept smaller (30px) to lighten the image */}
+            <span
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: "50%",
+                background: "rgba(255,255,255,.95)",
+                boxShadow: "var(--sh-1)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Icon name="heart" size={16} fill={isSaved ? "currentColor" : "none"} />
+            </span>
+          </button>
+        )}
         {/* Video — minimal icon-only chip, no label */}
         {p.hasVideo && (
           <div
@@ -387,50 +351,143 @@ export function ProductCard({
       <div
         className="bz-pcard__body"
         style={{
-          padding: "10px 12px 12px",
+          padding: compact ? "7px 9px 8px" : "10px 12px 12px",
           display: "flex",
           flexDirection: "column",
-          gap: 5,
-          flex: 1,
+          gap: compact ? 3 : 5,
+          flex: compact ? "0 0 auto" : 1,
+          minWidth: 0,
         }}
       >
         <div
           className="bz-pcard__title"
           style={{
-            fontSize: ".875rem",
+            fontSize: compact ? "11.5px" : ".875rem",
             fontWeight: 600,
             color: "var(--ink-900)",
-            lineHeight: 1.35,
+            lineHeight: compact ? 1.2 : 1.35,
             display: "-webkit-box",
-            WebkitLineClamp: 2,
+            WebkitLineClamp: compact ? 1 : 2,
             WebkitBoxOrient: "vertical",
             overflow: "hidden",
-            minHeight: "2.7em",
+            minHeight: compact ? "1.2em" : "2.7em",
           }}
         >
           {productName}
         </div>
-        <div
-          className="bz-pcard__rating"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 5,
-            flexWrap: "wrap",
-            minHeight: "1.25rem",
-            fontSize: ".75rem",
-            color: "var(--ink-500)",
-          }}
-        >
-          <RatingStars value={p.rating ?? 0} size={12} count={p.reviews} />
-          {sale && <span style={{ color: "var(--ink-400)" }}>· {soldLabel}</span>}
-        </div>
+        {/* Rating row is ALWAYS rendered so cards keep equal height in a grid.
+            Zero reviews shows an outline star + "No reviews yet" (house pattern,
+            see RatingInline) — never a filled star against a misleading "(0)". */}
+        {!compact && (
+          <div
+            className="bz-pcard__rating"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+              flexWrap: "wrap",
+              minHeight: "1.25rem",
+              fontSize: ".75rem",
+              color: "var(--ink-500)",
+            }}
+          >
+            {hasReviews ? (
+              <RatingStars value={p.rating ?? 0} size={12} count={reviewCount} />
+            ) : (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  color: "var(--ink-400)",
+                }}
+              >
+                <Icon name="star" size={12} color="var(--ink-300)" fill="none" />
+                {t("common.noReviews")}
+              </span>
+            )}
+          </div>
+        )}
         {/* Single price line: all-in price + strikethrough original — via Price primitive */}
         {/* Trust row (cash on delivery / 7-day return) lives on the PDP only, not on cards. */}
         {/* marginTop:auto pins price to card bottom so price rows align across the grid */}
-        <div className="bz-pcard__price" style={{ marginTop: "auto" }}>
-          <Price value={p.price} original={p.original} size="md" />
+        {/* Reserves price + struck + savings space so no-discount and discount
+            cards stay equal height. Bump the min-height once to realign all. */}
+        <div
+          className="bz-pcard__price"
+          style={{ marginTop: "auto", minHeight: compact ? 16 : 46, minWidth: 0 }}
+        >
+          {compact ? (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                gap: 4,
+                minWidth: 0,
+                whiteSpace: "nowrap",
+              }}
+            >
+              <strong
+                className="tnum"
+                style={{
+                  color: "var(--blue-deep)",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  lineHeight: 1.15,
+                  flex: "0 0 auto",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {formatNPR(p.price)}
+              </strong>
+              {p.original && (
+                <span
+                  className="tnum"
+                  style={{
+                    color: "var(--ink-400)",
+                    fontSize: 10.5,
+                    lineHeight: 1,
+                    textDecoration: "line-through",
+                  }}
+                >
+                  {formatNPR(p.original)}
+                </span>
+              )}
+            </div>
+          ) : (
+            <>
+              <Price value={p.price} original={p.original} size="md" />
+              {savings >= SAVINGS_THRESHOLD && (
+                <div
+                  style={{
+                    fontSize: ".6875rem",
+                    fontWeight: 600,
+                    color: "var(--success)",
+                    marginTop: 3,
+                  }}
+                >
+                  {t("common.saveAmount", { amount: formatNPR(savings) })}
+                </div>
+              )}
+            </>
+          )}
         </div>
+        {!compact && ctaLabel && onCta && (
+          <div className="bz-pcard__cta-wrap">
+            <Button
+              variant="bargainOutline"
+              size="sm"
+              full
+              icon={ctaIcon}
+              onClick={(e) => {
+                e.stopPropagation();
+                onCta(p);
+              }}
+            >
+              {ctaLabel}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -441,12 +498,10 @@ export function ProductRail({
   items,
   onOpen,
   cols,
-  sale = false,
 }: {
   items: Product[];
   onOpen: (p: Product) => void;
   cols?: number;
-  sale?: boolean;
 }) {
   return (
     <div
@@ -454,7 +509,7 @@ export function ProductRail({
       style={{ display: "grid", gridTemplateColumns: `repeat(${cols || 5}, 1fr)`, gap: 18 }}
     >
       {items.map((p) => (
-        <ProductCard key={p.id} p={p} onClick={onOpen} sale={sale} />
+        <ProductCard key={p.id} p={p} onClick={onOpen} />
       ))}
     </div>
   );
@@ -569,12 +624,16 @@ export function CategoryTile({
   compact = false,
   href,
   shortOnMobile = false,
+  variant = "circle",
+  shape = "circle",
 }: {
   c: Category;
   onClick: (c: Category) => void;
   compact?: boolean;
   href?: string;
   shortOnMobile?: boolean;
+  variant?: "circle" | "card";
+  shape?: "circle" | "squircle";
 }) {
   const [hov, setHov] = useState(false);
   const locale = useBazaarStore((s) => s.locale);
@@ -583,8 +642,45 @@ export function CategoryTile({
   const shortLabel = shortOnMobile ? CATEGORY_SHORT_NAME[c.id] : undefined;
   const iconName = CATEGORY_ICON[c.id] ?? "tag";
   const iconSrc = CATEGORY_ICON_SRC[c.id];
+  const image = categoryImageBySlug[c.id];
   const Tag: React.ElementType = href ? AppLink : "button";
   const tagProps = href ? { href, onNavigate: () => onClick(c) } : { onClick: () => onClick(c) };
+
+  // Card variant — frameless navigation tile: a circular (or squircle) category
+  // photo with a centered caption below, sitting directly on the page. Reads as a
+  // department menu entry, not a product card. `shape` flips --cat-radius so a
+  // single prop switches every tile from circle to squircle. The image is
+  // decorative: the visible text label gives the link its accessible name, so the
+  // photo stays aria-hidden to avoid a double announcement. Falls back to the line
+  // icon only if a slug has no curated image (e.g. an unknown backend category).
+  if (variant === "card") {
+    return (
+      <Tag
+        {...tagProps}
+        className="bz-cat__card"
+        style={{ "--cat-radius": shape === "squircle" ? "16px" : "50%" } as React.CSSProperties}
+      >
+        <div className="bz-cat__card-thumb">
+          {image ? (
+            <img src={image.imageSrc} alt="" aria-hidden="true" draggable={false} loading="lazy" />
+          ) : (
+            <Icon name={iconName} size={30} color={tint.fg} stroke={1.8} />
+          )}
+        </div>
+        <span className="bz-cat__card-label">
+          {shortLabel ? (
+            <>
+              <span className="bz-hide-mobile">{label}</span>
+              <span className="bz-show-mobile">{shortLabel}</span>
+            </>
+          ) : (
+            label
+          )}
+        </span>
+      </Tag>
+    );
+  }
+
   return (
     <Tag
       {...tagProps}
@@ -649,51 +745,6 @@ export function CategoryTile({
         </div>
       </div>
     </Tag>
-  );
-}
-
-/* ---------- Navbar ---------- */
-export function DevViewSwitcher() {
-  const { t } = useTranslation();
-  const { screen } = useBz();
-  const SELLER = [
-    "s-onboarding",
-    "s-dashboard",
-    "s-inbox",
-    "s-order-detail",
-    "s-add",
-    "s-products",
-    "s-ledger",
-  ];
-  const isSeller = SELLER.includes(screen);
-  const target = isSeller ? "home" : "s-dashboard";
-  const icon = isSeller ? "cart" : "store";
-  const label = isSeller ? t("common.switchToBuyer") : t("common.switchToSeller");
-  return (
-    <AppLink
-      href={pathFromScreen(target)}
-      title={label}
-      ariaLabel={label}
-      style={{
-        position: "fixed",
-        left: 22,
-        bottom: 22,
-        zIndex: 200,
-        width: 56,
-        height: 56,
-        borderRadius: "50%",
-        background: "var(--blue-deep)",
-        color: "#fff",
-        border: "3px solid #fff",
-        boxShadow: "0 6px 20px rgba(11,18,32,.22)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: "pointer",
-      }}
-    >
-      <Icon name={icon} size={26} color="#fff" />
-    </AppLink>
   );
 }
 
@@ -818,9 +869,9 @@ function AccountMenuPanel({
       />
       <NavMenuItem
         icon="heart"
-        label={t("nav.wishlist")}
-        href={pathFromScreen("wishlist")}
-        onNavigate={() => goAndClose("wishlist")}
+        label={t("nav.saved")}
+        href={pathFromScreen("saved")}
+        onNavigate={() => goAndClose("saved")}
       />
       <NavMenuItem
         icon="message"
@@ -864,46 +915,83 @@ function AccountMenuPanel({
   );
 }
 
+/* Inline EN / नेपाली switch for the navy utility bar — text style per the
+   prototype, with the active language highlighted. */
+function NavLang() {
+  const locale = useBazaarStore((s) => s.locale);
+  const setLocale = useBazaarStore((s) => s.setLocale);
+  return (
+    <span className="bz-navbar__lang" role="group" aria-label="Language">
+      <button
+        type="button"
+        lang="en"
+        aria-pressed={locale === "en"}
+        className={locale === "en" ? "is-active" : ""}
+        onClick={() => setLocale("en")}
+      >
+        EN
+      </button>
+      <span aria-hidden="true">/</span>
+      <button
+        type="button"
+        lang="ne"
+        aria-pressed={locale === "ne"}
+        className={locale === "ne" ? "is-active" : ""}
+        onClick={() => setLocale("ne")}
+      >
+        नेपाली
+      </button>
+    </span>
+  );
+}
+
 export function Navbar() {
   const { t } = useTranslation();
   const {
     nav,
+    cart,
     cartCount,
-    wish,
-    wishSellers,
+    savedProducts,
+    savedSellers,
     screen,
     query,
     setQuery,
     submitSearch,
     clearSearch,
-    toast,
   } = useBz();
   const user = useBazaarStore((s) => s.user);
   const authed = useBazaarStore((s) => s.authed);
+  const locale = useBazaarStore((s) => s.locale);
   const logoutMutation = useLogout();
   const navLabel = displayName(user, "Account");
+  const navFirstName = firstName(user, "Account");
+  const { data: categories = [] } = useCategories();
+  // Which category the buyer is currently browsing (from `?cat=`), so the mobile
+  // strip can highlight the active pill — "All" when no category is selected.
+  const activeCatIds = categoryIdsFromSearchParams(useSearchParams());
+  // Cart subtotal shown in the navbar — recomputed from the live cart lines the
+  // same way checkout does (rupees, snapped per line) so it always matches.
+  const cartTotal = roundRs(cart.reduce((sum, line) => sum + roundRs(line.price * line.qty), 0));
+  const savedCount = savedProducts.length + savedSellers.length;
   const [menuOpen, setMenuOpen] = useState(false);
+  // Search category scope (the "All ▾" selector). null = all categories.
+  const [scope, setScope] = useState<string | null>(null);
+  const [scopeOpen, setScopeOpen] = useState(false);
   const [deliverOpen, setDeliverOpen] = useState(false);
   const deliveryLocation = useBazaarStore((s) => s.deliveryLocation);
   const setDeliveryLocation = useBazaarStore((s) => s.setDeliveryLocation);
   const deliverLabel = formatDeliverToLabel(deliveryLocation);
   const { data: savedAddresses = [] } = useAddresses(authed);
   const createAddress = useCreateAddress();
-  // Only offer the navbar "Deliver to" picker while the buyer has no saved
-  // address yet. Once one exists, the profile is the source of truth.
+  // Only open the "Deliver to" picker while the buyer has no saved address yet.
+  // Once one exists, the profile is the source of truth, so the chip links there.
   const hasSavedAddress = savedAddresses.length > 0;
   const desktopMenuRef = useRef<HTMLDivElement | null>(null);
-  const mobileSheetRef = useRef<HTMLDivElement | null>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!menuOpen) return;
-    const isMobile = window.matchMedia("(max-width: 768px)").matches;
-    const prevOverflow = document.body.style.overflow;
-    if (isMobile) document.body.style.overflow = "hidden";
     const onDocClick = (e: MouseEvent) => {
-      const t = e.target as Node;
-      if (desktopMenuRef.current?.contains(t) || mobileSheetRef.current?.contains(t)) return;
+      if (desktopMenuRef.current?.contains(e.target as Node)) return;
       setMenuOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
@@ -912,11 +1000,35 @@ export function Navbar() {
     document.addEventListener("mousedown", onDocClick);
     document.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = prevOverflow;
       document.removeEventListener("mousedown", onDocClick);
       document.removeEventListener("keydown", onKey);
     };
   }, [menuOpen]);
+
+  useEffect(() => {
+    if (!scopeOpen) return;
+    const onDocClick = (e: MouseEvent) => {
+      // searchField renders on both breakpoints, so match the scope by class
+      // rather than a single ref (which would bind to the hidden mobile copy).
+      if ((e.target as HTMLElement).closest?.(".bz-navbar__scope-wrap")) return;
+      setScopeOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setScopeOpen(false);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [scopeOpen]);
+
+  const openDeliver = () => (hasSavedAddress ? nav("profile") : setDeliverOpen(true));
+  const runSearch = () => submitSearch(scope ?? undefined);
+  const scopeLabel = scope
+    ? (CATEGORY_SHORT_NAME[scope] ?? categories.find((c) => c.id === scope)?.en ?? t("nav.search"))
+    : t("nav.all");
 
   const goAndClose = (s: string) => {
     setMenuOpen(false);
@@ -939,260 +1051,325 @@ export function Navbar() {
     });
   };
 
-  return (
-    <header className={`bz-navbar${screen === "home" ? " bz-hide-mobile" : ""}`}>
-      <div className="bz-navbar__trust bz-hide-mobile">
-        <div className="bz-navbar__trust-inner">
-          {/* suppressHydrationWarning: text is locale-sensitive; server may render
-              "en" on first visit before the locale cookie is set, while the client
-              immediately uses the stored locale. The cookie approach eliminates this
-              after the first visit; the prop silences the warning on that first load. */}
-          <span
-            suppressHydrationWarning
-            style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
-          >
-            <Icon name="video" size={13} color="#fff" /> {t("trust.shopping")}
-          </span>
-          <span style={{ opacity: 0.35 }}>·</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-            <Icon name="play" size={13} color="#fff" /> {t("trust.videos")}
-          </span>
-          <span style={{ opacity: 0.35 }}>·</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-            <Icon name="bargain" size={13} color="#fff" /> {t("trust.bargain")}
-          </span>
-          <span style={{ opacity: 0.35 }}>·</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-            <Icon name="truck" size={13} color="#fff" /> {t("trust.delivery")}
-          </span>
-        </div>
-      </div>
-
-      <div className="bz-navbar__inner">
-        <AppLink
-          href={pathFromScreen("home")}
-          ariaLabel={t("nav.homeAria")}
-          className="bz-navbar__brand bz-hide-mobile"
+  const onSearchKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") runSearch();
+  };
+  const deliverChip = (
+    <button
+      type="button"
+      onClick={openDeliver}
+      aria-haspopup={hasSavedAddress ? undefined : "dialog"}
+      aria-expanded={hasSavedAddress ? undefined : deliverOpen}
+      aria-label={t("common.deliverToAria", { label: deliverLabel })}
+      className="bz-navbar__deliver"
+    >
+      <Icon name="mapPin" size={14} color="var(--gold)" />
+      <span>
+        {t("nav.deliverTo")} <strong>{deliverLabel}</strong>
+      </span>
+      {!hasSavedAddress && <span className="bz-navbar__deliver-change">{t("common.change")}</span>}
+    </button>
+  );
+  const searchField = (
+    <div className="bz-navbar__search">
+      {/* Category scope — desktop only, mirrors the prototype's "All ▾". */}
+      <div className="bz-navbar__scope-wrap bz-hide-mobile">
+        <button
+          type="button"
+          className="bz-navbar__scope"
+          aria-haspopup="menu"
+          aria-expanded={scopeOpen}
+          onClick={() => setScopeOpen((o) => !o)}
         >
-          <Logo height={38} />
-        </AppLink>
-
-        {/* Mobile-only: buyer's profile picture replaces the logo and links to the profile page */}
-        <AppLink
-          href={pathFromScreen("profile")}
-          ariaLabel={t("nav.profileAria")}
-          className="bz-navbar__brand bz-show-mobile"
-        >
-          <BuyerAvatar user={user} size={40} fontSize={16} />
-        </AppLink>
-
-        {!hasSavedAddress && (
-          <>
+          <span>{scopeLabel}</span>
+          <Icon name="chevronDown" size={13} />
+        </button>
+        {scopeOpen && (
+          <div role="menu" className="bz-navbar__scope-menu no-scrollbar">
             <button
               type="button"
-              onClick={() => setDeliverOpen(true)}
-              aria-haspopup="dialog"
-              aria-expanded={deliverOpen}
-              aria-label={t("common.deliverToAria", { label: deliverLabel })}
-              className="bz-navbar__deliver bz-hide-mobile"
-            >
-              <Icon name="mapPin" size={16} color="var(--red)" />
-              <div style={{ textAlign: "left", lineHeight: 1.15 }}>
-                <div
-                  style={{
-                    fontSize: ".625rem",
-                    color: "var(--ink-400)",
-                    fontWeight: 700,
-                    letterSpacing: ".06em",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  {t("nav.deliverTo")}
-                </div>
-                <div>{deliverLabel}</div>
-              </div>
-              <Icon name="chevronDown" size={14} color="var(--ink-500)" />
-            </button>
-
-            <DeliverToModal
-              open={deliverOpen}
-              value={deliveryLocation}
-              onClose={() => setDeliverOpen(false)}
-              onSave={async (loc: DeliveryLocation) => {
-                setDeliveryLocation(loc);
-                setDeliverOpen(false);
-                toast(t("delivery.deliveringTo", { label: formatDeliverToLabel(loc) }));
-                // Mirror checkout: persist the entered address to the buyer's
-                // profile so it becomes their (first, default) saved address.
-                if (authed) {
-                  try {
-                    await createAddress.mutateAsync(deliveryToSavePayload(loc, "Home", true));
-                  } catch {
-                    /* local delivery location already set; ignore sync error */
-                  }
-                }
-              }}
-            />
-          </>
-        )}
-
-        <div className="bz-navbar__search">
-          <button
-            type="button"
-            aria-label={t("nav.search")}
-            onClick={submitSearch}
-            className="bz-navbar__search-btn"
-          >
-            <Icon name="search" size={19} />
-          </button>
-          <input
-            ref={searchInputRef}
-            className={`bz-navbar__search-input${query ? " has-clear" : ""}`}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") submitSearch();
-            }}
-            placeholder={t("nav.search")}
-            aria-label={t("nav.searchProducts")}
-          />
-          {query && (
-            <button
-              type="button"
-              aria-label={t("common.a11y.clearSearch")}
-              className="bz-navbar__search-clear"
+              role="menuitemradio"
+              aria-checked={scope === null}
+              className={`bz-navbar__scope-item${scope === null ? " is-active" : ""}`}
               onClick={() => {
-                clearSearch();
-                searchInputRef.current?.focus();
+                setScope(null);
+                setScopeOpen(false);
               }}
             >
-              <Icon name="x" size={16} />
+              {t("home.allCategories")}
             </button>
-          )}
-        </div>
-
-        <div className="bz-navbar__mobile-actions">
-          <IconButton
-            name="cart"
-            label={t("nav.cart")}
-            badge={cartCount}
-            href={pathFromScreen("cart")}
-            size={40}
-          />
-        </div>
-
-        <nav className="bz-navbar__nav bz-navbar__nav--desktop">
-          <AppLink
-            href={pathFromScreen("stores")}
-            className={`bz-navbar__link${screen === "stores" ? " is-active" : ""}`}
-          >
-            <Icon name="store" size={19} /> {t("nav.stores")}
-          </AppLink>
-          <AppLink
-            href={pathFromScreen("video")}
-            className={`bz-navbar__link bz-navbar__link--video${screen === "video" ? " is-active" : ""}`}
-          >
-            <Icon name="video" size={19} /> {t("nav.watch")}
-          </AppLink>
-          <IconButton
-            name="heart"
-            label={t("nav.wishlist")}
-            badge={wish.length + wishSellers.length}
-            href={pathFromScreen("wishlist")}
-          />
-          <AppLink
-            href={pathFromScreen("bargains")}
-            ariaLabel={t("nav.bargain")}
-            title={t("nav.bargain")}
-            className="bz-navbar__link bz-navbar__link--bargain"
-          >
-            <Icon name="bargain" size={19} color="#fff" /> {t("nav.bargain")}
-          </AppLink>
-          <IconButton
-            name="cart"
-            label={t("nav.cart")}
-            badge={cartCount}
-            href={pathFromScreen("cart")}
-          />
-          <div ref={desktopMenuRef} className="bz-navbar__account-wrap">
-            <button
-              type="button"
-              onClick={() => setMenuOpen((o) => !o)}
-              aria-haspopup="menu"
-              aria-expanded={menuOpen}
-              className={`bz-navbar__account-btn${menuOpen ? " is-open" : ""}`}
-            >
-              <BuyerAvatar user={user} size={26} fontSize={12} />
-              <span
-                className="bz-hide-mobile"
-                style={{ fontSize: ".8125rem", fontWeight: 600, color: "var(--ink-700)" }}
-              >
-                {navLabel}
-              </span>
-              <Icon name="chevronDown" size={14} color="var(--ink-500)" />
-            </button>
-            {menuOpen && (
-              <div role="menu" className="bz-navbar__menu bz-hide-mobile">
-                <AccountMenuPanel
-                  navLabel={navLabel}
-                  user={user}
-                  authed={authed}
-                  goAndClose={goAndClose}
-                  onLogout={requestLogout}
-                />
-              </div>
-            )}
-          </div>
-        </nav>
-      </div>
-
-      {menuOpen && (
-        <>
-          <div
-            className="bz-navbar__overlay bz-show-mobile"
-            aria-hidden
-            onClick={() => setMenuOpen(false)}
-          />
-          <div
-            ref={mobileSheetRef}
-            className="bz-navbar__sheet bz-show-mobile"
-            role="dialog"
-            aria-modal="true"
-            aria-label={t("common.a11y.accountMenu")}
-          >
-            <div className="bz-navbar__sheet-head">
-              <h2 className="bz-navbar__sheet-title">{t("nav.menu")}</h2>
+            {categories.map((c) => (
               <button
+                key={c.id}
                 type="button"
-                aria-label={t("common.a11y.closeMenu")}
-                onClick={() => setMenuOpen(false)}
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: "50%",
-                  border: "none",
-                  background: "var(--line-100)",
-                  cursor: "pointer",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                role="menuitemradio"
+                aria-checked={scope === c.id}
+                className={`bz-navbar__scope-item${scope === c.id ? " is-active" : ""}`}
+                onClick={() => {
+                  setScope(c.id);
+                  setScopeOpen(false);
                 }}
               >
-                <Icon name="x" size={18} />
+                {displayCategoryLabel(c, locale)}
               </button>
-            </div>
-            <div role="menu">
-              <AccountMenuPanel
-                navLabel={navLabel}
-                user={user}
-                authed={authed}
-                goAndClose={goAndClose}
-                onLogout={requestLogout}
-              />
+            ))}
+          </div>
+        )}
+      </div>
+      {/* Leading magnifier — mobile only (desktop puts the icon in the red button). */}
+      <span className="bz-navbar__search-lead bz-show-mobile" aria-hidden="true">
+        <Icon name="search" size={17} color="var(--ink-400)" />
+      </span>
+      <input
+        className="bz-navbar__search-input"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={onSearchKey}
+        placeholder={t("home.searchPlaceholder")}
+        aria-label={t("nav.searchProducts")}
+      />
+      {query && (
+        <button
+          type="button"
+          aria-label={t("common.a11y.clearSearch")}
+          className="bz-navbar__search-clear"
+          onClick={(e) => {
+            clearSearch();
+            // Refocus the input in THIS search field (the component renders one
+            // per breakpoint, so target the sibling rather than a shared ref).
+            e.currentTarget.closest(".bz-navbar__search")?.querySelector("input")?.focus();
+          }}
+        >
+          <Icon name="x" size={16} />
+        </button>
+      )}
+      <button
+        type="button"
+        aria-label={t("nav.search")}
+        onClick={runSearch}
+        className="bz-navbar__search-btn"
+      >
+        <Icon name="search" size={18} color="#fff" className="bz-hide-mobile" />
+        <span className="bz-show-mobile">{t("nav.go")}</span>
+      </button>
+    </div>
+  );
+  const navCategories = categories.slice(0, 20);
+  const categoryStrip = (
+    <>
+      {navCategories.map((c) => (
+        <AppLink
+          key={c.id}
+          href={browsePath({ cat: c.id })}
+          onNavigate={() => nav("browse", { cat: c.id })}
+          className="bz-navbar__cat"
+        >
+          {displayCategoryLabel(c, locale)}
+        </AppLink>
+      ))}
+    </>
+  );
+  // Mobile mirrors the desktop category strip but leads with an "All" pill that
+  // clears the category filter; the active pill is highlighted.
+  const mobileCategoryStrip = (
+    <>
+      <AppLink
+        href={browsePath({})}
+        onNavigate={() => nav("browse")}
+        className="bz-navbar__cat bz-navbar__cat--all"
+      >
+        {t("nav.all")}
+      </AppLink>
+      {navCategories.map((c) => (
+        <AppLink
+          key={c.id}
+          href={browsePath({ cat: c.id })}
+          onNavigate={() => nav("browse", { cat: c.id })}
+          className={`bz-navbar__cat${activeCatIds.includes(c.id) ? " is-active" : ""}`}
+        >
+          {displayCategoryLabel(c, locale)}
+        </AppLink>
+      ))}
+    </>
+  );
+
+  return (
+    <header className="bz-navbar">
+      {/* ===================== DESKTOP ===================== */}
+      <div className="bz-navbar__desktop bz-hide-mobile">
+        {/* Tier 1 — utility */}
+        <div className="bz-navbar__utility">
+          <div className="bz-navbar__utility-inner container">
+            {deliverChip}
+            <div className="bz-navbar__utility-links">
+              <AppLink href={pathFromScreen("s-onboarding")} className="bz-navbar__util-link">
+                {t("footer.becomeSeller")}
+              </AppLink>
+              <AppLink href={pathFromScreen("tracking")} className="bz-navbar__util-link">
+                {t("footer.trackOrder")}
+              </AppLink>
+              <AppLink href={pathFromScreen("help")} className="bz-navbar__util-link">
+                {t("footer.helpCol")}
+              </AppLink>
+              <NavLang />
             </div>
           </div>
-        </>
-      )}
+        </div>
+
+        {/* Tier 2 — brand + search + actions */}
+        <div className="bz-navbar__main">
+          <div className="bz-navbar__main-inner container">
+            <AppLink
+              href={pathFromScreen("home")}
+              ariaLabel={t("nav.homeAria")}
+              className="bz-navbar__brand"
+            >
+              <Logo height={38} />
+            </AppLink>
+            {searchField}
+            <div className="bz-navbar__actions">
+              <AppLink href={pathFromScreen("cart")} className="bz-navbar__action">
+                <span className="bz-navbar__action-ic">
+                  <Icon name="cart" size={23} color="#fff" />
+                  {cartCount > 0 && <span className="bz-navbar__action-badge">{cartCount}</span>}
+                </span>
+                <span className="bz-navbar__action-text">
+                  <span className="bz-navbar__action-cap">{t("nav.cart")}</span>
+                  <span className="bz-navbar__action-main tnum">{formatNPR(cartTotal)}</span>
+                </span>
+              </AppLink>
+              <AppLink
+                href={pathFromScreen("video")}
+                className={`bz-navbar__action${screen === "video" ? " is-active" : ""}`}
+              >
+                <Icon name="video" size={22} color="var(--on-navy-300)" />
+                <span className="bz-navbar__action-text">
+                  <span className="bz-navbar__action-cap">BazaarCo</span>
+                  <span className="bz-navbar__action-main">{t("nav.watch")}</span>
+                </span>
+              </AppLink>
+              <AppLink href={pathFromScreen("saved")} className="bz-navbar__action">
+                <span className="bz-navbar__action-ic">
+                  <Icon name="heart" size={22} color="var(--on-navy-300)" />
+                  {savedCount > 0 && (
+                    <span className="bz-navbar__action-badge bz-navbar__action-badge--gold">
+                      {savedCount}
+                    </span>
+                  )}
+                </span>
+                <span className="bz-navbar__action-text">
+                  <span className="bz-navbar__action-cap">{t("nav.your")}</span>
+                  <span className="bz-navbar__action-main">{t("nav.saved")}</span>
+                </span>
+              </AppLink>
+              <div ref={desktopMenuRef} className="bz-navbar__account-wrap">
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen((o) => !o)}
+                  aria-haspopup="menu"
+                  aria-expanded={menuOpen}
+                  className={`bz-navbar__action bz-navbar__account-btn${menuOpen ? " is-open" : ""}`}
+                >
+                  {authed ? (
+                    <BuyerAvatar user={user} size={26} fontSize={12} />
+                  ) : (
+                    <Icon name="user" size={22} color="var(--on-navy-300)" />
+                  )}
+                  <span className="bz-navbar__action-text">
+                    <span className="bz-navbar__action-cap">{t("nav.account")}</span>
+                    <span className="bz-navbar__action-main">
+                      {authed ? navFirstName : t("nav.signIn")}{" "}
+                      <Icon name="chevronDown" size={13} color="currentColor" />
+                    </span>
+                  </span>
+                </button>
+                {menuOpen && (
+                  <div role="menu" className="bz-navbar__menu">
+                    <AccountMenuPanel
+                      navLabel={navLabel}
+                      user={user}
+                      authed={authed}
+                      goAndClose={goAndClose}
+                      onLogout={requestLogout}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tier 3 — category nav */}
+        <div className="bz-navbar__cats">
+          <div className="bz-navbar__cats-inner container no-scrollbar">{categoryStrip}</div>
+        </div>
+      </div>
+
+      {/* ===================== MOBILE ===================== */}
+      <div className="bz-navbar__mobile bz-show-mobile">
+        <div className="bz-navbar__m-bar">
+          <div className="bz-navbar__m-bar-inner container">
+            <div className="bz-navbar__m-top">
+              <AppLink
+                href={pathFromScreen("home")}
+                ariaLabel={t("nav.homeAria")}
+                className="bz-navbar__brand"
+              >
+                <Logo height={24} />
+              </AppLink>
+              <div className="bz-navbar__m-icons">
+                <AppLink
+                  href={pathFromScreen("saved")}
+                  ariaLabel={t("nav.saved")}
+                  className="bz-navbar__m-icon"
+                >
+                  <Icon name="heart" size={22} color="var(--on-navy-300)" />
+                  {savedCount > 0 && (
+                    <span className="bz-navbar__action-badge bz-navbar__action-badge--gold">
+                      {savedCount}
+                    </span>
+                  )}
+                </AppLink>
+                <AppLink
+                  href={pathFromScreen("cart")}
+                  ariaLabel={t("nav.cart")}
+                  className="bz-navbar__m-icon"
+                >
+                  <Icon name="cart" size={22} color="#fff" />
+                  {cartCount > 0 && <span className="bz-navbar__action-badge">{cartCount}</span>}
+                </AppLink>
+              </div>
+            </div>
+            {searchField}
+            {deliverChip}
+          </div>
+        </div>
+        <div className="bz-navbar__cats-strip">
+          <div className="bz-navbar__cats-strip-inner container no-scrollbar">
+            {mobileCategoryStrip}
+          </div>
+        </div>
+      </div>
+
+      <DeliverToModal
+        open={deliverOpen}
+        value={deliveryLocation}
+        onClose={() => setDeliverOpen(false)}
+        onSave={async (loc: DeliveryLocation) => {
+          setDeliveryLocation(loc);
+          setDeliverOpen(false);
+          toast.info(t("delivery.deliveringTo", { label: formatDeliverToLabel(loc) }));
+          // Mirror checkout: persist the entered address to the buyer's profile
+          // so it becomes their (first, default) saved address.
+          if (authed) {
+            try {
+              await createAddress.mutateAsync(deliveryToSavePayload(loc, "Home", true));
+            } catch {
+              /* local delivery location already set; ignore sync error */
+            }
+          }
+        }}
+      />
 
       {/* Shared logout confirmation — every logout entry point opens this. */}
       <LogoutConfirmModal
@@ -1304,16 +1481,15 @@ export function Footer() {
         }}
       />
       <div
-        className="bz-footer-grid"
+        className="bz-footer-grid container"
         style={{
           position: "relative",
           zIndex: 2,
-          maxWidth: "var(--container)",
-          margin: "0 auto",
-          padding: "72px clamp(12px, 4vw, 28px) 48px",
+          paddingTop: 72,
+          paddingBottom: 48,
           display: "grid",
-          gridTemplateColumns: "1.6fr repeat(4, 1fr)",
-          gap: 40,
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: "var(--sp-8)",
         }}
       >
         <div>
@@ -1409,14 +1585,13 @@ export function Footer() {
         }}
       >
         <div
-          className="bz-row-4up"
+          className="bz-row-4up container"
           style={{
-            maxWidth: "var(--container)",
-            margin: "0 auto",
-            padding: "28px clamp(12px, 4vw, 28px)",
+            paddingTop: 28,
+            paddingBottom: 28,
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
-            gap: 24,
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: "var(--sp-6)",
             color: "rgba(255,255,255,.45)",
             fontSize: ".75rem",
             lineHeight: 1.7,

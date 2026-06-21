@@ -1,0 +1,637 @@
+"use client";
+
+import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useSearchParams } from "next/navigation";
+import { Icon, PageBar, AppLink, SkeletonCard, Button } from "@/components/ui";
+import { ProductCard, useBz } from "@/components/common";
+import { useCatalog } from "@/shared/hooks/use-catalog";
+import { useSearch } from "@/buyer/hooks/use-search";
+import {
+  categoryIdsFromSearchParams,
+  pathFromScreen,
+  searchSortFromBrowseParam,
+} from "@/config/routes";
+import { displayCategoryLabel } from "@/shared/lib/locale-display";
+import { useBazaarStore } from "@/store/bazaar-store";
+import type { SearchParams } from "@/buyer/api/search";
+
+const PER_PAGE = 24;
+
+/** Faceted search results — left filter rail + results grid, Algolia-backed.
+ *  Mobile lays the same filters out in a bottom sheet so products come first. */
+export function Search() {
+  const { t } = useTranslation();
+  const locale = useBazaarStore((s) => s.locale);
+  const { openProduct } = useBz();
+  const { categories: CATEGORIES } = useCatalog();
+  const urlParams = useSearchParams();
+  const urlQuery = urlParams.get("q")?.trim() ?? "";
+  const catFromUrl = useMemo(() => categoryIdsFromSearchParams(urlParams), [urlParams]);
+  const sortFromUrl = searchSortFromBrowseParam(urlParams.get("sort")) ?? "relevance";
+
+  const [cats, setCats] = useState<string[]>(catFromUrl);
+  const [sellers, setSellers] = useState<string[]>([]);
+  const [sellerSearch, setSellerSearch] = useState("");
+  const [pmin, setPmin] = useState("");
+  const [pmax, setPmax] = useState("");
+  const [appliedMin, setAppliedMin] = useState("");
+  const [appliedMax, setAppliedMax] = useState("");
+  const [rating, setRating] = useState(0);
+  const [sort, setSort] = useState<NonNullable<SearchParams["sort"]>>(sortFromUrl);
+  const [page, setPage] = useState(1);
+  const [sheet, setSheet] = useState(false); // mobile filter drawer
+
+  useEffect(() => {
+    setCats(catFromUrl);
+  }, [catFromUrl]);
+
+  useEffect(() => {
+    setSort(sortFromUrl);
+  }, [sortFromUrl]);
+
+  // Debounce the price inputs so typing a number doesn't fire a query per keystroke.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setAppliedMin(pmin);
+      setAppliedMax(pmax);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [pmin, pmax]);
+
+  const params: SearchParams = {
+    query: urlQuery,
+    categories: cats.length ? cats : undefined,
+    sellers: sellers.length ? sellers : undefined,
+    price_min: appliedMin !== "" ? Math.max(0, parseFloat(appliedMin) || 0) : undefined,
+    price_max: appliedMax !== "" ? Math.max(0, parseFloat(appliedMax) || 0) : undefined,
+    rating: rating || undefined,
+    sort,
+    page,
+    limit: PER_PAGE,
+  };
+
+  // Reset to page 1 whenever the query or any filter changes.
+  const filterKey = `${urlQuery}|${cats.join(",")}|${sellers.join(",")}|${appliedMin}|${appliedMax}|${rating}|${sort}`;
+  useEffect(() => {
+    setPage(1);
+  }, [filterKey]);
+
+  // Lock background scroll while the mobile filter sheet is open.
+  useEffect(() => {
+    if (!sheet) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [sheet]);
+
+  const { data, isFetching } = useSearch(params);
+
+  const total = data?.total ?? 0;
+  const items = data?.items ?? [];
+  const catFacets = data?.facets?.categories ?? [];
+  const sellerFacets = useMemo(() => {
+    const all = data?.facets?.sellers ?? [];
+    const filtered = sellerSearch
+      ? all.filter((s) => s.value.toLowerCase().includes(sellerSearch.toLowerCase()))
+      : all;
+    return filtered.slice(0, 12);
+  }, [data, sellerSearch]);
+
+  const sortOptions = useMemo(
+    () =>
+      [
+        { value: "relevance" as const, label: t("search.sortRelevance") },
+        { value: "rating" as const, label: t("search.sortTopRated") },
+        { value: "price_low" as const, label: t("search.sortPriceLow") },
+        { value: "price_high" as const, label: t("search.sortPriceHigh") },
+      ] satisfies { value: NonNullable<SearchParams["sort"]>; label: string }[],
+    [t],
+  );
+
+  const catName = (id: string) => {
+    const c = (CATEGORIES ?? []).find((cat) => cat.id === id);
+    return c ? displayCategoryLabel(c, locale) : id;
+  };
+
+  const toggle = (list: string[], set: (v: string[]) => void, value: string) =>
+    set(list.includes(value) ? list.filter((x) => x !== value) : [...list, value]);
+
+  const clearAll = () => {
+    setCats([]);
+    setSellers([]);
+    setSellerSearch("");
+    setPmin("");
+    setPmax("");
+    setRating(0);
+  };
+  const activeCount =
+    cats.length + sellers.length + (rating ? 1 : 0) + (pmin !== "" || pmax !== "" ? 1 : 0);
+  const hasFilters = activeCount > 0;
+
+  const heading = (() => {
+    if (urlQuery) return t("search.resultsFor", { query: urlQuery });
+    if (cats.length === 1) return catName(cats[0]!);
+    return t("search.allProducts");
+  })();
+
+  // One filter block, rendered in both the desktop rail and the mobile sheet.
+  const filters = (
+    <>
+      <FacetGroup title={t("search.categories")}>
+        {catFacets.length === 0 ? (
+          <EmptyHint>{t("search.noCategories")}</EmptyHint>
+        ) : (
+          catFacets.map((c) => (
+            <FacetRow
+              key={c.value}
+              label={catName(c.value)}
+              count={c.count}
+              checked={cats.includes(c.value)}
+              onToggle={() => toggle(cats, setCats, c.value)}
+            />
+          ))
+        )}
+      </FacetGroup>
+
+      <FacetGroup title={t("search.sellers")}>
+        <input
+          value={sellerSearch}
+          onChange={(e) => setSellerSearch(e.target.value)}
+          placeholder={t("search.searchSellers")}
+          style={{
+            width: "100%",
+            padding: "7px 10px",
+            marginBottom: 8,
+            border: "1px solid var(--line-200)",
+            borderRadius: "var(--r-sm)",
+            fontSize: ".8125rem",
+          }}
+        />
+        {sellerFacets.length === 0 ? (
+          <EmptyHint>{t("search.noSellers")}</EmptyHint>
+        ) : (
+          sellerFacets.map((s) => (
+            <FacetRow
+              key={s.value}
+              label={s.value}
+              count={s.count}
+              checked={sellers.includes(s.value)}
+              onToggle={() => toggle(sellers, setSellers, s.value)}
+            />
+          ))
+        )}
+      </FacetGroup>
+
+      <FacetGroup title={t("search.price")}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <input
+            type="number"
+            value={pmin}
+            onChange={(e) => setPmin(e.target.value)}
+            placeholder={t("search.priceMin")}
+            style={priceInput}
+          />
+          <span style={{ color: "var(--ink-400)" }}>–</span>
+          <input
+            type="number"
+            value={pmax}
+            onChange={(e) => setPmax(e.target.value)}
+            placeholder={t("search.priceMax")}
+            style={priceInput}
+          />
+        </div>
+      </FacetGroup>
+
+      <FacetGroup title={t("search.rating")}>
+        {[4, 3, 2, 1].map((n) => (
+          <button
+            key={n}
+            onClick={() => setRating(rating === n ? 0 : n)}
+            aria-pressed={rating === n}
+            className="bz-hover-tint"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              width: "100%",
+              padding: "4px 6px",
+              border: "none",
+              borderRadius: "var(--r-sm)",
+              background: "none",
+              cursor: "pointer",
+              color: rating === n ? "var(--blue)" : "var(--ink-700)",
+              fontWeight: rating === n ? 700 : 500,
+              fontSize: ".8125rem",
+            }}
+          >
+            <span style={{ color: "var(--gold)" }}>
+              {"★".repeat(n)}
+              {"☆".repeat(5 - n)}
+            </span>
+            {t("search.ratingUp")}
+          </button>
+        ))}
+      </FacetGroup>
+
+      {hasFilters ? (
+        <Button variant="secondary" size="sm" full onClick={clearAll} style={{ marginTop: 8 }}>
+          {t("search.clearAllFilters")}
+        </Button>
+      ) : null}
+    </>
+  );
+
+  return (
+    <div
+      className="bz-container-pad"
+      style={{
+        maxWidth: "var(--container)",
+        margin: "0 auto",
+        padding: "16px clamp(12px, 4vw, 28px) 48px",
+      }}
+    >
+      {/* Breadcrumb — desktop only (mobile leads with products). */}
+      <div
+        className="bz-hide-mobile"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          fontSize: ".8125rem",
+          color: "var(--ink-400)",
+          marginBottom: 12,
+        }}
+      >
+        <AppLink href={pathFromScreen("home")} className="bz-crumb">
+          {t("common.home")}
+        </AppLink>
+        <Icon name="chevronRight" size={13} color="var(--ink-300)" />
+        <span style={{ color: "var(--ink-700)" }}>
+          {urlQuery ? t("search.searchLabel", { query: urlQuery }) : t("search.title")}
+        </span>
+      </div>
+
+      {/* Mobile: heading spans full width above filters + results. */}
+      <div
+        className="bz-show-mobile bz-show-mobile--flex"
+        style={{
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          marginBottom: 16,
+        }}
+      >
+        <h1
+          style={{
+            margin: 0,
+            fontSize: "clamp(1.25rem, 5vw, 1.5rem)",
+            fontWeight: 800,
+            color: "var(--blue-deep)",
+          }}
+        >
+          {heading}
+        </h1>
+        <button
+          type="button"
+          aria-label={t("search.filtersAria")}
+          className="bz-show-mobile bz-show-mobile--flex bz-hover-border"
+          onClick={() => setSheet(true)}
+          style={{
+            position: "relative",
+            flexShrink: 0,
+            alignItems: "center",
+            justifyContent: "center",
+            width: 42,
+            height: 42,
+            borderRadius: "var(--r-md)",
+            border: "1.5px solid var(--line-200)",
+            background: "#fff",
+            cursor: "pointer",
+          }}
+        >
+          <Icon name="sliders" size={20} color="var(--ink-700)" />
+          {activeCount > 0 && (
+            <span
+              style={{
+                position: "absolute",
+                top: -6,
+                right: -6,
+                minWidth: 18,
+                height: 18,
+                padding: "0 5px",
+                background: "var(--red)",
+                color: "#fff",
+                borderRadius: "var(--r-full)",
+                fontSize: ".6875rem",
+                fontWeight: 800,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {activeCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      <div style={{ display: "flex", gap: 24, alignItems: "flex-start", flexWrap: "wrap" }}>
+        {/* ---- Desktop left filter rail (hidden on mobile) ---- */}
+        <aside className="bz-hide-mobile" style={{ flex: "0 0 248px", fontSize: ".875rem" }}>
+          {filters}
+        </aside>
+
+        {/* ---- Main results ---- */}
+        <main style={{ flex: "1 1 420px", minWidth: 0 }}>
+          <h1
+            className="bz-hide-mobile"
+            style={{
+              margin: "0 0 4px",
+              fontSize: "1.5rem",
+              fontWeight: 800,
+              color: "var(--blue-deep)",
+              letterSpacing: "-.01em",
+            }}
+          >
+            {heading}
+          </h1>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              marginBottom: 16,
+              flexWrap: "wrap",
+            }}
+          >
+            <span
+              className="tnum"
+              style={{ color: "var(--ink-500)", fontSize: ".875rem", marginRight: "auto" }}
+            >
+              {isFetching && !data
+                ? t("search.searching")
+                : t("search.productsFound", { count: total.toLocaleString("en-IN") })}
+            </span>
+            <label style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+              <span
+                style={{
+                  fontSize: ".75rem",
+                  fontWeight: 700,
+                  color: "var(--ink-400)",
+                  textTransform: "uppercase",
+                  letterSpacing: ".06em",
+                }}
+              >
+                {t("search.sort")}
+              </span>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as NonNullable<SearchParams["sort"]>)}
+                className="bz-hover-border"
+                style={{
+                  padding: "8px 12px",
+                  border: "1.5px solid var(--line-200)",
+                  borderRadius: "var(--r-md)",
+                  fontSize: ".8125rem",
+                  fontWeight: 600,
+                  background: "#fff",
+                  color: "var(--ink-700)",
+                  cursor: "pointer",
+                }}
+              >
+                {sortOptions.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {isFetching && !data ? (
+            <div className="bz-search-grid" style={gridStyle}>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
+            </div>
+          ) : items.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "56px 16px", color: "var(--ink-500)" }}>
+              <div
+                style={{
+                  fontSize: "1.0625rem",
+                  fontWeight: 800,
+                  color: "var(--ink-900)",
+                  marginBottom: 6,
+                }}
+              >
+                {t("search.noProductsMatch")}
+              </div>
+              <div style={{ fontSize: ".875rem" }}>{t("search.tryDifferent")}</div>
+            </div>
+          ) : (
+            <>
+              <div className="bz-search-grid" style={gridStyle}>
+                {items.map((p) => (
+                  <ProductCard key={p.id} p={p} onClick={openProduct} />
+                ))}
+              </div>
+              <PageBar
+                page={data?.page ?? 1}
+                pageCount={data?.page_count ?? 1}
+                alwaysShow={false}
+                onPage={(n: number) => {
+                  setPage(n);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+              />
+            </>
+          )}
+        </main>
+      </div>
+
+      {/* ---- Mobile filter sheet (bottom drawer) ---- */}
+      {sheet && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 500,
+            background: "rgba(11,18,32,.5)",
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "center",
+          }}
+          onClick={() => setSheet(false)}
+        >
+          <div
+            className="fade-up"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#fff",
+              borderRadius: "var(--r-xl) var(--r-xl) 0 0",
+              width: "100%",
+              maxWidth: 560,
+              padding: "16px 20px 0",
+              maxHeight: "85vh",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <div
+              style={{
+                width: 40,
+                height: 4,
+                background: "var(--line-200)",
+                borderRadius: 2,
+                margin: "0 auto 14px",
+                flexShrink: 0,
+              }}
+            />
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 12,
+                flexShrink: 0,
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: "1.125rem" }}>{t("search.filters")}</h3>
+              <button
+                onClick={() => setSheet(false)}
+                aria-label={t("search.closeFilters")}
+                className="bz-hover-tint"
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: "var(--r-full)",
+                  border: "1.5px solid var(--line-200)",
+                  background: "#fff",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Icon name="x" size={18} color="var(--ink-700)" />
+              </button>
+            </div>
+
+            <div style={{ overflowY: "auto", paddingBottom: 12, fontSize: ".9375rem" }}>
+              {filters}
+            </div>
+
+            <div
+              style={{
+                flexShrink: 0,
+                padding: "12px 0 16px",
+                borderTop: "1px solid var(--line-100)",
+              }}
+            >
+              <Button variant="primary" full onClick={() => setSheet(false)}>
+                {total === 1
+                  ? t("search.showResult", { count: total.toLocaleString("en-IN") })
+                  : t("search.showResults", { count: total.toLocaleString("en-IN") })}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const priceInput: React.CSSProperties = {
+  width: "100%",
+  padding: "7px 10px",
+  border: "1px solid var(--line-200)",
+  borderRadius: "var(--r-sm)",
+  fontSize: ".8125rem",
+};
+
+const gridStyle: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fill, minmax(172px, 1fr))",
+  gap: 14,
+};
+
+function FacetGroup({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: 22 }}>
+      <h3
+        style={{
+          margin: "0 0 8px",
+          fontSize: ".75rem",
+          fontWeight: 700,
+          color: "var(--ink-400)",
+          textTransform: "uppercase",
+          letterSpacing: ".06em",
+        }}
+      >
+        {title}
+      </h3>
+      {children}
+    </div>
+  );
+}
+
+function FacetRow({
+  label,
+  count,
+  checked,
+  onToggle,
+}: {
+  label: string;
+  count: number;
+  checked: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <label
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        padding: "3px 0",
+        cursor: "pointer",
+        color: checked ? "var(--blue)" : "var(--ink-700)",
+        fontWeight: checked ? 700 : 500,
+        fontSize: ".8125rem",
+      }}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onToggle}
+        style={{ accentColor: "var(--blue)" }}
+      />
+      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {label}
+      </span>
+      <span
+        style={{
+          marginLeft: "auto",
+          background: "var(--line-100)",
+          color: "var(--ink-400)",
+          borderRadius: "var(--r-full)",
+          padding: "0 8px",
+          fontSize: ".7rem",
+          fontWeight: 700,
+        }}
+      >
+        {count}
+      </span>
+    </label>
+  );
+}
+
+function EmptyHint({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ color: "var(--ink-300)", fontSize: ".8125rem", padding: "2px 0" }}>
+      {children}
+    </div>
+  );
+}

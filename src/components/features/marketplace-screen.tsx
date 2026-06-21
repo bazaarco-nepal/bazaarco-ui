@@ -4,7 +4,7 @@ import { Suspense, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { usePathname } from "next/navigation";
 import { screenFromPath } from "@/config/routes";
-import { displayProductName } from "@/lib/locale-display";
+import { displayProductName } from "@/shared/lib/locale-display";
 import { useBazaarStore } from "@/store/bazaar-store";
 import {
   Auth,
@@ -15,12 +15,13 @@ import {
   PDP,
   Store,
   Stores,
+  BargainableProducts,
   VideoTheater,
   Cart,
   Checkout,
   OrderSuccess,
   Tracking,
-  Wishlist,
+  Saved,
   Bargains,
   Profile,
   ProfileEdit,
@@ -60,9 +61,9 @@ import {
   BargainingGuidePage,
 } from "@/features";
 import { useBz } from "@/components/common";
-import { EmptyState, Spinner } from "@/components/ui";
+import { EmptyState, MaintenanceMessage, Spinner, SellerPack } from "@/components/ui";
 import { SELLER_SCREENS } from "@/config/routes";
-import { isBuyerScreen, isGuestViewableScreen, isSellerUser } from "@/lib/auth-rbac";
+import { isBuyerScreen, isGuestViewableScreen, isSellerUser } from "@/shared/lib/auth-rbac";
 
 /** Centered loader shown while the session probe settles on a gated screen. */
 function ScreenLoader() {
@@ -135,6 +136,9 @@ export function MarketplaceScreen() {
     return <ScreenLoader />;
   }
 
+  // Level 1 — scheduled maintenance. The middleware redirects all traffic here;
+  // it renders inside the shell so the header/footer stay for brand continuity.
+  if (screen === "maintenance") return <MaintenanceMessage variant="page" />;
   if (screen === "auth") return <Auth />;
   if (screen === "auth-callback") {
     return (
@@ -152,6 +156,7 @@ export function MarketplaceScreen() {
   }
   if (screen === "store") return <Store />;
   if (screen === "stores") return <Stores />;
+  if (screen === "bargainable-products") return <BargainableProducts />;
   if (screen === "video") {
     return (
       <Suspense fallback={<ScreenLoader />}>
@@ -163,7 +168,7 @@ export function MarketplaceScreen() {
   if (screen === "checkout") return <Checkout />;
   if (screen === "success") return <OrderSuccess total={orderTotal} />;
   if (screen === "tracking") return <Tracking />;
-  if (screen === "wishlist") return <Wishlist />;
+  if (screen === "saved") return <Saved />;
   if (screen === "bargains") return <Bargains />;
   if (screen === "messages") return <SellerChat buyerMode />;
   if (screen === "profile") return <Profile />;
@@ -187,9 +192,11 @@ export function MarketplaceScreen() {
       // Onboarding renders outside SellerShell, so it carries the Fluent skin
       // itself. (SellerChat in buyerMode is intentionally left unskinned.)
       return (
-        <div data-skin="fluent">
-          <SellerOnboarding />
-        </div>
+        <SellerPack>
+          <div data-skin="fluent">
+            <SellerOnboarding />
+          </div>
+        </SellerPack>
       );
     if (screen === "s-dashboard") inner = <SellerDashboard />;
     else if (screen === "s-inbox") inner = <SellerInbox />;
@@ -218,7 +225,11 @@ export function MarketplaceScreen() {
     else if (screen === "s-profile") inner = <SellerProfile />;
     else if (screen === "s-admin-verify") inner = <AdminSellerVerifications />;
     else inner = <SellerDashboard />;
-    return <SellerShell screen={screen}>{inner}</SellerShell>;
+    return (
+      <SellerPack>
+        <SellerShell screen={screen}>{inner}</SellerShell>
+      </SellerPack>
+    );
   }
 
   return <Home />;

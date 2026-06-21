@@ -8,7 +8,7 @@ import {
   deliveryEstimate,
   premiumCutoffPassed,
   type CartLikeItem,
-} from "@/lib/delivery-options";
+} from "@/buyer/lib/delivery-options";
 
 // Money-critical: these fees MUST match bazaarco-api orders.service.ts DELIVERY_FEES
 // (standard 149/179, premium 199/229). A drift here overcharges/undercharges

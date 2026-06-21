@@ -3,7 +3,8 @@
 import { useRef } from "react";
 import { usePathname } from "next/navigation";
 import { NO_FOOTER_SCREENS, NO_NAV_SCREENS, SELLER_SCREENS, screenFromPath } from "@/config/routes";
-import { BottomNav, Toast } from "@/components/ui";
+import { BuyerPack, BuyerBottomNav } from "@/buyer/ui";
+import { SellerBottomNav } from "@/seller/ui";
 import { Footer, Navbar, useBz } from "@/components/common";
 import { AuthRoleGuard } from "@/components/layouts/auth-role-guard";
 import { useBazaarStore } from "@/store/bazaar-store";
@@ -19,7 +20,7 @@ const BUYER_BOTTOM_NAV_SCREENS = new Set([
   "tracking",
   "profile",
   "profile-edit",
-  "wishlist",
+  "saved",
   "help",
   "privacy",
   "terms",
@@ -40,14 +41,17 @@ function BottomNavBridge() {
   const user = useBazaarStore((s) => s.user);
 
   const bottomNavActive = (() => {
-    if (screen === "home" || screen === "browse") return "home";
+    if (screen === "home") return "home";
+    if (screen === "browse" || screen === "search") return "browse";
+    if (screen === "video") return "video";
     if (screen === "bargains") return "bargains";
-    if (screen === "cart" || screen === "checkout") return "cart";
-    if (screen === "orders" || screen === "tracking") return "orders";
+    // Account groups the buyer's personal screens, including orders.
     if (
+      screen === "orders" ||
+      screen === "tracking" ||
       screen === "profile" ||
       screen === "profile-edit" ||
-      screen === "wishlist" ||
+      screen === "saved" ||
       screen === "help" ||
       screen === "privacy" ||
       screen === "terms" ||
@@ -64,7 +68,7 @@ function BottomNavBridge() {
 
   if (isSeller) {
     if (screen !== "s-onboarding") {
-      return <BottomNav seller active={screen} onNav={nav} />;
+      return <SellerBottomNav active={screen} onNav={nav} />;
     }
     return null;
   }
@@ -74,7 +78,7 @@ function BottomNavBridge() {
   }
 
   return (
-    <BottomNav
+    <BuyerBottomNav
       active={bottomNavActive}
       onNav={nav}
       cartCount={cartCount}
@@ -93,10 +97,8 @@ export function MarketplaceShell({ children }: { children: React.ReactNode }) {
   const isVideoScreen = screen === "video";
   const hideNavbarOnMobile = screen === "pdp";
 
-  const ctx = useBz();
-
   return (
-    <>
+    <BuyerPack>
       <AuthRoleGuard />
       <div id="app-scroll" ref={scrollRef} className={isVideoScreen ? "bz-app--video" : undefined}>
         {showNavbar &&
@@ -115,7 +117,6 @@ export function MarketplaceShell({ children }: { children: React.ReactNode }) {
         )}
       </div>
       <BottomNavBridge />
-      <Toast toast={ctx.toastMsg ?? null} />
-    </>
+    </BuyerPack>
   );
 }

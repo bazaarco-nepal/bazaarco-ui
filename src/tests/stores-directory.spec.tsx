@@ -62,12 +62,12 @@ const useSellersMock = vi.fn(() => ({
   error: null,
 }));
 
-vi.mock("@/hooks/use-catalog", () => ({
+vi.mock("@/shared/hooks/use-catalog", () => ({
   useSellers: () => useSellersMock(),
 }));
 
 import { BazaarCtx } from "@/components/common";
-import { Stores } from "@/features/stores/stores";
+import { Stores } from "@/buyer/features/stores/stores";
 
 const openStore = vi.fn();
 

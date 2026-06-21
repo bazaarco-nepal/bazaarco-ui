@@ -33,7 +33,7 @@ vi.mock("next/navigation", () => {
   };
 });
 
-vi.mock("@/hooks/use-catalog", () => ({
+vi.mock("@/shared/hooks/use-catalog", () => ({
   useCatalog: () => ({
     products: [],
     categories: [],
@@ -50,12 +50,12 @@ vi.mock("@/hooks/use-catalog", () => ({
   }),
 }));
 
-vi.mock("@/hooks/use-search", () => ({
+vi.mock("@/buyer/hooks/use-search", () => ({
   useSearch: () => ({ data: null, isLoading: false }),
 }));
 
 import { BazaarCtx } from "@/components/common";
-import { Browse } from "@/features/browse/browse";
+import { Browse } from "@/buyer/features/browse/browse";
 import { useBazaarStore } from "@/store/bazaar-store";
 
 // Minimal context backed by the REAL store so Browse's setQuery writes it and

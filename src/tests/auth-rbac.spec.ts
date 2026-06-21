@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { isGuestAllowedScreen, isGuestViewableScreen } from "@/lib/auth-rbac";
+import { isGuestAllowedScreen, isGuestViewableScreen } from "@/shared/lib/auth-rbac";
 
 describe("guest video access", () => {
   it("a guest sees the real video screen rendered (no sign-in wall to watch)", () => {
@@ -20,7 +20,7 @@ describe("guest video access", () => {
   });
 
   it("account screens still require sign-in (guests get the CTA, not the screen)", () => {
-    for (const screen of ["cart", "checkout", "orders", "bargains", "wishlist", "profile"]) {
+    for (const screen of ["cart", "checkout", "orders", "bargains", "saved", "profile"]) {
       expect(isGuestViewableScreen(screen), `"${screen}" must stay gated`).toBe(false);
     }
   });

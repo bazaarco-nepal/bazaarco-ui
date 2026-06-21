@@ -1,4 +1,4 @@
-import type { Facet, SearchFacets } from "@/services/api/search";
+import type { Facet, SearchFacets } from "@/buyer/api/search";
 
 export interface AlgoliaResult {
   hits?: Record<string, unknown>[];

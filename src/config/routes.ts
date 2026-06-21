@@ -5,12 +5,13 @@ export const BUYER_SCREENS = new Set([
   "pdp",
   "store",
   "stores",
+  "bargainable-products",
   "video",
   "cart",
   "checkout",
   "success",
   "tracking",
-  "wishlist",
+  "saved",
   "profile",
   "profile-edit",
   "addresses",
@@ -71,18 +72,20 @@ export const NO_FOOTER_SCREENS = new Set([
 const SCREEN_PATH: Record<string, string> = {
   auth: "/auth",
   "auth-callback": "/auth/callback",
+  maintenance: "/maintenance",
   home: "/home",
   browse: "/browse",
   search: "/search",
   pdp: "/product",
   store: "/store",
   stores: "/stores",
+  "bargainable-products": "/bargainable-products",
   video: "/video",
   cart: "/cart",
   checkout: "/checkout",
   success: "/checkout/success",
   tracking: "/orders/tracking",
-  wishlist: "/wishlist",
+  saved: "/saved",
   profile: "/profile",
   "profile-edit": "/profile/edit",
   addresses: "/profile/addresses",
@@ -202,14 +205,22 @@ export function searchPath(options?: SearchPathOptions): string {
   return qs ? `/search?${qs}` : "/search";
 }
 
-/** Build `/browse` — product listings delegate to `/search`; only the category browser stays on browse. */
+/** Build `/browse` — product listings delegate to `/search`; category browsing
+    and the all-products newest listing stay on Browse because Search has no
+    newest-created sort. */
 export function browsePath(options?: BrowsePathOptions): string {
   if (options?.view === "categories") {
     return "/browse?view=categories";
   }
+  const q = options?.q?.trim();
+  const cats = options?.cat;
+  const joinedCats = cats ? (Array.isArray(cats) ? cats : [cats]).filter(Boolean).join(",") : "";
+  if (!q && !joinedCats && options?.sort?.trim() === "newest") {
+    return "/browse?sort=newest";
+  }
   return searchPath({
-    q: options?.q,
-    cat: options?.cat,
+    q,
+    cat: joinedCats ? cats : undefined,
     sort: options?.sort,
   });
 }
@@ -232,18 +243,20 @@ export function storeShareUrl(sellerId: string, origin?: string): string {
 const SCREEN_TITLES: Record<string, string> = {
   auth: "Sign In",
   "auth-callback": "Signing In",
+  maintenance: "Maintenance",
   home: "Home",
   browse: "Browse Products",
   search: "Search",
   pdp: "Product",
   store: "Store",
   stores: "All Stores",
+  "bargainable-products": "Bargainable Products",
   video: "Watch",
   cart: "Your Cart",
   checkout: "Checkout",
   success: "Order Confirmed",
   tracking: "Track Order",
-  wishlist: "Wishlist",
+  saved: "Saved",
   bargains: "Bargains",
   messages: "Messages",
   profile: "Account",

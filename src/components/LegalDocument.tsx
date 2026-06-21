@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useLegalDocument } from "@/hooks/useLegalDocument";
+import { useLegalDocument } from "@/buyer/hooks/useLegalDocument";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import "./legal-document.css";
 

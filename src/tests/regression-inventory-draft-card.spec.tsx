@@ -10,7 +10,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(""),
 }));
 
-vi.mock("@/hooks/use-seller", () => {
+vi.mock("@/seller/hooks/use-seller", () => {
   const items: unknown[] = [];
   const inventoryResult = { data: items, isLoading: false, isError: false, error: null };
   const noopMutation = { mutate: () => {}, mutateAsync: async () => {}, isPending: false };
@@ -22,8 +22,8 @@ vi.mock("@/hooks/use-seller", () => {
   };
 });
 
-import { ADD_PRODUCT_DRAFT_KEY } from "@/features/seller/_shared/form-workflow";
-import { SellerInventory } from "@/features/seller";
+import { ADD_PRODUCT_DRAFT_KEY } from "@/seller/features/_shared/form-workflow";
+import { SellerInventory } from "@/seller/features";
 import { BazaarCtx } from "@/components/common";
 import type { BazaarContextValue } from "@/types/bazaar";
 

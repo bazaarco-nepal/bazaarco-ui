@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 
-import { userInitial } from "@/lib/display";
+import { userInitial } from "@/shared/lib/display";
 
 type BuyerAvatarUser = {
   name?: string | null;

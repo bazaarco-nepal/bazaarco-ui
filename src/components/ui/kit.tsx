@@ -12,7 +12,13 @@ import { formatNPR } from "@/lib/money";
 import { MapPinPicker } from "@/components/ui/map-pin-picker";
 import { CLOUDINARY_CLOUD_NAME, publicIdFromVideoUrl } from "@/lib/cloudinary";
 import { SellerIcon } from "@/seller/ui/icons";
+import { BzPack } from "@/shared/ui/pack";
 import "cloudinary-video-player/cld-video-player.min.css";
+
+// BzPack (shared) and SellerPack (seller console) moved to their design-system
+// homes; re-exported so existing `@/components/ui` consumers keep resolving.
+export { BzPack } from "@/shared/ui/pack";
+export { SellerPack } from "@/seller/ui/pack";
 
 /* ============================================================
    BazaarCo — Component Kit
@@ -770,12 +776,6 @@ export function AppLink({
   );
 }
 
-/* Which surface a button is rendering on. The buyer pack opts into the class-based
-   button-system (button.css, scoped to [data-pack="buyer"]); the seller console
-   keeps the legacy inline rendering untouched. Default "seller" so any button
-   outside an explicit buyer pack stays on the safe legacy path. */
-export const BzPack = createContext<"buyer" | "seller">("seller");
-
 /* Mark a subtree as buyer — sets the [data-pack="buyer"] CSS scope and the pack
    context. `display:contents` so the wrapper adds no box of its own. */
 export function BuyerPack({ children }: { children: React.ReactNode }) {
@@ -784,12 +784,6 @@ export function BuyerPack({ children }: { children: React.ReactNode }) {
       <BzPack.Provider value="buyer">{children}</BzPack.Provider>
     </div>
   );
-}
-
-/* Reset a nested subtree back to the seller surface (e.g. a seller screen mounted
-   inside the buyer shell) so its buttons keep the legacy look. */
-export function SellerPack({ children }: { children: React.ReactNode }) {
-  return <BzPack.Provider value="seller">{children}</BzPack.Provider>;
 }
 
 export function Button({

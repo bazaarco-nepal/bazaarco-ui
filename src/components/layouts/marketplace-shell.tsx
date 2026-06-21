@@ -3,7 +3,8 @@
 import { useRef } from "react";
 import { usePathname } from "next/navigation";
 import { NO_FOOTER_SCREENS, NO_NAV_SCREENS, SELLER_SCREENS, screenFromPath } from "@/config/routes";
-import { BottomNav, BuyerPack, SellerPack } from "@/components/ui";
+import { BottomNav, BuyerPack } from "@/components/ui";
+import { SellerBottomNav } from "@/seller/ui";
 import { Footer, Navbar, useBz } from "@/components/common";
 import { AuthRoleGuard } from "@/components/layouts/auth-role-guard";
 import { useBazaarStore } from "@/store/bazaar-store";
@@ -67,11 +68,7 @@ function BottomNavBridge() {
 
   if (isSeller) {
     if (screen !== "s-onboarding") {
-      return (
-        <SellerPack>
-          <BottomNav seller active={screen} onNav={nav} />
-        </SellerPack>
-      );
+      return <SellerBottomNav active={screen} onNav={nav} />;
     }
     return null;
   }

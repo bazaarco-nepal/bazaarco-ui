@@ -20,6 +20,14 @@ import "cloudinary-video-player/cld-video-player.min.css";
 // shared/ must not import buyer/ or seller/.
 export { BzPack } from "@/shared/ui/pack";
 
+// DEBT: a few buyer-only chrome widgets still live in this shared kit
+// (DeliverToModal, AllInPriceCard, MobileBuyBar, VoiceMicButton) — relocate to
+// @/buyer/ui once runtime-verifiable (they are @ts-nocheck and depend on kit
+// internals). Boundary-safe meanwhile: they import nothing from buyer/ or seller/.
+// DEBT: several shared primitives render the buyer SVG Icon set even on seller
+// surfaces, so the "separate icon packs" goal isn't fully met — make the
+// primitives icon-agnostic (inject the renderer) for true per-surface icons.
+
 /* ============================================================
    BazaarCo — Component Kit
    Icons (Lucide-style), Logo, Buttons, ProductCard, VideoPlayer,

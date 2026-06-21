@@ -1,8 +1,8 @@
-@import "./tokens.css";
-@import "./button.css";
-@import "./fluent.css";
-@import "./form-workflow.css";
-@import "./seller-kit.css";
+@import "../buyer/styles/tokens.css";
+@import "../buyer/styles/button.css";
+@import "../seller/styles/fluent.css";
+@import "../seller/styles/form-workflow.css";
+@import "../seller/styles/seller-kit.css";
 
 @keyframes bz-spin {
   to {

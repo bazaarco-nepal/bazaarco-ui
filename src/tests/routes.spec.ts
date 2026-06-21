@@ -100,8 +100,8 @@ describe("browsePath", () => {
     expect(browsePath({ view: "categories" })).toBe("/browse?view=categories");
   });
 
-  it("keeps all-products newest sorting on /browse", () => {
-    expect(browsePath({ sort: "newest" })).toBe("/browse?sort=newest");
+  it("sends the newest listing to the unified /search page", () => {
+    expect(browsePath({ sort: "newest" })).toBe("/search?sort=newest");
   });
 
   it("drops empty/whitespace-only values", () => {
@@ -115,6 +115,7 @@ describe("searchPath", () => {
     expect(searchPath({ q: "premium" })).toBe("/search?q=premium");
     expect(searchPath({ cat: "fashion" })).toBe("/search?cat=fashion");
     expect(searchPath({ sort: "low" })).toBe("/search?sort=price_low");
+    expect(searchPath({ sort: "newest" })).toBe("/search?sort=newest");
   });
 });
 

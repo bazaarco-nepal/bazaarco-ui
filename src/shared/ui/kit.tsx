@@ -5,7 +5,11 @@ import React, { useState, useEffect, useRef, useContext, createContext } from "r
 import { useRouter } from "next/navigation";
 import { Trans, useTranslation } from "react-i18next";
 import { ASSETS } from "@/config/assets";
-import { postalForCity, isDeliverableCity, DELIVERY_AREA_MESSAGE } from "@/shared/lib/delivery-location";
+import {
+  postalForCity,
+  isDeliverableCity,
+  DELIVERY_AREA_MESSAGE,
+} from "@/shared/lib/delivery-location";
 import { reverseGeocode } from "@/shared/lib/reverse-geocode";
 import { tintForName, STORE_TINTS } from "@/shared/lib/store-tint";
 import { formatNPR } from "@/shared/lib/money";
@@ -731,11 +735,11 @@ function useSpaLinkClick(href, onNavigate, target) {
       return;
     }
     e.preventDefault();
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "instant" });
     if (onNavigate) {
       onNavigate();
     } else if (href) {
       router.push(href);
-      if (typeof window !== "undefined") window.scrollTo({ top: 0 });
     }
   };
 }
@@ -2187,6 +2191,7 @@ export function QtyStepper({ value, onChange, min = 1, max = 99 }) {
       <button
         onClick={() => onChange(Math.max(min, value - 1))}
         disabled={value <= min}
+        aria-label="Decrease quantity"
         style={{
           width: 40,
           height: 40,
@@ -2210,6 +2215,7 @@ export function QtyStepper({ value, onChange, min = 1, max = 99 }) {
       <button
         onClick={() => onChange(Math.min(max, value + 1))}
         disabled={value >= max}
+        aria-label="Increase quantity"
         style={{
           width: 40,
           height: 40,
@@ -2526,6 +2532,7 @@ export function BackToTop({ threshold = 1200 }) {
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
       aria-label={t("common.backToTop")}
       title={t("common.backToTop")}
+      className="bz-mobile-hide"
       style={{
         position: "fixed",
         right: 22,
@@ -2829,11 +2836,16 @@ export function MobileBuyBar({
   onAdd,
   onBuy,
   onBargain,
+  onRemove,
+  inCart = false,
   disabled = false,
 }: {
   onAdd: () => void;
   onBuy: () => void;
   onBargain?: () => void;
+  /** When the selection is already in the cart, the cart button removes it. */
+  onRemove?: () => void;
+  inCart?: boolean;
   /** Out-of-stock listings disable the buy actions; bargaining is hidden too. */
   disabled?: boolean;
 }) {
@@ -2870,15 +2882,17 @@ export function MobileBuyBar({
           {t("common.offer")}
         </Button>
       ) : null}
-      {/* Add to cart — neutral secondary to the solid Buy now. */}
+      {/* Add to cart — neutral secondary to the solid Buy now. Once the
+          selection is in the cart it flips to a remove toggle (still removable
+          while out of stock, mirroring the desktop buy box). */}
       <Button
         variant="secondary"
-        icon="cart"
-        onClick={onAdd}
-        disabled={disabled}
+        icon={inCart ? "trash" : "cart"}
+        onClick={inCart ? onRemove : onAdd}
+        disabled={disabled && !inCart}
         style={{ flex: 1, minWidth: 0, height: 46 }}
       >
-        {t("nav.cart")}
+        {inCart ? t("common.remove") : t("nav.cart")}
       </Button>
       <Button
         variant="primary"

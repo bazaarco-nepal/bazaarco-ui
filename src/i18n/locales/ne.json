@@ -60,6 +60,7 @@
     "seeAll": "सबै हेर्नुहोस्",
     "loadMore": "थप देखाउनुहोस्",
     "addToCart": "कार्टमा थप्नुहोस्",
+    "remove": "हटाउनुहोस्",
     "buyNow": "अहिले किन्नुहोस्",
     "previous": "अघिल्लो",
     "next": "अर्को",
@@ -310,6 +311,7 @@
     "allCategories": "सबै श्रेणी",
     "moreToExplore": "थप हेर्नुहोस्",
     "recommendedForYou": "तपाईंका लागि सिफारिस",
+    "browseAll": "सबै हेर्नुहोस्",
     "popularStores": "लोकप्रिय स्टोरहरू",
     "viewAllStores": "सबै स्टोर हेर्नुहोस्",
     "watchTheirFeed": "उनीहरूको फिड हेर्नुहोस्",
@@ -399,6 +401,7 @@
     "applyFilters": "फिल्टर लागू गर्नुहोस्",
     "sort": "क्रम",
     "sortRelevance": "सान्दर्भिकता",
+    "sortNewest": "नयाँ",
     "sortTopRated": "उच्च रेटिङ",
     "sortPriceLow": "मूल्य: कम देखि बढी",
     "sortPriceHigh": "मूल्य: बढी देखि कम",
@@ -1390,6 +1393,14 @@
     "message": "आफ्नो प्रोफाइल, अर्डर, मोलतोल र म्यासेजहरू हेर्न कृपया लगइन गर्नुहोस्।",
     "cta": "लगइन"
   },
+  "guestSignIn": {
+    "newCustomer": "नयाँ ग्राहक?",
+    "mobileHeadline": "बचत, मोलतोल र ट्र्याकका लागि साइन इन गर्नुहोस्।",
+    "benefitSave": "मनपर्ने बचत गर्नुहोस्",
+    "benefitBargain": "विक्रेतासँग मोलतोल",
+    "benefitTrack": "अर्डर ट्र्याक गर्नुहोस्",
+    "createAccount": "खाता बनाउनुहोस्"
+  },
   "payment": {
     "callback": {
       "backToCart": "कार्टमा फर्कनुहोस्",
@@ -1460,6 +1471,7 @@
   },
   "toast": {
     "addedToCart": "कार्टमा थपियो",
+    "removedFromCart": "कार्टबाट हटाइयो",
     "couldNotAddToCart": "कार्टमा थप्न सकिएन",
     "couldNotPlaceOrder": "अर्डर सफल हुन सकेन",
     "couldNotRemoveItem": "सामान हटाउन सकिएन",

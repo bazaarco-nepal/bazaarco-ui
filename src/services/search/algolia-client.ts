@@ -12,9 +12,10 @@ export const replicaIndexNames = {
   ratingDesc: `${indexName}_rating_desc`,
   priceAsc: `${indexName}_price_asc`,
   priceDesc: `${indexName}_price_desc`,
+  createdDesc: `${indexName}_created_desc`,
 } as const;
 
-export type AlgoliaSort = "" | "price:asc" | "price:desc" | "rating:desc";
+export type AlgoliaSort = "" | "price:asc" | "price:desc" | "rating:desc" | "created:desc";
 
 export function resolveSortIndex(sort: AlgoliaSort): string {
   switch (sort) {
@@ -24,6 +25,8 @@ export function resolveSortIndex(sort: AlgoliaSort): string {
       return replicaIndexNames.priceAsc;
     case "price:desc":
       return replicaIndexNames.priceDesc;
+    case "created:desc":
+      return replicaIndexNames.createdDesc;
     default:
       return primaryIndexName;
   }

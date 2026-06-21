@@ -51,7 +51,8 @@ vi.mock("@/shared/hooks/use-catalog", () => ({
 }));
 
 vi.mock("@/buyer/hooks/use-search", () => ({
-  useSearch: () => ({ data: null, isLoading: false }),
+  useProductListing: () => ({ data: null, isLoading: false, isFetching: false }),
+  useSimilar: () => ({ data: undefined, isLoading: false }),
 }));
 
 import { BazaarCtx } from "@/components/common";

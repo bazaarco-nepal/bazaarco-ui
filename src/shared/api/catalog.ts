@@ -89,6 +89,28 @@ export interface ProductListParams {
   limit?: number;
 }
 
+/** Faceted browse params — the Postgres-backed listing used when there's no
+ *  typed query (so browsing never costs an Algolia search op). */
+export interface BrowseParams {
+  categories?: string[];
+  sellers?: string[];
+  price_min?: number;
+  price_max?: number;
+  rating?: number;
+  sort?: "relevance" | "newest" | "price_low" | "price_high" | "rating";
+  page?: number;
+  limit?: number;
+}
+
+export interface BrowseFacet {
+  value: string;
+  count: number;
+}
+
+export interface BrowseResponse extends PaginatedData<Product> {
+  facets?: { categories: BrowseFacet[]; sellers: BrowseFacet[] };
+}
+
 export interface TopPicksParams {
   days?: number;
   page?: number;
@@ -143,6 +165,24 @@ export const catalogApi = {
 
   async getProducts(params?: ProductListParams): Promise<PaginatedData<Product>> {
     return mapProductPage(await getData<PaginatedData<Product>>("/catalog/products", params));
+  },
+
+  /** Faceted browse listing (Postgres). Arrays are comma-joined for the query
+   *  string; `facets=true` asks the API for category/seller counts. */
+  async browseProducts(params: BrowseParams): Promise<BrowseResponse> {
+    const query: Record<string, string | number | boolean> = {
+      facets: true,
+      page: params.page ?? 1,
+      limit: params.limit ?? 24,
+    };
+    if (params.categories?.length) query.categories = params.categories.join(",");
+    if (params.sellers?.length) query.sellers = params.sellers.join(",");
+    if (params.price_min != null) query.price_min = params.price_min;
+    if (params.price_max != null) query.price_max = params.price_max;
+    if (params.rating != null) query.rating = params.rating;
+    if (params.sort) query.sort = params.sort;
+    const raw = await getData<BrowseResponse>("/catalog/products", query);
+    return { ...raw, items: raw.items.map(mapProduct) };
   },
 
   async getTopPicks(params?: TopPicksParams): Promise<PaginatedData<Product>> {

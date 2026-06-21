@@ -17,10 +17,7 @@ import {
   sellerVerificationApi,
   type SubmitSellerVerificationPayload,
 } from "@/seller/api/seller-verification";
-import {
-  sellerSettingsApi,
-  type UpdateSellerSettingsPayload,
-} from "@/seller/api/seller-settings";
+import { sellerSettingsApi, type UpdateSellerSettingsPayload } from "@/seller/api/seller-settings";
 import { storefrontApi, type UpdateStorefrontPayload } from "@/seller/api/storefront";
 import { queryKeys } from "@/shared/api/query-keys";
 

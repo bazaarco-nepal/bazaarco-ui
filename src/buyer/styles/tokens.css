@@ -791,6 +791,30 @@ body {
   padding: 6px;
   z-index: 200;
 }
+.bz-navbar__menu--guest {
+  min-width: 200px;
+  padding: 14px;
+}
+.bz-navbar__menu--guest::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  right: 28px;
+  width: 11px;
+  height: 11px;
+  background: #fff;
+  border-left: 1px solid var(--line-200);
+  border-top: 1px solid var(--line-200);
+  transform: rotate(45deg);
+}
+.bz-guest-popover__link {
+  color: var(--blue);
+  font-weight: 600;
+  text-decoration: none;
+}
+.bz-guest-popover__link:hover {
+  text-decoration: underline;
+}
 
 .bz-navbar__cats {
   width: 100%;
@@ -925,6 +949,7 @@ body {
   -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid var(--line-200);
   padding-bottom: env(safe-area-inset-bottom, 0);
+  font-family: var(--font-sans);
 }
 
 .bz-bnav__item {
@@ -942,6 +967,7 @@ body {
   gap: 3px;
   cursor: pointer;
   color: var(--ink-500);
+  font-family: inherit;
   transition: color 0.18s var(--ease);
   -webkit-tap-highlight-color: transparent;
 }
@@ -967,6 +993,7 @@ body {
 }
 
 .bz-bnav__label {
+  font-family: inherit;
   font-size: 11px;
   font-weight: 700;
   max-width: 100%;
@@ -3536,6 +3563,12 @@ body {
   gap: var(--section-gap);
   padding-bottom: 8px;
 }
+/* Hero hidden: the first section would otherwise hug the navbar, so the page
+   carries the hero's old top offset instead. Remove this rule + the class in
+   home.tsx when the hero is restored (the hero then owns its own top spacing). */
+.bz-home--no-hero {
+  padding-top: var(--home-hero-top);
+}
 /* The hero is the first item, so the stack gap can't offset it from the navbar —
    it carries its own top spacing. (Mobile hero sets this inline.) */
 @media (min-width: 769px) {
@@ -3835,9 +3868,8 @@ body {
   background: #fff;
 }
 
-/* Desktop — hero shares a row with the New Arrivals rail. Row height is capped so
-   the hero stays compact; the carousel sizes itself from its aspect ratio (never
-   cropped) and the rail takes the remaining width. */
+/* Desktop — hero keeps its current footprint while the right slot waits for the
+   Smart Shopping panel. Row height is capped so the carousel stays compact. */
 @media (min-width: 769px) {
   .bz-home-herorow {
     display: flex;
@@ -3851,7 +3883,338 @@ body {
     height: 100%;
     width: auto;
   }
+  .bz-home-smart-slot {
+    flex: 0 1 clamp(300px, 32vw, 470px);
+    width: clamp(300px, 32vw, 470px);
+    min-width: 300px;
+    min-height: 0;
+  }
 }
+
+/* Smart Shopping panel — the hero-right "mini control center", composed from
+   shared SmartPanel primitives (header/title, lead card, tile grid, metric row,
+   quick links). Every value is a token, so a :root change restyles it with the
+   rest of the site. Content flows top-to-bottom at the panel's own gap so the
+   CTA stays with its content. The guest panel adds --fill to match the hero
+   height: its trailing "Popular searches" block grows to take up the slack, so
+   the card fills the slot with real content instead of empty space. */
+.bz-smart-panel {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--card);
+  border: 0.5px solid var(--bz-card-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-1);
+  overflow: hidden;
+}
+.bz-smart-panel--fill {
+  height: 100%;
+}
+.bz-smart-panel__header {
+  min-width: 0;
+}
+.bz-smart-panel__title {
+  margin: 0;
+  color: var(--blue-deep);
+  font-size: var(--fs-h2);
+  font-weight: var(--w-emphasis);
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+.bz-smart-panel__subtitle {
+  margin: var(--space-2xs) 0 0;
+  color: var(--ink-500);
+  font-size: var(--fs-caption);
+  line-height: 1.35;
+}
+
+/* Lead card — the one prominent action/status block. */
+.bz-smart-lead {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  background: var(--line-100);
+  border-radius: var(--r-md);
+}
+.bz-smart-lead--bargain {
+  background: var(--tint-red-50);
+}
+.bz-smart-lead__icon {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--blue-deep);
+  background: var(--card);
+  border-radius: var(--r-md);
+}
+.bz-smart-lead--bargain .bz-smart-lead__icon {
+  color: var(--red);
+}
+.bz-smart-lead__thumb {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  background: var(--line-100);
+  border: 1px solid var(--line-200);
+  border-radius: var(--r-md);
+}
+.bz-smart-lead__body {
+  min-width: 0;
+}
+.bz-smart-lead__title {
+  margin: 0;
+  color: var(--blue-deep);
+  font-size: var(--fs-base);
+  font-weight: var(--w-emphasis);
+  line-height: 1.25;
+}
+.bz-smart-lead__line {
+  margin: var(--space-2xs) 0 0;
+  color: var(--ink-500);
+  font-size: var(--fs-caption);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.bz-smart-lead__meta {
+  display: block;
+  margin-top: var(--space-2xs);
+  color: var(--ink-400);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+/* Tile grid — compact 2-up navigation tiles (icon chip + title + subtext). */
+.bz-smart-tiles {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-xs);
+}
+.bz-smart-tile {
+  min-width: 0;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--line-100);
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  text-decoration: none;
+  transition:
+    background var(--dur-micro) var(--ease),
+    border-color var(--dur-micro) var(--ease);
+}
+.bz-smart-tile:hover {
+  background: var(--card);
+  border-color: var(--line-200);
+}
+.bz-smart-tile__chip {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--blue-deep);
+  background: var(--card);
+  border: 0.5px solid var(--line-200);
+  border-radius: var(--r-md);
+  transition:
+    background var(--dur-micro) var(--ease),
+    color var(--dur-micro) var(--ease);
+}
+.bz-smart-tile:hover .bz-smart-tile__chip {
+  background: var(--line-100);
+  color: var(--blue);
+}
+.bz-smart-tile__text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.bz-smart-tile__title {
+  color: var(--ink-700);
+  font-size: var(--fs-caption);
+  font-weight: var(--w-emphasis);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bz-smart-tile__sub {
+  color: var(--ink-400);
+  font-size: 11.5px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Metric row — number-over-label tiles on a tinted surface (mirrors .bz-stat). */
+.bz-smart-metrics {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-xs);
+}
+.bz-smart-metric {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  background: var(--line-100);
+  border-radius: var(--r-md);
+}
+.bz-smart-metric__value {
+  color: var(--blue-deep);
+  font-size: 1.125rem;
+  font-weight: var(--w-emphasis);
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bz-smart-metric__label {
+  color: var(--ink-400);
+  font-size: 11.5px;
+}
+
+/* Quick links — an optionally-labelled wrapped row of blue text links/buttons
+   (used for both the per-state quick actions and the guest "Popular now" row). */
+.bz-smart-quick-group {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+.bz-smart-quick__label {
+  color: var(--ink-500);
+  font-size: var(--fs-caption);
+  font-weight: var(--w-emphasis);
+}
+/* Popular searches — tappable pill topics. On --fill panels this block grows to
+   absorb the slack between the CTA and the bottom of the hero-height card. */
+.bz-smart-topics-group {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+.bz-smart-panel--fill .bz-smart-topics-group {
+  flex: 1 1 auto;
+}
+.bz-smart-topics {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: var(--space-xs);
+}
+.bz-smart-panel--fill .bz-smart-topics {
+  flex: 1 1 auto;
+}
+.bz-smart-topic {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 var(--space-sm);
+  background: var(--line-100);
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  color: var(--ink-700);
+  font-size: var(--fs-caption);
+  font-weight: var(--w-emphasis);
+  text-decoration: none;
+  transition:
+    background var(--dur-micro) var(--ease),
+    border-color var(--dur-micro) var(--ease),
+    color var(--dur-micro) var(--ease);
+}
+.bz-smart-topic:hover {
+  background: var(--card);
+  border-color: var(--line-200);
+  color: var(--blue);
+}
+.bz-smart-quick {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  min-height: 24px;
+}
+.bz-smart-quick a,
+.bz-smart-quick button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--blue);
+  font: inherit;
+  font-size: var(--fs-caption);
+  font-weight: var(--w-emphasis);
+  text-decoration: none;
+  cursor: pointer;
+}
+.bz-smart-quick a:hover,
+.bz-smart-quick button:hover {
+  text-decoration: underline;
+}
+.bz-smart-panel__helper {
+  margin: 0;
+  color: var(--ink-400);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+/* Skeleton mirrors the panel's natural flow (header → lead → metrics → CTA). */
+.bz-smart-skel {
+  background: linear-gradient(90deg, var(--line-100), var(--line-200), var(--line-100));
+  background-size: 200% 100%;
+  border-radius: var(--r-md);
+  animation: bz-skel 1.4s ease infinite;
+}
+.bz-smart-skel--title {
+  width: 54%;
+  height: 24px;
+}
+.bz-smart-skel--line {
+  width: 82%;
+  height: 14px;
+}
+.bz-smart-skel--lead {
+  height: 72px;
+}
+.bz-smart-skel--cta {
+  height: 40px;
+}
+.bz-smart-skel-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-xs);
+}
+.bz-smart-skel-row span {
+  height: 56px;
+  background: var(--line-100);
+  border-radius: var(--r-md);
+}
+
+/* The Smart Shopping panel is desktop-only (its slot lives in .bz-hide-mobile),
+   so it needs no mobile/responsive rules. */
 @media (max-width: 768px) {
   .bz-hero__arrow {
     width: 30px;
@@ -3865,83 +4228,6 @@ body {
   }
 }
 
-/* ---------- New arrivals (backend-backed) ---------- */
-.bz-arrivals__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-.bz-arrivals__title {
-  margin: 2px 0 0;
-  color: var(--blue-deep);
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 800;
-  line-height: 1.1;
-}
-.bz-arrivals__count {
-  flex-shrink: 0;
-  color: var(--ink-400);
-  font-size: 11.5px;
-  font-weight: 700;
-  padding-top: 5px;
-}
-
-.bz-arrivals-rail {
-  display: flex;
-  flex-direction: column;
-  flex: 0 1 clamp(300px, 32vw, 470px);
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-  width: clamp(300px, 32vw, 470px);
-  min-width: 300px;
-  min-height: 0;
-}
-.bz-arrivals-rail .bz-arrivals__head {
-  flex: 0 0 auto;
-  align-items: center;
-  margin-bottom: 10px;
-}
-.bz-arrivals-rail__grid {
-  flex: 1 1 0;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  grid-auto-rows: 1fr;
-  gap: 9px;
-  align-content: stretch;
-  overflow: hidden;
-}
-
-.bz-arrivals-mobile__head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-.bz-arrivals-mobile__grid {
-  display: flex;
-  gap: 9px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x proximity;
-  padding-bottom: 4px;
-  scrollbar-width: none;
-}
-.bz-arrivals-mobile__grid::-webkit-scrollbar {
-  display: none;
-}
-.bz-arrivals-mobile__grid > * {
-  flex: 0 0 148px;
-  height: 208px;
-  scroll-snap-align: start;
-}
-.bz-arrivals-mobile__grid > .bz-product-card--compact {
-  height: 208px !important;
-}
 /* ---------- BazaarCo Watch and Bargain panels ---------- */
 .bz-watch-panel,
 .bz-bargain-panel {

@@ -31,7 +31,11 @@ export class LocalErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     // Log loudly with context so a prod crash in a minor widget is debuggable.
-    console.error(`[LocalErrorBoundary${this.props.label ? `:${this.props.label}` : ""}]`, error, info);
+    console.error(
+      `[LocalErrorBoundary${this.props.label ? `:${this.props.label}` : ""}]`,
+      error,
+      info,
+    );
   }
 
   render() {

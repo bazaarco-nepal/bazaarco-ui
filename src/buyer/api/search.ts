@@ -11,7 +11,7 @@ export interface SearchParams {
   price_max?: number;
   rating?: number;
   rating4?: boolean;
-  sort?: "relevance" | "price_low" | "price_high" | "rating";
+  sort?: "relevance" | "newest" | "price_low" | "price_high" | "rating";
   page?: number;
   limit?: number;
 }

@@ -350,10 +350,12 @@ export function Cart() {
     void updateCartQty(line.id, q, line.variantId);
   };
   const remove = (line) => {
-    void removeFromCart(line.id, line.variantId).then(() => {
-      setConfirm(null);
-      toast.success(t("checkout.removedFromCart"));
-    });
+    void removeFromCart(line.id, line.variantId)
+      .then(() => {
+        setConfirm(null);
+        toast.success(t("checkout.removedFromCart"));
+      })
+      .catch(() => {}); // error already toasted inside removeFromCart
   };
 
   if (cartLoading && cart.length === 0) {
@@ -802,6 +804,7 @@ export function ConfirmModal({ title, message, confirmLabel, onConfirm, onCancel
       ref={dialogRef}
       role="dialog"
       aria-modal="true"
+      aria-labelledby="confirm-dialog-title"
       style={{
         position: "fixed",
         inset: 0,
@@ -819,7 +822,9 @@ export function ConfirmModal({ title, message, confirmLabel, onConfirm, onCancel
         onClick={(e) => e.stopPropagation()}
         style={{ background: "#fff", borderRadius: "var(--r-xl)", width: 400, padding: 26 }}
       >
-        <h3 style={{ margin: "0 0 8px", fontSize: "1.125rem" }}>{title}</h3>
+        <h3 id="confirm-dialog-title" style={{ margin: "0 0 8px", fontSize: "1.125rem" }}>
+          {title}
+        </h3>
         <p style={{ margin: "0 0 22px", color: "var(--ink-500)", fontSize: ".9375rem" }}>
           {message}
         </p>
@@ -1203,7 +1208,7 @@ export function Checkout() {
                             whiteSpace: "nowrap",
                           }}
                         >
-                          {formatNPR(it.price * it.qty)}
+                          {formatNPR(roundRs(it.price * it.qty))}
                         </div>
                       </div>
                       <div

@@ -339,6 +339,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
         const msg =
           error instanceof ApiRequestError ? error.message : t("toast.couldNotRemoveItem");
         toast.error(msg);
+        throw error;
       }
     },
     [removeItem, t],

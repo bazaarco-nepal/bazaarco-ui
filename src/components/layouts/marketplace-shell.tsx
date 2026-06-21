@@ -1,13 +1,21 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { NO_FOOTER_SCREENS, NO_NAV_SCREENS, SELLER_SCREENS, screenFromPath } from "@/config/routes";
+import { useTranslation } from "react-i18next";
+import {
+  NO_FOOTER_SCREENS,
+  NO_NAV_SCREENS,
+  SELLER_SCREENS,
+  screenFromPath,
+  pathFromScreen,
+} from "@/config/routes";
 import { BuyerPack, BuyerBottomNav } from "@/buyer/ui";
 import { SellerBottomNav } from "@/seller/ui";
 import { Footer, Navbar, useBz } from "@/components/common";
 import { AuthRoleGuard } from "@/components/layouts/auth-role-guard";
 import { useBazaarStore } from "@/store/bazaar-store";
+import { Icon, Button, AppLink } from "@/components/ui";
 
 const BUYER_BOTTOM_NAV_SCREENS = new Set([
   "home",
@@ -33,12 +41,175 @@ const BUYER_BOTTOM_NAV_SCREENS = new Set([
   "stores",
 ]);
 
+function GuestSignInSheet({
+  open,
+  onClose,
+  onSignIn,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSignIn: () => void;
+}) {
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  const benefits = [
+    { icon: "heart" as const, label: t("guestSignIn.benefitSave") },
+    { icon: "bargain" as const, label: t("guestSignIn.benefitBargain") },
+    { icon: "package" as const, label: t("guestSignIn.benefitTrack") },
+  ];
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 700,
+        background: "rgba(11,18,32,.45)",
+      }}
+      onClick={onClose}
+      aria-hidden="true"
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="guest-sheet-title"
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          background: "#fff",
+          borderRadius: "20px 20px 0 0",
+          padding: "0 20px calc(36px + env(safe-area-inset-bottom, 0px))",
+          maxHeight: "80dvh",
+          overflowY: "auto",
+          boxShadow: "0 -8px 30px rgba(11,18,32,.18)",
+          animation: "bz-store-sheet-up 0.24s var(--ease)",
+        }}
+        onClick={(e) => e.stopPropagation()}
+        aria-hidden={undefined}
+      >
+        {/* drag handle */}
+        <div
+          aria-hidden="true"
+          style={{
+            width: 40,
+            height: 4,
+            borderRadius: 2,
+            background: "var(--line-200)",
+            margin: "12px auto 20px",
+          }}
+        />
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 20,
+          }}
+        >
+          <p
+            id="guest-sheet-title"
+            style={{
+              fontSize: "1.0625rem",
+              fontWeight: 700,
+              color: "var(--ink-900)",
+              margin: 0,
+              lineHeight: 1.3,
+            }}
+          >
+            {t("guestSignIn.mobileHeadline")}
+          </p>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t("common.close")}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--ink-400)",
+              padding: 6,
+              lineHeight: 1,
+              flexShrink: 0,
+            }}
+          >
+            <Icon name="x" size={20} />
+          </button>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 28 }}>
+          {benefits.map(({ icon, label }) => (
+            <div key={label} style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  background: "var(--tint-blue-50)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Icon name={icon} size={20} color="var(--blue)" />
+              </div>
+              <span
+                style={{
+                  fontSize: ".9375rem",
+                  fontWeight: 500,
+                  color: "var(--ink-700)",
+                }}
+              >
+                {label}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <Button variant="primary" full size="lg" onClick={onSignIn}>
+          {t("auth.signIn")}
+        </Button>
+        <div style={{ textAlign: "center", marginTop: 16 }}>
+          <AppLink
+            href={pathFromScreen("auth")}
+            onNavigate={onSignIn}
+            style={{
+              fontSize: ".875rem",
+              color: "var(--blue)",
+              fontWeight: 600,
+              textDecoration: "none",
+            }}
+          >
+            {t("guestSignIn.createAccount")}
+          </AppLink>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function BottomNavBridge() {
   const { nav, cartCount } = useBz();
   const pathname = usePathname();
   const screen = screenFromPath(pathname);
   const isSeller = SELLER_SCREENS.has(screen);
   const user = useBazaarStore((s) => s.user);
+  const authed = useBazaarStore((s) => s.authed);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const bottomNavActive = (() => {
     if (screen === "home") return "home";
@@ -66,6 +237,14 @@ function BottomNavBridge() {
     return null;
   })();
 
+  const handleNav = (target: string) => {
+    if (target === "profile" && !authed) {
+      setSheetOpen(true);
+      return;
+    }
+    nav(target);
+  };
+
   if (isSeller) {
     if (screen !== "s-onboarding") {
       return <SellerBottomNav active={screen} onNav={nav} />;
@@ -78,12 +257,22 @@ function BottomNavBridge() {
   }
 
   return (
-    <BuyerBottomNav
-      active={bottomNavActive}
-      onNav={nav}
-      cartCount={cartCount}
-      avatarUrl={user?.avatarUrl}
-    />
+    <>
+      <BuyerBottomNav
+        active={bottomNavActive}
+        onNav={handleNav}
+        cartCount={cartCount}
+        avatarUrl={user?.avatarUrl}
+      />
+      <GuestSignInSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        onSignIn={() => {
+          setSheetOpen(false);
+          nav("auth");
+        }}
+      />
+    </>
   );
 }
 

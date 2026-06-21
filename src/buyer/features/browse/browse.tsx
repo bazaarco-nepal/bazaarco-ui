@@ -49,7 +49,7 @@ import {
   Navbar,
   Footer,
 } from "@/components/common";
-import { displayCategoryLabel } from "@/lib/locale-display";
+import { displayCategoryLabel } from "@/shared/lib/locale-display";
 import { useBazaarStore } from "@/store/bazaar-store";
 
 const PLP_SORT_VALUES = ["popular", "newest", "low", "high", "rating"] as const;

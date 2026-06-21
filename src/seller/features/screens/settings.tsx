@@ -19,7 +19,7 @@ import {
 } from "@/components/common";
 import { SellerHelpBar, SellerPageHeader } from "../_shared/components";
 import { NOTIF_CHANNELS, NOTIF_EVENTS } from "../_shared/notif";
-import { toast } from "@/lib/toast";
+import { toast } from "@/shared/lib/toast";
 
 export function SellerSettings() {
   const { t } = useTranslation();

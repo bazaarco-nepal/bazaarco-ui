@@ -11,7 +11,7 @@ import {
   isPublicScreen,
   isSellerScreen,
   isSellerUser,
-} from "@/lib/auth-rbac";
+} from "@/shared/lib/auth-rbac";
 import { useBazaarStore } from "@/store/bazaar-store";
 
 /**

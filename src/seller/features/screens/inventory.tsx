@@ -14,8 +14,8 @@ import {
 } from "@/components/ui";
 import { SellerIcon } from "@/seller/ui/icons";
 import { ProductDeleteConfirmModal } from "@/seller/components/product-delete-confirm-modal";
-import { formatNPR } from "@/lib/money";
-import { toast } from "@/lib/toast";
+import { formatNPR } from "@/shared/lib/money";
+import { toast } from "@/shared/lib/toast";
 import { type CreateProductVariantPayload, type SellerInventoryItem } from "@/seller/api/seller";
 import {
   useUpdateProduct,

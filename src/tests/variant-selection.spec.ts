@@ -7,7 +7,7 @@ import {
   toggleOption,
   variantBacksOption,
   type SelectableVariant,
-} from "@/lib/variant-selection";
+} from "@/shared/lib/variant-selection";
 
 // The motivating catalogue: Black comes in S/M/L, Red in S/M/XL. Grouped
 // variants carry a single {group: option} pair each.

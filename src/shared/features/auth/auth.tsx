@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Trans, useTranslation } from "react-i18next";
 import { Icon, Logo, Button, AppLink, PasswordInput } from "@/components/ui";
 import { useBz } from "@/components/common";
-import { resolvePostAuthScreen } from "@/lib/auth-rbac";
+import { resolvePostAuthScreen } from "@/shared/lib/auth-rbac";
 import { screenFromPath, pathFromScreen } from "@/config/routes";
 import {
   useForgotPasswordConfirm,
@@ -18,8 +18,8 @@ import {
 import { getGoogleLoginUrl } from "@/shared/api/auth";
 import { ApiRequestError } from "@/shared/api/http";
 import type { AuthUser, PendingEmailVerification } from "@/types/auth";
-import { isStrongPassword, passwordRequirementMessage } from "@/lib/password-validation";
-import { toast } from "@/lib/toast";
+import { isStrongPassword, passwordRequirementMessage } from "@/shared/lib/password-validation";
+import { toast } from "@/shared/lib/toast";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",

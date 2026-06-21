@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Map as LeafletMap, Marker as LeafletMarker } from "leaflet";
-import { centerForCity } from "@/lib/nepal-map-centers";
+import { centerForCity } from "@/shared/lib/nepal-map-centers";
 
 export interface MapPinPickerProps {
   city: string;

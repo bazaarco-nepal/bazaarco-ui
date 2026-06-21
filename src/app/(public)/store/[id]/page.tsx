@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { OG_IMAGE, SITE_NAME, SITE_URL } from "@/config/site";
-import { fetchSellerSeo } from "@/lib/seo/catalog";
+import { fetchSellerSeo } from "@/shared/lib/seo/catalog";
 import { JsonLd } from "@/components/seo/json-ld";
-import { breadcrumbSchema, storeSchema } from "@/lib/seo/structured-data";
+import { breadcrumbSchema, storeSchema } from "@/shared/lib/seo/structured-data";
 
 export const dynamic = "force-dynamic";
 

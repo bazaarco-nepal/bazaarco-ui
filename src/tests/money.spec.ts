@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { formatNPR, roundRs } from "@/lib/money";
+import { formatNPR, roundRs } from "@/shared/lib/money";
 
 // The single money formatter: rupees, en-IN grouping, fractional amounts padded
 // to 2 decimals, whole amounts left clean. Every price on every screen flows

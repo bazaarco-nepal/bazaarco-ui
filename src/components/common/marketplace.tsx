@@ -22,14 +22,14 @@ import { browsePath, categoryIdsFromSearchParams, pathFromScreen } from "@/confi
 import { categoryImageBySlug } from "@/config/category-images";
 import { useLogout } from "@/shared/hooks/use-auth";
 import { useCategories } from "@/shared/hooks/use-catalog";
-import { formatNPR, roundRs } from "@/lib/money";
+import { formatNPR, roundRs } from "@/shared/lib/money";
 import { useAddresses, useCreateAddress } from "@/buyer/hooks/use-addresses";
-import { deliveryToSavePayload } from "@/lib/saved-address";
-import { displayName, firstName } from "@/lib/display";
-import { displayCategoryLabel, displayProductName } from "@/lib/locale-display";
+import { deliveryToSavePayload } from "@/buyer/lib/saved-address";
+import { displayName, firstName } from "@/shared/lib/display";
+import { displayCategoryLabel, displayProductName } from "@/shared/lib/locale-display";
 import { useBazaarStore } from "@/store/bazaar-store";
-import { formatDeliverToLabel } from "@/lib/delivery-location";
-import { toast } from "@/lib/toast";
+import { formatDeliverToLabel } from "@/shared/lib/delivery-location";
+import { toast } from "@/shared/lib/toast";
 import { ASSETS } from "@/config/assets";
 import { SOCIAL_LINKS } from "@/config/site";
 import { BuyerAvatar } from "@/components/common/buyer-avatar";
@@ -39,7 +39,7 @@ import { LanguageToggle } from "@/components/common/language-toggle";
 import type { BazaarContextValue } from "@/types/bazaar";
 import type { Category, Product, Seller } from "@/types";
 import type { AuthUser } from "@/types/auth";
-import type { DeliveryLocation } from "@/lib/delivery-location";
+import type { DeliveryLocation } from "@/shared/lib/delivery-location";
 
 export const BazaarCtx = createContext<BazaarContextValue | null>(null);
 export const useBz = (): BazaarContextValue => {

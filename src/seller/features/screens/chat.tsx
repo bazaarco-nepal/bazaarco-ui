@@ -12,10 +12,10 @@ import {
   joinConversation,
   leaveConversation,
   sendChatMessage,
-} from "@/lib/chat-socket";
+} from "@/shared/lib/chat-socket";
 import { chatApi, type ChatMessage, type ChatThread } from "@/shared/api/chat";
 import { BuyerAvatar } from "@/components/common";
-import { toast } from "@/lib/toast";
+import { toast } from "@/shared/lib/toast";
 import { SellerHelpBar } from "../_shared/components";
 import { useIsNarrow } from "../_shared/hooks";
 

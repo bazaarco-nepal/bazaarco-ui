@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button, RatingStars, ChipGroup, ApiState } from "@/components/ui";
 import { useSellerReviews } from "@/seller/hooks/use-seller";
 import { BuyerAvatar } from "@/components/common";
-import { toast } from "@/lib/toast";
+import { toast } from "@/shared/lib/toast";
 import {
   SellerHelpBar,
   SellerPageHeader,

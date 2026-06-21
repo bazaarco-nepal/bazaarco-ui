@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveDelivery, type DeliveryTier } from "@/lib/delivery-options";
+import { resolveDelivery, type DeliveryTier } from "@/buyer/lib/delivery-options";
 
 // Mirrors the production formula in features/checkout/checkout.tsx `priceBreakdown`:
 //   subtotal = Σ price*qty ; delivery = subtotal===0 ? 0 : resolveDelivery(cart,tier).fee

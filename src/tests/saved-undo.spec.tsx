@@ -46,7 +46,7 @@ vi.mock("@/shared/hooks/use-catalog", () => ({ useProduct: () => ({ data: null }
 import { BazaarProvider } from "@/providers/bazaar-provider";
 import { useBz } from "@/components/common";
 import { useBazaarStore } from "@/store/bazaar-store";
-import { useToastStore } from "@/lib/toast";
+import { useToastStore } from "@/shared/lib/toast";
 
 let ctx: ReturnType<typeof useBz>;
 function Capture() {

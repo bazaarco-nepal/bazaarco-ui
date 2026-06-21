@@ -7,9 +7,9 @@ import { useTranslation } from "react-i18next";
 import { useBz } from "@/components/common";
 import { Spinner } from "@/components/ui";
 import { screenFromPath } from "@/config/routes";
-import { resolvePostAuthScreen } from "@/lib/auth-rbac";
-import { setAccessToken } from "@/lib/auth-token";
-import { toast } from "@/lib/toast";
+import { resolvePostAuthScreen } from "@/shared/lib/auth-rbac";
+import { setAccessToken } from "@/shared/lib/auth-token";
+import { toast } from "@/shared/lib/toast";
 import { establishBrowserSession, fetchCurrentUser } from "@/shared/api/auth";
 import { useBazaarStore } from "@/store/bazaar-store";
 

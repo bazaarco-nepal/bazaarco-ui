@@ -18,16 +18,16 @@ import {
   formatAddressLine,
   isAddressComplete,
   savedAddressToDelivery,
-} from "@/lib/saved-address";
-import type { DeliveryLocation } from "@/lib/delivery-location";
+} from "@/buyer/lib/saved-address";
+import type { DeliveryLocation } from "@/shared/lib/delivery-location";
 import {
   DEFAULT_DELIVERY,
   isDeliverableCity,
   DELIVERY_AREA_MESSAGE,
-} from "@/lib/delivery-location";
+} from "@/shared/lib/delivery-location";
 import type { SavedAddress } from "@/buyer/api/addresses";
 import { ApiRequestError } from "@/shared/api/http";
-import { toast } from "@/lib/toast";
+import { toast } from "@/shared/lib/toast";
 
 const emptyForm = (): { label: string; location: DeliveryLocation } => ({
   label: "Home",

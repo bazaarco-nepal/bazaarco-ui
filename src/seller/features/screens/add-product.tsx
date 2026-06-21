@@ -15,11 +15,11 @@ import {
 } from "../_shared/form-workflow";
 import { ProductPhotoPicker, type ProductPhoto } from "@/seller/components/product-photo-picker";
 import { SellerVerificationBlocked } from "@/seller/components/seller-verification-banner";
-import { saleEffective, saleValid as isSaleValid, buildPricing } from "@/lib/discount";
-import { formatNPR } from "@/lib/money";
-import { BARGAIN_MIN_GAP_PERCENT, maxAllowedBargainMinimum } from "@/lib/bargain-gap";
-import { cartesianVariantRows } from "@/lib/variant-selection";
-import { toast } from "@/lib/toast";
+import { saleEffective, saleValid as isSaleValid, buildPricing } from "@/shared/lib/discount";
+import { formatNPR } from "@/shared/lib/money";
+import { BARGAIN_MIN_GAP_PERCENT, maxAllowedBargainMinimum } from "@/shared/lib/bargain-gap";
+import { cartesianVariantRows } from "@/shared/lib/variant-selection";
+import { toast } from "@/shared/lib/toast";
 import { useCategories, useProduct } from "@/shared/hooks/use-catalog";
 import { useUploadImage } from "@/shared/hooks/use-media-upload";
 import { type SellerInventoryItem } from "@/seller/api/seller";
@@ -978,7 +978,7 @@ export function SellerAddProduct({
   // 1 main image (the cover) + 2–5 gallery images, for new listings and edits.
   const photosOk = mainPhoto.length === 1 && galleryPhotos.length >= 2 && galleryPhotos.length <= 5;
 
-  // Discount (single-price only). Pure math lives in @/lib/discount and mirrors
+  // Discount (single-price only). Pure math lives in @/shared/lib/discount and mirrors
   // the server's authoritative rules so the seller gets immediate feedback.
   const applyDiscount = onSale && !hasVariants;
   const baseNum = Number(price) || 0;

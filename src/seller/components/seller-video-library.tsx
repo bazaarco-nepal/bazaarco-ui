@@ -8,7 +8,7 @@ import { useDeleteSellerVideo, useUpdateSellerVideo } from "@/shared/hooks/use-m
 import { useSellerInventory } from "@/seller/hooks/use-seller";
 import { VideoDeleteConfirmModal } from "@/seller/components/video-delete-confirm-modal";
 import { SellerPageHeader } from "@/seller/features/_shared/components";
-import { toast } from "@/lib/toast";
+import { toast } from "@/shared/lib/toast";
 import type { SellerVideoItem } from "@/shared/api/media";
 
 function VideoEditModal({

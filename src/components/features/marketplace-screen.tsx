@@ -4,7 +4,7 @@ import { Suspense, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { usePathname } from "next/navigation";
 import { screenFromPath } from "@/config/routes";
-import { displayProductName } from "@/lib/locale-display";
+import { displayProductName } from "@/shared/lib/locale-display";
 import { useBazaarStore } from "@/store/bazaar-store";
 import {
   Auth,
@@ -63,7 +63,7 @@ import {
 import { useBz } from "@/components/common";
 import { EmptyState, MaintenanceMessage, Spinner, SellerPack } from "@/components/ui";
 import { SELLER_SCREENS } from "@/config/routes";
-import { isBuyerScreen, isGuestViewableScreen, isSellerUser } from "@/lib/auth-rbac";
+import { isBuyerScreen, isGuestViewableScreen, isSellerUser } from "@/shared/lib/auth-rbac";
 
 /** Centered loader shown while the session probe settles on a gated screen. */
 function ScreenLoader() {

@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Chip, ApiState } from "@/components/ui";
-import { bargainExpiryLabel } from "@/lib/bargain-expiry";
-import { formatNPR } from "@/lib/money";
+import { bargainExpiryLabel } from "@/shared/lib/bargain-expiry";
+import { formatNPR } from "@/shared/lib/money";
 import {
   useAcceptBargainOffer,
   useRejectBargainOffer,
@@ -13,7 +13,7 @@ import {
 import { useSellerBargains, type SellerBargainOffer } from "@/seller/hooks/use-seller";
 import { BuyerAvatar } from "@/components/common";
 import { ApiRequestError } from "@/shared/api/http";
-import { toast } from "@/lib/toast";
+import { toast } from "@/shared/lib/toast";
 import { bargainStatus } from "../_shared/bargain";
 import { SellerHelpBar, SellerPageHeader, SellerEmptyState } from "../_shared/components";
 

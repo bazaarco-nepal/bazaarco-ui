@@ -4,7 +4,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Placeholder, ApiState } from "@/components/ui";
 import { SellerIcon } from "@/seller/ui/icons";
-import { formatNPR } from "@/lib/money";
+import { formatNPR } from "@/shared/lib/money";
 import { useSellerAnalytics } from "@/seller/hooks/use-seller";
 import { SellerBarChart } from "../_shared/charts";
 import { SellerHelpBar, SellerPageHeader } from "../_shared/components";

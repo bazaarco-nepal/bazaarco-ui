@@ -1,9 +1,9 @@
 import type { Locale } from "@/i18n";
 import type { AuthIntent, AuthUser } from "@/types/auth";
 import type { CartLine, Product } from "@/types/catalog";
-import type { DeliveryLocation } from "@/lib/delivery-location";
-import type { DeliveryTier } from "@/lib/delivery-options";
-import type { CartSelection } from "@/lib/cart-selection";
+import type { DeliveryLocation } from "@/shared/lib/delivery-location";
+import type { DeliveryTier } from "@/buyer/lib/delivery-options";
+import type { CartSelection } from "@/buyer/lib/cart-selection";
 
 export interface BazaarStoreState {
   authed: boolean;

@@ -1,6 +1,6 @@
 import axios, { type AxiosError } from "axios";
 import type { ApiErrorResponse, ApiSuccessResponse } from "./types";
-import { clearAccessToken, getAccessToken } from "@/lib/auth-token";
+import { clearAccessToken, getAccessToken } from "@/shared/lib/auth-token";
 import { useBazaarStore } from "@/store/bazaar-store";
 
 export class ApiRequestError extends Error {

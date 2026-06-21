@@ -15,7 +15,7 @@ import {
   AppLink,
   LocalErrorBoundary,
 } from "@/components/ui";
-import { toast } from "@/lib/toast";
+import { toast } from "@/shared/lib/toast";
 import { BuyerAvatar, ProductCard, useBz } from "@/components/common";
 import {
   useSeller,
@@ -24,7 +24,7 @@ import {
   useCreateSellerReview,
 } from "@/shared/hooks/use-catalog";
 import { storeIdFromPath, pathFromScreen } from "@/config/routes";
-import { formatStoreAddress } from "@/lib/store-address";
+import { formatStoreAddress } from "@/shared/lib/store-address";
 import type { Seller } from "@/types";
 
 const RATING_LABEL_KEYS = [

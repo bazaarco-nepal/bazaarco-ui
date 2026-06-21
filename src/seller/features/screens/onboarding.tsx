@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button, LandmarkAddress, AppLink } from "@/components/ui";
 import { SellerIcon } from "@/seller/ui/icons";
 import { useBazaarStore } from "@/store/bazaar-store";
-import { clearDeferredSellerOnboarding, deferSellerOnboarding } from "@/lib/seller-onboarding";
+import { clearDeferredSellerOnboarding, deferSellerOnboarding } from "@/seller/lib/seller-onboarding";
 import {
   useSellerOrganization,
   useSetupSellerOrganization,
@@ -14,8 +14,8 @@ import {
 } from "@/seller/hooks/use-seller";
 import { useBz } from "@/components/common";
 import { pathFromScreen } from "@/config/routes";
-import { emptyStoreAddress, type StoreAddress } from "@/lib/store-address";
-import { toast } from "@/lib/toast";
+import { emptyStoreAddress, type StoreAddress } from "@/shared/lib/store-address";
+import { toast } from "@/shared/lib/toast";
 import { SellerHelpBar } from "../_shared/components";
 
 // Short walkthrough that plays on the seller onboarding hero. Hosted on Drive

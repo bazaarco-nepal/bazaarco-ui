@@ -15,9 +15,9 @@ import {
 import { SellerIcon } from "@/seller/ui/icons";
 import { useCompleteOnboarding } from "@/shared/hooks/use-auth";
 import { useBazaarStore } from "@/store/bazaar-store";
-import { displayName } from "@/lib/display";
-import { formatNPR } from "@/lib/money";
-import { toast } from "@/lib/toast";
+import { displayName } from "@/shared/lib/display";
+import { formatNPR } from "@/shared/lib/money";
+import { toast } from "@/shared/lib/toast";
 import {
   useSellerDashboard,
   useSellerInbox,

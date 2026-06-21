@@ -32,7 +32,7 @@ import type {
 } from "@/types/auth";
 import { queryKeys } from "@/shared/api/query-keys";
 import { useBazaarStore } from "@/store/bazaar-store";
-import { clearRoleHint, writeRoleHint } from "@/lib/auth-hint";
+import { clearRoleHint, writeRoleHint } from "@/shared/lib/auth-hint";
 
 function normalizeAuthUser(user: Awaited<ReturnType<typeof fetchCurrentUser>>) {
   return { ...user, onBoarding: user.onBoarding ?? false };

@@ -19,8 +19,8 @@ import {
   effectiveSelectedIds,
   pruneSelection,
   selectLine,
-} from "@/lib/cart-selection";
-import { toast } from "@/lib/toast";
+} from "@/buyer/lib/cart-selection";
+import { toast } from "@/shared/lib/toast";
 import type { CheckoutPayload, EsewaPaymentInit } from "@/buyer/api/orders";
 import type { Product } from "@/types";
 

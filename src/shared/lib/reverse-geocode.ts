@@ -1,4 +1,4 @@
-import { NEPAL_CITY_CENTER } from "@/lib/nepal-map-centers";
+import { NEPAL_CITY_CENTER } from "@/shared/lib/nepal-map-centers";
 
 const KNOWN_CITIES = Object.keys(NEPAL_CITY_CENTER);
 

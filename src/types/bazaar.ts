@@ -1,7 +1,7 @@
 import type { CartLine, Product } from "@/types/catalog";
 import type { CheckoutPayload, EsewaPaymentInit } from "@/buyer/api/orders";
 
-export type { ToastVariant } from "@/lib/toast";
+export type { ToastVariant } from "@/shared/lib/toast";
 
 export interface BazaarContextValue {
   screen: string;

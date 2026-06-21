@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { bargainExpiryLabel } from "@/lib/bargain-expiry";
+import { bargainExpiryLabel } from "@/shared/lib/bargain-expiry";
 
 describe("bargainExpiryLabel", () => {
   afterEach(() => vi.useRealTimers());

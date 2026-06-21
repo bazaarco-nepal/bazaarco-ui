@@ -1,6 +1,6 @@
 import { io, type Socket } from "socket.io-client";
 
-import { getAccessToken } from "@/lib/auth-token";
+import { getAccessToken } from "@/shared/lib/auth-token";
 import type { ChatMessage, SendChatMessagePayload } from "@/shared/api/chat";
 import { chatApi } from "@/shared/api/chat";
 

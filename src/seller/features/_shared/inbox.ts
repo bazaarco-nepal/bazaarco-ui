@@ -1,6 +1,6 @@
 "use client";
 
-import { type OrderStatus } from "@/lib/order-utils";
+import { type OrderStatus } from "@/shared/lib/order-utils";
 
 /* ---------- 4.3 Orders Inbox (Viber-style feed) ---------- */
 export const INBOX_TONE: Record<OrderStatus, string> = {

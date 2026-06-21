@@ -10,9 +10,9 @@ import {
   DEFAULT_DELIVERY,
   readDeliveryFromStorage,
   writeDeliveryToStorage,
-} from "@/lib/delivery-location";
-import { readRoleHint } from "@/lib/auth-hint";
-import { normalizePhone, readPhoneFromStorage, writePhoneToStorage } from "@/lib/buyer-contact";
+} from "@/shared/lib/delivery-location";
+import { readRoleHint } from "@/shared/lib/auth-hint";
+import { normalizePhone, readPhoneFromStorage, writePhoneToStorage } from "@/buyer/lib/buyer-contact";
 import type { BazaarStoreState } from "@/types/store";
 
 export const useBazaarStore = create<BazaarStoreState>((set, get) => ({

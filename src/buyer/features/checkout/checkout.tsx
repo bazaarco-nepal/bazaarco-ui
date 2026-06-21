@@ -36,20 +36,20 @@ import {
   BackToTop,
 } from "@/components/ui";
 import { useCatalog } from "@/shared/hooks/use-catalog";
-import { formatNPR, roundRs } from "@/lib/money";
-import { bargainExpiryLabel } from "@/lib/bargain-expiry";
+import { formatNPR, roundRs } from "@/shared/lib/money";
+import { bargainExpiryLabel } from "@/shared/lib/bargain-expiry";
 import { useAddresses, pickDefaultAddress } from "@/buyer/hooks/use-addresses";
 import { SavedAddressPicker } from "@/buyer/features/profile/addresses";
 import {
   ADDRESS_LABEL_PRESETS,
   isAddressComplete,
   savedAddressToDelivery,
-} from "@/lib/saved-address";
+} from "@/buyer/lib/saved-address";
 import {
   DEFAULT_DELIVERY,
   isDeliverableCity,
   DELIVERY_AREA_MESSAGE,
-} from "@/lib/delivery-location";
+} from "@/shared/lib/delivery-location";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { queryKeys } from "@/shared/api/query-keys";
 import {
@@ -67,7 +67,7 @@ import {
   deliveryChoices,
   distinctSellerCount,
   deliveryTypeLabel,
-} from "@/lib/delivery-options";
+} from "@/buyer/lib/delivery-options";
 import { useOrder } from "@/buyer/hooks/use-orders";
 import { EsewaRedirectForm } from "@/components/payment/esewa-redirect-form";
 import type { EsewaPaymentInit } from "@/buyer/api/orders";
@@ -78,8 +78,8 @@ import {
   isLineSelected,
   toggleLine,
   toggleAll,
-} from "@/lib/cart-selection";
-import { toast } from "@/lib/toast";
+} from "@/buyer/lib/cart-selection";
+import { toast } from "@/shared/lib/toast";
 
 // Cap the quantity stepper at the stock the server reports for this line, the
 // same rule the PDP uses. Falls back to 99 when stock is unknown; checkout

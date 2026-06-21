@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { formatNPR } from "@/lib/money";
+import { formatNPR } from "@/shared/lib/money";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import {
@@ -43,7 +43,7 @@ import { useVideoLike } from "@/buyer/hooks/use-video-like";
 import { videosApi } from "@/buyer/api/videos";
 import type { VideoFeedItem } from "@/types/video";
 import type { Product } from "@/types";
-import { toast } from "@/lib/toast";
+import { toast } from "@/shared/lib/toast";
 import {
   BazaarCtx,
   useBz,

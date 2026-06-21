@@ -1,7 +1,7 @@
 import { deleteData, getData, patchData, postData } from "@/shared/api/http";
 import type { Product } from "@/types";
 import type { StorefrontData } from "./storefront";
-import type { OrderStatus } from "@/lib/order-utils";
+import type { OrderStatus } from "@/shared/lib/order-utils";
 
 // What the Add Product form sends. The owning seller is resolved from auth on
 // the server; icon/tint are inherited from the category.

@@ -1,7 +1,7 @@
 "use client";
 
 import { Icon, AppLink } from "@/components/ui";
-import { formatNPR } from "@/lib/money";
+import { formatNPR } from "@/shared/lib/money";
 import type { VideoFeedItem } from "@/types/video";
 
 // Dark backdrops sit behind the reel video, mirroring the prototype's reel tints.

@@ -1,7 +1,7 @@
 import React from "react";
 import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/react";
-import { tintForName } from "@/lib/store-tint";
+import { tintForName } from "@/shared/lib/store-tint";
 import { StoreAvatar } from "@/components/ui";
 
 // The store brand tint is hashed from the NAME so the same shop is always the

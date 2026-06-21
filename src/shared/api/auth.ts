@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import { clearAccessToken, getAccessToken, setAccessToken } from "@/lib/auth-token";
+import { clearAccessToken, getAccessToken, setAccessToken } from "@/shared/lib/auth-token";
 import type {
   AuthSessionResponse,
   AuthUser,

@@ -12,7 +12,7 @@ import {
   pathFromScreen,
   searchSortFromBrowseParam,
 } from "@/config/routes";
-import { displayCategoryLabel } from "@/lib/locale-display";
+import { displayCategoryLabel } from "@/shared/lib/locale-display";
 import { useBazaarStore } from "@/store/bazaar-store";
 import type { SearchParams } from "@/buyer/api/search";
 

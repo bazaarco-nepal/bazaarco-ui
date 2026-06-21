@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Chip, ApiState } from "@/components/ui";
-import { formatNPR } from "@/lib/money";
+import { formatNPR } from "@/shared/lib/money";
 import { useSellerLedger } from "@/seller/hooks/use-seller";
 import { pathFromScreen } from "@/config/routes";
 import { SellerHelpBar, SellerPageHeader, Card } from "../_shared/components";

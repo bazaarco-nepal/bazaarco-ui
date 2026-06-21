@@ -7,7 +7,7 @@ export interface StorefrontBlock {
   enabled: boolean;
 }
 
-import type { StoreAddress } from "@/lib/store-address";
+import type { StoreAddress } from "@/shared/lib/store-address";
 
 export interface StorefrontData {
   shopName: string;

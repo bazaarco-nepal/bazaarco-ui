@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { optionImageFor, variantSwatchImage, selectionHeroImage } from "@/lib/variant-images";
+import { optionImageFor, variantSwatchImage, selectionHeroImage } from "@/buyer/lib/variant-images";
 import type { OptionImage, PricedVariant } from "@/types/catalog";
 
 // Mirrors the server's resolution chain (bazaarco-api catalog.service

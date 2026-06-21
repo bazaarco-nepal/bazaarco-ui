@@ -38,7 +38,7 @@ import {
 } from "@/components/ui";
 import { pathFromScreen, productShareUrl, searchPath } from "@/config/routes";
 import { useBazaarStore } from "@/store/bazaar-store";
-import { displayCategoryLabel } from "@/lib/locale-display";
+import { displayCategoryLabel } from "@/shared/lib/locale-display";
 import { useProduct, useCategories, useSellerTrust, useProductProfile } from "@/shared/hooks/use-catalog";
 import {
   BazaarCtx,
@@ -54,12 +54,12 @@ import {
   useBargainActivity,
   useCreateBargainOffer,
 } from "@/shared/hooks/use-bargains";
-import { bargainExpiryLabel } from "@/lib/bargain-expiry";
-import { formatNPR } from "@/lib/money";
-import { matchSelectedVariants, toggleOption, variantBacksOption } from "@/lib/variant-selection";
-import { optionImageFor, selectionHeroImage, variantSwatchImage } from "@/lib/variant-images";
+import { bargainExpiryLabel } from "@/shared/lib/bargain-expiry";
+import { formatNPR } from "@/shared/lib/money";
+import { matchSelectedVariants, toggleOption, variantBacksOption } from "@/shared/lib/variant-selection";
+import { optionImageFor, selectionHeroImage, variantSwatchImage } from "@/buyer/lib/variant-images";
 import { ApiRequestError } from "@/shared/api/http";
-import { toast } from "@/lib/toast";
+import { toast } from "@/shared/lib/toast";
 import type { PdpProps } from "@/types";
 import {
   ReviewsSection,

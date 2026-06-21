@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { isGuestAllowedScreen, isGuestViewableScreen } from "@/lib/auth-rbac";
+import { isGuestAllowedScreen, isGuestViewableScreen } from "@/shared/lib/auth-rbac";
 
 describe("guest video access", () => {
   it("a guest sees the real video screen rendered (no sign-in wall to watch)", () => {

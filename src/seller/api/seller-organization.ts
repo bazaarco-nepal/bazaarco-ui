@@ -1,5 +1,5 @@
 import { apiClient, getData } from "@/shared/api/http";
-import type { StoreAddress } from "@/lib/store-address";
+import type { StoreAddress } from "@/shared/lib/store-address";
 import type { SellerVerification } from "./seller-verification";
 import type { ApiSuccessResponse } from "@/shared/api/types";
 

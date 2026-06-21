@@ -20,7 +20,7 @@ import {
 } from "@/config/site";
 import { IosInstallBanner } from "@/components/common/ios-install-banner";
 import { JsonLd } from "@/components/seo/json-ld";
-import { organizationSchema, websiteSchema } from "@/lib/seo/structured-data";
+import { organizationSchema, websiteSchema } from "@/shared/lib/seo/structured-data";
 import "@/styles/globals.css";
 
 const ibmPlexSans = IBM_Plex_Sans({

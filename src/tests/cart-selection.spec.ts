@@ -10,7 +10,7 @@ import {
   toggleAll,
   toggleLine,
   type CartSelection,
-} from "@/lib/cart-selection";
+} from "@/buyer/lib/cart-selection";
 
 // A cart line — only `id` matters to the selection helpers.
 const line = (id: string) => ({ id, price: 100, qty: 1 });

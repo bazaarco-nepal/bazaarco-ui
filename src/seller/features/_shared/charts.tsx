@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { formatNPR } from "@/lib/money";
+import { formatNPR } from "@/shared/lib/money";
 
 /* ---------- 4.2 Seller Dashboard ---------- */
 

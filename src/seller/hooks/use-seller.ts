@@ -7,7 +7,7 @@ import {
   type UpdateProductPayload,
 } from "@/seller/api/seller";
 import type { SellerVideosResponse } from "@/shared/api/media";
-import type { OrderStatus } from "@/lib/order-utils";
+import type { OrderStatus } from "@/shared/lib/order-utils";
 import type { SellerReview } from "@/types/catalog";
 import {
   sellerOrganizationApi,

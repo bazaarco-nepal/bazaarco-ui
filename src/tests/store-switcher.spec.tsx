@@ -32,7 +32,7 @@ vi.mock("@/seller/hooks/use-seller", () => ({
 }));
 
 // Toasts now come from the module singleton, not the Bazaar context.
-vi.mock("@/lib/toast", () => ({
+vi.mock("@/shared/lib/toast", () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),
@@ -44,7 +44,7 @@ vi.mock("@/lib/toast", () => ({
 }));
 
 import { BazaarCtx } from "@/components/common";
-import { toast } from "@/lib/toast";
+import { toast } from "@/shared/lib/toast";
 import { StoreSwitcherChip } from "@/seller/features/store-switcher";
 import type { SellerStoreSummary } from "@/seller/api/seller-organization";
 

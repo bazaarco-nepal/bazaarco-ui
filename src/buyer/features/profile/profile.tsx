@@ -49,13 +49,13 @@ import { useAddresses } from "@/buyer/hooks/use-addresses";
 import { useCartQuery } from "@/buyer/hooks/use-cart";
 import { useSavedQuery } from "@/buyer/hooks/use-saved";
 import { useCancelOrder, useOrders } from "@/buyer/hooks/use-orders";
-import { canCancelOrder } from "@/lib/order-utils";
-import { formatNPR } from "@/lib/money";
-import { toast } from "@/lib/toast";
+import { canCancelOrder } from "@/shared/lib/order-utils";
+import { formatNPR } from "@/shared/lib/money";
+import { toast } from "@/shared/lib/toast";
 import { ConfirmModal } from "@/buyer/features/checkout/checkout";
 import { useChatInbox } from "@/shared/hooks/use-chat";
 import { useBazaarStore } from "@/store/bazaar-store";
-import { displayName } from "@/lib/display";
+import { displayName } from "@/shared/lib/display";
 import {
   BazaarCtx,
   useBz,

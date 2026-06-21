@@ -37,18 +37,18 @@ import {
 } from "@/components/ui";
 import { usePathname } from "next/navigation";
 import { orderIdFromPath, pathFromScreen, searchPath } from "@/config/routes";
-import { deliveryTypeLabel } from "@/lib/delivery-options";
-import { formatNPR } from "@/lib/money";
+import { deliveryTypeLabel } from "@/buyer/lib/delivery-options";
+import { formatNPR } from "@/shared/lib/money";
 import { useCatalog } from "@/shared/hooks/use-catalog";
 import { useTracking } from "@/buyer/hooks/use-tracking";
 import { useCancelOrder, useOrder } from "@/buyer/hooks/use-orders";
-import { canCancelOrder } from "@/lib/order-utils";
+import { canCancelOrder } from "@/shared/lib/order-utils";
 import { ConfirmModal } from "@/buyer/features/checkout/checkout";
 import { useAcceptCounterOffer, useBargains } from "@/shared/hooks/use-bargains";
-import { bargainExpiryLabel } from "@/lib/bargain-expiry";
+import { bargainExpiryLabel } from "@/shared/lib/bargain-expiry";
 import { useSavedQuery } from "@/buyer/hooks/use-saved";
 import { useBazaarStore } from "@/store/bazaar-store";
-import { toast } from "@/lib/toast";
+import { toast } from "@/shared/lib/toast";
 import {
   BazaarCtx,
   useBz,

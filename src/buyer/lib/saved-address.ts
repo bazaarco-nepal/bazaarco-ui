@@ -1,5 +1,5 @@
-import type { DeliveryLocation } from "@/lib/delivery-location";
-import { postalForCity } from "@/lib/delivery-location";
+import type { DeliveryLocation } from "@/shared/lib/delivery-location";
+import { postalForCity } from "@/shared/lib/delivery-location";
 import type { SavedAddress } from "@/buyer/api/addresses";
 
 export const ADDRESS_LABEL_PRESETS = ["Home", "Office", "Other"] as const;

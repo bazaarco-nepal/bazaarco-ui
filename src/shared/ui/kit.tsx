@@ -5,12 +5,12 @@ import React, { useState, useEffect, useRef, useContext, createContext } from "r
 import { useRouter } from "next/navigation";
 import { Trans, useTranslation } from "react-i18next";
 import { ASSETS } from "@/config/assets";
-import { postalForCity, isDeliverableCity, DELIVERY_AREA_MESSAGE } from "@/lib/delivery-location";
-import { reverseGeocode } from "@/lib/reverse-geocode";
-import { tintForName, STORE_TINTS } from "@/lib/store-tint";
-import { formatNPR } from "@/lib/money";
+import { postalForCity, isDeliverableCity, DELIVERY_AREA_MESSAGE } from "@/shared/lib/delivery-location";
+import { reverseGeocode } from "@/shared/lib/reverse-geocode";
+import { tintForName, STORE_TINTS } from "@/shared/lib/store-tint";
+import { formatNPR } from "@/shared/lib/money";
 import { MapPinPicker } from "@/shared/ui/map-pin-picker";
-import { CLOUDINARY_CLOUD_NAME, publicIdFromVideoUrl } from "@/lib/cloudinary";
+import { CLOUDINARY_CLOUD_NAME, publicIdFromVideoUrl } from "@/shared/lib/cloudinary";
 import { BzPack } from "@/shared/ui/pack";
 import "cloudinary-video-player/cld-video-player.min.css";
 

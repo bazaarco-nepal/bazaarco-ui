@@ -1,6 +1,6 @@
 "use client";
 
-import { type OrderStatus } from "@/lib/order-utils";
+import { type OrderStatus } from "@/shared/lib/order-utils";
 
 export type SellerInboxOrderItem = {
   id: string;

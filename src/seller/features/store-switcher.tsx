@@ -9,8 +9,8 @@ import { SellerIcon } from "@/seller/ui/icons";
 import { useBz } from "@/components/common";
 import { useCreateSellerStore, useSwitchActiveStore } from "@/seller/hooks/use-seller";
 import type { SellerStoreSummary } from "@/seller/api/seller-organization";
-import { emptyStoreAddress, type StoreAddress } from "@/lib/store-address";
-import { toast } from "@/lib/toast";
+import { emptyStoreAddress, type StoreAddress } from "@/shared/lib/store-address";
+import { toast } from "@/shared/lib/toast";
 
 // Must stay in lockstep with the seller-shell breakpoint in tokens.css. Below this
 // width the sidebar slides in as a transformed drawer, so the switcher panel renders

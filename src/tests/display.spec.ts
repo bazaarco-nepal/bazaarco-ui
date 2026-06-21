@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { displayName, userInitial, maskEmail } from "@/lib/display";
+import { displayName, userInitial, maskEmail } from "@/shared/lib/display";
 
 describe("displayName", () => {
   it("uses the trimmed name when present", () => {

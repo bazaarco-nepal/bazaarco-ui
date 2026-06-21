@@ -14,7 +14,7 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 // repeat fires. If any regress, toasts break across cart, checkout, auth, etc.
 
 import { ToastContainer } from "@/shared/ui/toast";
-import { toast, useToastStore } from "@/lib/toast";
+import { toast, useToastStore } from "@/shared/lib/toast";
 
 beforeEach(() => {
   useToastStore.getState().clear();

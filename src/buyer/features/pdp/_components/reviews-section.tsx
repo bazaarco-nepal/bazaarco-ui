@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { Icon, RatingStars } from "@/components/ui";
-import { toast } from "@/lib/toast";
+import { toast } from "@/shared/lib/toast";
 import { BuyerAvatar, useBz } from "@/components/common";
 import {
   useCreateProductReview,

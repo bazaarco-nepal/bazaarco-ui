@@ -13,13 +13,7 @@ import { useEffect } from "react";
 
 import { BuyerPack, MaintenanceMessage } from "@/components/ui";
 
-export default function GlobalError({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
+export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
   useEffect(() => {
     console.error("[global-error] root render failure", error.digest ?? "", error);
   }, [error]);
@@ -29,7 +23,7 @@ export default function GlobalError({
       <body>
         <BuyerPack>
           <div style={{ minHeight: "100dvh", background: "var(--page)" }}>
-            <MaintenanceMessage variant="page" onRefresh={reset} />
+            <MaintenanceMessage variant="page" />
           </div>
         </BuyerPack>
       </body>

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { OG_IMAGE, SITE_NAME, SITE_URL } from "@/config/site";
-import { fetchProductSeo, truncate } from "@/lib/seo/catalog";
+import { fetchProductSeo, truncate } from "@/shared/lib/seo/catalog";
 import { JsonLd } from "@/components/seo/json-ld";
-import { breadcrumbSchema, productSchema } from "@/lib/seo/structured-data";
+import { breadcrumbSchema, productSchema } from "@/shared/lib/seo/structured-data";
 
 // The root layout reads the locale cookie (dynamic), so this route can't be
 // statically/ISR-rendered — declaring `revalidate` here caused a static/dynamic

@@ -6,8 +6,8 @@ import { useTranslation } from "react-i18next";
 import { Button, PasswordInput } from "@/components/ui";
 import { useBz } from "@/components/common/marketplace";
 import { useChangePassword } from "@/shared/hooks/use-auth";
-import { isStrongPassword, passwordRequirementMessage } from "@/lib/password-validation";
-import { toast } from "@/lib/toast";
+import { isStrongPassword, passwordRequirementMessage } from "@/shared/lib/password-validation";
+import { toast } from "@/shared/lib/toast";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",

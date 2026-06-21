@@ -15,9 +15,11 @@ import { SellerIcon } from "@/seller/ui/icons";
 import { BzPack } from "@/shared/ui/pack";
 import "cloudinary-video-player/cld-video-player.min.css";
 
-// BzPack (shared) and SellerPack (seller console) moved to their design-system
-// homes; re-exported so existing `@/components/ui` consumers keep resolving.
+// BzPack (shared) and the BuyerPack/SellerPack surface wrappers moved to their
+// design-system homes; re-exported so existing `@/components/ui` consumers keep
+// resolving until they are repointed in later phases.
 export { BzPack } from "@/shared/ui/pack";
+export { BuyerPack } from "@/buyer/ui/pack";
 export { SellerPack } from "@/seller/ui/pack";
 
 /* ============================================================
@@ -773,16 +775,6 @@ export function AppLink({
     >
       {children}
     </a>
-  );
-}
-
-/* Mark a subtree as buyer — sets the [data-pack="buyer"] CSS scope and the pack
-   context. `display:contents` so the wrapper adds no box of its own. */
-export function BuyerPack({ children }: { children: React.ReactNode }) {
-  return (
-    <div data-pack="buyer" style={{ display: "contents" }}>
-      <BzPack.Provider value="buyer">{children}</BzPack.Provider>
-    </div>
   );
 }
 

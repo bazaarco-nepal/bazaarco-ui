@@ -3,7 +3,7 @@
  */
 export const ASSETS = {
   logo: "/assets/bazaarco-logo.png",
-  mascot: "/Hiro%20Background%20Removed.png",
+  mascot: "/hiro/generic-hero.png",
   skyline: "/assets/kathmandu-skyline.png",
   // Homepage hero slides (from the revamp prototype). DEBT: hardcoded marketing
   // slides — owner to wire admin-managed hero banners later.

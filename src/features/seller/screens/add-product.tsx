@@ -19,6 +19,7 @@ import { saleEffective, saleValid as isSaleValid, buildPricing } from "@/lib/dis
 import { formatNPR } from "@/lib/money";
 import { BARGAIN_MIN_GAP_PERCENT, maxAllowedBargainMinimum } from "@/lib/bargain-gap";
 import { cartesianVariantRows } from "@/lib/variant-selection";
+import { toast } from "@/lib/toast";
 import { useCategories, useProduct } from "@/hooks/use-catalog";
 import { useUploadImage } from "@/hooks/use-media-upload";
 import { type SellerInventoryItem } from "@/services/api/seller";
@@ -763,7 +764,7 @@ export function SellerAddProduct({
 }: { editing?: SellerInventoryItem | null } = {}) {
   const { t } = useTranslation();
   const isEdit = Boolean(editing);
-  const { nav, toast } = useBz();
+  const { nav } = useBz();
   const { data: organization } = useSellerOrganization();
   const verification = organization?.verification;
   const vStatus = verification?.status ?? "none";
@@ -1345,7 +1346,7 @@ export function SellerAddProduct({
     setGalleryPhotos([]);
     setSubmitAttempted(false);
     setStep(0);
-    toast(t("seller.addProduct.toastStartedFresh"));
+    toast.info(t("seller.addProduct.toastStartedFresh"));
   };
 
   // Submit gate: surface the validation summary when something's missing,
@@ -1841,10 +1842,10 @@ export function SellerAddProduct({
               : null,
           ...buildPdpFields(),
         });
-        toast(t("seller.addProduct.toastProductUpdated"));
+        toast.success(t("seller.addProduct.toastProductUpdated"));
         nav("s-products");
       } catch (err) {
-        toast(err instanceof Error ? err.message : t("seller.addProduct.toastSaveFailed"));
+        toast.error(err instanceof Error ? err.message : t("seller.addProduct.toastSaveFailed"));
       }
       return;
     }
@@ -1873,11 +1874,11 @@ export function SellerAddProduct({
             : null,
         ...buildPdpFields(),
       });
-      toast(t("seller.addProduct.toastProductPublished"));
+      toast.success(t("seller.addProduct.toastProductPublished"));
       draft.clear();
       nav("s-products");
     } catch (err) {
-      toast(err instanceof Error ? err.message : t("seller.addProduct.toastPublishFailed"));
+      toast.error(err instanceof Error ? err.message : t("seller.addProduct.toastPublishFailed"));
     }
   };
 
@@ -4787,11 +4788,11 @@ export function SellerAddProduct({
                     // so the two can't disagree.
                     const next = buildDraft();
                     if (!productDraftHasContent(next)) {
-                      toast(t("seller.addProduct.toastFillDetailFirst"), "warning");
+                      toast.error(t("seller.addProduct.toastFillDetailFirst"));
                       return;
                     }
                     draft.write(next);
-                    toast(t("seller.addProduct.toastDraftSaved"));
+                    toast.success(t("seller.addProduct.toastDraftSaved"));
                   }}
                 >
                   {t("seller.addProduct.saveDraft")}

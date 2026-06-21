@@ -6,11 +6,11 @@ import { render, act } from "@testing-library/react";
 // compiles its JSX to classic React.createElement, so expose React globally.
 (globalThis as unknown as { React: typeof React }).React = React;
 
-// This proves the wishlist toast's Undo is REAL end-to-end, not decorative:
+// This proves the saved-items toast's Undo is REAL end-to-end, not decorative:
 // saving a product yields a toast carrying an `undo`, and invoking that undo
-// drives the real provider path that calls the remove-from-wishlist mutation
-// and replaces the toast with a plain "Removed from wishlist" (no second Undo).
-// It pins the full chain toggleWish -> toast({undo}) -> undo() -> removeProduct.
+// drives the real provider path that calls the remove mutation and replaces
+// the toast with a plain "Removed from saved" (no second Undo). It pins the
+// full chain toggleSaved -> toast({undo}) -> undo() -> removeProduct.
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
@@ -32,9 +32,9 @@ vi.mock("@/hooks/use-cart", () => ({
 const empty = { productIds: [], sellerIds: [], products: [], sellers: [] };
 const addProduct = vi.fn().mockResolvedValue(empty);
 const removeProduct = vi.fn().mockResolvedValue(empty);
-vi.mock("@/hooks/use-wishlist", () => ({
-  useWishlistQuery: () => ({}),
-  useWishlistMutations: () => ({
+vi.mock("@/hooks/use-saved", () => ({
+  useSavedQuery: () => ({}),
+  useSavedMutations: () => ({
     addProduct: { mutateAsync: addProduct },
     removeProduct: { mutateAsync: removeProduct },
     addSeller: { mutateAsync: vi.fn() },
@@ -46,6 +46,7 @@ vi.mock("@/hooks/use-catalog", () => ({ useProduct: () => ({ data: null }) }));
 import { BazaarProvider } from "@/providers/bazaar-provider";
 import { useBz } from "@/components/common";
 import { useBazaarStore } from "@/store/bazaar-store";
+import { useToastStore } from "@/lib/toast";
 
 let ctx: ReturnType<typeof useBz>;
 function Capture() {
@@ -53,14 +54,20 @@ function Capture() {
   return null;
 }
 
+const latestToast = () => {
+  const { toasts } = useToastStore.getState();
+  return toasts[toasts.length - 1];
+};
+
 beforeEach(() => {
   addProduct.mockClear();
   removeProduct.mockClear();
+  useToastStore.getState().clear();
   useBazaarStore.getState().setAuthed(true);
-  useBazaarStore.getState().setWish([]);
+  useBazaarStore.getState().setSavedProducts([]);
 });
 
-it("saving a product yields a toast whose Undo really removes it from the wishlist", async () => {
+it("saving a product yields a toast whose Undo really removes it from saved", async () => {
   render(
     <BazaarProvider>
       <Capture />
@@ -69,22 +76,24 @@ it("saving a product yields a toast whose Undo really removes it from the wishli
 
   // Save: optimistic add + the add mutation + an undo-bearing toast.
   await act(async () => {
-    await ctx.toggleWish("p1");
+    await ctx.toggleSaved("p1", "Pixel 9");
   });
   expect(addProduct).toHaveBeenCalledWith("p1");
-  expect(useBazaarStore.getState().wish).toContain("p1");
-  expect(ctx.toastMsg?.msg).toBe("Saved to wishlist");
-  expect(typeof ctx.toastMsg?.undo).toBe("function");
+  expect(useBazaarStore.getState().savedProducts).toContain("p1");
+  const saveToast = latestToast();
+  expect(saveToast?.title).toBe("Saved Pixel 9");
+  expect(typeof saveToast?.action?.onClick).toBe("function");
 
   // Fire the toast's Undo — the real thing the button calls.
   await act(async () => {
-    ctx.toastMsg?.undo?.();
+    saveToast?.action?.onClick();
   });
 
   // It actually reverses the save: remove mutation fired, item gone from store.
   expect(removeProduct).toHaveBeenCalledWith("p1");
-  expect(useBazaarStore.getState().wish).not.toContain("p1");
+  expect(useBazaarStore.getState().savedProducts).not.toContain("p1");
   // And the toast becomes a plain confirmation with no further Undo.
-  expect(ctx.toastMsg?.msg).toBe("Removed from wishlist");
-  expect(ctx.toastMsg?.undo).toBeUndefined();
+  const removeToast = latestToast();
+  expect(removeToast?.title).toBe("Removed from saved");
+  expect(removeToast?.action).toBeUndefined();
 });

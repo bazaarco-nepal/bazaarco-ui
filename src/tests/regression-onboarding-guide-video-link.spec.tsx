@@ -29,9 +29,9 @@ vi.mock("@/hooks/use-cart", () => ({
   useCartQuery: () => ({ isLoading: false, isFetching: false }),
   useCartMutations: () => ({ addItem: {}, updateQty: {}, removeItem: {} }),
 }));
-vi.mock("@/hooks/use-wishlist", () => ({
-  useWishlistQuery: () => ({}),
-  useWishlistMutations: () => ({
+vi.mock("@/hooks/use-saved", () => ({
+  useSavedQuery: () => ({}),
+  useSavedMutations: () => ({
     addProduct: { mutateAsync: vi.fn() },
     removeProduct: { mutateAsync: vi.fn() },
     addSeller: { mutateAsync: vi.fn() },

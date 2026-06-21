@@ -9,6 +9,7 @@ import { Spinner } from "@/components/ui";
 import { screenFromPath } from "@/config/routes";
 import { resolvePostAuthScreen } from "@/lib/auth-rbac";
 import { setAccessToken } from "@/lib/auth-token";
+import { toast } from "@/lib/toast";
 import { establishBrowserSession, fetchCurrentUser } from "@/services/api/auth";
 import { useBazaarStore } from "@/store/bazaar-store";
 
@@ -16,7 +17,7 @@ export function AuthCallback() {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { nav, toast } = useBz();
+  const { nav } = useBz();
   const setAuthed = useBazaarStore((s) => s.setAuthed);
   const setUser = useBazaarStore((s) => s.setUser);
   const [message, setMessage] = useState(t("auth.signingIn"));
@@ -25,7 +26,7 @@ export function AuthCallback() {
     const error = searchParams.get("error");
     if (error) {
       setMessage(t("auth.signInFailed"));
-      toast(decodeURIComponent(error));
+      toast.error(decodeURIComponent(error));
       nav("auth");
       return;
     }
@@ -89,7 +90,7 @@ export function AuthCallback() {
       } catch {
         if (cancelled) return;
         setMessage(t("auth.sessionLoadFailed"));
-        toast(t("auth.signInFailedRetry"));
+        toast.error(t("auth.signInFailedRetry"));
         nav("auth");
       }
     })();
@@ -97,7 +98,7 @@ export function AuthCallback() {
     return () => {
       cancelled = true;
     };
-  }, [nav, router, searchParams, setAuthed, setUser, toast, t]);
+  }, [nav, router, searchParams, setAuthed, setUser, t]);
 
   return (
     <div

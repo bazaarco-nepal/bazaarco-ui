@@ -8,6 +8,7 @@ import { Button, PasswordInput } from "@/components/ui";
 import { useBz } from "@/components/common/marketplace";
 import { useDeleteAccount, useRequestAccountDeletionOtp } from "@/hooks/use-auth";
 import { useBazaarStore } from "@/store/bazaar-store";
+import { toast } from "@/lib/toast";
 
 export function SellerDeleteAccountModal({
   open,
@@ -17,7 +18,7 @@ export function SellerDeleteAccountModal({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const { nav, toast } = useBz();
+  const { nav } = useBz();
   const deleteMutation = useDeleteAccount();
   const otpMutation = useRequestAccountDeletionOtp();
   const user = useBazaarStore((s) => s.user);
@@ -112,7 +113,7 @@ export function SellerDeleteAccountModal({
       {
         onSuccess: () => {
           closeModal();
-          toast(t("common.deleteSellerAccount.deleted"));
+          toast.success(t("common.deleteSellerAccount.deleted"));
           nav("home");
         },
         onError: (err) => {

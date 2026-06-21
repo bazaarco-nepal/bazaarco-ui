@@ -27,6 +27,7 @@ import {
 } from "@/lib/delivery-location";
 import type { SavedAddress } from "@/services/api/addresses";
 import { ApiRequestError } from "@/services/api/http";
+import { toast } from "@/lib/toast";
 
 const emptyForm = (): { label: string; location: DeliveryLocation } => ({
   label: "Home",
@@ -160,7 +161,7 @@ export function SavedAddressPicker({
 
 export function AddressesPage() {
   const { t } = useTranslation();
-  const { nav, toast } = useBz();
+  const { nav } = useBz();
   const { data: addresses = [], isLoading, isError } = useAddresses();
   const createAddress = useCreateAddress();
   const updateAddress = useUpdateAddress();
@@ -187,48 +188,48 @@ export function AddressesPage() {
 
   const save = async () => {
     if (!form.label.trim()) {
-      toast(t("profile.addresses.chooseLabel"));
+      toast.error(t("profile.addresses.chooseLabel"));
       return;
     }
     if (!isAddressComplete(form.location)) {
-      toast(t("profile.addresses.completeFields"));
+      toast.error(t("profile.addresses.completeFields"));
       return;
     }
     if (!isDeliverableCity(form.location.city)) {
-      toast(DELIVERY_AREA_MESSAGE);
+      toast.error(DELIVERY_AREA_MESSAGE);
       return;
     }
     try {
       const payload = deliveryToSavePayload(form.location, form.label, editing === "new");
       if (editing === "new") {
         await createAddress.mutateAsync(payload);
-        toast(t("profile.addresses.saved"));
+        toast.success(t("profile.addresses.saved"));
       } else if (editing) {
         await updateAddress.mutateAsync({ id: editing.id, payload });
-        toast(t("profile.addresses.updated"));
+        toast.success(t("profile.addresses.updated"));
       }
       closeForm();
     } catch (e) {
-      toast(e instanceof ApiRequestError ? e.message : t("profile.addresses.saveFailed"));
+      toast.error(e instanceof ApiRequestError ? e.message : t("profile.addresses.saveFailed"));
     }
   };
 
   const remove = async (id: string) => {
     try {
       await deleteAddress.mutateAsync(id);
-      toast(t("profile.addresses.removed"));
+      toast.success(t("profile.addresses.removed"));
       if (editing && editing !== "new" && editing.id === id) closeForm();
     } catch (e) {
-      toast(e instanceof ApiRequestError ? e.message : t("profile.addresses.removeFailed"));
+      toast.error(e instanceof ApiRequestError ? e.message : t("profile.addresses.removeFailed"));
     }
   };
 
   const makeDefault = async (id: string) => {
     try {
       await setDefault.mutateAsync(id);
-      toast(t("profile.addresses.defaultUpdated"));
+      toast.success(t("profile.addresses.defaultUpdated"));
     } catch (e) {
-      toast(e instanceof ApiRequestError ? e.message : t("profile.addresses.defaultFailed"));
+      toast.error(e instanceof ApiRequestError ? e.message : t("profile.addresses.defaultFailed"));
     }
   };
 
@@ -390,7 +391,7 @@ export function AddressesPage() {
               >
                 {!addr.isDefault && (
                   <Button
-                    variant="ghost"
+                    variant="tertiary"
                     size="sm"
                     disabled={busy}
                     onClick={() => void makeDefault(addr.id)}
@@ -407,11 +408,10 @@ export function AddressesPage() {
                   {t("profile.edit")}
                 </Button>
                 <Button
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
                   disabled={busy}
                   onClick={() => void remove(addr.id)}
-                  style={{ color: "var(--danger)" }}
                 >
                   {t("profile.addresses.delete")}
                 </Button>

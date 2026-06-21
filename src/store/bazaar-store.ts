@@ -22,8 +22,8 @@ export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
   roleHint: null,
   cart: [],
   selectedCartIds: null,
-  wish: [],
-  wishSellers: [],
+  savedProducts: [],
+  savedSellers: [],
   query: "",
   screenOverride: null,
   orderTotal: 0,
@@ -68,13 +68,15 @@ export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
       selectedCartIds:
         typeof selection === "function" ? selection(state.selectedCartIds) : selection,
     })),
-  setWish: (wish) =>
+  setSavedProducts: (savedProducts) =>
     set((state) => ({
-      wish: typeof wish === "function" ? wish(state.wish) : wish,
+      savedProducts:
+        typeof savedProducts === "function" ? savedProducts(state.savedProducts) : savedProducts,
     })),
-  setWishSellers: (wishSellers) =>
+  setSavedSellers: (savedSellers) =>
     set((state) => ({
-      wishSellers: typeof wishSellers === "function" ? wishSellers(state.wishSellers) : wishSellers,
+      savedSellers:
+        typeof savedSellers === "function" ? savedSellers(state.savedSellers) : savedSellers,
     })),
   setQuery: (query) => set({ query }),
   setScreenOverride: (screenOverride) => set({ screenOverride }),

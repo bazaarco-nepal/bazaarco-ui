@@ -12,8 +12,8 @@ import {
   useRemoveStorefrontLogo,
 } from "@/hooks/use-seller";
 import { ImageCropModal } from "@/components/common/image-crop-modal";
-import { useBz } from "@/components/common";
 import { pathFromScreen } from "@/config/routes";
+import { toast } from "@/lib/toast";
 import { ApiRequestError } from "@/services/api/http";
 import { emptyStoreAddress, formatStoreAddress, type StoreAddress } from "@/lib/store-address";
 import { SellerHelpBar, SellerPageHeader, Card, Field } from "../_shared/components";
@@ -22,7 +22,6 @@ import { useIsNarrow } from "../_shared/hooks";
 /* ---------- 4.11 Storefront builder ---------- */
 export function SellerStorefront() {
   const { t } = useTranslation();
-  const { toast } = useBz();
   const { data: storefront, isLoading, isError, error } = useSellerStorefront();
   const updateStorefront = useUpdateStorefront();
   const uploadLogo = useUploadStorefrontLogo();
@@ -95,9 +94,9 @@ export function SellerStorefront() {
   const handleRemoveLogo = async () => {
     try {
       await removeLogo.mutateAsync();
-      toast("Logo removed");
+      toast.success("Logo removed");
     } catch (e) {
-      toast(e instanceof Error ? e.message : "Could not remove logo");
+      toast.error(e instanceof Error ? e.message : "Could not remove logo");
     }
   };
 
@@ -113,7 +112,7 @@ export function SellerStorefront() {
   const pickImage = (file: File, kind: "logo" | "banner") => {
     const allowed = ["image/jpeg", "image/png", "image/webp"];
     if (!allowed.includes(file.type)) {
-      toast("Use JPEG, PNG, or WebP");
+      toast.error("Use JPEG, PNG, or WebP");
       return;
     }
     if (kind === "logo") {
@@ -134,9 +133,9 @@ export function SellerStorefront() {
     closeLogoCrop();
     try {
       await uploadLogo.mutateAsync(file);
-      toast("Logo updated");
+      toast.success("Logo updated");
     } catch (e) {
-      toast(e instanceof Error ? e.message : "Upload failed");
+      toast.error(e instanceof Error ? e.message : "Upload failed");
     }
   };
 
@@ -149,21 +148,21 @@ export function SellerStorefront() {
     closeBannerCrop();
     try {
       await uploadBanner.mutateAsync(file);
-      toast("Banner updated");
+      toast.success("Banner updated");
     } catch (e) {
-      toast(e instanceof Error ? e.message : "Upload failed");
+      toast.error(e instanceof Error ? e.message : "Upload failed");
     }
   };
 
   const publish = async () => {
     const trimmedName = shopName.trim();
     if (trimmedName.length < 2) {
-      toast("Store name is required");
+      toast.error("Store name is required");
       return;
     }
     const city = storeAddress.city?.trim();
     if (!city) {
-      toast("Store address is required");
+      toast.error("Store address is required");
       return;
     }
     try {
@@ -178,9 +177,9 @@ export function SellerStorefront() {
           ...(storeAddress.lng != null ? { lng: storeAddress.lng } : {}),
         },
       });
-      toast("Storefront published — buyers see it now");
+      toast.success("Storefront published — buyers see it now");
     } catch (e) {
-      toast(e instanceof Error ? e.message : "Could not save storefront");
+      toast.error(e instanceof Error ? e.message : "Could not save storefront");
     }
   };
 

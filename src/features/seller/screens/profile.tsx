@@ -7,6 +7,7 @@ import { SellerIcon } from "../_shared/icons";
 import { useLogout, useUpdateProfile } from "@/hooks/use-auth";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { displayName, userInitial } from "@/lib/display";
+import { toast } from "@/lib/toast";
 import { useSellerStorefront } from "@/hooks/use-seller";
 import {
   useBz,
@@ -19,7 +20,7 @@ import { SellerHelpBar, SellerPageHeader, SellerPage, Card } from "../_shared/co
 /* ---------- 4.18 Profile (includes KYC) ---------- */
 export function SellerProfile() {
   const { t } = useTranslation();
-  const { nav, toast } = useBz();
+  const { nav } = useBz();
   const logoutMutation = useLogout();
   const updateProfile = useUpdateProfile();
   const user = useBazaarStore((s) => s.user);
@@ -37,7 +38,7 @@ export function SellerProfile() {
     logoutMutation.mutate(undefined, {
       onSuccess: () => {
         setConfirmLogout(false);
-        toast("Logged out");
+        toast.info("Logged out");
         nav("home");
       },
     });
@@ -50,14 +51,14 @@ export function SellerProfile() {
     const next = window.prompt("Owner name", user?.name ?? "")?.trim();
     if (!next || next === user?.name) return;
     if (next.length < 2) {
-      toast("Enter your full name");
+      toast.error("Enter your full name");
       return;
     }
     try {
       await updateProfile.mutateAsync({ name: next });
-      toast("Owner name updated");
+      toast.success("Owner name updated");
     } catch (e) {
-      toast(e instanceof Error ? e.message : "Could not update name");
+      toast.error(e instanceof Error ? e.message : "Could not update name");
     }
   };
 
@@ -129,7 +130,7 @@ export function SellerProfile() {
         ].map((r, i, a) => (
           <button
             key={r.en}
-            onClick={() => (r.onAct ? void r.onAct() : toast(`${r.en} can't be edited here`))}
+            onClick={() => (r.onAct ? void r.onAct() : toast.info(`${r.en} can't be edited here`))}
             style={{
               width: "100%",
               display: "flex",

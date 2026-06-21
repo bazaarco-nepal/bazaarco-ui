@@ -19,10 +19,11 @@ import {
 } from "@/components/common";
 import { SellerHelpBar, SellerPageHeader } from "../_shared/components";
 import { NOTIF_CHANNELS, NOTIF_EVENTS } from "../_shared/notif";
+import { toast } from "@/lib/toast";
 
 export function SellerSettings() {
   const { t } = useTranslation();
-  const { toast, nav } = useBz();
+  const { nav } = useBz();
   const user = useBazaarStore((s) => s.user);
   const { data: organization } = useSellerOrganization();
   // Account settings (password, email, language, delete) work without KYC, so the
@@ -50,9 +51,9 @@ export function SellerSettings() {
       await updateSettings.mutateAsync({
         alertMatrix: notif,
       });
-      toast(t("seller.common.settingsSaved"));
+      toast.success(t("seller.common.settingsSaved"));
     } catch (e) {
-      toast(e instanceof Error ? e.message : t("seller.common.settingsSaveFailed"));
+      toast.error(e instanceof Error ? e.message : t("seller.common.settingsSaveFailed"));
     }
   };
 

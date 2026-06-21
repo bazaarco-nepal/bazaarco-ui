@@ -17,6 +17,7 @@ import { useCompleteOnboarding } from "@/hooks/use-auth";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { displayName } from "@/lib/display";
 import { formatNPR } from "@/lib/money";
+import { toast } from "@/lib/toast";
 import {
   useSellerDashboard,
   useSellerInbox,
@@ -46,7 +47,6 @@ import { type SellerInboxOrderItem } from "../_shared/types";
  */
 function StoreLinkCard() {
   const { t } = useTranslation();
-  const { toast } = useBz();
   const { data: organization } = useSellerOrganization();
   const updateHandle = useUpdateStoreHandle();
   const [origin, setOrigin] = useState("");
@@ -86,30 +86,31 @@ function StoreLinkCard() {
     updateHandle.mutate(next, {
       onSuccess: () => {
         setIsEditing(false);
-        toast(t("seller.dashboard.storeLinkSaved"));
+        toast.success(t("seller.dashboard.storeLinkSaved"));
       },
       onError: (err) => {
         const token = (err as { response?: { data?: { message?: string } } })?.response?.data
           ?.message;
-        if (token === "STORE_HANDLE_TAKEN") toast(t("seller.dashboard.storeLinkTaken"));
-        else if (token === "INVALID_STORE_HANDLE") toast(t("seller.dashboard.storeLinkInvalid"));
-        else toast(t("seller.dashboard.storeLinkSaveError"));
+        if (token === "STORE_HANDLE_TAKEN") toast.error(t("seller.dashboard.storeLinkTaken"));
+        else if (token === "INVALID_STORE_HANDLE")
+          toast.error(t("seller.dashboard.storeLinkInvalid"));
+        else toast.error(t("seller.dashboard.storeLinkSaveError"));
       },
     });
   };
 
   const copyLink = async () => {
     if (typeof navigator === "undefined" || !navigator.clipboard) {
-      toast(t("seller.dashboard.storeLinkShareUnsupported"));
+      toast.info(t("seller.dashboard.storeLinkShareUnsupported"));
       return;
     }
     try {
       await navigator.clipboard.writeText(fullUrl);
       setCopied(true);
-      toast(t("seller.dashboard.storeLinkCopyToast"));
+      toast.success(t("seller.dashboard.storeLinkCopyToast"));
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast(t("seller.dashboard.storeLinkShareError"));
+      toast.error(t("seller.dashboard.storeLinkShareError"));
     }
   };
 
@@ -125,7 +126,7 @@ function StoreLinkCard() {
       } catch (err) {
         // User dismissing the native sheet throws AbortError — ignore it.
         if (err instanceof Error && err.name === "AbortError") return;
-        toast(t("seller.dashboard.storeLinkShareError"));
+        toast.error(t("seller.dashboard.storeLinkShareError"));
       }
       return;
     }
@@ -232,7 +233,7 @@ function StoreLinkCard() {
 
 export function SellerDashboard() {
   const { t } = useTranslation();
-  const { nav, toast } = useBz();
+  const { nav } = useBz();
   const user = useBazaarStore((s) => s.user);
   const setUser = useBazaarStore((s) => s.setUser);
   const completeOnboardingMutation = useCompleteOnboarding();

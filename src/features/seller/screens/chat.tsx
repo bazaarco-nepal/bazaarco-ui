@@ -14,13 +14,13 @@ import {
   sendChatMessage,
 } from "@/lib/chat-socket";
 import { chatApi, type ChatMessage, type ChatThread } from "@/services/api/chat";
-import { useBz, BuyerAvatar } from "@/components/common";
+import { BuyerAvatar } from "@/components/common";
+import { toast } from "@/lib/toast";
 import { SellerHelpBar } from "../_shared/components";
 import { useIsNarrow } from "../_shared/hooks";
 
 export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
   const { t } = useTranslation();
-  const { toast } = useBz();
   const isMobile = useIsNarrow();
   const { data: inbox, isLoading, isError, error } = useChatInbox();
   const { invalidateInbox, invalidateMessages } = useInvalidateChat();
@@ -74,12 +74,12 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
         void invalidateInbox();
       })
       .catch((e) => {
-        toast(e instanceof Error ? e.message : "Could not open chat");
+        toast.error(e instanceof Error ? e.message : "Could not open chat");
       })
       .finally(() => {
         setOpeningChat(false);
       });
-  }, [buyerMode, invalidateInbox, toast]);
+  }, [buyerMode, invalidateInbox]);
 
   useEffect(() => {
     if (msgPage?.messages) setMessages(msgPage.messages);
@@ -179,7 +179,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
 
   const send = async (text: string) => {
     if (!active?.id) {
-      toast("Select a conversation first");
+      toast.error("Select a conversation first");
       return;
     }
     if (sending) return;
@@ -216,7 +216,7 @@ export function SellerChat({ buyerMode = false }: { buyerMode?: boolean }) {
       void invalidateInbox();
     } catch (e) {
       setMessages((prev) => prev.filter((m) => m.id !== clientMessageId));
-      toast(e instanceof Error ? e.message : "Could not send message");
+      toast.error(e instanceof Error ? e.message : "Could not send message");
     } finally {
       setSending(false);
       requestAnimationFrame(() => inputRef.current?.focus());

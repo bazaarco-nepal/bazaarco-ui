@@ -150,7 +150,7 @@ export const sellerApi = {
     return postData(`/seller/products/${encodeURIComponent(id)}/acknowledge-moderation`, {});
   },
 
-  // Hard-deletes the listing and cascades its reviews, Q&A, bargains, wishlist
+  // Hard-deletes the listing and cascades its reviews, Q&A, bargains, saved
   // entries and cart lines server-side. Rejected (409) when the product has
   // order history — order records must stay intact, so the UI surfaces the
   // server message instead.

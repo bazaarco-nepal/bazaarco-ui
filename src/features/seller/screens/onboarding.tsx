@@ -15,6 +15,7 @@ import {
 import { useBz } from "@/components/common";
 import { pathFromScreen } from "@/config/routes";
 import { emptyStoreAddress, type StoreAddress } from "@/lib/store-address";
+import { toast } from "@/lib/toast";
 import { SellerHelpBar } from "../_shared/components";
 
 // Short walkthrough that plays on the seller onboarding hero. Hosted on Drive
@@ -25,7 +26,7 @@ const SELLER_ONBOARDING_GUIDE_URL =
 /* ---------- 4.1 Seller Onboarding ---------- */
 export function SellerOnboarding() {
   const { t } = useTranslation();
-  const { nav, toast } = useBz();
+  const { nav } = useBz();
   const user = useBazaarStore((s) => s.user);
   const reuploadIntent = useBazaarStore((s) => s.sellerReuploadIntent);
   const setReuploadIntent = useBazaarStore((s) => s.setSellerReuploadIntent);
@@ -99,25 +100,25 @@ export function SellerOnboarding() {
     const name = (scanned?.shop || shopName || "").trim();
     const owner = (scanned?.name || "").trim();
     if (name.length < 2) {
-      toast("Enter your store name to continue");
+      toast.error("Enter your store name to continue");
       return;
     }
     if (owner.length < 2) {
-      toast("Enter the owner name to continue");
+      toast.error("Enter the owner name to continue");
       return;
     }
     if (!docFile || !docType) {
-      toast("Upload your NID or PAN photo first");
+      toast.error("Upload your NID or PAN photo first");
       return;
     }
     const storeCity = (storeAddress.city || "").trim();
     if (storeCity.length < 1) {
-      toast("Enter your store location");
+      toast.error("Enter your store location");
       return;
     }
     const docId = (scanned?.docId || "").trim();
     if (docId.length < 1) {
-      toast(`Enter your ${scanned?.docLabel ?? "document"} number`);
+      toast.error(`Enter your ${scanned?.docLabel ?? "document"} number`);
       return;
     }
     try {
@@ -140,7 +141,7 @@ export function SellerOnboarding() {
       clearDeferredSellerOnboarding();
       setStage("done");
     } catch (e) {
-      toast(e instanceof Error ? e.message : "Could not register your shop");
+      toast.error(e instanceof Error ? e.message : "Could not register your shop");
     }
   };
 
@@ -160,7 +161,7 @@ export function SellerOnboarding() {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file || !file.type.startsWith("image/")) {
-      toast("Please choose an image file");
+      toast.error("Please choose an image file");
       return;
     }
     if (docPreview) URL.revokeObjectURL(docPreview);
@@ -199,7 +200,7 @@ export function SellerOnboarding() {
                 margin: "0 auto 18px",
               }}
             >
-              <SellerIcon name="badgeCheck" size={42} color="var(--success)" />
+              <SellerIcon name="badgeCheck" size={42} color="var(--blue)" />
             </div>
             <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 600 }}>You&apos;re verified</h1>
             <div style={{ marginTop: 24 }}>

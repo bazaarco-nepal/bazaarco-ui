@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useVerifyEsewaPayment } from "@/hooks/use-payment";
 import { useBazaarStore } from "@/store/bazaar-store";
+import { Button, BuyerPack } from "@/components/ui";
 
 type Phase = "verifying" | "captured" | "pending" | "failed";
 
@@ -61,117 +62,97 @@ export function EsewaCallback({ mode }: { mode: "success" | "failure" }) {
   }, [encodedData, mode, router, verify, failedMessage, t]);
 
   return (
-    <div
-      style={{
-        minHeight: "70vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 24,
-      }}
-    >
+    <BuyerPack>
       <div
         style={{
-          maxWidth: 440,
-          width: "100%",
-          background: "#fff",
-          border: "1px solid var(--line-200)",
-          borderRadius: "var(--r-lg)",
-          padding: 32,
-          textAlign: "center",
+          minHeight: "70vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 24,
         }}
       >
-        {(phase === "verifying" || phase === "captured") && (
-          <>
-            <div style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--ink-900)" }}>
-              {phase === "captured"
-                ? t("payment.callback.confirmedTitle")
-                : t("payment.callback.verifyingTitle")}
-            </div>
-            <p style={{ marginTop: 10, fontSize: ".875rem", color: "var(--ink-500)" }}>
-              {phase === "captured"
-                ? t("payment.callback.confirmedHint")
-                : t("payment.callback.verifyingHint")}
-            </p>
-          </>
-        )}
+        <div
+          style={{
+            maxWidth: 440,
+            width: "100%",
+            background: "#fff",
+            border: "1px solid var(--line-200)",
+            borderRadius: "var(--r-lg)",
+            padding: 32,
+            textAlign: "center",
+          }}
+        >
+          {(phase === "verifying" || phase === "captured") && (
+            <>
+              <div style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--ink-900)" }}>
+                {phase === "captured"
+                  ? t("payment.callback.confirmedTitle")
+                  : t("payment.callback.verifyingTitle")}
+              </div>
+              <p style={{ marginTop: 10, fontSize: ".875rem", color: "var(--ink-500)" }}>
+                {phase === "captured"
+                  ? t("payment.callback.confirmedHint")
+                  : t("payment.callback.verifyingHint")}
+              </p>
+            </>
+          )}
 
-        {phase === "pending" && (
-          <>
-            <div style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--ink-900)" }}>
-              {t("payment.callback.pendingTitle")}
-            </div>
-            <p style={{ marginTop: 10, fontSize: ".875rem", color: "var(--ink-500)" }}>
-              {message || t("payment.callback.pendingHint")}
-            </p>
-            <div
-              style={{
-                marginTop: 20,
-                display: "flex",
-                gap: 10,
-                justifyContent: "center",
-                flexWrap: "wrap",
-              }}
-            >
-              <button type="button" onClick={() => router.refresh()} style={primaryBtn}>
-                {t("payment.callback.checkAgain")}
-              </button>
-              <button type="button" onClick={() => router.push("/orders")} style={secondaryBtn}>
-                {t("payment.callback.viewOrders")}
-              </button>
-            </div>
-          </>
-        )}
+          {phase === "pending" && (
+            <>
+              <div style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--ink-900)" }}>
+                {t("payment.callback.pendingTitle")}
+              </div>
+              <p style={{ marginTop: 10, fontSize: ".875rem", color: "var(--ink-500)" }}>
+                {message || t("payment.callback.pendingHint")}
+              </p>
+              <div
+                style={{
+                  marginTop: 20,
+                  display: "flex",
+                  gap: 10,
+                  justifyContent: "center",
+                  flexWrap: "wrap",
+                }}
+              >
+                <Button variant="primary" onClick={() => router.refresh()}>
+                  {t("payment.callback.checkAgain")}
+                </Button>
+                <Button variant="secondary" onClick={() => router.push("/orders")}>
+                  {t("payment.callback.viewOrders")}
+                </Button>
+              </div>
+            </>
+          )}
 
-        {phase === "failed" && (
-          <>
-            <div style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--danger)" }}>
-              {t("payment.callback.failedTitle")}
-            </div>
-            <p style={{ marginTop: 10, fontSize: ".875rem", color: "var(--ink-500)" }}>
-              {message || failedMessage}
-            </p>
-            <div
-              style={{
-                marginTop: 20,
-                display: "flex",
-                gap: 10,
-                justifyContent: "center",
-                flexWrap: "wrap",
-              }}
-            >
-              <button type="button" onClick={() => router.push("/checkout")} style={primaryBtn}>
-                {t("payment.callback.tryAgain")}
-              </button>
-              <button type="button" onClick={() => router.push("/cart")} style={secondaryBtn}>
-                {t("payment.callback.backToCart")}
-              </button>
-            </div>
-          </>
-        )}
+          {phase === "failed" && (
+            <>
+              <div style={{ fontSize: "1.125rem", fontWeight: 800, color: "var(--danger)" }}>
+                {t("payment.callback.failedTitle")}
+              </div>
+              <p style={{ marginTop: 10, fontSize: ".875rem", color: "var(--ink-500)" }}>
+                {message || failedMessage}
+              </p>
+              <div
+                style={{
+                  marginTop: 20,
+                  display: "flex",
+                  gap: 10,
+                  justifyContent: "center",
+                  flexWrap: "wrap",
+                }}
+              >
+                <Button variant="primary" onClick={() => router.push("/checkout")}>
+                  {t("payment.callback.tryAgain")}
+                </Button>
+                <Button variant="secondary" onClick={() => router.push("/cart")}>
+                  {t("payment.callback.backToCart")}
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </BuyerPack>
   );
 }
-
-const primaryBtn: React.CSSProperties = {
-  padding: "11px 18px",
-  borderRadius: "var(--r-md)",
-  border: "none",
-  background: "var(--blue)",
-  color: "#fff",
-  fontWeight: 700,
-  fontSize: ".875rem",
-  cursor: "pointer",
-};
-
-const secondaryBtn: React.CSSProperties = {
-  padding: "11px 18px",
-  borderRadius: "var(--r-md)",
-  border: "1px solid var(--line-200)",
-  background: "#fff",
-  color: "var(--ink-700)",
-  fontWeight: 700,
-  fontSize: ".875rem",
-  cursor: "pointer",
-};

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock only the transport — the real mapProduct/mapSeller run so we assert the
-// v3 -> UI field translation actually happens for wishlist payloads.
+// v3 -> UI field translation actually happens for saved payloads.
 vi.mock("@/services/api/http", () => ({
   getData: vi.fn(),
   postData: vi.fn(),
@@ -10,13 +10,13 @@ vi.mock("@/services/api/http", () => ({
 }));
 
 import { getData, postData, deleteData } from "@/services/api/http";
-import { wishlistApi } from "@/services/api/wishlist";
+import { savedApi } from "@/services/api/saved";
 
 const mockedGet = getData as unknown as ReturnType<typeof vi.fn>;
 const mockedPost = postData as unknown as ReturnType<typeof vi.fn>;
 const mockedDelete = deleteData as unknown as ReturnType<typeof vi.fn>;
 
-// The shape the API actually returns for wishlist entries (raw v3 fields).
+// The shape the API actually returns for saved entries (raw v3 fields).
 const rawResponse = {
   productIds: ["p1"],
   sellerIds: ["s1"],
@@ -39,11 +39,11 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe("wishlistApi field mapping", () => {
+describe("savedApi field mapping", () => {
   it("maps raw product fields to the UI shape on get()", async () => {
     mockedGet.mockResolvedValue(rawResponse);
 
-    const result = await wishlistApi.get();
+    const result = await savedApi.get();
     const product = result.products[0]!;
 
     expect(product.price).toBe(2500); // rupees, passed through
@@ -56,7 +56,7 @@ describe("wishlistApi field mapping", () => {
   it("maps products on addProduct() too (mutations return the full list)", async () => {
     mockedPost.mockResolvedValue(rawResponse);
 
-    const result = await wishlistApi.addProduct("p1");
+    const result = await savedApi.addProduct("p1");
     expect(result.products[0]!.price).toBe(2500);
     expect(result.products[0]!.img).toBe("https://cdn/img.jpg");
   });
@@ -64,11 +64,11 @@ describe("wishlistApi field mapping", () => {
   it("maps products on removeProduct() too", async () => {
     mockedDelete.mockResolvedValue(rawResponse);
 
-    const result = await wishlistApi.removeProduct("p1");
+    const result = await savedApi.removeProduct("p1");
     expect(result.products[0]!.price).toBe(2500);
   });
 
-  it("tolerates an empty wishlist", async () => {
+  it("tolerates an empty saved", async () => {
     mockedGet.mockResolvedValue({
       productIds: [],
       sellerIds: [],
@@ -76,7 +76,7 @@ describe("wishlistApi field mapping", () => {
       sellers: [],
     });
 
-    const result = await wishlistApi.get();
+    const result = await savedApi.get();
     expect(result.products).toEqual([]);
     expect(result.sellers).toEqual([]);
   });

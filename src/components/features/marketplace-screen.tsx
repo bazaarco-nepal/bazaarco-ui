@@ -15,12 +15,13 @@ import {
   PDP,
   Store,
   Stores,
+  BargainableProducts,
   VideoTheater,
   Cart,
   Checkout,
   OrderSuccess,
   Tracking,
-  Wishlist,
+  Saved,
   Bargains,
   Profile,
   ProfileEdit,
@@ -60,7 +61,7 @@ import {
   BargainingGuidePage,
 } from "@/features";
 import { useBz } from "@/components/common";
-import { EmptyState, Spinner } from "@/components/ui";
+import { EmptyState, Spinner, SellerPack } from "@/components/ui";
 import { SELLER_SCREENS } from "@/config/routes";
 import { isBuyerScreen, isGuestViewableScreen, isSellerUser } from "@/lib/auth-rbac";
 
@@ -152,6 +153,7 @@ export function MarketplaceScreen() {
   }
   if (screen === "store") return <Store />;
   if (screen === "stores") return <Stores />;
+  if (screen === "bargainable-products") return <BargainableProducts />;
   if (screen === "video") {
     return (
       <Suspense fallback={<ScreenLoader />}>
@@ -163,7 +165,7 @@ export function MarketplaceScreen() {
   if (screen === "checkout") return <Checkout />;
   if (screen === "success") return <OrderSuccess total={orderTotal} />;
   if (screen === "tracking") return <Tracking />;
-  if (screen === "wishlist") return <Wishlist />;
+  if (screen === "saved") return <Saved />;
   if (screen === "bargains") return <Bargains />;
   if (screen === "messages") return <SellerChat buyerMode />;
   if (screen === "profile") return <Profile />;
@@ -187,9 +189,11 @@ export function MarketplaceScreen() {
       // Onboarding renders outside SellerShell, so it carries the Fluent skin
       // itself. (SellerChat in buyerMode is intentionally left unskinned.)
       return (
-        <div data-skin="fluent">
-          <SellerOnboarding />
-        </div>
+        <SellerPack>
+          <div data-skin="fluent">
+            <SellerOnboarding />
+          </div>
+        </SellerPack>
       );
     if (screen === "s-dashboard") inner = <SellerDashboard />;
     else if (screen === "s-inbox") inner = <SellerInbox />;
@@ -218,7 +222,11 @@ export function MarketplaceScreen() {
     else if (screen === "s-profile") inner = <SellerProfile />;
     else if (screen === "s-admin-verify") inner = <AdminSellerVerifications />;
     else inner = <SellerDashboard />;
-    return <SellerShell screen={screen}>{inner}</SellerShell>;
+    return (
+      <SellerPack>
+        <SellerShell screen={screen}>{inner}</SellerShell>
+      </SellerPack>
+    );
   }
 
   return <Home />;

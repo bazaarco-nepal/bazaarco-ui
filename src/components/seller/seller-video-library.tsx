@@ -8,6 +8,7 @@ import { useDeleteSellerVideo, useUpdateSellerVideo } from "@/hooks/use-media-up
 import { useSellerInventory } from "@/hooks/use-seller";
 import { VideoDeleteConfirmModal } from "@/components/seller/video-delete-confirm-modal";
 import { SellerPageHeader } from "@/features/seller/_shared/components";
+import { toast } from "@/lib/toast";
 import type { SellerVideoItem } from "@/services/api/media";
 
 function VideoEditModal({
@@ -247,12 +248,10 @@ function VideoCard({
   video,
   onEdit,
   onDeleted,
-  onToast,
 }: {
   video: SellerVideoItem;
   onEdit: () => void;
   onDeleted: () => void;
-  onToast: (msg: string) => void;
 }) {
   const { t } = useTranslation();
   const del = useDeleteSellerVideo();
@@ -262,10 +261,10 @@ function VideoCard({
     try {
       await del.mutateAsync(video.id);
       setConfirmingDelete(false);
-      onToast(t("seller.videoLibrary.videoDeleted"));
+      toast.success(t("seller.videoLibrary.videoDeleted"));
       onDeleted();
     } catch (err) {
-      onToast(err instanceof Error ? err.message : t("seller.videoLibrary.deleteFailed"));
+      toast.error(err instanceof Error ? err.message : t("seller.videoLibrary.deleteFailed"));
     }
   };
 
@@ -330,13 +329,11 @@ export function SellerVideoLibrary({
   showUpload,
   onToggleUpload,
   onRefetch,
-  onToast,
 }: {
   videos: SellerVideoItem[];
   showUpload: boolean;
   onToggleUpload: () => void;
   onRefetch: () => void;
-  onToast: (msg: string) => void;
 }) {
   const { t } = useTranslation();
   const [editing, setEditing] = useState<SellerVideoItem | null>(null);
@@ -373,7 +370,7 @@ export function SellerVideoLibrary({
               onSuccess={(status) => {
                 onToggleUpload();
                 onRefetch();
-                onToast(
+                toast.success(
                   status === "published"
                     ? t("seller.videoLibrary.videoPublished")
                     : t("seller.videoLibrary.draftSaved"),
@@ -393,13 +390,7 @@ export function SellerVideoLibrary({
       ) : (
         <div className="bz-seller-video-library-grid">
           {videos.map((v) => (
-            <VideoCard
-              key={v.id}
-              video={v}
-              onEdit={() => setEditing(v)}
-              onDeleted={onRefetch}
-              onToast={onToast}
-            />
+            <VideoCard key={v.id} video={v} onEdit={() => setEditing(v)} onDeleted={onRefetch} />
           ))}
         </div>
       )}
@@ -410,7 +401,7 @@ export function SellerVideoLibrary({
           onClose={() => setEditing(null)}
           onSaved={(msg) => {
             onRefetch();
-            onToast(msg);
+            toast.success(msg);
           }}
         />
       )}

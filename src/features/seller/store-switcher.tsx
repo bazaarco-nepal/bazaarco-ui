@@ -10,6 +10,7 @@ import { useBz } from "@/components/common";
 import { useCreateSellerStore, useSwitchActiveStore } from "@/hooks/use-seller";
 import type { SellerStoreSummary } from "@/services/api/seller-organization";
 import { emptyStoreAddress, type StoreAddress } from "@/lib/store-address";
+import { toast } from "@/lib/toast";
 
 // Must stay in lockstep with the seller-shell breakpoint in tokens.css. Below this
 // width the sidebar slides in as a transformed drawer, so the switcher panel renders
@@ -63,7 +64,7 @@ function useBodyScrollLock(active: boolean) {
 
 export function StoreSwitcherChip({ variant, stores, activeSellerId }: StoreSwitcherChipProps) {
   const { t } = useTranslation();
-  const { toast, nav } = useBz();
+  const { nav } = useBz();
   const isMobile = useIsMobileViewport();
 
   const switchStore = useSwitchActiveStore();
@@ -109,9 +110,10 @@ export function StoreSwitcherChip({ variant, stores, activeSellerId }: StoreSwit
     switchStore.mutate(storeId, {
       onSuccess: () => {
         setPanelOpen(false);
-        toast(t("seller.storeSwitched"));
+        toast.success(t("seller.storeSwitched"));
       },
-      onError: (err) => toast(err instanceof Error ? err.message : t("seller.storeSwitchFailed")),
+      onError: (err) =>
+        toast.error(err instanceof Error ? err.message : t("seller.storeSwitchFailed")),
     });
   };
 
@@ -125,12 +127,12 @@ export function StoreSwitcherChip({ variant, stores, activeSellerId }: StoreSwit
   const handleCreate = async () => {
     const name = newName.trim();
     if (name.length < 2) {
-      toast(t("seller.storeNameTooShort"));
+      toast.error(t("seller.storeNameTooShort"));
       return;
     }
     const city = newStoreAddress.city?.trim();
     if (!city) {
-      toast(t("seller.storeCityRequired"));
+      toast.error(t("seller.storeCityRequired"));
       return;
     }
     try {
@@ -149,12 +151,12 @@ export function StoreSwitcherChip({ variant, stores, activeSellerId }: StoreSwit
       setAddOpen(false);
       setNewName("");
       setNewStoreAddress(emptyStoreAddress());
-      toast(t("seller.storeCreatedKyc"));
+      toast.success(t("seller.storeCreatedKyc"));
       // A brand-new store starts unverified — send the seller straight to KYC so it
       // can start selling. Switching active store is handled server-side on create.
       nav("s-verification");
     } catch (err) {
-      toast(err instanceof Error ? err.message : t("seller.storeCreateFailed"));
+      toast.error(err instanceof Error ? err.message : t("seller.storeCreateFailed"));
     }
   };
 

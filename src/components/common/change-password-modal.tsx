@@ -7,6 +7,7 @@ import { Button, PasswordInput } from "@/components/ui";
 import { useBz } from "@/components/common/marketplace";
 import { useChangePassword } from "@/hooks/use-auth";
 import { isStrongPassword, passwordRequirementMessage } from "@/lib/password-validation";
+import { toast } from "@/lib/toast";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -23,7 +24,7 @@ const inputStyle: React.CSSProperties = {
 
 export function ChangePasswordModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useTranslation();
-  const { nav, toast } = useBz();
+  const { nav } = useBz();
   const changePassword = useChangePassword();
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -71,7 +72,7 @@ export function ChangePasswordModal({ open, onClose }: { open: boolean; onClose:
 
     try {
       await changePassword.mutateAsync({ currentPassword, newPassword });
-      toast(t("common.changePassword.success"));
+      toast.success(t("common.changePassword.success"));
       onClose();
       nav("auth");
     } catch (err) {
@@ -188,7 +189,7 @@ export function ChangePasswordModal({ open, onClose }: { open: boolean; onClose:
 
           <div className="bz-modal-actions" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <Button
-              variant="ghost"
+              variant="tertiary"
               type="button"
               onClick={onClose}
               disabled={pending}

@@ -263,7 +263,7 @@ export function SellerVerificationTimeline() {
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <SellerIcon name="badgeCheck" size={20} color="var(--success)" />
+                <SellerIcon name="badgeCheck" size={20} color="var(--blue)" />
                 <div style={{ fontWeight: 600, fontSize: "1rem", color: "var(--ink-900)" }}>
                   You&apos;re verified — your store is live
                 </div>

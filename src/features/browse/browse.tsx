@@ -18,7 +18,6 @@ import {
   SkeletonCard,
   EmptyState,
   QtyStepper,
-  Toast,
   SectionHead,
   TINTS,
   AllInPriceCard,
@@ -490,30 +489,21 @@ export function Browse() {
 
           {/* When no filters AND no query → category browser. Otherwise product grid. */}
           {!hasActive && !effectiveQuery ? (
-            <>
-              <h2
-                style={{
-                  margin: "4px 0 14px",
-                  fontSize: "1rem",
-                  fontWeight: 800,
-                  color: "var(--blue-deep)",
-                }}
-              >
-                Shop by category
-              </h2>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(4, 1fr)",
-                  gap: "20px 8px",
-                  paddingBottom: 24,
-                }}
-              >
+            <div className="bz-category-browser bz-home-categories">
+              <SectionHead title={t("home.allCategories")} />
+              <div className="bz-category-browser-grid">
                 {(CATEGORIES ?? []).map((c) => (
-                  <CategoryTile key={c.id} c={c} onClick={() => setCats([c.id])} />
+                  <CategoryTile
+                    key={c.id}
+                    c={c}
+                    variant="card"
+                    href={browsePath({ cat: c.id })}
+                    onClick={() => setCats([c.id])}
+                    shortOnMobile
+                  />
                 ))}
               </div>
-            </>
+            </div>
           ) : (
             <>
               <div
@@ -580,7 +570,7 @@ export function Browse() {
                       </button>
                     ))}
                   </div>
-                  <Button variant="ghost" onClick={clearAll}>
+                  <Button variant="tertiary" onClick={clearAll}>
                     Clear all filters
                   </Button>
                 </div>
@@ -624,38 +614,20 @@ export function Browse() {
           </div>
 
           {showCategoryBrowser ? (
-            <>
-              <div style={{ marginBottom: 18 }}>
-                <h1
-                  style={{
-                    margin: 0,
-                    fontSize: "1.5rem",
-                    fontWeight: 800,
-                    color: "var(--blue-deep)",
-                  }}
-                >
-                  All categories
-                </h1>
-                <div
-                  className="tnum"
-                  style={{ fontSize: ".875rem", color: "var(--ink-400)", marginTop: 4 }}
-                >
-                  Choose a category to browse products.
-                </div>
+            <div className="bz-category-browser">
+              <SectionHead title={t("home.allCategories")} />
+              <div className="bz-category-browser-grid">
+                {(CATEGORIES ?? []).map((c) => (
+                  <CategoryTile
+                    key={c.id}
+                    c={c}
+                    variant="card"
+                    href={browsePath({ cat: c.id })}
+                    onClick={() => setCats([c.id])}
+                  />
+                ))}
               </div>
-              <div className="bz-cat-card" style={{ display: "block", marginTop: 0 }}>
-                <div className="bz-cat-row">
-                  {(CATEGORIES ?? []).map((c) => (
-                    <CategoryTile
-                      key={c.id}
-                      c={c}
-                      href={browsePath({ cat: c.id })}
-                      onClick={() => setCats([c.id])}
-                    />
-                  ))}
-                </div>
-              </div>
-            </>
+            </div>
           ) : (
             <>
               {/* Header row + sort chips */}
@@ -997,10 +969,10 @@ export function Browse() {
                     </div>
                   )}
                   <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-                    <Button variant="ghost" onClick={clearAll}>
+                    <Button variant="secondary" onClick={clearAll}>
                       Clear all filters
                     </Button>
-                    <Button variant="ghost" href={pathFromScreen("home")}>
+                    <Button variant="tertiary" href={pathFromScreen("home")}>
                       Back to home
                     </Button>
                   </div>
@@ -1410,7 +1382,7 @@ export function Browse() {
                   flexShrink: 0,
                 }}
               >
-                <Button variant="ghost" full onClick={clearAll}>
+                <Button variant="tertiary" full onClick={clearAll}>
                   Clear all
                 </Button>
                 <Button variant="primary" full onClick={() => setSheet(false)}>

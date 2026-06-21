@@ -17,17 +17,19 @@ import {
   DeliverToModal,
   AppLink,
 } from "@/components/ui";
-import { browsePath, pathFromScreen } from "@/config/routes";
+import { useSearchParams } from "next/navigation";
+import { browsePath, categoryIdsFromSearchParams, pathFromScreen } from "@/config/routes";
 import { categoryImageBySlug } from "@/config/category-images";
 import { useLogout } from "@/hooks/use-auth";
 import { useCategories } from "@/hooks/use-catalog";
 import { formatNPR, roundRs } from "@/lib/money";
 import { useAddresses, useCreateAddress } from "@/hooks/use-addresses";
 import { deliveryToSavePayload } from "@/lib/saved-address";
-import { displayName } from "@/lib/display";
+import { displayName, firstName } from "@/lib/display";
 import { displayCategoryLabel, displayProductName } from "@/lib/locale-display";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { formatDeliverToLabel } from "@/lib/delivery-location";
+import { toast } from "@/lib/toast";
 import { ASSETS } from "@/config/assets";
 import { SOCIAL_LINKS } from "@/config/site";
 import { BuyerAvatar } from "@/components/common/buyer-avatar";
@@ -234,32 +236,40 @@ export function SellerRow({
 }
 
 /* ---------- Product card ---------- */
+// A discount shows the struck original price always, but the green "Save Rs. N"
+// line only once the saving clears this floor (rupees) — below it a trivial
+// "Save Rs. 17" just adds noise.
+const SAVINGS_THRESHOLD = 50;
+
 export function ProductCard({
   p,
   onClick,
-  sale = false,
   preview = false,
+  savable = true,
+  ctaLabel,
+  ctaIcon,
+  onCta,
 }: {
   p: Product;
   onClick: (p: Product) => void;
-  sale?: boolean;
-  /** Static, non-interactive render (no PDP link, no wishlist toggle) — used by
+  /** Static, non-interactive render (no PDP link, no save toggle) — used by
       the Add Product live preview so sellers see the exact buyer card. */
   preview?: boolean;
+  savable?: boolean;
+  ctaLabel?: string;
+  ctaIcon?: React.ComponentProps<typeof Icon>["name"];
+  onCta?: (p: Product) => void;
 }) {
   const { t } = useTranslation();
-  const { toggleWish, wish } = useBz();
+  const { toggleSaved, savedProducts } = useBz();
   const locale = useBazaarStore((s) => s.locale);
   const productName = displayProductName(p, locale);
   const [hov, setHov] = useState(false);
   const disc = p.original ? Math.round((1 - p.price / p.original) * 100) : 0;
-  const wished = wish.includes(p.id);
-  // Sold count as social proof — sale cards only; derived from reviews × deterministic factor
-  const soldCount = Math.max(p.reviews * 3, 12);
-  const soldLabel =
-    soldCount >= 1000
-      ? `${(soldCount / 1000).toFixed(1).replace(/\.0$/, "")}k sold`
-      : `${soldCount} sold`;
+  const isSaved = savable && savedProducts.includes(p.id);
+  const reviewCount = p.reviews ?? 0;
+  const hasReviews = reviewCount > 0;
+  const savings = p.original ? roundRs(p.original - p.price) : 0;
   return (
     <div
       onMouseEnter={() => setHov(true)}
@@ -298,18 +308,19 @@ export function ProductCard({
             style={{
               position: "relative",
               width: "100%",
-              aspectRatio: "1 / 0.8",
+              aspectRatio: "1 / 1",
               overflow: "hidden",
             }}
           >
             <img
               src={p.img}
               alt={productName}
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+              className="bz-pcard__img-el"
+              style={{ width: "100%", height: "100%", display: "block", objectFit: "cover" }}
             />
           </div>
         ) : (
-          <Placeholder icon={p.icon} tint={p.tint} radius="0" ratio="1 / 0.8" />
+          <Placeholder icon={p.icon} tint={p.tint} radius="0" ratio="1 / 1" />
         )}
         {/* Single discount badge — only one platform-badge style allowed */}
         {disc > 0 && (
@@ -319,53 +330,55 @@ export function ProductCard({
             </Chip>
           </div>
         )}
-        {/* wishlist — 44×44 per WCAG / Material touch target */}
-        <button
-          onClick={
-            preview
-              ? undefined
-              : (e) => {
-                  e.stopPropagation();
-                  void toggleWish(p.id);
-                }
-          }
-          aria-label={t("common.a11y.addToWishlist")}
-          aria-hidden={preview || undefined}
-          tabIndex={preview ? -1 : undefined}
-          style={{
-            position: "absolute",
-            top: 2,
-            right: 2,
-            zIndex: 2,
-            width: 44,
-            height: 44,
-            borderRadius: "50%",
-            background: "transparent",
-            border: "none",
-            cursor: preview ? "default" : "pointer",
-            pointerEvents: preview ? "none" : undefined,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: wished ? "var(--red)" : "var(--ink-500)",
-          }}
-        >
-          {/* 44px tap target per WCAG; visible circle kept smaller (30px) to lighten the image */}
-          <span
+        {/* save — 44×44 per WCAG / Material touch target */}
+        {savable && (
+          <button
+            onClick={
+              preview
+                ? undefined
+                : (e) => {
+                    e.stopPropagation();
+                    void toggleSaved(p.id, productName);
+                  }
+            }
+            aria-label={t("common.a11y.save")}
+            aria-hidden={preview || undefined}
+            tabIndex={preview ? -1 : undefined}
             style={{
-              width: 30,
-              height: 30,
+              position: "absolute",
+              top: 2,
+              right: 2,
+              zIndex: 2,
+              width: 44,
+              height: 44,
               borderRadius: "50%",
-              background: "rgba(255,255,255,.95)",
-              boxShadow: "var(--sh-1)",
+              background: "transparent",
+              border: "none",
+              cursor: preview ? "default" : "pointer",
+              pointerEvents: preview ? "none" : undefined,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              color: isSaved ? "var(--red)" : "var(--ink-500)",
             }}
           >
-            <Icon name="heart" size={16} fill={wished ? "currentColor" : "none"} />
-          </span>
-        </button>
+            {/* 44px tap target per WCAG; visible circle kept smaller (30px) to lighten the image */}
+            <span
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: "50%",
+                background: "rgba(255,255,255,.95)",
+                boxShadow: "var(--sh-1)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Icon name="heart" size={16} fill={isSaved ? "currentColor" : "none"} />
+            </span>
+          </button>
+        )}
         {/* Video — minimal icon-only chip, no label */}
         {p.hasVideo && (
           <div
@@ -412,6 +425,9 @@ export function ProductCard({
         >
           {productName}
         </div>
+        {/* Rating row is ALWAYS rendered so cards keep equal height in a grid.
+            Zero reviews shows an outline star + "No reviews yet" (house pattern,
+            see RatingInline) — never a filled star against a misleading "(0)". */}
         <div
           className="bz-pcard__rating"
           style={{
@@ -424,15 +440,58 @@ export function ProductCard({
             color: "var(--ink-500)",
           }}
         >
-          <RatingStars value={p.rating ?? 0} size={12} count={p.reviews} />
-          {sale && <span style={{ color: "var(--ink-400)" }}>· {soldLabel}</span>}
+          {hasReviews ? (
+            <RatingStars value={p.rating ?? 0} size={12} count={reviewCount} />
+          ) : (
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+                color: "var(--ink-400)",
+              }}
+            >
+              <Icon name="star" size={12} color="var(--ink-300)" fill="none" />
+              {t("common.noReviews")}
+            </span>
+          )}
         </div>
         {/* Single price line: all-in price + strikethrough original — via Price primitive */}
         {/* Trust row (cash on delivery / 7-day return) lives on the PDP only, not on cards. */}
         {/* marginTop:auto pins price to card bottom so price rows align across the grid */}
-        <div className="bz-pcard__price" style={{ marginTop: "auto" }}>
+        {/* Reserves price + struck + savings space so no-discount and discount
+            cards stay equal height. Bump the min-height once to realign all. */}
+        <div className="bz-pcard__price" style={{ marginTop: "auto", minHeight: 46 }}>
           <Price value={p.price} original={p.original} size="md" />
+          {savings >= SAVINGS_THRESHOLD && (
+            <div
+              style={{
+                fontSize: ".6875rem",
+                fontWeight: 600,
+                color: "var(--success)",
+                marginTop: 3,
+              }}
+            >
+              {t("common.saveAmount", { amount: formatNPR(savings) })}
+            </div>
+          )}
         </div>
+        {ctaLabel && onCta && (
+          <div className="bz-pcard__cta-wrap">
+            <Button
+              variant="bargainOutline"
+              size="sm"
+              full
+              icon={ctaIcon}
+              onClick={(e) => {
+                e.stopPropagation();
+                onCta(p);
+              }}
+            >
+              {ctaLabel}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -443,12 +502,10 @@ export function ProductRail({
   items,
   onOpen,
   cols,
-  sale = false,
 }: {
   items: Product[];
   onOpen: (p: Product) => void;
   cols?: number;
-  sale?: boolean;
 }) {
   return (
     <div
@@ -456,7 +513,7 @@ export function ProductRail({
       style={{ display: "grid", gridTemplateColumns: `repeat(${cols || 5}, 1fr)`, gap: 18 }}
     >
       {items.map((p) => (
-        <ProductCard key={p.id} p={p} onClick={onOpen} sale={sale} />
+        <ProductCard key={p.id} p={p} onClick={onOpen} />
       ))}
     </div>
   );
@@ -572,6 +629,7 @@ export function CategoryTile({
   href,
   shortOnMobile = false,
   variant = "circle",
+  shape = "circle",
 }: {
   c: Category;
   onClick: (c: Category) => void;
@@ -579,6 +637,7 @@ export function CategoryTile({
   href?: string;
   shortOnMobile?: boolean;
   variant?: "circle" | "card";
+  shape?: "circle" | "squircle";
 }) {
   const [hov, setHov] = useState(false);
   const locale = useBazaarStore((s) => s.locale);
@@ -591,14 +650,20 @@ export function CategoryTile({
   const Tag: React.ElementType = href ? AppLink : "button";
   const tagProps = href ? { href, onNavigate: () => onClick(c) } : { onClick: () => onClick(c) };
 
-  // Card variant — bordered tile holding a square category photo over its label
-  // (revamp home). The image label is decorative: the visible text label below
-  // gives the link its accessible name, so the photo stays aria-hidden to avoid
-  // a double announcement. Falls back to the line icon only if a slug has no
-  // curated image (e.g. an unknown backend category).
+  // Card variant — frameless navigation tile: a circular (or squircle) category
+  // photo with a centered caption below, sitting directly on the page. Reads as a
+  // department menu entry, not a product card. `shape` flips --cat-radius so a
+  // single prop switches every tile from circle to squircle. The image is
+  // decorative: the visible text label gives the link its accessible name, so the
+  // photo stays aria-hidden to avoid a double announcement. Falls back to the line
+  // icon only if a slug has no curated image (e.g. an unknown backend category).
   if (variant === "card") {
     return (
-      <Tag {...tagProps} className="bz-cat__card">
+      <Tag
+        {...tagProps}
+        className="bz-cat__card"
+        style={{ "--cat-radius": shape === "squircle" ? "16px" : "50%" } as React.CSSProperties}
+      >
         <div className="bz-cat__card-thumb">
           {image ? (
             <img src={image.imageSrc} alt="" aria-hidden="true" draggable={false} loading="lazy" />
@@ -853,9 +918,9 @@ function AccountMenuPanel({
       />
       <NavMenuItem
         icon="heart"
-        label={t("nav.wishlist")}
-        href={pathFromScreen("wishlist")}
-        onNavigate={() => goAndClose("wishlist")}
+        label={t("nav.saved")}
+        href={pathFromScreen("saved")}
+        onNavigate={() => goAndClose("saved")}
       />
       <NavMenuItem
         icon="message"
@@ -935,25 +1000,28 @@ export function Navbar() {
     nav,
     cart,
     cartCount,
-    wish,
-    wishSellers,
+    savedProducts,
+    savedSellers,
     screen,
     query,
     setQuery,
     submitSearch,
     clearSearch,
-    toast,
   } = useBz();
   const user = useBazaarStore((s) => s.user);
   const authed = useBazaarStore((s) => s.authed);
   const locale = useBazaarStore((s) => s.locale);
   const logoutMutation = useLogout();
   const navLabel = displayName(user, "Account");
+  const navFirstName = firstName(user, "Account");
   const { data: categories = [] } = useCategories();
+  // Which category the buyer is currently browsing (from `?cat=`), so the mobile
+  // strip can highlight the active pill — "All" when no category is selected.
+  const activeCatIds = categoryIdsFromSearchParams(useSearchParams());
   // Cart subtotal shown in the navbar — recomputed from the live cart lines the
   // same way checkout does (rupees, snapped per line) so it always matches.
   const cartTotal = roundRs(cart.reduce((sum, line) => sum + roundRs(line.price * line.qty), 0));
-  const savedCount = wish.length + wishSellers.length;
+  const savedCount = savedProducts.length + savedSellers.length;
   const [menuOpen, setMenuOpen] = useState(false);
   // Search category scope (the "All ▾" selector). null = all categories.
   const [scope, setScope] = useState<string | null>(null);
@@ -1135,24 +1203,38 @@ export function Navbar() {
       </button>
     </div>
   );
-  const navCategories = categories.slice(0, 10);
+  const navCategories = categories.slice(0, 20);
   const categoryStrip = (
     <>
-      <AppLink
-        href={browsePath({ view: "categories" })}
-        onNavigate={() => nav("browse")}
-        className="bz-navbar__allcats"
-      >
-        <Icon name="menu" size={16} className="bz-hide-mobile" />
-        <span className="bz-hide-mobile">{t("home.allCategories")}</span>
-        <span className="bz-show-mobile">{t("nav.all")}</span>
-      </AppLink>
       {navCategories.map((c) => (
         <AppLink
           key={c.id}
           href={browsePath({ cat: c.id })}
           onNavigate={() => nav("browse", { cat: c.id })}
           className="bz-navbar__cat"
+        >
+          {displayCategoryLabel(c, locale)}
+        </AppLink>
+      ))}
+    </>
+  );
+  // Mobile mirrors the desktop category strip but leads with an "All" pill that
+  // clears the category filter; the active pill is highlighted.
+  const mobileCategoryStrip = (
+    <>
+      <AppLink
+        href={browsePath({})}
+        onNavigate={() => nav("browse")}
+        className="bz-navbar__cat bz-navbar__cat--all"
+      >
+        {t("nav.all")}
+      </AppLink>
+      {navCategories.map((c) => (
+        <AppLink
+          key={c.id}
+          href={browsePath({ cat: c.id })}
+          onNavigate={() => nav("browse", { cat: c.id })}
+          className={`bz-navbar__cat${activeCatIds.includes(c.id) ? " is-active" : ""}`}
         >
           {displayCategoryLabel(c, locale)}
         </AppLink>
@@ -1166,7 +1248,7 @@ export function Navbar() {
       <div className="bz-navbar__desktop bz-hide-mobile">
         {/* Tier 1 — utility */}
         <div className="bz-navbar__utility">
-          <div className="bz-navbar__utility-inner">
+          <div className="bz-navbar__utility-inner container">
             {deliverChip}
             <div className="bz-navbar__utility-links">
               <AppLink href={pathFromScreen("s-onboarding")} className="bz-navbar__util-link">
@@ -1185,7 +1267,7 @@ export function Navbar() {
 
         {/* Tier 2 — brand + search + actions */}
         <div className="bz-navbar__main">
-          <div className="bz-navbar__main-inner">
+          <div className="bz-navbar__main-inner container">
             <AppLink
               href={pathFromScreen("home")}
               ariaLabel={t("nav.homeAria")}
@@ -1215,7 +1297,7 @@ export function Navbar() {
                   <span className="bz-navbar__action-main">{t("nav.watch")}</span>
                 </span>
               </AppLink>
-              <AppLink href={pathFromScreen("wishlist")} className="bz-navbar__action">
+              <AppLink href={pathFromScreen("saved")} className="bz-navbar__action">
                 <span className="bz-navbar__action-ic">
                   <Icon name="heart" size={22} color="var(--on-navy-300)" />
                   {savedCount > 0 && (
@@ -1245,7 +1327,7 @@ export function Navbar() {
                   <span className="bz-navbar__action-text">
                     <span className="bz-navbar__action-cap">{t("nav.account")}</span>
                     <span className="bz-navbar__action-main">
-                      {authed ? navLabel : t("nav.signIn")}{" "}
+                      {authed ? navFirstName : t("nav.signIn")}{" "}
                       <Icon name="chevronDown" size={13} color="currentColor" />
                     </span>
                   </span>
@@ -1268,13 +1350,13 @@ export function Navbar() {
 
         {/* Tier 3 — category nav */}
         <div className="bz-navbar__cats">
-          <div className="bz-navbar__cats-inner no-scrollbar">{categoryStrip}</div>
+          <div className="bz-navbar__cats-inner container no-scrollbar">{categoryStrip}</div>
         </div>
       </div>
 
       {/* ===================== MOBILE ===================== */}
       <div className="bz-navbar__mobile bz-show-mobile">
-        <div className="bz-navbar__m-bar">
+        <div className="bz-navbar__m-bar container">
           <div className="bz-navbar__m-top">
             <AppLink
               href={pathFromScreen("home")}
@@ -1285,8 +1367,8 @@ export function Navbar() {
             </AppLink>
             <div className="bz-navbar__m-icons">
               <AppLink
-                href={pathFromScreen("wishlist")}
-                ariaLabel={t("nav.wishlist")}
+                href={pathFromScreen("saved")}
+                ariaLabel={t("nav.saved")}
                 className="bz-navbar__m-icon"
               >
                 <Icon name="heart" size={22} color="var(--on-navy-300)" />
@@ -1309,7 +1391,7 @@ export function Navbar() {
           {searchField}
           {deliverChip}
         </div>
-        <div className="bz-navbar__cats-strip no-scrollbar">{categoryStrip}</div>
+        <div className="bz-navbar__cats-strip container no-scrollbar">{mobileCategoryStrip}</div>
       </div>
 
       <DeliverToModal
@@ -1319,7 +1401,7 @@ export function Navbar() {
         onSave={async (loc: DeliveryLocation) => {
           setDeliveryLocation(loc);
           setDeliverOpen(false);
-          toast(t("delivery.deliveringTo", { label: formatDeliverToLabel(loc) }));
+          toast.info(t("delivery.deliveringTo", { label: formatDeliverToLabel(loc) }));
           // Mirror checkout: persist the entered address to the buyer's profile
           // so it becomes their (first, default) saved address.
           if (authed) {
@@ -1442,16 +1524,15 @@ export function Footer() {
         }}
       />
       <div
-        className="bz-footer-grid"
+        className="bz-footer-grid container"
         style={{
           position: "relative",
           zIndex: 2,
-          maxWidth: "var(--container)",
-          margin: "0 auto",
-          padding: "72px clamp(12px, 4vw, 28px) 48px",
+          paddingTop: 72,
+          paddingBottom: 48,
           display: "grid",
-          gridTemplateColumns: "1.6fr repeat(4, 1fr)",
-          gap: 40,
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: "var(--sp-8)",
         }}
       >
         <div>
@@ -1547,14 +1628,13 @@ export function Footer() {
         }}
       >
         <div
-          className="bz-row-4up"
+          className="bz-row-4up container"
           style={{
-            maxWidth: "var(--container)",
-            margin: "0 auto",
-            padding: "28px clamp(12px, 4vw, 28px)",
+            paddingTop: 28,
+            paddingBottom: 28,
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
-            gap: 24,
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: "var(--sp-6)",
             color: "rgba(255,255,255,.45)",
             fontSize: ".75rem",
             lineHeight: 1.7,

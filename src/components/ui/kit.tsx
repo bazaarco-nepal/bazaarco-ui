@@ -10,7 +10,6 @@ import { reverseGeocode } from "@/lib/reverse-geocode";
 import { tintForName, STORE_TINTS } from "@/lib/store-tint";
 import { formatNPR } from "@/lib/money";
 import { MapPinPicker } from "@/components/ui/map-pin-picker";
-import { TOAST_VARIANT_META } from "@/lib/toast-variant";
 import { CLOUDINARY_CLOUD_NAME, publicIdFromVideoUrl } from "@/lib/cloudinary";
 import { SellerIcon } from "@/features/seller/_shared/icons";
 import "cloudinary-video-player/cld-video-player.min.css";
@@ -18,7 +17,7 @@ import "cloudinary-video-player/cld-video-player.min.css";
 /* ============================================================
    BazaarCo — Component Kit
    Icons (Lucide-style), Logo, Buttons, ProductCard, VideoPlayer,
-   RatingStars, Chips, Skeletons, EmptyState (mascot), Toast.
+   RatingStars, Chips, Skeletons, EmptyState (mascot).
    Exported to window for cross-file use.
    ============================================================ */
 /* ---------- Icons ---------- */
@@ -72,6 +71,35 @@ export const ICON_PATHS = {
       <path d="m9 12 2 2 4-4" />
     </>
   ),
+  alertCircle: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <line x1="12" y1="8" x2="12" y2="12.5" />
+      <line x1="12" y1="16" x2="12.01" y2="16" />
+    </>
+  ),
+  alertTriangle: (
+    <>
+      <path d="M12 4 2.6 20h18.8L12 4Z" />
+      <line x1="12" y1="10" x2="12" y2="14" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </>
+  ),
+  infoCircle: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <line x1="12" y1="11.5" x2="12" y2="16" />
+      <line x1="12" y1="8" x2="12.01" y2="8" />
+    </>
+  ),
+  discount2: (
+    <>
+      <rect x="3" y="3" width="18" height="18" rx="4" />
+      <line x1="9" y1="15" x2="15" y2="9" />
+      <circle cx="9.5" cy="9.5" r="1.1" fill="currentColor" stroke="none" />
+      <circle cx="14.5" cy="14.5" r="1.1" fill="currentColor" stroke="none" />
+    </>
+  ),
   truck: (
     <>
       <path d="M3 6h11v9H3z" />
@@ -114,8 +142,12 @@ export const ICON_PATHS = {
   ),
   badgeCheck: (
     <>
-      <path d="m12 2 2.4 1.8 3-.2.9 2.9 2.4 1.8-1 2.9 1 2.9-2.4 1.8-.9 2.9-3-.2L12 22l-2.4-1.8-3 .2-.9-2.9L3.3 16l1-2.9-1-2.9 2.4-1.8.9-2.9 3 .2Z" />
-      <path d="m9 12 2 2 4-4" />
+      <path
+        d="m12 2 2.4 1.8 3-.2.9 2.9 2.4 1.8-1 2.9 1 2.9-2.4 1.8-.9 2.9-3-.2L12 22l-2.4-1.8-3 .2-.9-2.9L3.3 16l1-2.9-1-2.9 2.4-1.8.9-2.9 3 .2Z"
+        fill="currentColor"
+        stroke="none"
+      />
+      <path d="m9 12 2 2 4-4" fill="none" stroke="#fff" strokeWidth="2.3" />
     </>
   ),
   mapPin: (
@@ -738,6 +770,28 @@ export function AppLink({
   );
 }
 
+/* Which surface a button is rendering on. The buyer pack opts into the class-based
+   button-system (button.css, scoped to [data-pack="buyer"]); the seller console
+   keeps the legacy inline rendering untouched. Default "seller" so any button
+   outside an explicit buyer pack stays on the safe legacy path. */
+export const BzPack = createContext<"buyer" | "seller">("seller");
+
+/* Mark a subtree as buyer — sets the [data-pack="buyer"] CSS scope and the pack
+   context. `display:contents` so the wrapper adds no box of its own. */
+export function BuyerPack({ children }: { children: React.ReactNode }) {
+  return (
+    <div data-pack="buyer" style={{ display: "contents" }}>
+      <BzPack.Provider value="buyer">{children}</BzPack.Provider>
+    </div>
+  );
+}
+
+/* Reset a nested subtree back to the seller surface (e.g. a seller screen mounted
+   inside the buyer shell) so its buttons keep the legacy look. */
+export function SellerPack({ children }: { children: React.ReactNode }) {
+  return <BzPack.Provider value="seller">{children}</BzPack.Provider>;
+}
+
 export function Button({
   variant = "primary",
   size = "md",
@@ -754,6 +808,7 @@ export function Button({
   href,
   onNavigate,
   target,
+  ...rest
 }: {
   variant?: string;
   size?: string;
@@ -772,7 +827,92 @@ export function Button({
   href?: string;
   onNavigate?: () => void;
   target?: string;
+  // Passthrough for native attributes (aria-label, title, data-*, etc.).
+  [key: string]: any;
 }) {
+  const pack = useContext(BzPack);
+  const linkClick = useSpaLinkClick(href, onNavigate, target);
+  const [hov, setHov] = useState(false);
+
+  // ---- Buyer surface: class-based button-system (button.css) ----
+  if (pack === "buyer") {
+    const iconSize = size === "lg" ? 18 : size === "sm" ? 14 : 16;
+    const cls = [
+      "btn",
+      `btn--${variant}`,
+      variant !== "link" && `btn--${size}`,
+      full && "btn--full",
+      className,
+    ]
+      .filter(Boolean)
+      .join(" ");
+    // Loading keeps the button's width fixed: the label stays in place (hidden)
+    // under a centred spinner instead of collapsing to spinner-width.
+    const labels = (
+      <>
+        {icon && <Icon name={icon} size={iconSize} />}
+        {children}
+        {iconRight && <Icon name={iconRight} size={iconSize} />}
+      </>
+    );
+    const content = loading ? (
+      <>
+        <span
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Spinner size={iconSize} />
+        </span>
+        <span
+          style={{ visibility: "hidden", display: "inline-flex", alignItems: "center", gap: 8 }}
+        >
+          {labels}
+        </span>
+      </>
+    ) : (
+      labels
+    );
+    const mergedStyle = loading ? { position: "relative" as const, ...style } : style;
+
+    if (href && !disabled && !loading) {
+      return (
+        <a
+          href={href}
+          className={cls}
+          style={mergedStyle}
+          target={target}
+          rel={target === "_blank" ? "noopener noreferrer" : undefined}
+          onClick={(e) => {
+            onClick?.(e as React.MouseEvent<HTMLButtonElement>);
+            linkClick(e);
+          }}
+          {...rest}
+        >
+          {content}
+        </a>
+      );
+    }
+    return (
+      <button
+        type={type}
+        className={cls}
+        style={mergedStyle}
+        disabled={disabled || loading}
+        onClick={onClick}
+        aria-busy={loading || undefined}
+        {...rest}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  // ---- Seller / default surface: legacy inline rendering (unchanged) ----
   const h = size === "lg" ? 52 : size === "sm" ? 36 : 44;
   const fs = size === "lg" ? "1.125rem" : size === "sm" ? ".875rem" : "1rem";
   const pad = size === "lg" ? "0 28px" : size === "sm" ? "0 14px" : "0 22px";
@@ -821,8 +961,6 @@ export function Button({
       borderColor: "var(--line-100)",
     };
   }
-  const [hov, setHov] = useState(false);
-  const linkClick = useSpaLinkClick(href, onNavigate, target);
   let merged = { ...base, ...variants[variant] };
   if (hov && !disabled) {
     if (variant === "primary" || variant === "blue") merged.background = "var(--blue-hover)";
@@ -864,6 +1002,7 @@ export function Button({
           onClick?.(e);
           linkClick(e);
         }}
+        {...rest}
       >
         {inner}
       </a>
@@ -880,6 +1019,7 @@ export function Button({
       onMouseLeave={() => setHov(false)}
       onClick={onClick}
       aria-busy={loading || undefined}
+      {...rest}
     >
       {inner}
     </button>
@@ -1249,22 +1389,19 @@ export function Price({
   size?: "sm" | "md" | "lg";
   color?: string;
 }) {
-  const fs = size === "lg" ? "1.75rem" : size === "sm" ? "1rem" : "1.25rem";
+  const fs = size === "lg" ? "1.5rem" : size === "sm" ? "0.875rem" : "1rem";
   const safeValue = value ?? 0;
   const safeOriginal = original && original > safeValue ? original : null;
   return (
     <span style={{ display: "inline-flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-      <span
-        className="tnum"
-        style={{ fontSize: fs, fontWeight: 800, color, letterSpacing: "-.01em" }}
-      >
+      <span className="tnum" style={{ fontSize: fs, fontWeight: 800, color }}>
         {formatNPR(safeValue)}
       </span>
       {safeOriginal && (
         <span
           className="tnum"
           style={{
-            fontSize: size === "lg" ? "1rem" : ".8125rem",
+            fontSize: size === "lg" ? "0.9375rem" : "0.75rem",
             color: "var(--ink-400)",
             textDecoration: "line-through",
             fontWeight: 500,
@@ -2099,84 +2236,6 @@ export function QtyStepper({ value, onChange, min = 1, max = 99 }) {
   );
 }
 
-/* ---------- Toast ----------
-   A compact navy pill that floats above the mobile tab bar (bottom-right on
-   desktop). It acknowledges an action rather than announcing it: a small
-   coloured check/error dot, a short message, and — for reversible actions like
-   a wishlist save — an inline Undo. Tapping the body dismisses it; new toasts
-   replace the current one rather than stacking. */
-const TOAST_EXIT_MS = 320;
-
-type ToastData = { msg: string; id: number; variant: string; undo?: () => void };
-
-export function Toast({ toast }: { toast: ToastData | null }) {
-  const { t } = useTranslation();
-  const [shown, setShown] = useState<ToastData | null>(null);
-  const [leaving, setLeaving] = useState(false);
-  const shownRef = useRef(shown);
-  shownRef.current = shown;
-  const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const dismiss = () => {
-    if (!shownRef.current) return;
-    setLeaving(true);
-    if (exitTimer.current) clearTimeout(exitTimer.current);
-    exitTimer.current = setTimeout(() => {
-      setShown(null);
-      setLeaving(false);
-    }, TOAST_EXIT_MS);
-  };
-
-  useEffect(() => {
-    if (toast) {
-      if (exitTimer.current) clearTimeout(exitTimer.current);
-      setShown(toast);
-      setLeaving(false);
-      return;
-    }
-    dismiss();
-  }, [toast]);
-
-  useEffect(() => () => void (exitTimer.current && clearTimeout(exitTimer.current)), []);
-
-  if (!shown) return null;
-
-  const variant = shown.variant ?? "success";
-  const meta = TOAST_VARIANT_META[variant] ?? TOAST_VARIANT_META.success;
-  const isError = variant === "error";
-
-  return (
-    <div className="bz-toast-wrap">
-      <div
-        key={shown.id}
-        role={isError ? "alert" : "status"}
-        aria-live={isError ? "assertive" : "polite"}
-        className={`bz-toast bz-toast--${variant} ${leaving ? "bz-toast--exit" : "bz-toast--enter"}`}
-        style={{ "--bz-toast-accent": meta.accent } as React.CSSProperties}
-        onClick={dismiss}
-      >
-        <span className="bz-toast__dot" aria-hidden>
-          <Icon name={meta.icon} size={11} color="#fff" stroke={2.4} />
-        </span>
-        <p className="bz-toast__msg">{shown.msg}</p>
-        {shown.undo && (
-          <button
-            type="button"
-            className="bz-toast__undo"
-            aria-label={t("common.a11y.undoSaveWishlist")}
-            onClick={(e) => {
-              e.stopPropagation();
-              shown.undo?.();
-            }}
-          >
-            {t("common.undo")}
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
 /* ---------- Section header with crimson stripe accent (brand pattern) ---------- */
 export function SectionHead({
   eyebrow,
@@ -2200,7 +2259,7 @@ export function SectionHead({
         display: "flex",
         alignItems: "flex-end",
         justifyContent: "space-between",
-        marginBottom: 16,
+        marginBottom: "var(--section-header)",
         gap: 16,
       }}
     >
@@ -2220,55 +2279,17 @@ export function SectionHead({
             {eyebrow}
           </div>
         )}
-        <h2
-          className="bz-sec-head__title"
-          style={{
-            margin: 0,
-            fontSize: "1.5rem",
-            fontWeight: 800,
-            color: "var(--blue-deep)",
-            letterSpacing: "-.01em",
-          }}
-        >
+        <h2 className="bz-sec-head__title" style={{ margin: 0 }}>
           {title} {accent && <span style={{ color: "var(--red)" }}>{accent}</span>}
         </h2>
       </div>
       {action &&
         (actionHref ? (
-          <AppLink
-            href={actionHref}
-            className="bz-sec-head__action"
-            style={{
-              color: "var(--blue)",
-              fontWeight: 700,
-              fontSize: ".9375rem",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
-              whiteSpace: "nowrap",
-              textDecoration: "none",
-            }}
-          >
+          <AppLink href={actionHref} className="bz-sec-head__action">
             {action} <Icon name="arrowRight" size={16} />
           </AppLink>
         ) : (
-          <button
-            onClick={onAction}
-            className="bz-sec-head__action"
-            style={{
-              background: "none",
-              border: "none",
-              color: "var(--blue)",
-              fontWeight: 700,
-              fontSize: ".9375rem",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
-              whiteSpace: "nowrap",
-            }}
-          >
+          <button onClick={onAction} className="bz-sec-head__action">
             {action} <Icon name="arrowRight" size={16} />
           </button>
         ))}
@@ -2365,7 +2386,7 @@ export function LoadMore({
 }: LoadMoreProps) {
   const { t } = useTranslation();
   if (!paged || paged.total === 0) return null;
-  const { shown, total, hasMore, nextBatch, pageSize } = paged;
+  const { total, hasMore, nextBatch, pageSize } = paged;
   // Everything fit on the first page — never paginated, so skip the end-state chrome.
   if (!hasMore && total <= pageSize) return null;
   const scrollTop = onTop || (() => window.scrollTo({ top: 0, behavior: "smooth" }));
@@ -2381,23 +2402,15 @@ export function LoadMore({
       }}
     >
       {hasMore ? (
-        <>
-          <Button
-            variant="secondary"
-            size={size}
-            onClick={paged.more}
-            iconRight="chevronDown"
-            className={size === "sm" ? undefined : "bz-loadmore"}
-          >
-            {t("common.showMoreNoun", { count: nextBatch, noun })}
-          </Button>
-          <div
-            className="tnum"
-            style={{ fontSize: ".8125rem", color: "var(--ink-400)", fontWeight: 600 }}
-          >
-            {t("common.showingOf", { shown, total, noun })}
-          </div>
-        </>
+        <Button
+          variant="secondary"
+          size={size}
+          onClick={paged.more}
+          iconRight="chevronDown"
+          className={size === "sm" ? undefined : "bz-loadmore"}
+        >
+          {t("common.showMoreNoun", { count: nextBatch, noun })}
+        </Button>
       ) : (
         <>
           <div
@@ -2411,7 +2424,7 @@ export function LoadMore({
             {t("common.seenAll", { total, noun })}
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
-            <Button variant="ghost" icon="chevronUp" onClick={scrollTop}>
+            <Button variant="tertiary" icon="chevronUp" onClick={scrollTop}>
               {t("common.backToTop")}
             </Button>
             {onClear && (
@@ -2524,7 +2537,7 @@ export function BackToTop({ threshold = 1200 }) {
       style={{
         position: "fixed",
         right: 22,
-        bottom: 90,
+        bottom: "calc(var(--space-lg) + env(safe-area-inset-bottom, 0px))",
         zIndex: 199,
         width: 48,
         height: 48,
@@ -2852,57 +2865,29 @@ export function MobileBuyBar({
         alignItems: "center",
       }}
     >
-      {/* Bargaining is BazaarCo's identity — leads the bar as a compact soft-red
-          square, tinted so it never out-shouts Buy now. */}
+      {/* Bargaining is BazaarCo's identity — leads the bar as a compact red-outline
+          offer, so it stays the signature action without out-shouting Buy now. */}
       {showBargain ? (
-        <button
-          type="button"
+        <Button
+          variant="bargainOutline"
+          icon="bargain"
           aria-label={t("pdp.makeOffer")}
           onClick={onBargain}
-          className="bz-pdp-offer-btn"
-          style={{
-            flex: "0 0 auto",
-            height: 46,
-            padding: "0 12px",
-            borderRadius: "var(--r-md)",
-            color: "var(--red)",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 4,
-            cursor: "pointer",
-            fontSize: 11,
-            fontWeight: 700,
-          }}
+          style={{ flex: "0 0 auto", height: 46, padding: "0 12px", fontSize: 11, gap: 4 }}
         >
-          <Icon name="bargain" size={18} />
-          <span>{t("common.offer")}</span>
-        </button>
+          {t("common.offer")}
+        </Button>
       ) : null}
-      {/* Add to cart — outlined navy, secondary to the solid Buy now. */}
-      <button
-        type="button"
+      {/* Add to cart — neutral secondary to the solid Buy now. */}
+      <Button
+        variant="secondary"
+        icon="cart"
         onClick={onAdd}
         disabled={disabled}
-        style={{
-          flex: 1,
-          minWidth: 0,
-          height: 46,
-          borderRadius: "var(--r-md)",
-          border: `1.5px solid ${disabled ? "var(--line-200)" : "var(--blue-deep)"}`,
-          background: "#fff",
-          color: disabled ? "var(--ink-300)" : "var(--blue-deep)",
-          fontWeight: 600,
-          fontSize: ".9375rem",
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 7,
-          cursor: disabled ? "not-allowed" : "pointer",
-        }}
+        style={{ flex: 1, minWidth: 0, height: 46 }}
       >
-        <Icon name="cart" size={18} /> {t("nav.cart")}
-      </button>
+        {t("nav.cart")}
+      </Button>
       <Button
         variant="primary"
         icon="zap"
@@ -3552,7 +3537,7 @@ export function DeliverToModal({ open, value, onClose, onSave }) {
         </div>
 
         <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-          <Button variant="ghost" full onClick={onClose}>
+          <Button variant="tertiary" full onClick={onClose}>
             {t("common.cancel")}
           </Button>
           <Button

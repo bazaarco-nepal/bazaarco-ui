@@ -83,6 +83,7 @@ export interface ProductListParams {
   category?: string;
   hasVideo?: boolean;
   onSale?: boolean;
+  bargainable?: boolean;
   q?: string;
   page?: number;
   limit?: number;

@@ -19,6 +19,7 @@ import { getGoogleLoginUrl } from "@/services/api/auth";
 import { ApiRequestError } from "@/services/api/http";
 import type { AuthUser, PendingEmailVerification } from "@/types/auth";
 import { isStrongPassword, passwordRequirementMessage } from "@/lib/password-validation";
+import { toast } from "@/lib/toast";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -78,7 +79,7 @@ function Field({
 
 export function Auth() {
   const { t } = useTranslation();
-  const { nav, toast } = useBz();
+  const { nav } = useBz();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -194,7 +195,7 @@ export function Auth() {
         });
         setPendingVerification(pending);
         setOtp("");
-        toast(t("auth.codeSent"));
+        toast.success(t("auth.codeSent"));
         return;
       } else {
         user = await loginMutation.mutateAsync({
@@ -202,14 +203,14 @@ export function Auth() {
           password,
         });
       }
-      toast(t("auth.welcomeBack"));
+      toast.success(t("auth.welcomeBack"));
       afterAuth(user);
     } catch (err) {
       const message = err instanceof ApiRequestError ? err.message : t("auth.genericError");
       if (mode === "register") {
         // Surface signup failures (e.g. "already registered as a buyer account") as a
         // toast — the conflict message guides the user back to the right flow.
-        toast(message, "error");
+        toast.error(message);
         return;
       }
       if (mode === "login" && err instanceof ApiRequestError && err.status === 403) {
@@ -235,7 +236,7 @@ export function Auth() {
         email: pendingVerification.email,
         otp: otp.trim(),
       });
-      toast(t("auth.emailVerified"));
+      toast.success(t("auth.emailVerified"));
       afterAuth(user);
     } catch (err) {
       const message = err instanceof ApiRequestError ? err.message : t("auth.genericError");
@@ -252,7 +253,7 @@ export function Auth() {
       });
       setPendingVerification(pending);
       setOtp("");
-      toast(t("auth.codeResent"));
+      toast.success(t("auth.codeResent"));
     } catch (err) {
       const message = err instanceof ApiRequestError ? err.message : t("auth.genericError");
       setError(message);
@@ -305,7 +306,7 @@ export function Auth() {
       const res = await forgotRequestMutation.mutateAsync({ email: trimmed });
       setForgotMaskedEmail(res.email);
       setForgotStep(2);
-      toast(t("auth.resetCodeSent"));
+      toast.success(t("auth.resetCodeSent"));
     } catch (err) {
       setForgotError(err instanceof Error ? err.message : t("auth.resetCodeFailed"));
     }
@@ -334,7 +335,7 @@ export function Auth() {
         otp: forgotOtp.trim(),
         newPassword: forgotNewPassword,
       });
-      toast(t("auth.passwordUpdated"));
+      toast.success(t("auth.passwordUpdated"));
       setForgotMode(false);
     } catch (err) {
       setForgotError(err instanceof Error ? err.message : t("auth.resetFailed"));
@@ -1112,7 +1113,7 @@ export function Auth() {
 
             {!pendingVerification && !forgotMode && !isSeller && (
               <div style={{ marginTop: 10 }}>
-                <Button variant="ghost" full href={pathFromScreen("home")}>
+                <Button variant="tertiary" full href={pathFromScreen("home")}>
                   {t("auth.skipForNow")}
                 </Button>
               </div>

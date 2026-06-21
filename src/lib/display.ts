@@ -4,6 +4,10 @@ export function displayName(user?: { name?: string | null } | null, fallback = "
   return user?.name?.trim() || fallback;
 }
 
+export function firstName(user?: { name?: string | null } | null, fallback = "there"): string {
+  return user?.name?.trim().split(/\s+/)[0] || fallback;
+}
+
 export function userInitial(user?: { name?: string | null; email?: string | null } | null): string {
   const base = user?.name?.trim() || user?.email?.trim() || "?";
   return base.charAt(0).toUpperCase();

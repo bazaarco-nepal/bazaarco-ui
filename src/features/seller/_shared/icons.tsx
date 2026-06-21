@@ -143,6 +143,38 @@ export function SellerIcon({
   style,
   className,
 }: SellerIconProps) {
+  if (name === "badgeCheck") {
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        className={className}
+        style={{
+          color: color ?? "var(--blue)",
+          display: "inline-block",
+          flexShrink: 0,
+          verticalAlign: "middle",
+          ...style,
+        }}
+        aria-hidden="true"
+      >
+        <path
+          d="m12 2 2.4 1.8 3-.2.9 2.9 2.4 1.8-1 2.9 1 2.9-2.4 1.8-.9 2.9-3-.2L12 22l-2.4-1.8-3 .2-.9-2.9L3.3 16l1-2.9-1-2.9 2.4-1.8.9-2.9 3 .2Z"
+          fill="currentColor"
+        />
+        <path
+          d="m9 12 2 2 4-4"
+          fill="none"
+          stroke="#fff"
+          strokeWidth="2.3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+
   const entry = ICON_MAP[name];
   if (!entry) {
     return null;

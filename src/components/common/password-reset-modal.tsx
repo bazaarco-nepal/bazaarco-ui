@@ -7,6 +7,7 @@ import { Button, PasswordInput } from "@/components/ui";
 import { useBz } from "@/components/common/marketplace";
 import { useConfirmPasswordReset, useRequestPasswordReset } from "@/hooks/use-auth";
 import { isStrongPassword, passwordRequirementMessage } from "@/lib/password-validation";
+import { toast } from "@/lib/toast";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -31,7 +32,7 @@ export function PasswordResetModal({
   mode?: "reset" | "set";
 }) {
   const { t } = useTranslation();
-  const { nav, toast } = useBz();
+  const { nav } = useBz();
   const requestReset = useRequestPasswordReset();
   const confirmReset = useConfirmPasswordReset();
 
@@ -74,7 +75,7 @@ export function PasswordResetModal({
       const res = await requestReset.mutateAsync();
       setMaskedEmail(res.email);
       setStep(2);
-      toast(t("common.passwordReset.codeSent"));
+      toast.success(t("common.passwordReset.codeSent"));
     } catch (e) {
       setError(e instanceof Error ? e.message : t("common.passwordReset.sendFailed"));
     }
@@ -99,7 +100,7 @@ export function PasswordResetModal({
 
     try {
       await confirmReset.mutateAsync({ otp, newPassword });
-      toast(t("common.passwordReset.updated"));
+      toast.success(t("common.passwordReset.updated"));
       onClose();
       nav("auth");
     } catch (err) {

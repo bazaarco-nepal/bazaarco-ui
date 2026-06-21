@@ -129,12 +129,12 @@ function clearSessionState(queryClient: ReturnType<typeof useQueryClient>) {
   clearRoleHint();
   useBazaarStore.getState().setRoleHint(null);
   useBazaarStore.getState().setCart([]);
-  useBazaarStore.getState().setWish([]);
-  useBazaarStore.getState().setWishSellers([]);
+  useBazaarStore.getState().setSavedProducts([]);
+  useBazaarStore.getState().setSavedSellers([]);
   return Promise.all([
     queryClient.removeQueries({ queryKey: queryKeys.auth.me }),
     queryClient.removeQueries({ queryKey: queryKeys.cart.all }),
-    queryClient.removeQueries({ queryKey: queryKeys.wishlist.all }),
+    queryClient.removeQueries({ queryKey: queryKeys.saved.all }),
     queryClient.removeQueries({ queryKey: ["seller"] }),
   ]);
 }

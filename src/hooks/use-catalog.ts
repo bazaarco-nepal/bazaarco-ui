@@ -117,6 +117,27 @@ function useAllProducts() {
   return useProducts({ page: 1, limit: 100 });
 }
 
+/** Products whose sellers are open to bargaining — powers the home "Bargain with
+ *  the seller" rail. Backed by GET /catalog/products?bargainable=true. */
+export function useBargainableProducts(limit = 6) {
+  return useProducts({ bargainable: true, page: 1, limit });
+}
+
+const BARGAINABLE_PAGE_SIZE = 24;
+
+/** Paginated bargainable products for the full "All bargainable products" listing. */
+export function useBargainableProductsInfinite() {
+  return useInfiniteQuery({
+    queryKey: queryKeys.catalog.products({ bargainable: true, infinite: true }),
+    queryFn: ({ pageParam }) =>
+      catalogApi.getProducts({ bargainable: true, page: pageParam, limit: BARGAINABLE_PAGE_SIZE }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
+    staleTime: STALE_TIME,
+  });
+}
+
 export function useProduct(id: string | null) {
   return useQuery({
     queryKey: queryKeys.catalog.product(id ?? ""),

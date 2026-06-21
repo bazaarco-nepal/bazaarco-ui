@@ -5,6 +5,7 @@ export * from "@/features/search";
 export * from "@/features/pdp";
 export * from "@/features/store";
 export * from "@/features/stores";
+export * from "@/features/bargainable-products";
 export * from "@/features/video";
 export * from "@/features/checkout";
 export * from "@/features/extra";

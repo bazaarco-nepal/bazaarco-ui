@@ -11,8 +11,9 @@ import {
   useCounterBargainOffer,
 } from "@/hooks/use-bargains";
 import { useSellerBargains, type SellerBargainOffer } from "@/hooks/use-seller";
-import { useBz, BuyerAvatar } from "@/components/common";
+import { BuyerAvatar } from "@/components/common";
 import { ApiRequestError } from "@/services/api/http";
+import { toast } from "@/lib/toast";
 import { bargainStatus } from "../_shared/bargain";
 import { SellerHelpBar, SellerPageHeader, SellerEmptyState } from "../_shared/components";
 
@@ -28,13 +29,11 @@ function BargainOfferCard({
   acceptMutation,
   rejectMutation,
   counterMutation,
-  toast,
 }: {
   o: SellerBargainOffer;
   acceptMutation: ReturnType<typeof useAcceptBargainOffer>;
   rejectMutation: ReturnType<typeof useRejectBargainOffer>;
   counterMutation: ReturnType<typeof useCounterBargainOffer>;
-  toast: (msg: string) => void;
 }) {
   const status = bargainStatus(o);
   const listed = Number(o.listed) || 0;
@@ -51,15 +50,15 @@ function BargainOfferCard({
   const sendCounter = async (amountRs?: number) => {
     const amount = amountRs ?? Number(counterText);
     if (!Number.isFinite(amount) || amount <= 0) {
-      toast("Enter your counter amount");
+      toast.error("Enter your counter amount");
       return;
     }
     try {
       await counterMutation.mutateAsync({ id: o.id, counter: amount });
-      toast("Counter offer sent");
+      toast.bargain("Counter offer sent");
       setCountering(false);
     } catch (error) {
-      toast(error instanceof ApiRequestError ? error.message : "Could not send counter");
+      toast.error(error instanceof ApiRequestError ? error.message : "Could not send counter");
     }
   };
 
@@ -219,9 +218,9 @@ function BargainOfferCard({
                 onClick={async () => {
                   try {
                     await acceptMutation.mutateAsync(o.id);
-                    toast("Offer accepted");
+                    toast.bargain("Offer accepted");
                   } catch {
-                    toast("Could not accept offer");
+                    toast.error("Could not accept offer");
                   }
                 }}
               >
@@ -240,9 +239,9 @@ function BargainOfferCard({
                 onClick={async () => {
                   try {
                     await rejectMutation.mutateAsync(o.id);
-                    toast("Offer rejected");
+                    toast.bargain("Offer rejected");
                   } catch {
-                    toast("Could not reject offer");
+                    toast.error("Could not reject offer");
                   }
                 }}
                 style={{
@@ -349,7 +348,6 @@ function BargainOfferCard({
 /* ---------- 4.8 Bargaining ---------- */
 export function SellerBargain() {
   const { t } = useTranslation();
-  const { toast } = useBz();
   const { data: BARGAIN_OFFERS = [], isLoading, isError, error } = useSellerBargains();
   const acceptMutation = useAcceptBargainOffer();
   const rejectMutation = useRejectBargainOffer();
@@ -461,7 +459,6 @@ export function SellerBargain() {
                 acceptMutation={acceptMutation}
                 rejectMutation={rejectMutation}
                 counterMutation={counterMutation}
-                toast={toast}
               />
             ))}
           </div>

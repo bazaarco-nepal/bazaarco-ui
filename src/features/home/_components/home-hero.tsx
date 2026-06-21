@@ -3,25 +3,26 @@
 import { useEffect, useRef, useState } from "react";
 import { AppLink, Icon } from "@/components/ui";
 import { ASSETS } from "@/config/assets";
-import { pathFromScreen } from "@/config/routes";
+import { browsePath } from "@/config/routes";
 
 // DEBT: hardcoded marketing hero slides (revamp prototype). Owner dropped the
 // admin-managed hero banners — revisit if dynamic banners are needed again.
+// Every slide opens the full product listing (all products), on both breakpoints.
 const SLIDES = [
   {
     src: ASSETS.hero.bargain,
     alt: "Bargain with sellers — get the best deal inside the app",
-    href: pathFromScreen("bargains"),
+    href: browsePath(),
   },
   {
     src: ASSETS.hero.watch,
     alt: "Real product videos — watch before you buy",
-    href: pathFromScreen("video"),
+    href: browsePath(),
   },
   {
     src: ASSETS.hero.delivery,
     alt: "Lowest delivery charge for multi-seller orders",
-    href: pathFromScreen("stores"),
+    href: browsePath(),
   },
 ];
 

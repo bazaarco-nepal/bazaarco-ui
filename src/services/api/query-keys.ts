@@ -24,8 +24,8 @@ export const queryKeys = {
   cart: {
     all: ["cart"] as const,
   },
-  wishlist: {
-    all: ["wishlist"] as const,
+  saved: {
+    all: ["saved"] as const,
   },
   addresses: {
     all: ["addresses"] as const,

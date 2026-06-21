@@ -20,7 +20,7 @@ describe("guest video access", () => {
   });
 
   it("account screens still require sign-in (guests get the CTA, not the screen)", () => {
-    for (const screen of ["cart", "checkout", "orders", "bargains", "wishlist", "profile"]) {
+    for (const screen of ["cart", "checkout", "orders", "bargains", "saved", "profile"]) {
       expect(isGuestViewableScreen(screen), `"${screen}" must stay gated`).toBe(false);
     }
   });

@@ -18,7 +18,6 @@ import {
   SkeletonCard,
   EmptyState,
   QtyStepper,
-  Toast,
   SectionHead,
   TINTS,
   AllInPriceCard,
@@ -48,8 +47,9 @@ import { canCancelOrder } from "@/lib/order-utils";
 import { ConfirmModal } from "@/features/checkout/checkout";
 import { useAcceptCounterOffer, useBargains } from "@/hooks/use-bargains";
 import { bargainExpiryLabel } from "@/lib/bargain-expiry";
-import { useWishlistQuery } from "@/hooks/use-wishlist";
+import { useSavedQuery } from "@/hooks/use-saved";
 import { useBazaarStore } from "@/store/bazaar-store";
+import { toast } from "@/lib/toast";
 import {
   BazaarCtx,
   useBz,
@@ -452,7 +452,7 @@ function TrackingSidebar({ nav, order }) {
         </div>
       )}
       <Button
-        variant="ghost"
+        variant="secondary"
         full
         icon="headphones"
         href={pathFromScreen("help")}
@@ -464,10 +464,10 @@ function TrackingSidebar({ nav, order }) {
   );
 }
 
-export function Wishlist() {
+export function Saved() {
   const { t } = useTranslation();
-  const { nav, openProduct, toggleSellerWish, wishSellers, authed } = useBz();
-  const { data, isLoading, isError, error } = useWishlistQuery(authed);
+  const { nav, openProduct, toggleSavedSeller, savedSellers, authed } = useBz();
+  const { data, isLoading, isError, error } = useSavedQuery(authed);
   const products = data?.products ?? [];
   const sellers = data?.sellers ?? [];
   const productPaged = usePaged(products, 12, products.length);
@@ -480,9 +480,9 @@ export function Wishlist() {
         style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px" }}
       >
         <EmptyState
-          title={t("wishlist.signInTitle")}
-          message={t("wishlist.signInMessage")}
-          cta={t("wishlist.signIn")}
+          title={t("saved.signInTitle")}
+          message={t("saved.signInMessage")}
+          cta={t("saved.signIn")}
           ctaHref={pathFromScreen("auth")}
         />
       </div>
@@ -504,9 +504,9 @@ export function Wishlist() {
         style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px" }}
       >
         <EmptyState
-          title={t("wishlist.emptyTitle")}
-          message={t("wishlist.emptyMessage")}
-          cta={t("wishlist.startExploring")}
+          title={t("saved.emptyTitle")}
+          message={t("saved.emptyMessage")}
+          cta={t("saved.startExploring")}
           ctaHref={pathFromScreen("home")}
           secondary={t("checkout.watch")}
           secondaryHref={pathFromScreen("video")}
@@ -532,7 +532,7 @@ export function Wishlist() {
             color: "var(--blue-deep)",
           }}
         >
-          {t("wishlist.myWishlist")}
+          {t("saved.title")}
         </h1>
         <h1
           className="bz-hide-mobile"
@@ -543,19 +543,19 @@ export function Wishlist() {
             color: "var(--blue-deep)",
           }}
         >
-          {t("profile.wishlist")}{" "}
+          {t("profile.saved")}{" "}
           <span
             className="tnum"
             style={{ color: "var(--ink-400)", fontWeight: 600, fontSize: "1rem" }}
           >
-            · {t("wishlist.savedCount", { count: totalSaved })}
+            · {t("saved.savedCount", { count: totalSaved })}
           </span>
         </h1>
 
         {sellers.length > 0 && (
           <section style={{ marginBottom: 36 }}>
             <h2 style={{ margin: "0 0 14px", fontSize: "1.125rem", fontWeight: 700 }}>
-              {t("wishlist.savedSellers")}
+              {t("saved.savedSellers")}
             </h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {sellers.map((s) => (
@@ -571,9 +571,9 @@ export function Wishlist() {
                   <SellerRow
                     seller={s}
                     sellerId={s.id}
-                    saved={wishSellers.includes(s.id)}
+                    saved={savedSellers.includes(s.id)}
                     onToggleSave={(id) => {
-                      void toggleSellerWish(id);
+                      void toggleSavedSeller(id);
                     }}
                   />
                 </div>
@@ -584,9 +584,6 @@ export function Wishlist() {
 
         {products.length > 0 && (
           <section>
-            <h2 style={{ margin: "0 0 14px", fontSize: "1.125rem", fontWeight: 700 }}>
-              {t("wishlist.savedProducts")}
-            </h2>
             <div
               className="bz-grid-cards"
               style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 18 }}
@@ -605,7 +602,7 @@ export function Wishlist() {
 
 export function Bargains() {
   const { t } = useTranslation();
-  const { openProduct, addToCart, toast } = useBz();
+  const { openProduct, addToCart } = useBz();
   const { data: offers = [], isLoading, isError, error } = useBargains();
   const acceptCounter = useAcceptCounterOffer();
   const [tab, setTab] = useState("all");
@@ -685,7 +682,7 @@ export function Bargains() {
             </p>
           </div>
           {offers.length > 0 && (
-            <Button variant="ghost" size="sm" icon="search" href={searchPath()}>
+            <Button variant="tertiary" size="sm" icon="search" href={searchPath()}>
               Find products
             </Button>
           )}
@@ -910,7 +907,7 @@ export function Bargains() {
 
                         {accepted && (
                           <Button
-                            variant="danger"
+                            variant="primary"
                             size="sm"
                             icon="cart"
                             onClick={() =>
@@ -935,13 +932,12 @@ export function Bargains() {
                               onClick={async () => {
                                 try {
                                   await acceptCounter.mutateAsync(o.id);
-                                  toast(t("bargains.counterAccepted"));
+                                  toast.bargain(t("bargains.counterAccepted"));
                                 } catch (err) {
-                                  toast(
+                                  toast.error(
                                     err instanceof Error
                                       ? err.message
                                       : "Could not accept the counter",
-                                    "error",
                                   );
                                 }
                               }}
@@ -949,7 +945,7 @@ export function Bargains() {
                               Accept · {formatNPR(o.sellerCounter)}
                             </Button>
                             <Button
-                              variant="ghost"
+                              variant="tertiary"
                               size="sm"
                               href={pathFromScreen("pdp", o.p.id)}
                               onNavigate={() => openProduct(o.p)}
@@ -962,7 +958,7 @@ export function Bargains() {
                         {pending && !expired && (
                           <div style={{ display: "flex", gap: 6 }}>
                             <Button
-                              variant="ghost"
+                              variant="tertiary"
                               size="sm"
                               href={pathFromScreen("pdp", o.p.id)}
                               onNavigate={() => openProduct(o.p)}
@@ -974,7 +970,7 @@ export function Bargains() {
 
                         {(o.status === "rejected" || o.status === "expired" || expired) && (
                           <Button
-                            variant="secondary"
+                            variant="bargain"
                             size="sm"
                             icon="bargain"
                             href={pathFromScreen("pdp", o.p.id)}
@@ -986,7 +982,7 @@ export function Bargains() {
 
                         {accepted && (
                           <Button
-                            variant="ghost"
+                            variant="tertiary"
                             size="sm"
                             href={pathFromScreen("pdp", o.p.id)}
                             onNavigate={() => openProduct(o.p)}

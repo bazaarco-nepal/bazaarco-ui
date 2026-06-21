@@ -88,7 +88,6 @@ function renderLibrary() {
       showUpload={false}
       onToggleUpload={() => {}}
       onRefetch={() => {}}
-      onToast={() => {}}
     />,
   );
 }

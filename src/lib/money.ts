@@ -9,5 +9,9 @@ export function roundRs(amount: number): number {
 
 export function formatNPR(value: number | null | undefined): string {
   const amount = typeof value === "number" && Number.isFinite(value) ? value : 0;
-  return `Rs. ${amount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+  const hasFraction = !Number.isInteger(amount);
+  return `Rs. ${amount.toLocaleString("en-IN", {
+    minimumFractionDigits: hasFraction ? 2 : 0,
+    maximumFractionDigits: 2,
+  })}`;
 }

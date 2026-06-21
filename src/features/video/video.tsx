@@ -19,7 +19,6 @@ import {
   SkeletonCard,
   EmptyState,
   QtyStepper,
-  Toast,
   SectionHead,
   TINTS,
   AllInPriceCard,
@@ -45,6 +44,7 @@ import { useVideoLike } from "@/hooks/use-video-like";
 import { videosApi } from "@/services/api/videos";
 import type { VideoFeedItem } from "@/types/video";
 import type { Product } from "@/types";
+import { toast } from "@/lib/toast";
 import {
   BazaarCtx,
   useBz,
@@ -277,10 +277,10 @@ function ReelItem({
   hideMuteBadge?: boolean;
 }) {
   const { t } = useTranslation();
-  const { openProduct, addToCart, toggleWish, wish, toast } = useBz();
+  const { openProduct, addToCart, toggleSaved, savedProducts } = useBz();
   const p = item;
   const s = item.seller;
-  const wished = wish.includes(p.id);
+  const isSaved = savedProducts.includes(p.id);
   const metrics = item.engagement;
   const caption = item.caption;
   const tint = TINTS[p.tint as keyof typeof TINTS] || TINTS.blue;
@@ -641,7 +641,7 @@ function ReelItem({
             count={metrics.comments}
             inside={isMobile}
             onClick={() => {
-              toast("Opening bargain chat…");
+              toast.info("Opening bargain chat…");
               openProduct(asProduct(p));
             }}
           />
@@ -658,7 +658,7 @@ function ReelItem({
             } else {
               navigator.clipboard
                 .writeText(url)
-                .then(() => toast("Link copied!"))
+                .then(() => toast.success("Link copied!"))
                 .catch(() => {});
             }
           }}
@@ -667,9 +667,9 @@ function ReelItem({
           icon="tag"
           label="Save"
           count={metrics.saves}
-          active={wished}
+          active={isSaved}
           inside={isMobile}
-          onClick={() => toggleWish(p.id)}
+          onClick={() => toggleSaved(p.id, p.name)}
         />
       </div>
 
@@ -701,7 +701,7 @@ function ReelItem({
    VideoTheater — orchestrator + snap scroll container
    ============================================================ */
 export function VideoTheater() {
-  const { openProduct, addToCart, toggleWish, wish, toast, nav, authed, promptLogin } = useBz();
+  const { openProduct, addToCart, toggleSaved, savedProducts, nav, authed, promptLogin } = useBz();
   const router = useRouter();
   const searchParams = useSearchParams();
   const startProductId = searchParams.get("product")?.trim() ?? null;
@@ -1072,7 +1072,7 @@ export function VideoTheater() {
           Add to Cart
         </Button>
         <Button
-          variant="ghost"
+          variant="tertiary"
           size="sm"
           full
           iconRight="arrowRight"

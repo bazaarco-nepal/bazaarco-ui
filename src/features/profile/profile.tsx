@@ -18,7 +18,6 @@ import {
   SkeletonCard,
   EmptyState,
   QtyStepper,
-  Toast,
   SectionHead,
   AppLink,
   TINTS,
@@ -49,10 +48,11 @@ import { useUploadImage } from "@/hooks/use-media-upload";
 import { useBargains } from "@/hooks/use-bargains";
 import { useAddresses } from "@/hooks/use-addresses";
 import { useCartQuery } from "@/hooks/use-cart";
-import { useWishlistQuery } from "@/hooks/use-wishlist";
+import { useSavedQuery } from "@/hooks/use-saved";
 import { useCancelOrder, useOrders } from "@/hooks/use-orders";
 import { canCancelOrder } from "@/lib/order-utils";
 import { formatNPR } from "@/lib/money";
+import { toast } from "@/lib/toast";
 import { ConfirmModal } from "@/features/checkout/checkout";
 import { useChatInbox } from "@/hooks/use-chat";
 import { useBazaarStore } from "@/store/bazaar-store";
@@ -298,7 +298,7 @@ export function Orders() {
 
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                     {o.status === "cancelled" ? (
-                      <Button variant="ghost" onClick={() => nav("home")}>
+                      <Button variant="secondary" onClick={() => nav("home")}>
                         Order again
                       </Button>
                     ) : (
@@ -327,7 +327,7 @@ export function Orders() {
                     )}
                     {canCancelOrder(o) && (
                       <Button
-                        variant="danger"
+                        variant="secondary"
                         disabled={cancelOrder.isPending}
                         onClick={() => setCancelTarget(o)}
                       >
@@ -335,7 +335,7 @@ export function Orders() {
                       </Button>
                     )}
                     <Button
-                      variant="ghost"
+                      variant="tertiary"
                       href={pathFromScreen("tracking", undefined, undefined, o.id)}
                       onNavigate={() => openTracking(o.id)}
                     >
@@ -399,38 +399,41 @@ function StatTile({ value, label, href, onNavigate }) {
   );
 }
 
-// One account hub entry: a square icon tile, title (+ optional badge), and a
-// live subtitle. Renders as a link (with SPA onNavigate) or a button.
-function AcctRow({ icon, title, sub, badge, accent, href, onNavigate, onClick }) {
+// One account hub entry: a 36px icon chip, title (+ optional badge), a one-line
+// description, and a muted right chevron. Renders as a link (with SPA onNavigate)
+// or a button. The single shared row for Shopping, Activity, Settings and Legal.
+function ProfileNavRow({ icon, title, description, badge, selected, href, onNavigate, onClick }) {
   const Tag = href ? AppLink : "button";
   const tagProps = href ? { href, onNavigate } : { onClick, type: "button" };
   return (
-    <Tag {...tagProps} className={`bz-acct-row${accent ? " bz-acct-row--accent" : ""}`}>
-      <span className={`bz-acct-row__icon${accent ? " bz-acct-row__icon--accent" : ""}`}>
-        <Icon name={icon} size={20} color={accent ? "var(--blue)" : "var(--ink-700)"} />
+    <Tag {...tagProps} className={`bz-acct-row${selected ? " bz-acct-row--selected" : ""}`}>
+      <span className={`bz-acct-row__icon${selected ? " bz-acct-row__icon--accent" : ""}`}>
+        <Icon name={icon} size={18} color={selected ? "var(--bz-blue)" : "var(--ink-700)"} />
       </span>
       <span className="bz-acct-row__body">
         <span className="bz-acct-row__title">
           {title}
           {badge && <span className="bz-acct-row__badge">{badge}</span>}
         </span>
-        {sub && <span className="bz-acct-row__sub">{sub}</span>}
+        {description && <span className="bz-acct-row__sub">{description}</span>}
       </span>
-      <Icon name="chevronRight" size={18} color="var(--ink-300)" />
+      <span className="bz-acct-row__chev" aria-hidden="true">
+        <Icon name="chevronRight" size={18} color="var(--bz-ink-muted)" />
+      </span>
     </Tag>
   );
 }
 
 export function Profile() {
   const { t } = useTranslation();
-  const { nav, toast } = useBz();
+  const { nav } = useBz();
   const logoutMutation = useLogout();
   const deleteMutation = useDeleteAccount();
   const user = useBazaarStore((s) => s.user);
   const authed = useBazaarStore((s) => s.authed);
   const ordersQuery = useOrders();
   const cartQuery = useCartQuery(authed);
-  const wishlistQuery = useWishlistQuery(authed);
+  const savedQuery = useSavedQuery(authed);
   const bargainsQuery = useBargains();
   const { data: savedAddresses = [] } = useAddresses();
   const { data: chatInbox } = useChatInbox();
@@ -440,13 +443,12 @@ export function Profile() {
   const totalOrders = orders.length;
   const activeOrders = orders.filter((o) => isActiveOrder(o.status)).length;
   const cartCount = cartQuery.data?.items.length ?? 0;
-  const wishlistCount = wishlistQuery.data?.productIds.length ?? 0;
+  const savedProductCount = savedQuery.data?.productIds.length ?? 0;
   const bargains = bargainsQuery.data ?? [];
   // "Active" bargains = anything the seller hasn't rejected (pending/countered/accepted).
   const activeBargains = bargains.filter((b) => b.status !== "rejected").length;
   const unreadMessages = (chatInbox?.threads ?? []).reduce((sum, t) => sum + (t.unread || 0), 0);
 
-  const firstName = displayName(user, "there").split(/\s+/)[0];
   const memberSince = user?.createdAt ? new Date(user.createdAt).getFullYear() : null;
   const dash = "–";
   const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -504,7 +506,7 @@ export function Profile() {
   const handleLogout = () => {
     logoutMutation.mutate(undefined, {
       onSuccess: () => {
-        toast?.("Logged out");
+        toast.info("Logged out");
         nav("home");
         setConfirmLogout(false);
       },
@@ -548,7 +550,7 @@ export function Profile() {
       {
         onSuccess: () => {
           closeDeleteModal();
-          toast?.("Account deleted. We're sorry to see you go.");
+          toast.success("Account deleted. We're sorry to see you go.");
           nav("home");
         },
         onError: (err) => {
@@ -559,122 +561,121 @@ export function Profile() {
   };
 
   return (
-    <div className="bz-profile">
+    <div className="container bz-profile">
       <style>{`
+        /* Width + gutters come from the shared .container so the page lines up
+           with the header and homepage edges. Groups chunk on the homepage
+           rhythm: --section-gap between sections, --section-header label→grid. */
         .bz-profile {
-          max-width: var(--container);
-          margin: 0 auto;
-          padding: 28px 28px 96px;
+          padding-top: var(--sp-8);
+          padding-bottom: 96px;
           display: flex;
           flex-direction: column;
-          gap: 28px;
-        }
-        @media (max-width: 899px) {
-          .bz-profile { padding: 20px 16px 96px; gap: 22px; }
+          gap: var(--section-gap);
         }
 
-        /* ---- Account header band: identity + live stats, full width ---- */
+        /* ---- Account header band: identity + live stats (the one elevated card) ---- */
         .bz-acct-header {
           background: #fff;
-          border: 1px solid var(--line-200);
-          border-radius: var(--r-xl);
-          padding: 24px;
+          border: 0.5px solid var(--bz-card-border);
+          border-radius: var(--r-lg);
+          padding: var(--sp-6);
           display: flex;
           flex-direction: column;
-          gap: 22px;
-          box-shadow: var(--sh-1);
+          gap: var(--sp-6);
+          box-shadow: var(--bz-toast-shadow);
         }
         .bz-acct-header__top {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 16px;
+          gap: var(--sp-4);
         }
         .bz-acct-header__identity {
           display: flex;
           align-items: center;
-          gap: 16px;
+          gap: var(--sp-4);
           min-width: 0;
         }
         .bz-acct-header__avatar { flex-shrink: 0; display: inline-flex; }
         .bz-acct-header__name {
-          font-size: 1.375rem;
-          font-weight: 800;
-          color: var(--ink-900);
-          line-height: 1.2;
+          font-size: 1.125rem;
+          font-weight: var(--w-emphasis);
+          color: var(--bz-navy);
+          line-height: 1.25;
         }
         .bz-acct-header__meta {
-          font-size: .875rem;
-          color: var(--ink-500);
+          font-size: 12.5px;
+          color: var(--bz-ink-soft);
           margin-top: 3px;
           overflow-wrap: anywhere;
         }
-        .bz-greet--mobile { display: none; }
-        .bz-edit--short { display: none; }
 
-        /* ---- Stat tiles ---- */
+        /* ---- Metric tiles: number + label on a tinted surface, no heavy borders ---- */
         .bz-acct-stats {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          gap: 12px;
+          gap: var(--sp-3);
         }
         .bz-stat {
           display: flex;
           flex-direction: column;
-          gap: 3px;
+          gap: 2px;
           padding: 14px 16px;
-          border: 1px solid var(--line-200);
-          border-radius: var(--r-lg);
-          background: var(--page);
+          border-radius: var(--r-md);
+          background: var(--line-100);
           text-decoration: none;
-          transition: border-color var(--dur-standard) var(--ease), background var(--dur-standard) var(--ease);
+          transition: background var(--dur-standard) var(--ease);
         }
-        .bz-stat:hover { border-color: var(--blue); background: #fff; }
-        .bz-stat__value { font-size: 1.5rem; font-weight: 800; color: var(--ink-900); line-height: 1.1; }
-        .bz-stat__label { font-size: .8125rem; font-weight: 600; color: var(--ink-400); }
+        .bz-stat:hover { background: var(--line-200); }
+        .bz-stat__value { font-size: 1.375rem; font-weight: var(--w-emphasis); color: var(--bz-navy); line-height: 1.1; }
+        .bz-stat__label { font-size: 12px; color: var(--bz-ink-soft); }
 
         /* ---- Section groups ---- */
-        .bz-acct-group { display: flex; flex-direction: column; gap: 12px; }
+        .bz-acct-group { display: flex; flex-direction: column; gap: var(--section-header); }
         .bz-acct-group__title {
           margin: 0;
           padding-left: 2px;
-          font-size: .75rem;
-          font-weight: 700;
-          letter-spacing: .05em;
+          font-size: var(--fs-caption);
+          font-weight: 600;
+          letter-spacing: .06em;
           text-transform: uppercase;
-          color: var(--ink-400);
+          color: var(--bz-ink-soft);
         }
-        /* Three cards per row on desktop; auto-fit stretches a 2-card group
-           (Settings & help) to fill the width. Collapses to a list on mobile. */
+        /* Rows flow 2-up/3-up/4-up by width and collapse to one column on a phone
+           (a 280px min track can't fit twice in a phone-width container). */
         .bz-acct-group__cards {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-          gap: 12px;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: var(--sp-4);
         }
 
-        /* ---- Hub row / card ---- */
+        /* ---- Nav list row: compact ~64px, category-tile "nav feel" (no card lift) ---- */
         .bz-acct-row {
           display: flex;
           align-items: center;
-          gap: 14px;
+          gap: var(--sp-3);
           width: 100%;
-          padding: 16px;
+          min-height: 64px;
+          padding: 12px 14px;
           background: #fff;
-          border: 1px solid var(--line-200);
+          border: 0.5px solid var(--bz-card-border);
           border-radius: var(--r-lg);
           text-align: left;
           text-decoration: none;
           font-family: inherit;
           cursor: pointer;
-          transition: border-color var(--dur-standard) var(--ease), box-shadow var(--dur-standard) var(--ease);
+          transition: background var(--dur-standard) var(--ease);
         }
-        .bz-acct-row:hover { border-color: var(--blue); box-shadow: var(--sh-1); }
+        .bz-acct-row:hover { background: var(--line-100); }
+        .bz-acct-row:hover .bz-acct-row__chev { transform: translateX(2px); }
         .bz-acct-row--static { cursor: default; }
-        .bz-acct-row--static:hover { border-color: var(--line-200); box-shadow: none; }
-        .bz-acct-row--accent { border-color: var(--blue); box-shadow: inset 0 0 0 1px var(--blue); }
+        .bz-acct-row--static:hover { background: #fff; }
+        /* One subtle selected state — a 1.5px blue hairline, not a filled outline. */
+        .bz-acct-row--selected { border: 1.5px solid var(--bz-blue); }
         .bz-acct-row__icon {
-          width: 44px;
-          height: 44px;
+          width: 36px;
+          height: 36px;
           border-radius: var(--r-md);
           background: var(--line-100);
           display: flex;
@@ -688,85 +689,58 @@ export function Profile() {
           display: flex;
           align-items: center;
           gap: 8px;
-          font-weight: 700;
-          font-size: .9375rem;
-          color: var(--ink-900);
+          font-weight: var(--w-emphasis);
+          font-size: var(--fs-base);
+          color: var(--bz-navy);
         }
         .bz-acct-row__sub {
           display: block;
-          margin-top: 2px;
-          font-size: .8125rem;
-          color: var(--ink-400);
+          margin-top: 1px;
+          font-size: 12.5px;
+          color: var(--bz-ink-soft);
         }
         .bz-acct-row__badge {
           flex-shrink: 0;
-          font-size: .6875rem;
-          font-weight: 700;
-          color: var(--blue);
+          font-size: 11px;
+          font-weight: var(--w-button);
+          color: var(--bz-blue);
           background: var(--tint-blue-50);
-          padding: 2px 8px;
+          padding: 1px 8px;
           border-radius: var(--r-full);
         }
+        .bz-acct-row__chev {
+          flex-shrink: 0;
+          display: inline-flex;
+          transition: transform var(--dur-standard) var(--ease);
+        }
+        /* Language row: label left, segmented toggle right; toggle wraps if cramped. */
+        .bz-acct-row--lang { flex-wrap: wrap; }
 
+        /* ---- Delete account — quiet, small, destructive red text link ---- */
         .bz-delete-link {
           align-self: center;
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
           background: none;
           border: none;
           padding: 4px 2px;
-          margin-top: 14px;
           cursor: pointer;
           font-family: inherit;
-          font-weight: 500;
-          font-size: .75rem;
-          color: var(--ink-400);
-          opacity: .55;
-          transition: opacity .15s, color .15s;
+          font-weight: var(--w-emphasis);
+          font-size: 12.5px;
+          color: var(--red);
+          opacity: .8;
+          transition: opacity var(--dur-standard) var(--ease);
         }
-        .bz-delete-link:hover { opacity: .85; color: var(--danger); }
+        .bz-delete-link:hover { opacity: 1; }
 
-        /* ---- Mobile: greeting instead of avatar, grouped list cards ---- */
+        /* ---- Mobile (≤600px): single-column stack, 2x2 stats, full-width edit ---- */
         .bz-profile__logout-mobile { display: none; }
-        @media (max-width: 899px) {
-          .bz-acct-header { padding: 18px; gap: 18px; }
-          .bz-acct-header__avatar { display: none; }
-          .bz-greet--desktop { display: none; }
-          .bz-greet--mobile { display: block; }
-          .bz-acct-header__member { display: none; }
-          .bz-edit--full { display: none; }
-          .bz-edit--short { display: inline; }
-          .bz-acct-stats { gap: 8px; }
-          .bz-stat { padding: 12px 8px; align-items: center; text-align: center; }
-          .bz-stat__value { font-size: 1.25rem; }
-          .bz-stat__label { font-size: .6875rem; }
-
-          .bz-acct-group__cards {
-            grid-template-columns: 1fr;
-            gap: 0;
-            background: #fff;
-            border: 1px solid var(--line-200);
-            border-radius: var(--r-xl);
-            overflow: hidden;
-          }
-          .bz-acct-group__cards .bz-acct-row {
-            position: relative;
-            border: none;
-            border-radius: 0;
-            box-shadow: none;
-          }
-          .bz-acct-group__cards .bz-acct-row--accent { box-shadow: none; }
-          .bz-acct-group__cards .bz-acct-row:not(:first-child)::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 74px;
-            right: 0;
-            height: 1px;
-            background: var(--line-100);
-          }
-          .bz-profile__logout-mobile { display: block; margin-top: 4px; }
+        @media (max-width: 600px) {
+          .bz-acct-header { padding: var(--sp-5); gap: var(--sp-5); }
+          .bz-acct-header__top { flex-direction: column; align-items: stretch; gap: var(--sp-4); }
+          .bz-acct-header__edit > a,
+          .bz-acct-header__edit > button { width: 100% !important; }
+          .bz-acct-stats { grid-template-columns: 1fr 1fr; }
+          .bz-profile__logout-mobile { display: block; }
         }
       `}</style>
 
@@ -778,31 +752,23 @@ export function Profile() {
               <BuyerAvatar user={user} size={56} fontSize="1.375rem" />
             </span>
             <div style={{ minWidth: 0 }}>
-              <div className="bz-acct-header__name bz-greet--desktop">
-                {displayName(user, "Guest")}
-              </div>
-              <div className="bz-acct-header__name bz-greet--mobile">
-                {t("profile.hi", { name: firstName })}
-              </div>
+              <div className="bz-acct-header__name">{displayName(user, "Guest")}</div>
               <div className="bz-acct-header__meta tnum">
                 {user?.email ?? ""}
-                {memberSince && (
-                  <span className="bz-acct-header__member">
-                    {" "}
-                    · {t("profile.memberSince", { year: memberSince })}
-                  </span>
-                )}
+                {memberSince && <> · {t("profile.memberSince", { year: memberSince })}</>}
               </div>
             </div>
           </div>
-          <Button
-            variant="secondary"
-            href={pathFromScreen("profile-edit")}
-            onNavigate={() => nav("profile-edit")}
-          >
-            <span className="bz-edit--full">{t("profile.editProfile")}</span>
-            <span className="bz-edit--short">{t("profile.edit")}</span>
-          </Button>
+          <span className="bz-acct-header__edit">
+            <Button
+              variant="secondary"
+              size="md"
+              href={pathFromScreen("profile-edit")}
+              onNavigate={() => nav("profile-edit")}
+            >
+              {t("profile.editProfile")}
+            </Button>
+          </span>
         </div>
 
         <div className="bz-acct-stats">
@@ -819,10 +785,10 @@ export function Profile() {
             onNavigate={() => nav("cart")}
           />
           <StatTile
-            value={wishlistQuery.isLoading ? dash : wishlistCount}
-            label={t("profile.wishlist")}
-            href={pathFromScreen("wishlist")}
-            onNavigate={() => nav("wishlist")}
+            value={savedQuery.isLoading ? dash : savedProductCount}
+            label={t("profile.saved")}
+            href={pathFromScreen("saved")}
+            onNavigate={() => nav("saved")}
           />
           <StatTile
             value={bargainsQuery.isLoading ? dash : activeBargains}
@@ -837,21 +803,21 @@ export function Profile() {
       <section className="bz-acct-group">
         <h2 className="bz-acct-group__title">{t("profile.shopping")}</h2>
         <div className="bz-acct-group__cards">
-          <AcctRow
-            accent
+          <ProfileNavRow
+            selected
             icon="package"
             title={t("profile.myOrders")}
             badge={
               activeOrders > 0 ? t("profile.activeOrdersBadge", { count: activeOrders }) : undefined
             }
-            sub={t("profile.trackReturn")}
+            description={t("profile.trackReturn")}
             href={pathFromScreen("orders")}
             onNavigate={() => nav("orders")}
           />
-          <AcctRow
+          <ProfileNavRow
             icon="cart"
             title={t("profile.myCart")}
-            sub={
+            description={
               cartCount
                 ? cartCount === 1
                   ? t("profile.itemReadyCheckout", { count: cartCount })
@@ -861,23 +827,23 @@ export function Profile() {
             href={pathFromScreen("cart")}
             onNavigate={() => nav("cart")}
           />
-          <AcctRow
+          <ProfileNavRow
             icon="heart"
-            title={t("profile.wishlist")}
-            sub={
-              wishlistCount
-                ? wishlistCount === 1
-                  ? t("profile.savedProduct", { count: wishlistCount })
-                  : t("profile.savedProducts", { count: wishlistCount })
+            title={t("profile.saved")}
+            description={
+              savedProductCount
+                ? savedProductCount === 1
+                  ? t("profile.savedProduct", { count: savedProductCount })
+                  : t("profile.savedProducts", { count: savedProductCount })
                 : t("profile.noSavedProducts")
             }
-            href={pathFromScreen("wishlist")}
-            onNavigate={() => nav("wishlist")}
+            href={pathFromScreen("saved")}
+            onNavigate={() => nav("saved")}
           />
-          <AcctRow
+          <ProfileNavRow
             icon="store"
             title={t("profile.allStores")}
-            sub={t("profile.allStoresSub")}
+            description={t("profile.allStoresSub")}
             href={pathFromScreen("stores")}
             onNavigate={() => nav("stores")}
           />
@@ -888,11 +854,11 @@ export function Profile() {
       <section className="bz-acct-group">
         <h2 className="bz-acct-group__title">{t("profile.activity")}</h2>
         <div className="bz-acct-group__cards">
-          <AcctRow
+          <ProfileNavRow
             icon="messageDots"
             title={t("profile.myMessages")}
             badge={unreadMessages > 0 ? String(unreadMessages) : undefined}
-            sub={
+            description={
               unreadMessages
                 ? unreadMessages === 1
                   ? t("profile.unreadMessage", { count: unreadMessages })
@@ -902,11 +868,11 @@ export function Profile() {
             href={pathFromScreen("messages")}
             onNavigate={() => nav("messages")}
           />
-          <AcctRow
+          <ProfileNavRow
             icon="bargain"
             title={t("profile.myBargains")}
             badge={activeBargains > 0 ? String(activeBargains) : undefined}
-            sub={
+            description={
               activeBargains
                 ? activeBargains === 1
                   ? t("profile.activeOffer", { count: activeBargains })
@@ -916,10 +882,10 @@ export function Profile() {
             href={pathFromScreen("bargains")}
             onNavigate={() => nav("bargains")}
           />
-          <AcctRow
+          <ProfileNavRow
             icon="mapPin"
             title={t("profile.savedAddresses")}
-            sub={
+            description={
               savedAddresses.length
                 ? t("profile.addressesSaved", {
                     count: savedAddresses.length,
@@ -940,9 +906,9 @@ export function Profile() {
       <section className="bz-acct-group">
         <h2 className="bz-acct-group__title">{t("profile.settingsHelp")}</h2>
         <div className="bz-acct-group__cards">
-          <div className="bz-acct-row bz-acct-row--static">
+          <div className="bz-acct-row bz-acct-row--static bz-acct-row--lang">
             <span className="bz-acct-row__icon">
-              <Icon name="globe" size={20} color="var(--ink-700)" />
+              <Icon name="globe" size={18} color="var(--ink-700)" />
             </span>
             <span className="bz-acct-row__body">
               <span className="bz-acct-row__title">{t("profile.language")}</span>
@@ -951,17 +917,17 @@ export function Profile() {
             <LanguageToggle compact />
           </div>
           {requiresPassword && (
-            <AcctRow
+            <ProfileNavRow
               icon="lock"
               title={t("profile.changePassword")}
-              sub={t("profile.changePasswordSub")}
+              description={t("profile.changePasswordSub")}
               onClick={() => setChangePwdOpen(true)}
             />
           )}
-          <AcctRow
+          <ProfileNavRow
             icon="headphones"
             title={t("profile.helpSupport")}
-            sub={t("profile.helpSupportSub")}
+            description={t("profile.helpSupportSub")}
             href={pathFromScreen("help")}
             onNavigate={() => nav("help")}
           />
@@ -972,17 +938,17 @@ export function Profile() {
       <section className="bz-acct-group">
         <h2 className="bz-acct-group__title">{t("profile.legal")}</h2>
         <div className="bz-acct-group__cards">
-          <AcctRow
+          <ProfileNavRow
             icon="shieldCheck"
             title={t("profile.privacyPolicy")}
-            sub={t("profile.privacySub")}
+            description={t("profile.privacySub")}
             href={pathFromScreen("privacy")}
             onNavigate={() => nav("privacy")}
           />
-          <AcctRow
+          <ProfileNavRow
             icon="file"
             title={t("profile.termsConditions")}
-            sub={t("profile.termsSub")}
+            description={t("profile.termsSub")}
             href={pathFromScreen("terms")}
             onNavigate={() => nav("terms")}
           />
@@ -1000,7 +966,7 @@ export function Profile() {
           desktop, logout lives in the navbar account menu instead. Both routes
           open the same confirmation modal before signing out. */}
       <div className="bz-profile__logout-mobile">
-        <Button variant="danger" full icon="logout" onClick={() => setConfirmLogout(true)}>
+        <Button variant="secondary" full icon="logout" onClick={() => setConfirmLogout(true)}>
           {t("profile.logOut")}
         </Button>
       </div>
@@ -1099,7 +1065,7 @@ export function Profile() {
               }}
             >
               <li>Order history and tracking</li>
-              <li>Saved addresses and wishlist</li>
+              <li>Saved addresses and saved items</li>
               <li>Reviews and ratings you've posted</li>
             </ul>
 
@@ -1251,7 +1217,7 @@ export function Profile() {
               </Button>
               {deleteStep === "request" ? (
                 <Button
-                  variant="danger"
+                  variant="secondary"
                   full
                   disabled={!canRequestOtp}
                   loading={otpMutation.isPending}
@@ -1261,7 +1227,7 @@ export function Profile() {
                 </Button>
               ) : (
                 <Button
-                  variant="danger"
+                  variant="secondary"
                   full
                   disabled={!canDelete}
                   loading={deleteMutation.isPending}
@@ -1279,7 +1245,7 @@ export function Profile() {
 }
 
 export function WriteReview({ productId }: WriteReviewProps) {
-  const { nav, toast } = useBz();
+  const { nav } = useBz();
   const { byId } = useCatalog();
   const p = productId ? byId(productId) : undefined;
   const createReview = useCreateProductReview(productId ?? null);
@@ -1309,15 +1275,15 @@ export function WriteReview({ productId }: WriteReviewProps) {
     if (rating === 0 || createReview.isPending) return;
     try {
       await createReview.mutateAsync({ rating, text: text.trim() });
-      toast("Thanks! Review posted.");
+      toast.success("Thanks! Review posted.");
       nav("orders");
     } catch (err) {
       if (err instanceof ApiRequestError && err.status === 403) {
-        toast("You can only review products you've purchased.");
+        toast.error("You can only review products you've purchased.");
       } else if (err instanceof ApiRequestError && err.status === 409) {
-        toast("You've already reviewed this product.");
+        toast.error("You've already reviewed this product.");
       } else {
-        toast("Could not post review. Try again.");
+        toast.error("Could not post review. Try again.");
       }
     }
   };
@@ -1530,7 +1496,7 @@ function profileFormFromUser(user: { name?: string | null; email?: string | null
 }
 
 export function ProfileEdit() {
-  const { nav, toast } = useBz();
+  const { nav } = useBz();
   const user = useBazaarStore((s) => s.user);
   const buyerPhone = useBazaarStore((s) => s.buyerPhone);
   const setBuyerPhone = useBazaarStore((s) => s.setBuyerPhone);
@@ -1557,10 +1523,10 @@ export function ProfileEdit() {
     setBuyerPhone(form.phone);
     try {
       await updateProfile.mutateAsync({ name: currentName(), avatarUrl });
-      toast?.("Profile saved");
+      toast.success("Profile saved");
       nav("profile");
     } catch (error) {
-      toast?.(error instanceof Error ? error.message : "Could not save profile");
+      toast.error(error instanceof Error ? error.message : "Could not save profile");
     }
   };
   const changePhoto = () => fileInputRef.current?.click();
@@ -1573,9 +1539,9 @@ export function ProfileEdit() {
       });
       setAvatarUrl(uploaded.url);
       await updateProfile.mutateAsync({ name: currentName(), avatarUrl: uploaded.url });
-      toast?.("Profile photo updated");
+      toast.success("Profile photo updated");
     } catch (error) {
-      toast?.(error instanceof Error ? error.message : "Could not upload photo");
+      toast.error(error instanceof Error ? error.message : "Could not upload photo");
     } finally {
       setUploadProgress(0);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -1585,10 +1551,10 @@ export function ProfileEdit() {
     try {
       setAvatarUrl(null);
       await updateProfile.mutateAsync({ name: currentName(), avatarUrl: null });
-      toast?.("Profile photo removed");
+      toast.success("Profile photo removed");
     } catch (error) {
       setAvatarUrl(user?.avatarUrl ?? null);
-      toast?.(error instanceof Error ? error.message : "Could not remove photo");
+      toast.error(error instanceof Error ? error.message : "Could not remove photo");
     }
   };
 
@@ -1688,7 +1654,7 @@ export function ProfileEdit() {
                 : "Change photo"}
             </Button>
             <Button
-              variant="ghost"
+              variant="tertiary"
               size="sm"
               disabled={!avatarUrl || uploadImage.isPending || updateProfile.isPending}
               onClick={removePhoto}
@@ -1832,7 +1798,7 @@ export function ProfileEdit() {
         >
           <div style={{ fontWeight: 800, color: "var(--ink-900)" }}>Default delivery address</div>
           <button
-            onClick={() => toast?.("Open address book")}
+            onClick={() => toast.info("Open address book")}
             style={{
               background: "none",
               border: "none",
@@ -2090,7 +2056,7 @@ export function ProfileEdit() {
                   set("phone", otpDigits);
                   setShowPhoneOtp(false);
                   setOtpDigits("");
-                  toast?.(`Phone number saved · +977 ${otpDigits}`);
+                  toast.success(`Phone number saved · +977 ${otpDigits}`);
                 }}
               >
                 Save

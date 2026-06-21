@@ -20,7 +20,6 @@ import {
   SkeletonCard,
   EmptyState,
   QtyStepper,
-  Toast,
   SectionHead,
   TINTS,
   AllInPriceCard,
@@ -84,6 +83,7 @@ import {
   toggleLine,
   toggleAll,
 } from "@/lib/cart-selection";
+import { toast } from "@/lib/toast";
 
 // Cap the quantity stepper at the stock the server reports for this line, the
 // same rule the PDP uses. Falls back to 99 when stock is unknown; checkout
@@ -324,7 +324,6 @@ export function Cart() {
     removeFromCart,
     nav,
     openProduct,
-    toast,
     cartLoading,
     authed,
     promptLogin,
@@ -357,7 +356,7 @@ export function Cart() {
   const remove = (line) => {
     void removeFromCart(line.id, line.variantId).then(() => {
       setConfirm(null);
-      toast(t("checkout.removedFromCart"));
+      toast.success(t("checkout.removedFromCart"));
     });
   };
 
@@ -590,7 +589,7 @@ export function Cart() {
                           gap: 4,
                         }}
                       >
-                        <Icon name="badgeCheck" size={13} color="var(--gold)" /> {s?.name}
+                        <Icon name="badgeCheck" size={13} color="var(--blue)" /> {s?.name}
                       </div>
                     </AppLink>
                     <Price value={it.price} size="sm" />
@@ -832,7 +831,7 @@ export function ConfirmModal({ title, message, confirmLabel, onConfirm, onCancel
           <Button variant="primary" full onClick={onCancel} style={{ flex: 2 }}>
             Keep
           </Button>
-          <Button variant="danger" onClick={onConfirm} style={{ flex: 1 }}>
+          <Button variant="secondary" onClick={onConfirm} style={{ flex: 1 }}>
             {confirmLabel}
           </Button>
         </div>
@@ -912,7 +911,7 @@ function isValidNpPhone(digits) {
 
 /* ---------- CHECKOUT (single page, 3 collapsed sections) ---------- */
 export function Checkout() {
-  const { cart, nav, placeOrder, checkoutEsewa, updateCartQty, toast } = useBz();
+  const { cart, nav, placeOrder, checkoutEsewa, updateCartQty } = useBz();
   const queryClient = useQueryClient();
   const authed = useBazaarStore((s) => s.authed);
   const buyerPhone = useBazaarStore((s) => s.buyerPhone);
@@ -925,7 +924,7 @@ export function Checkout() {
   // the cart for later (non-destructive), and the total drops immediately.
   const removeFromOrder = (key) => {
     setSelectedCartIds((prev) => toggleLine(cart, prev, key));
-    toast("Removed from this order — still saved in your cart");
+    toast.success("Removed from this order — still saved in your cart");
   };
   // Price and place only what the buyer selected in the cart, so the total
   // shown here is exactly what the server charges (provider sends the same set).

@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { Button, Chip } from "@/components/ui";
+import { toast } from "@/lib/toast";
 import { useBz } from "@/components/common";
 import { useProductQuestions, useCreateProductQuestion } from "@/hooks/use-catalog";
 import type { ProductQuestion } from "@/types";
 
 function QuestionComposer({ productId, onDone }: { productId: string; onDone: () => void }) {
-  const { toast, authed, promptLogin } = useBz();
+  const { authed, promptLogin } = useBz();
   const createQuestion = useCreateProductQuestion(productId);
   const [text, setText] = useState("");
   const canSubmit = text.trim().length > 0 && !createQuestion.isPending;
@@ -20,11 +21,11 @@ function QuestionComposer({ productId, onDone }: { productId: string; onDone: ()
     if (!canSubmit) return;
     try {
       await createQuestion.mutateAsync({ text: text.trim() });
-      toast("Question posted — the seller will answer soon.");
+      toast.success("Question posted — the seller will answer soon.");
       setText("");
       onDone();
     } catch {
-      toast("Could not post question. Try again.");
+      toast.error("Could not post question. Try again.");
     }
   };
 
@@ -223,7 +224,7 @@ export function QASection({ productId }: { productId: string }) {
           {query.hasNextPage && (
             <div style={{ display: "flex", justifyContent: "center", marginTop: 14 }}>
               <Button
-                variant="ghost"
+                variant="secondary"
                 size="sm"
                 iconRight="chevronDown"
                 disabled={query.isFetchingNextPage}

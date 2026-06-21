@@ -31,7 +31,20 @@ vi.mock("@/hooks/use-seller", () => ({
   useCreateSellerStore: () => ({ mutateAsync: createMutateAsync, isPending: false }),
 }));
 
+// Toasts now come from the module singleton, not the Bazaar context.
+vi.mock("@/lib/toast", () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+    info: vi.fn(),
+    bargain: vi.fn(),
+    dismiss: vi.fn(),
+  },
+}));
+
 import { BazaarCtx } from "@/components/common";
+import { toast } from "@/lib/toast";
 import { StoreSwitcherChip } from "@/features/seller/store-switcher";
 import type { SellerStoreSummary } from "@/services/api/seller-organization";
 
@@ -40,11 +53,10 @@ const STORES: SellerStoreSummary[] = [
   { sellerId: "shop_b", shopName: "Branch Two", city: "Pokhara", logoUrl: null, verified: false },
 ];
 
-const toast = vi.fn();
 const nav = vi.fn();
 
 function renderChip(stores = STORES, activeSellerId: string | null = "shop_a") {
-  const value = { toast, nav } as unknown as React.ContextType<typeof BazaarCtx>;
+  const value = { nav } as unknown as React.ContextType<typeof BazaarCtx>;
   return render(
     <BazaarCtx.Provider value={value}>
       <StoreSwitcherChip variant="sidebar" stores={stores} activeSellerId={activeSellerId} />
@@ -126,6 +138,6 @@ describe("StoreSwitcherChip", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "seller.createStore" }));
     expect(createMutateAsync).not.toHaveBeenCalled();
-    expect(toast).toHaveBeenCalledWith("seller.storeCityRequired");
+    expect(toast.error).toHaveBeenCalledWith("seller.storeCityRequired");
   });
 });

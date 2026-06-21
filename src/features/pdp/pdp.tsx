@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import {
   Icon,
@@ -18,7 +19,6 @@ import {
   SkeletonCard,
   EmptyState,
   QtyStepper,
-  Toast,
   SectionHead,
   TINTS,
   OTPInput,
@@ -62,6 +62,7 @@ import { formatNPR } from "@/lib/money";
 import { matchSelectedVariants, toggleOption, variantBacksOption } from "@/lib/variant-selection";
 import { optionImageFor, selectionHeroImage, variantSwatchImage } from "@/lib/variant-images";
 import { ApiRequestError } from "@/services/api/http";
+import { toast } from "@/lib/toast";
 import type { PdpProps } from "@/types";
 import {
   ReviewsSection,
@@ -72,7 +73,7 @@ import {
   SellerCard,
 } from "./_components";
 
-// Round, glassy control floated over the gallery image (wishlist / share).
+// Round, glassy control floated over the gallery image (save / share).
 const imgOverlayBtn = (color: string): React.CSSProperties => ({
   width: 36,
   height: 36,
@@ -388,7 +389,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
               </p>
             )}
             <div style={{ marginTop: 20 }}>
-              <Button variant="primary" full size="lg" onClick={submit}>
+              <Button variant="bargain" full size="lg" onClick={submit}>
                 Send offer to seller
               </Button>
             </div>
@@ -528,7 +529,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
             </p>
             <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
               <Button
-                variant="secondary"
+                variant="bargainOutline"
                 full
                 onClick={() => {
                   setOffer(String(suggestedOffer));
@@ -726,16 +727,17 @@ export function PDP({ p: pProp }: PdpProps) {
     buyNow,
     openProduct,
     openStore,
-    toggleWish,
-    toggleSellerWish,
-    wish,
-    wishSellers,
-    toast,
+    toggleSaved,
+    toggleSavedSeller,
+    savedProducts,
+    savedSellers,
     nav,
     authed,
     promptLogin,
   } = useBz();
   const productId = pProp.id;
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: productFromApi, isLoading, isError, error } = useProduct(productId);
   const { data: categories = [] } = useCategories();
   const locale = useBazaarStore((s) => s.locale);
@@ -787,14 +789,14 @@ export function PDP({ p: pProp }: PdpProps) {
       }
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(url);
-        toast("Link copied to clipboard");
+        toast.success("Link copied to clipboard");
         return;
       }
-      toast("Sharing isn't supported on this device");
+      toast.info("Sharing isn't supported on this device");
     } catch (err) {
       // The user dismissing the native share sheet throws AbortError — ignore it.
       if (err instanceof Error && err.name === "AbortError") return;
-      toast("Couldn't share this product");
+      toast.error("Couldn't share this product");
     }
   };
   const [qty, setQty] = useState(1);
@@ -926,7 +928,7 @@ export function PDP({ p: pProp }: PdpProps) {
     : Boolean(p.allowBargaining);
 
   // Buy controls are disabled when the listing can't be purchased. Stock comes
-  // from the server-computed status; wishlist stays active regardless.
+  // from the server-computed status; saved stays active regardless.
   const isOutOfStock =
     p.stockStatus === "out_of_stock" || p.stockStatus === "unavailable" || p.outOfStock === true;
   // Cap the quantity selector at the available stock the server reports.
@@ -967,7 +969,7 @@ export function PDP({ p: pProp }: PdpProps) {
     }
     // An offer is for one concrete option — its price and its floor.
     if (isMultiDimVariant && !selVariant) {
-      toast(
+      toast.error(
         selectedVariants.length > 1
           ? "Offers work on one option at a time — keep just one selected."
           : "Select an option first to make an offer.",
@@ -976,6 +978,23 @@ export function PDP({ p: pProp }: PdpProps) {
     }
     setBargain(true);
   };
+
+  // Arriving from a bargain rail's "Make an offer" (`?offer=1`): run the same
+  // openBargain() the on-page button does, then drop the param so a refresh or
+  // back-nav doesn't reopen it. Waits for bargaining to resolve (the API product
+  // may still be loading) and fires at most once per mount. The ref holds the
+  // latest openBargain so the effect needn't depend on its (per-render) identity.
+  const openBargainRef = useRef(openBargain);
+  openBargainRef.current = openBargain;
+  const offerIntentConsumed = useRef(false);
+  useEffect(() => {
+    if (offerIntentConsumed.current) return;
+    if (searchParams.get("offer") !== "1") return;
+    if (!bargainingAvailable) return;
+    offerIntentConsumed.current = true;
+    openBargainRef.current();
+    router.replace(pathFromScreen("pdp", productId), { scroll: false });
+  }, [searchParams, bargainingAvailable, router, productId]);
 
   /** For multi-dim mode: whether a given option is available (any SKU backs it) */
   const isOptionAvailable = (dimName: string, optionVal: string): boolean => {
@@ -996,18 +1015,18 @@ export function PDP({ p: pProp }: PdpProps) {
   const selectionToBuy = (): Array<string | null> | null => {
     if (!isMultiDimVariant) {
       if (selVariant && (selVariant.stock ?? 0) <= 0) {
-        toast(`${selVariant.name} is out of stock`);
+        toast.warning(`${selVariant.name} is out of stock`);
         return null;
       }
       return [resolvedVariantId];
     }
     if (selectedVariants.length === 0) {
-      toast("Select an option first");
+      toast.error("Select an option first");
       return null;
     }
     const out = selectedVariants.find((v) => (v.stock ?? 0) <= 0);
     if (out) {
-      toast(`${out.name} is out of stock`);
+      toast.warning(`${out.name} is out of stock`);
       return null;
     }
     return selectedVariants.map((v) => v.id);
@@ -1117,7 +1136,7 @@ export function PDP({ p: pProp }: PdpProps) {
     }
   }, [productId]);
 
-  const wished = wish.includes(p.id);
+  const isSaved = savedProducts.includes(p.id);
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
@@ -1215,20 +1234,20 @@ export function PDP({ p: pProp }: PdpProps) {
                   >
                     <Icon name="chevronLeft" size={22} stroke={2.5} />
                   </button>
-                  {/* Floating wishlist + share */}
+                  {/* Floating save + share */}
                   <button
                     type="button"
-                    aria-label={wished ? "Remove from wishlist" : "Save to wishlist"}
+                    aria-label={isSaved ? "Remove from saved" : "Save"}
                     onTouchStart={(e) => e.stopPropagation()}
-                    onClick={() => toggleWish(p.id)}
+                    onClick={() => toggleSaved(p.id, p.name)}
                     className="bz-pdp-m-fab"
                     style={{
                       top: 12,
                       right: 56,
-                      color: wished ? "var(--red)" : "var(--ink-700)",
+                      color: isSaved ? "var(--red)" : "var(--ink-700)",
                     }}
                   >
-                    <Icon name="heart" size={18} fill={wished ? "currentColor" : "none"} />
+                    <Icon name="heart" size={18} fill={isSaved ? "currentColor" : "none"} />
                   </button>
                   <button
                     type="button"
@@ -1489,11 +1508,11 @@ export function PDP({ p: pProp }: PdpProps) {
                   >
                     <button
                       type="button"
-                      aria-label={wished ? "Remove from wishlist" : "Save to wishlist"}
-                      onClick={() => toggleWish(p.id)}
-                      style={imgOverlayBtn(wished ? "var(--red)" : "var(--ink-700)")}
+                      aria-label={isSaved ? "Remove from saved" : "Save"}
+                      onClick={() => toggleSaved(p.id, p.name)}
+                      style={imgOverlayBtn(isSaved ? "var(--red)" : "var(--ink-700)")}
                     >
-                      <Icon name="heart" size={17} fill={wished ? "currentColor" : "none"} />
+                      <Icon name="heart" size={17} fill={isSaved ? "currentColor" : "none"} />
                     </button>
                     <button
                       type="button"
@@ -1589,6 +1608,7 @@ export function PDP({ p: pProp }: PdpProps) {
                 <Button
                   variant="primary"
                   full
+                  size="lg"
                   disabled={isOutOfStock}
                   onClick={() => {
                     const sel = selectionToBuy();
@@ -1600,6 +1620,7 @@ export function PDP({ p: pProp }: PdpProps) {
                 <Button
                   variant="secondary"
                   full
+                  size="lg"
                   icon="cart"
                   disabled={isOutOfStock}
                   onClick={() => {
@@ -1612,8 +1633,9 @@ export function PDP({ p: pProp }: PdpProps) {
 
                 {bargainingAvailable && (
                   <Button
-                    variant="danger"
+                    variant="bargainOutline"
                     full
+                    size="lg"
                     icon="bargain"
                     disabled={isOutOfStock}
                     onClick={openBargain}

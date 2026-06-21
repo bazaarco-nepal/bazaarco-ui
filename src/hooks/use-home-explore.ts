@@ -5,7 +5,9 @@ import { catalogApi } from "@/services/api/catalog";
 import type { PaginatedData } from "@/services/api/types";
 import type { Product } from "@/types";
 
-const EXPLORE_PAGE_SIZE = 20;
+// 21 = a clean 3 rows at the common 7-up width; the grid renders only whole rows
+// for narrower column counts, so the page size just sets how much each fetch adds.
+const EXPLORE_PAGE_SIZE = 21;
 
 export function useHomeExploreFeed(initial?: PaginatedData<Product>) {
   const [items, setItems] = useState<Product[]>(initial?.items ?? []);

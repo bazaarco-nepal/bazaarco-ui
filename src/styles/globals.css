@@ -1,4 +1,5 @@
 @import "./tokens.css";
+@import "./button.css";
 @import "./fluent.css";
 @import "./form-workflow.css";
 @import "./seller-kit.css";
@@ -245,47 +246,23 @@ a {
 
 .bz-picks-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  row-gap: 12px;
-  column-gap: 10px;
-}
-@media (min-width: 768px) {
-  .bz-picks-grid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 14px;
-  }
-}
-@media (min-width: 992px) {
-  .bz-picks-grid {
-    grid-template-columns: repeat(5, 1fr);
-  }
-}
-@media (min-width: 1200px) {
-  .bz-picks-grid {
-    grid-template-columns: repeat(6, 1fr);
-  }
+  grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr));
+  gap: var(--grid-gap);
 }
 
-/* Card price is compact (18px) — leaves the larger Price scale for the PDP. */
+/* Card price is compact — leaves the larger Price scale for the PDP. */
 .bz-pcard__price .tnum:first-child {
-  font-size: 1.125rem;
-  line-height: 1.4;
+  font-size: 1rem;
+  line-height: 1.35;
 }
 
 /* ---------- Mobile breathing room: lighter, more compact product cards ---------- */
 @media (max-width: 768px) {
-  /* Shorter, less dominant product image (avoid tall lifestyle shots) */
+  /* Square image tile, same ratio as desktop so cards stay consistent. */
   .bz-pcard__img {
-    aspect-ratio: 1 / 0.74 !important;
+    aspect-ratio: 1 / 1 !important;
     min-height: 0;
     min-width: 0;
-  }
-  .bz-pcard__img img {
-    width: 100%;
-    height: 100%;
-    min-height: 100%;
-    object-fit: cover;
-    display: block;
   }
   /* Fixed two-line title area so rating + price never shift between cards */
   .bz-pcard__title {
@@ -327,15 +304,14 @@ a {
     line-height: 14px !important;
   }
 
-  /* Lighter section headers on mobile — large bold type reads heavy on a phone */
-  .bz-sec-head {
-    margin-bottom: 18px !important;
-  }
+  /* Lighter section headers on mobile — large bold type reads heavy on a phone.
+     The header→content gap itself is the shared --section-header token. */
   .bz-sec-head__eyebrow {
     font-size: 11px !important;
     letter-spacing: 0.14em !important;
   }
-  .bz-sec-head__title {
+  .bz-sec-head__title,
+  .bz-watch-rail__title {
     font-size: 21px !important;
     line-height: 27px !important;
   }

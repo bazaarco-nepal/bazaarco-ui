@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import {
   Icon,
@@ -9,13 +9,9 @@ import {
   Spinner,
   Chip,
   StatusPill,
-  Price,
-  Placeholder,
-  VideoPlayer,
   SkeletonCard,
   EmptyState,
   QtyStepper,
-  Toast,
   SectionHead,
   AllInPriceCard,
   OTPInput,
@@ -29,11 +25,16 @@ import {
   BackToTop,
   ApiState,
   AppLink,
+  StoreAvatar,
+  RowLimitedGrid,
 } from "@/components/ui";
-import { browsePath, pathFromScreen, searchPath } from "@/config/routes";
+import { browsePath, pathFromScreen, videoPath } from "@/config/routes";
 import { ASSETS } from "@/config/assets";
 import { useHome } from "@/hooks/use-home";
 import { useHomeExploreFeed } from "@/hooks/use-home-explore";
+import { useGridColumns } from "@/hooks/use-visible-by-rows";
+import { useVideoFeed } from "@/hooks/use-video-feed";
+import { useBargainableProducts } from "@/hooks/use-catalog";
 import { useBazaarStore } from "@/store/bazaar-store";
 import {
   BazaarCtx,
@@ -41,130 +42,297 @@ import {
   Himalaya,
   KathmanduSkyline,
   ProductCard,
-  ProductRail,
+  BargainProductCard,
   CategoryTile,
   Navbar,
   Footer,
   DevViewSwitcher,
 } from "@/components/common";
 import { PicksSections } from "./_components/picks-tabs";
-import type { Product } from "@/types";
+import type { VideoFeedItem } from "@/types/video";
 import { HomeHero } from "./_components/home-hero";
-import { FlashSaleRail, FlashSaleMobile } from "./_components/flash-sale";
+import { NewArrivalsRail, NewArrivalsMobile } from "./_components/new-arrivals";
+import { ReelCard } from "./_components/reel-card";
+import type { PopularStore } from "@/services/api/home";
 
-function Countdown({ initial = 3 * 3600 + 42 * 60 + 9 }) {
-  const [s, setS] = useState(initial);
-  useEffect(() => {
-    const id = setInterval(() => setS((x) => (x > 0 ? x - 1 : 0)), 1000);
-    return () => clearInterval(id);
-  }, []);
-  const hh = String(Math.floor(s / 3600)).padStart(2, "0");
-  const mm = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
-  const ss = String(s % 60).padStart(2, "0");
-  const Box = ({ v }: { v: string }) => (
-    <span
-      className="tnum"
-      style={{
-        background: "var(--ink-900)",
-        color: "#fff",
-        borderRadius: "var(--r-sm)",
-        padding: "4px 8px",
-        fontWeight: 800,
-        fontSize: "1rem",
-        minWidth: 34,
-        textAlign: "center",
-        display: "inline-block",
-      }}
-    >
-      {v}
-    </span>
+const WATCH_RAIL_LIMIT = 8;
+
+// DEBT: BazaarCo Watch falls back to these placeholder reels until a dedicated
+// homepage video endpoint lands — owner-approved temporary static data.
+// Shown only when the live video feed returns zero playable reels, so the rail
+// is never empty. Shaped exactly like a feed item (see VideoFeedItem / the API's
+// mapFeedItem) — no media URLs, so each card renders its dark placeholder tint.
+const WATCH_FALLBACK_REELS: VideoFeedItem[] = [
+  {
+    id: "watch-sneakers",
+    name: "Sneakers with close-up stitching",
+    price: 2450,
+    original: null,
+    cat: "",
+    sellerId: "",
+    icon: "box",
+    tint: "blue",
+    rating: 0,
+    reviews: 0,
+    hasVideo: false,
+    videoThumb: null,
+    videoUrl: null,
+    videoPublicId: null,
+    img: null,
+    seller: { id: "", name: "Sajilo Deals", rating: 0, reviewsCount: 0, avatar: "" },
+    engagement: { views: 12400, likes: 0, comments: 0, shares: 0, saves: 0 },
+    caption: "Walkaround video",
+    liked: false,
+  },
+  {
+    id: "watch-bags",
+    name: "Daily carry bag demo",
+    price: 1890,
+    original: null,
+    cat: "",
+    sellerId: "",
+    icon: "box",
+    tint: "saffron",
+    rating: 0,
+    reviews: 0,
+    hasVideo: false,
+    videoThumb: null,
+    videoUrl: null,
+    videoPublicId: null,
+    img: null,
+    seller: { id: "", name: "Thamel Bags", rating: 0, reviewsCount: 0, avatar: "" },
+    engagement: { views: 8900, likes: 0, comments: 0, shares: 0, saves: 0 },
+    caption: "Inside pocket check",
+    liked: false,
+  },
+  {
+    id: "watch-audio",
+    name: "Bluetooth speaker preview",
+    price: 3200,
+    original: null,
+    cat: "",
+    sellerId: "",
+    icon: "box",
+    tint: "green",
+    rating: 0,
+    reviews: 0,
+    hasVideo: false,
+    videoThumb: null,
+    videoUrl: null,
+    videoPublicId: null,
+    img: null,
+    seller: { id: "", name: "SoundHub Nepal", rating: 0, reviewsCount: 0, avatar: "" },
+    engagement: { views: 15800, likes: 0, comments: 0, shares: 0, saves: 0 },
+    caption: "Sound test clip",
+    liked: false,
+  },
+  {
+    id: "watch-fashion",
+    name: "Kurti fabric movement",
+    price: 1350,
+    original: null,
+    cat: "",
+    sellerId: "",
+    icon: "box",
+    tint: "red",
+    rating: 0,
+    reviews: 0,
+    hasVideo: false,
+    videoThumb: null,
+    videoUrl: null,
+    videoPublicId: null,
+    img: null,
+    seller: { id: "", name: "Maya Fashion", rating: 0, reviewsCount: 0, avatar: "" },
+    engagement: { views: 6700, likes: 0, comments: 0, shares: 0, saves: 0 },
+    caption: "Fit and fabric",
+    liked: false,
+  },
+];
+
+function WatchSection() {
+  const { data } = useVideoFeed();
+  const liveReels = (data?.items ?? []).filter(
+    (v) => typeof v.videoUrl === "string" && v.videoUrl.trim().length > 0,
   );
+  // Fall back to the hardcoded reels only when the feed has no playable video.
+  const reels = liveReels.length > 0 ? liveReels.slice(0, WATCH_RAIL_LIMIT) : WATCH_FALLBACK_REELS;
+
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-      <Box v={hh} />
-      <span style={{ color: "#fff", fontWeight: 800 }}>:</span>
-      <Box v={mm} />
-      <span style={{ color: "#fff", fontWeight: 800 }}>:</span>
-      <Box v={ss} />
-    </span>
+    <section className="bz-watch-rail">
+      <div className="bz-watch-rail__head">
+        <span className="bz-watch-rail__badge" aria-hidden="true">
+          <Icon name="play" size={15} color="#fff" />
+        </span>
+        <span className="bz-watch-rail__title">BazaarCo Watch</span>
+        <Button
+          variant="link"
+          className="bz-watch-rail__feed"
+          href={pathFromScreen("video")}
+          iconRight="arrowRight"
+          style={{ marginLeft: "auto" }}
+        >
+          Open the feed
+        </Button>
+      </div>
+      <div className="bz-watch-rail__scroll no-scrollbar">
+        {reels.map((reel) => (
+          <div key={reel.id} className="bz-watch-rail__item">
+            <ReelCard reel={reel} href={videoPath(reel.id)} />
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
-function VideoRailCard({ p, onOpen }: { p: Product; onOpen: (p: Product) => void }) {
+function BargainSection() {
+  const { t } = useTranslation();
+  const { openProduct } = useBz();
+  const { data, isLoading } = useBargainableProducts(24);
+  const products = data?.items ?? [];
+
   return (
-    <div
-      onClick={() => onOpen(p)}
-      className="bz-hover-lift"
-      style={{
-        cursor: "pointer",
-        flexShrink: 0,
-        width: 188,
-        position: "relative",
-        borderRadius: "var(--r-md)",
-      }}
-    >
-      <div style={{ position: "relative" }}>
-        <VideoPlayer
-          tint={p.tint}
-          icon={p.icon}
-          ratio="9 / 14"
-          compact
-          label="WATCH"
-          thumb={p.videoThumb}
-          src={p.videoUrl}
-          publicId={p.videoPublicId}
+    <div className="bz-bargain-panel">
+      <div className="bz-sec-head bz-bargain-head">
+        <div>
+          <h2 className="bz-sec-head__title" style={{ margin: 0 }}>
+            Bargain with the seller
+          </h2>
+          <p className="bz-bargain-head__note">{t("home.bargainReassurance")}</p>
+        </div>
+        <AppLink href={pathFromScreen("bargainable-products")} className="bz-sec-head__action">
+          All bargainable products <Icon name="arrowRight" size={16} />
+        </AppLink>
+      </div>
+      {isLoading && products.length === 0 ? (
+        <div className="bz-bargain-grid">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+      ) : products.length > 0 ? (
+        <RowLimitedGrid
+          className="bz-bargain-grid"
+          items={products}
+          maxRows={2}
+          renderItem={(product) => (
+            <BargainProductCard
+              key={product.id}
+              p={product}
+              onOpen={openProduct}
+              onOffer={(prod) => openProduct(prod, { offer: true })}
+            />
+          )}
         />
-      </div>
-      <div style={{ marginTop: 10 }}>
-        <div
-          style={{
-            fontSize: ".875rem",
-            fontWeight: 600,
-            color: "var(--ink-900)",
-            display: "-webkit-box",
-            WebkitLineClamp: 1,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-          }}
-        >
-          {p.name}
+      ) : (
+        <div className="bz-bargain-empty">
+          <span>No negotiable products yet.</span>
+          <Button variant="link" href={browsePath()} iconRight="arrowRight">
+            Browse products
+          </Button>
         </div>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginTop: 4,
-          }}
-        >
-          <Price value={p.price} size="sm" />
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 3,
-              color: "var(--gold)",
-              fontSize: ".6875rem",
-              fontWeight: 700,
-            }}
-          >
-            <Icon name="badgeCheck" size={13} color="var(--gold)" />
-          </span>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
 
-function SkeletonRail({ cols = 5 }) {
+function PopularStoresSection({ stores }: { stores: PopularStore[] }) {
+  const { t } = useTranslation();
+  const { nav, openStore } = useBz();
+  if (stores.length === 0) return null;
+
   return (
-    <div
-      className="bz-grid-cards"
-      style={{ display: "grid", gridTemplateColumns: `repeat(${cols},1fr)`, gap: 18 }}
-    >
-      {Array.from({ length: cols }).map((_, i) => (
-        <SkeletonCard key={i} />
-      ))}
+    <div className="bz-hide-mobile bz-popular-stores">
+      <SectionHead
+        title={t("home.popularStores")}
+        action={t("home.viewAllStores")}
+        actionHref={pathFromScreen("stores")}
+      />
+      <RowLimitedGrid
+        className="bz-popular-stores__grid"
+        items={stores}
+        maxRows={1}
+        renderItem={(store) => (
+          <div
+            key={store.id}
+            role="link"
+            tabIndex={0}
+            className="bz-popular-store-card"
+            aria-label={t("stores.visitStoreAria", { name: store.name })}
+            onClick={() => openStore(store.slug || store.id)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                openStore(store.slug || store.id);
+              }
+            }}
+          >
+            <div className="bz-popular-store-card__body">
+              <div className="bz-popular-store-card__head">
+                <StoreAvatar src={store.avatar} name={store.name} size={44} />
+                <div className="bz-popular-store-card__identity">
+                  <div className="bz-popular-store-card__name">
+                    {store.name}
+                    {store.verified ? (
+                      <Icon name="badgeCheck" size={15} color="var(--blue)" />
+                    ) : null}
+                  </div>
+                  <div className="bz-popular-store-card__handle">@{store.slug || store.id}</div>
+                </div>
+                {store.reviews > 0 ? (
+                  <span className="bz-popular-store-card__rating">
+                    <Icon name="star" size={14} color="#8a6a12" fill="#8a6a12" />
+                    <span className="tnum">{store.rating.toFixed(1)}</span>
+                  </span>
+                ) : null}
+              </div>
+              <div className="bz-popular-store-card__products" aria-hidden="true">
+                {[0, 1, 2].map((index) => {
+                  const image = store.productImages[index];
+                  const moreCount = Math.max(store.productCount - 3, 0);
+                  return (
+                    <div key={index} className="bz-popular-store-card__product">
+                      {image ? <img src={image} alt="" loading="lazy" /> : null}
+                      {index === 2 && moreCount > 0 ? (
+                        <span className="bz-popular-store-card__more">
+                          +{moreCount.toLocaleString("en-IN")}
+                          <br />
+                          {t("home.more")}
+                        </span>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="bz-popular-store-card__actions">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon="play"
+                  className="bz-popular-store-card__action--grow"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    nav("video");
+                  }}
+                >
+                  {t("home.watchFeed")}
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="bz-popular-store-card__action--grow"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    openStore(store.slug || store.id);
+                  }}
+                >
+                  {t("home.visit")}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      />
     </div>
   );
 }
@@ -178,6 +346,20 @@ export function Home() {
   const isError = homeError;
   const error = homeErr;
   const categories = homeData?.categories;
+  const newArrivalItems = homeData?.newArrivals?.items ?? [];
+  const popularStores = homeData?.popularStores ?? [];
+
+  // "Recommended for you" is an auto-fill grid whose column count shifts with
+  // width/zoom (7-up at 100%, 6-up at 125%, …), so a fixed page size can't keep
+  // the last row full. Render only whole rows while more can load — the trailing
+  // partial row is hidden until the next page fills it — and show everything once
+  // the feed is exhausted, so no product is ever skipped.
+  const picksGridRef = React.useRef<HTMLDivElement>(null);
+  const exploreCols = useGridColumns(picksGridRef);
+  const exploreWholeRows = Math.floor(exploreFeed.items.length / exploreCols) * exploreCols;
+  const exploreVisibleCount =
+    exploreFeed.hasNextPage && exploreWholeRows > 0 ? exploreWholeRows : exploreFeed.items.length;
+
   const W = ({
     children,
     style,
@@ -187,11 +369,22 @@ export function Home() {
     style?: React.CSSProperties;
     className?: string;
   }) => (
-    <section
-      className={`bz-container-pad${className ? ` ${className}` : ""}`}
-      style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px", ...style }}
-    >
+    <section className={`container${className ? ` ${className}` : ""}`} style={style}>
       {children}
+    </section>
+  );
+  // Full-bleed featured band: the navy/cream floor spans the viewport while the
+  // content stays inside the centered .container. Only the two signature
+  // sections (Watch, Bargain) use it — see --band-*-bg.
+  const Band = ({
+    variant,
+    children,
+  }: {
+    variant: "watch" | "bargain";
+    children?: React.ReactNode;
+  }) => (
+    <section className={`bz-band bz-band--${variant}`}>
+      <div className="container">{children}</div>
     </section>
   );
   // The static shell (hero, mobile header, category frame, banners) needs no API
@@ -200,91 +393,17 @@ export function Home() {
   const catalogLoading = homeLoading && !categories;
   return (
     <>
-      <div style={{ paddingBottom: 8 }}>
+      <div className="bz-home">
         <BackToTop />
-        {/* Desktop hero — carousel beside the Flash Sale rail. Hidden on phones. */}
+        {/* Desktop hero — carousel beside the New Arrivals rail. Hidden on phones. */}
         <div className="bz-hide-mobile">
           <W className="bz-home-hero" style={{ paddingTop: 22 }}>
             <div className="bz-home-herorow">
               <HomeHero />
-              <FlashSaleRail />
+              <NewArrivalsRail products={newArrivalItems} loading={homeLoading} />
             </div>
           </W>
         </div>
-
-        {/* flash sale */}
-        {/* <W style={{ paddingTop: 24 }}>
-          <div
-            className="bz-flash-head"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 10,
-              flexWrap: "wrap",
-              rowGap: 10,
-              background: "linear-gradient(90deg, var(--red), var(--saffron))",
-              borderRadius: "var(--r-lg) var(--r-lg) 0 0",
-              padding: "14px 22px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                color: "#fff",
-                flexWrap: "wrap",
-                rowGap: 6,
-                minWidth: 0,
-              }}
-            >
-              <Icon name="zap" size={22} fill="#fff" color="#fff" />
-              <span style={{ fontWeight: 800, fontSize: "1.125rem", whiteSpace: "nowrap" }}>
-                Flash Sale
-              </span>
-              <span style={{ fontSize: ".8125rem", opacity: 0.9, whiteSpace: "nowrap" }}>
-                Ends in
-              </span>
-              <Countdown />
-            </div>
-            <AppLink
-              href={searchPath()}
-              style={{
-                background: "rgba(255,255,255,.2)",
-                border: "1px solid rgba(255,255,255,.4)",
-                color: "#fff",
-                fontWeight: 700,
-                padding: "8px 14px",
-                borderRadius: "var(--r-md)",
-                cursor: "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                flexShrink: 0,
-                whiteSpace: "nowrap",
-                textDecoration: "none",
-              }}
-            >
-              View all <Icon name="arrowRight" size={16} />
-            </AppLink>
-          </div>
-          <div
-            style={{
-              background: "#fff",
-              border: "1px solid var(--line-200)",
-              borderTop: "none",
-              borderRadius: "0 0 var(--r-lg) var(--r-lg)",
-              padding: 18,
-            }}
-          >
-            {loading ? (
-              <SkeletonRail cols={5} />
-            ) : (
-              <ProductRail items={flashProducts().slice(0, 5)} onOpen={openProduct} cols={5} sale />
-            )}
-          </div>
-        </W> */}
 
         {/* Hero carousel — mobile placement (under the header, above categories). */}
         <div className="bz-show-mobile">
@@ -294,7 +413,7 @@ export function Home() {
         </div>
 
         {/* Shop by categories — bordered card tiles (revamp). */}
-        <W className="bz-home-section bz-home-categories" style={{ paddingTop: 28 }}>
+        <W className="bz-home-section bz-home-categories">
           <SectionHead
             title={t("home.shopByCategory")}
             action={t("home.allCategories")}
@@ -302,7 +421,7 @@ export function Home() {
           />
           <div className="bz-homecat-grid">
             {catalogLoading && !categories
-              ? Array.from({ length: 12 }).map((_, i) => (
+              ? Array.from({ length: 11 }).map((_, i) => (
                   <div key={i} className="bz-cat__card" aria-hidden="true">
                     <div className="bz-cat__card-thumb skel" />
                     <span className="bz-cat__card-label">
@@ -323,124 +442,27 @@ export function Home() {
           </div>
         </W>
 
-        {/* Flash Sale — mobile placement (after categories, per the revamp). */}
+        {/* New arrivals — mobile placement (after categories, per the revamp). */}
         <div className="bz-show-mobile">
-          <W style={{ paddingTop: 24 }}>
-            <FlashSaleMobile />
+          <W>
+            <NewArrivalsMobile products={newArrivalItems} loading={homeLoading} />
           </W>
         </div>
 
-        <PicksSections
-          newArrivals={homeData?.newArrivals}
-          topPicks={homeData?.topPicks}
-          homeLoading={homeLoading}
-        />
+        <PicksSections topPicks={homeData?.topPicks} homeLoading={homeLoading} />
 
-        {/* trending in Kathmandu — hyperlocal */}
-        {/* <W style={{ paddingTop: 52 }}>
-          <SectionHead
-            eyebrow={
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-                <Icon name="mapPin" size={13} color="var(--red)" /> Trending in Kathmandu
-              </span>
-            }
-            title="What your city is buying right now"
-            action="See more"
-            actionHref={searchPath()}
-          />
-          {loading ? (
-            <SkeletonRail cols={5} />
-          ) : (
-            <ProductRail items={trending} onOpen={openProduct} cols={5} />
-          )}
-        </W> */}
+        {/* Featured zones — the only two sections on a full-bleed tinted band. */}
+        <Band variant="watch">
+          <WatchSection />
+        </Band>
 
-        {/* video shopping rail — desktop only */}
-        {/* <div className="bz-hide-mobile">
-          <W style={{ paddingTop: 52 }}>
-            <div
-              style={{
-                background: "var(--tint-blue-50)",
-                border: "1px solid var(--line-200)",
-                borderRadius: "var(--r-xl)",
-                padding: "30px 32px",
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "flex-end",
-                  justifyContent: "space-between",
-                  marginBottom: 22,
-                }}
-              >
-                <div>
-                  <div
-                    style={{
-                      fontSize: ".75rem",
-                      fontWeight: 700,
-                      letterSpacing: ".08em",
-                      textTransform: "uppercase",
-                      color: "var(--red)",
-                      marginBottom: 6,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <Icon name="video" size={15} color="var(--red)" /> Watch
-                  </div>
-                  <h2
-                    style={{
-                      margin: 0,
-                      fontSize: "1.5rem",
-                      fontWeight: 800,
-                      color: "var(--ink-900)",
-                    }}
-                  >
-                    See it in motion before you <span style={{ color: "var(--red)" }}>buy</span>
-                  </h2>
-                </div>
-                <Button
-                  variant="primary"
-                  href={pathFromScreen("video")}
-                  iconRight="arrowRight"
-                >
-                  Open video feed
-                </Button>
-              </div>
-              <div
-                className="no-scrollbar"
-                style={{ display: "flex", gap: 16, overflowX: "auto", paddingBottom: 4 }}
-              >
-                {videoProducts().map((p) => (
-                  <VideoRailCard key={p.id} p={p} onOpen={openProduct} />
-                ))}
-              </div>
-            </div>
-          </W>
-        </div> */}
-
-        {/* made in nepal */}
-        {/* <W style={{ paddingTop: 52, position: "relative" }}>
-          <SectionHead
-            eyebrow="Made in Nepal"
-            title="Loved in Nepal"
-            action="See more"
-            actionHref={searchPath()}
-          />
-          {loading ? (
-            <SkeletonRail cols={5} />
-          ) : (
-            <ProductRail items={madeInNepal} onOpen={openProduct} cols={5} />
-          )}
-        </W> */}
+        <Band variant="bargain">
+          <BargainSection />
+        </Band>
 
         {/* Endless product feed — shown on both web and mobile */}
-        <W className="bz-home-section" style={{ paddingTop: 28 }}>
-          <SectionHead title={t("home.moreToExplore")} />
+        <W className="bz-home-section">
+          <SectionHead title={t("home.recommendedForYou")} />
           {isError && !homeLoading ? (
             <EmptyState
               title={t("home.loadError")}
@@ -450,12 +472,12 @@ export function Home() {
             />
           ) : (
             <>
-              <div className="bz-picks-grid">
+              <div className="bz-picks-grid" ref={picksGridRef}>
                 {homeLoading && exploreFeed.items.length === 0
                   ? Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
-                  : exploreFeed.items.map((p) => (
-                      <ProductCard key={p.id} p={p} onClick={openProduct} />
-                    ))}
+                  : exploreFeed.items
+                      .slice(0, exploreVisibleCount)
+                      .map((p) => <ProductCard key={p.id} p={p} onClick={openProduct} />)}
               </div>
               {!homeLoading && exploreFeed.total > 0 && (
                 <LoadMore
@@ -485,6 +507,12 @@ export function Home() {
             </>
           )}
         </W>
+
+        {popularStores.length > 0 && (
+          <W className="bz-home-section bz-hide-mobile">
+            <PopularStoresSection stores={popularStores} />
+          </W>
+        )}
       </div>
     </>
   );

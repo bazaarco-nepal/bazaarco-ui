@@ -237,24 +237,9 @@ export function Search() {
       </FacetGroup>
 
       {hasFilters ? (
-        <button
-          onClick={clearAll}
-          className="bz-hover-border"
-          style={{
-            marginTop: 8,
-            width: "100%",
-            padding: "9px 14px",
-            borderRadius: "var(--r-md)",
-            border: "1.5px solid var(--line-200)",
-            background: "#fff",
-            color: "var(--ink-700)",
-            fontWeight: 700,
-            fontSize: ".8125rem",
-            cursor: "pointer",
-          }}
-        >
+        <Button variant="secondary" size="sm" full onClick={clearAll} style={{ marginTop: 8 }}>
           {t("search.clearAllFilters")}
-        </button>
+        </Button>
       ) : null}
     </>
   );

@@ -37,10 +37,7 @@ function ProductSection({
   if (hideWhenEmpty && items.length === 0) return null;
 
   return (
-    <section
-      className="bz-container-pad bz-home-section"
-      style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "0 28px", paddingTop: 28 }}
-    >
+    <section className="container bz-home-section">
       <SectionHead
         title={title}
         action={seeAllHref ? t("common.seeAll") : undefined}
@@ -117,32 +114,17 @@ function usePaginatedSection(initial?: PaginatedData<Product>) {
 }
 
 export function PicksSections({
-  newArrivals: newArrivalsInitial,
   topPicks: topPicksInitial,
   homeLoading,
 }: {
-  newArrivals?: PaginatedData<Product>;
   topPicks?: PaginatedData<Product>;
   homeLoading: boolean;
 }) {
   const { t } = useTranslation();
-  const newArrivals = usePaginatedSection(newArrivalsInitial);
   const topPicks = usePaginatedSection(topPicksInitial);
 
   return (
     <>
-      <ProductSection
-        title={t("home.newArrivals")}
-        items={newArrivals.items}
-        isLoading={homeLoading && newArrivals.items.length === 0}
-        hasNextPage={newArrivals.hasNextPage}
-        isFetchingNextPage={newArrivals.isFetchingNextPage}
-        onLoadMore={() =>
-          newArrivals.loadMore((page) =>
-            catalogApi.getNewArrivals({ page, limit: PICKS_PAGE_SIZE }),
-          )
-        }
-      />
       <ProductSection
         title={t("home.topPicks")}
         items={topPicks.items}

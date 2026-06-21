@@ -206,6 +206,41 @@ describe("BargainModal attempts label (platform-wide wording)", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Offer-intent auto-open: a bargain rail's "Make an offer" navigates to
+// /product/:id?offer=1, and the PDP runs the same openBargain() its own button
+// does. Mirrors the effect gate exactly: fire once, only for ?offer=1, and only
+// once bargaining has resolved available (the API product may still be loading).
+// ---------------------------------------------------------------------------
+function shouldAutoOpenOffer(
+  offerParam: string | null,
+  bargainingAvailable: boolean,
+  alreadyConsumed: boolean,
+): boolean {
+  if (alreadyConsumed) return false;
+  if (offerParam !== "1") return false;
+  return bargainingAvailable;
+}
+
+describe("PDP offer-intent auto-open (?offer=1)", () => {
+  it("opens when arriving with ?offer=1 and bargaining is available", () => {
+    expect(shouldAutoOpenOffer("1", true, false)).toBe(true);
+  });
+
+  it("does not open without the offer intent", () => {
+    expect(shouldAutoOpenOffer(null, true, false)).toBe(false);
+    expect(shouldAutoOpenOffer("0", true, false)).toBe(false);
+  });
+
+  it("waits (does not open) until bargaining resolves available", () => {
+    expect(shouldAutoOpenOffer("1", false, false)).toBe(false);
+  });
+
+  it("fires at most once per mount", () => {
+    expect(shouldAutoOpenOffer("1", true, true)).toBe(false);
+  });
+});
+
 describe("MobileBuyBar onBargain wiring", () => {
   it("passes onBargain handler when bargainingAvailable is true", () => {
     // Simulates: onBargain={bargainingAvailable ? openBargain : undefined}

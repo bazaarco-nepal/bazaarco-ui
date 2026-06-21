@@ -6,13 +6,11 @@ import { ApiState } from "@/components/ui";
 import { SellerIcon } from "../_shared/icons";
 import { SellerVideoLibrary } from "@/components/seller/seller-video-library";
 import { useSellerVideos, useSellerOrganization } from "@/hooks/use-seller";
-import { useBz } from "@/components/common";
 import { SellerHelpBar } from "../_shared/components";
 
 /* ---------- 4.12 Videos ---------- */
 export function SellerVideos() {
   const { t } = useTranslation();
-  const { toast, nav } = useBz();
   const { data: organization } = useSellerOrganization();
   const verification = organization?.verification;
   const vStatus = verification?.status ?? "none";
@@ -75,7 +73,6 @@ export function SellerVideos() {
           showUpload={showUpload}
           onToggleUpload={() => setShowUpload((s) => !s)}
           onRefetch={() => void refetch()}
-          onToast={toast}
         />
       </div>
     </ApiState>

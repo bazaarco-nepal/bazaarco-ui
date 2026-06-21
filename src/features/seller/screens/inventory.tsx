@@ -15,6 +15,7 @@ import {
 import { SellerIcon } from "../_shared/icons";
 import { ProductDeleteConfirmModal } from "@/components/seller/product-delete-confirm-modal";
 import { formatNPR } from "@/lib/money";
+import { toast } from "@/lib/toast";
 import { type CreateProductVariantPayload, type SellerInventoryItem } from "@/services/api/seller";
 import {
   useUpdateProduct,
@@ -40,7 +41,7 @@ const EMPTY_INVENTORY: SellerInventoryItem[] = [];
 
 export function SellerInventory() {
   const { t } = useTranslation();
-  const { nav, toast } = useBz();
+  const { nav } = useBz();
   const { data: inventoryData = EMPTY_INVENTORY, isLoading, isError, error } = useSellerInventory();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
@@ -94,7 +95,7 @@ export function SellerInventory() {
     productDraft.clear();
     setDraftPreview(null);
     setDiscardConfirmOpen(false);
-    toast(t("seller.inventory.draftDiscarded"));
+    toast.success(t("seller.inventory.draftDiscarded"));
   };
   // Keep the add-product action compact on phones so it stays inline with the
   // title instead of wrapping into an orphaned button above the search bar.
@@ -195,14 +196,14 @@ export function SellerInventory() {
           }),
         );
         clearDraft(id);
-        toast(t("seller.inventory.stockSaved"));
+        toast.success(t("seller.inventory.stockSaved"));
       } catch (err) {
-        toast(err instanceof Error ? err.message : t("seller.inventory.stockUpdateFailed"));
+        toast.error(err instanceof Error ? err.message : t("seller.inventory.stockUpdateFailed"));
       } finally {
         setSavingId(null);
       }
     },
-    [items, updateProduct, toast, savingId, t],
+    [items, updateProduct, savingId, t],
   );
 
   const saveStock = (it: SellerInventoryItem) => {
@@ -220,14 +221,14 @@ export function SellerInventory() {
     const cur = effStock(it);
     if (cur <= 0) return;
     void commitStock(it.id, { stock: cur - 1 });
-    toast(t("seller.inventory.soldOneInShop"));
+    toast.success(t("seller.inventory.soldOneInShop"));
   };
   const sellVariantInShop = (it: SellerInventoryItem, v: CreateProductVariantPayload) => {
     if (savingId) return;
     if (effVariantStock(it.id, v) <= 0) return;
     const variants = effVariants(it).map((x) => (x.id === v.id ? { ...x, stock: x.stock - 1 } : x));
     void commitStock(it.id, { variants });
-    toast(t("seller.inventory.soldOneVariantInShop", { variant: v.name }));
+    toast.success(t("seller.inventory.soldOneVariantInShop", { variant: v.name }));
   };
 
   const confirmDelete = async () => {
@@ -240,11 +241,11 @@ export function SellerInventory() {
       setItems((list) => list.filter((it) => it.id !== id));
       setExpanded((cur) => (cur === id ? null : cur));
       setDeleteTarget(null);
-      toast(t("seller.inventory.productDeleted", { name }));
+      toast.success(t("seller.inventory.productDeleted", { name }));
     } catch (err) {
       // 409 = product has order history (server keeps it to protect orders).
       // Keep the dialog open so the seller reads why and can cancel.
-      toast(err instanceof Error ? err.message : t("seller.inventory.productDeleteFailed"));
+      toast.error(err instanceof Error ? err.message : t("seller.inventory.productDeleteFailed"));
     }
   };
 
@@ -253,7 +254,7 @@ export function SellerInventory() {
     const raw = String(priceDraft[id] ?? it?.price ?? "").replace(/[^\d.]/g, "");
     const nextRupees = parseFloat(raw);
     if (!it || !Number.isFinite(nextRupees) || nextRupees <= 0) {
-      toast(t("seller.inventory.invalidPrice"));
+      toast.error(t("seller.inventory.invalidPrice"));
       return;
     }
     if (nextRupees === it.price) return;
@@ -262,9 +263,9 @@ export function SellerInventory() {
       // Prices are rupees end to end — send exactly what the seller typed.
       await updateProduct.mutateAsync({ id, price: nextRupees });
       setItems((list) => list.map((i) => (i.id === id ? { ...i, price: nextRupees } : i)));
-      toast(t("seller.inventory.priceSaved"));
+      toast.success(t("seller.inventory.priceSaved"));
     } catch (err) {
-      toast(err instanceof Error ? err.message : t("seller.inventory.priceUpdateFailed"));
+      toast.error(err instanceof Error ? err.message : t("seller.inventory.priceUpdateFailed"));
     } finally {
       setSavingId(null);
     }
@@ -805,14 +806,13 @@ export function SellerInventory() {
                                               : row,
                                           ),
                                         );
-                                        toast(t("seller.inventory.acknowledgeSuccess"), "success");
+                                        toast.success(t("seller.inventory.acknowledgeSuccess"));
                                       },
                                       onError: (err) => {
-                                        toast(
+                                        toast.error(
                                           err instanceof Error
                                             ? err.message
                                             : t("seller.inventory.acknowledgeFailed"),
-                                          "error",
                                         );
                                       },
                                     });

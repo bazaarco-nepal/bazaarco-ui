@@ -1,7 +1,14 @@
-import type { Category, Product } from "@/types";
+import type { Category, Product, Seller } from "@/types";
 import { getData } from "./http";
-import { mapProduct } from "./catalog";
+import { mapProduct, mapSeller } from "./catalog";
 import type { PaginatedData } from "./types";
+
+export interface PopularStore extends Seller {
+  productCount: number;
+  productImages: string[];
+  bannerUrl?: string | null;
+  verified?: boolean;
+}
 
 export interface TrustItem {
   icon: string;
@@ -17,6 +24,7 @@ export interface HomeData {
   newArrivals: PaginatedData<Product>;
   topPicks: PaginatedData<Product>;
   explore: PaginatedData<Product>;
+  popularStores: PopularStore[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -44,6 +52,20 @@ export const homeApi = {
       explore: mapProductPage(
         raw.explore ?? { items: [], total: 0, page: 1, limit: 20, totalPages: 0 },
       ),
+      popularStores: (raw.popularStores ?? []).map((store: unknown) => ({
+        ...mapSeller(store),
+        productCount:
+          typeof (store as { productCount?: unknown }).productCount === "number"
+            ? (store as { productCount: number }).productCount
+            : Number((store as { productCount?: unknown }).productCount ?? 0),
+        productImages: Array.isArray((store as { productImages?: unknown }).productImages)
+          ? ((store as { productImages: string[] }).productImages ?? []).filter(
+              (image): image is string => typeof image === "string" && image.trim().length > 0,
+            )
+          : [],
+        bannerUrl: (store as { bannerUrl?: string | null }).bannerUrl ?? null,
+        verified: (store as { verified?: boolean }).verified ?? false,
+      })),
     };
   },
 };

@@ -14,8 +14,8 @@ export interface BazaarStoreState {
   cart: CartLine[];
   /** Cart lines chosen for the next checkout. `null` = every line selected. */
   selectedCartIds: CartSelection;
-  wish: string[];
-  wishSellers: string[];
+  savedProducts: string[];
+  savedSellers: string[];
   query: string;
   /** Optimistic screen while client navigation catches up (e.g. search → browse). */
   screenOverride: string | null;
@@ -43,8 +43,8 @@ export interface BazaarStoreState {
   setBuyerPhone: (phone: string) => void;
   setCart: (cart: CartLine[] | ((prev: CartLine[]) => CartLine[])) => void;
   setSelectedCartIds: (selection: CartSelection | ((prev: CartSelection) => CartSelection)) => void;
-  setWish: (wish: string[] | ((prev: string[]) => string[])) => void;
-  setWishSellers: (sellerIds: string[] | ((prev: string[]) => string[])) => void;
+  setSavedProducts: (savedProducts: string[] | ((prev: string[]) => string[])) => void;
+  setSavedSellers: (sellerIds: string[] | ((prev: string[]) => string[])) => void;
   setQuery: (query: string) => void;
   setScreenOverride: (screen: string | null) => void;
   setOrderTotal: (total: number) => void;

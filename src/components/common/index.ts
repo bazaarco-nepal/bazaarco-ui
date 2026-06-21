@@ -1,4 +1,5 @@
 export * from "@/components/common/marketplace";
+export { BargainProductCard } from "@/components/common/bargain-product-card";
 export { BuyerAvatar } from "@/components/common/buyer-avatar";
 export { ChangePasswordModal } from "@/components/common/change-password-modal";
 export { IosInstallBanner } from "@/components/common/ios-install-banner";

@@ -83,8 +83,8 @@ apiClient.interceptors.response.use(
         store.setAuthed(false);
         store.setUser(null);
         store.setCart([]);
-        store.setWish([]);
-        store.setWishSellers([]);
+        store.setSavedProducts([]);
+        store.setSavedSellers([]);
       }
     }
     return Promise.reject(error);

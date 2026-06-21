@@ -1,5 +1,5 @@
 export { Tracking } from "./extra";
-export { Wishlist } from "./extra";
+export { Saved } from "./extra";
 export { Bargains } from "./extra";
 export {
   HelpSupportPage,

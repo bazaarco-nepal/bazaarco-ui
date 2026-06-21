@@ -21,7 +21,7 @@ export type {
   ProductProfile,
 } from "@/types/catalog";
 
-export type { BazaarToast, BazaarContextValue } from "@/types/bazaar";
+export type { BazaarContextValue } from "@/types/bazaar";
 export type { BazaarStoreState } from "@/types/store";
 export type { PdpProps } from "@/types/ui-kit";
 

@@ -5,6 +5,7 @@ import { useTranslation, Trans } from "react-i18next";
 import { Button, Placeholder, EmptyState, AppLink } from "@/components/ui";
 import { SellerIcon } from "../_shared/icons";
 import { formatNPR } from "@/lib/money";
+import { toast } from "@/lib/toast";
 import { type OrderStatus } from "@/lib/order-utils";
 import { useSellerInbox, useUpdateSellerOrderStatus } from "@/hooks/use-seller";
 import { useBz, BuyerAvatar } from "@/components/common";
@@ -17,7 +18,7 @@ import { ConfirmModal } from "@/components/seller/confirm-modal";
 /* ---------- 4.3b Order detail — full-screen, one big action ---------- */
 export function SellerOrderDetail() {
   const { t } = useTranslation();
-  const { nav, toast } = useBz();
+  const { nav } = useBz();
   const { data: inboxOrders = [] } = useSellerInbox();
   const o = sellerOrderRef.current || inboxOrders[0];
   const updateStatus = useUpdateSellerOrderStatus();
@@ -68,7 +69,9 @@ export function SellerOrderDetail() {
     try {
       const updated = await updateStatus.mutateAsync({ id: o.id, status });
       sellerOrderRef.current = updated;
-      toast(t("seller.orderDetail.statusUpdated", { id: o.id, status: INBOX_LABEL[status].en }));
+      toast.success(
+        t("seller.orderDetail.statusUpdated", { id: o.id, status: INBOX_LABEL[status].en }),
+      );
       nav("s-inbox");
     } catch {
       /* API layer surfaces the error */

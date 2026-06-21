@@ -14,6 +14,7 @@ import {
   StoreAvatar,
   AppLink,
 } from "@/components/ui";
+import { toast } from "@/lib/toast";
 import { BuyerAvatar, ProductCard, useBz } from "@/components/common";
 import {
   useSeller,
@@ -42,7 +43,6 @@ function formatReviewDate(iso: string): string {
 
 function RateStoreModal({ seller, onClose }: { seller: Seller; onClose: () => void }) {
   const { t } = useTranslation();
-  const { toast } = useBz();
   const createReview = useCreateSellerReview(seller.id);
   const [stars, setStars] = useState(0);
   const [hover, setHover] = useState(0);
@@ -54,10 +54,10 @@ function RateStoreModal({ seller, onClose }: { seller: Seller; onClose: () => vo
     if (!canSubmit) return;
     try {
       await createReview.mutateAsync({ stars, text: text.trim() });
-      toast(t("store.reviewPosted"));
+      toast.success(t("store.reviewPosted"));
       onClose();
     } catch {
-      toast(t("store.reviewPostFailed"));
+      toast.error(t("store.reviewPostFailed"));
     }
   };
 

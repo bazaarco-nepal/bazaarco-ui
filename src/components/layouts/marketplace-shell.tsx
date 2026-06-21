@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { usePathname } from "next/navigation";
 import { NO_FOOTER_SCREENS, NO_NAV_SCREENS, SELLER_SCREENS, screenFromPath } from "@/config/routes";
-import { BottomNav, Toast } from "@/components/ui";
+import { BottomNav, BuyerPack, SellerPack } from "@/components/ui";
 import { Footer, Navbar, useBz } from "@/components/common";
 import { AuthRoleGuard } from "@/components/layouts/auth-role-guard";
 import { useBazaarStore } from "@/store/bazaar-store";
@@ -19,7 +19,7 @@ const BUYER_BOTTOM_NAV_SCREENS = new Set([
   "tracking",
   "profile",
   "profile-edit",
-  "wishlist",
+  "saved",
   "help",
   "privacy",
   "terms",
@@ -50,7 +50,7 @@ function BottomNavBridge() {
       screen === "tracking" ||
       screen === "profile" ||
       screen === "profile-edit" ||
-      screen === "wishlist" ||
+      screen === "saved" ||
       screen === "help" ||
       screen === "privacy" ||
       screen === "terms" ||
@@ -67,7 +67,11 @@ function BottomNavBridge() {
 
   if (isSeller) {
     if (screen !== "s-onboarding") {
-      return <BottomNav seller active={screen} onNav={nav} />;
+      return (
+        <SellerPack>
+          <BottomNav seller active={screen} onNav={nav} />
+        </SellerPack>
+      );
     }
     return null;
   }
@@ -96,10 +100,8 @@ export function MarketplaceShell({ children }: { children: React.ReactNode }) {
   const isVideoScreen = screen === "video";
   const hideNavbarOnMobile = screen === "pdp";
 
-  const ctx = useBz();
-
   return (
-    <>
+    <BuyerPack>
       <AuthRoleGuard />
       <div id="app-scroll" ref={scrollRef} className={isVideoScreen ? "bz-app--video" : undefined}>
         {showNavbar &&
@@ -118,7 +120,6 @@ export function MarketplaceShell({ children }: { children: React.ReactNode }) {
         )}
       </div>
       <BottomNavBridge />
-      <Toast toast={ctx.toastMsg ?? null} />
-    </>
+    </BuyerPack>
   );
 }

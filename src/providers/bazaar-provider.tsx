@@ -5,9 +5,10 @@ import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { BazaarCtx, LoginPromptModal } from "@/components/common";
+import { BuyerPack, ToastContainer } from "@/components/ui";
 import { useCurrentUser } from "@/hooks/use-auth";
 import { useCartMutations, useCartQuery } from "@/hooks/use-cart";
-import { useWishlistMutations, useWishlistQuery } from "@/hooks/use-wishlist";
+import { useSavedMutations, useSavedQuery } from "@/hooks/use-saved";
 import { useProduct } from "@/hooks/use-catalog";
 import { searchPath, pathFromScreen, productIdFromPath, screenFromPath } from "@/config/routes";
 import { ordersApi } from "@/services/api/orders";
@@ -20,11 +21,9 @@ import {
   pruneSelection,
   selectLine,
 } from "@/lib/cart-selection";
-import { inferToastVariant, type ToastVariant } from "@/lib/toast-variant";
+import { toast } from "@/lib/toast";
 import type { CheckoutPayload, EsewaPaymentInit } from "@/services/api/orders";
-import type { BazaarToast, Product } from "@/types";
-
-const TOAST_VISIBLE_MS = 3200;
+import type { Product } from "@/types";
 
 export function BazaarProvider({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
@@ -32,8 +31,6 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const pathname = usePathname();
   const screen = screenFromPath(pathname);
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [toastMsg, setToastMsg] = useState<BazaarToast | null>(null);
   const [authPrompt, setAuthPrompt] = useState<string | null>(null);
 
   const meQuery = useCurrentUser(true);
@@ -77,10 +74,10 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   const authed = useBazaarStore((s) => s.authed);
   const setAuthed = useBazaarStore((s) => s.setAuthed);
   const cart = useBazaarStore((s) => s.cart);
-  const wish = useBazaarStore((s) => s.wish);
-  const wishSellers = useBazaarStore((s) => s.wishSellers);
-  const setWish = useBazaarStore((s) => s.setWish);
-  const setWishSellers = useBazaarStore((s) => s.setWishSellers);
+  const savedProducts = useBazaarStore((s) => s.savedProducts);
+  const savedSellers = useBazaarStore((s) => s.savedSellers);
+  const setSavedProducts = useBazaarStore((s) => s.setSavedProducts);
+  const setSavedSellers = useBazaarStore((s) => s.setSavedSellers);
   const query = useBazaarStore((s) => s.query);
   const activeProduct = useBazaarStore((s) => s.activeProduct);
   const setActiveProduct = useBazaarStore((s) => s.setActiveProduct);
@@ -91,22 +88,22 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
 
   const { isLoading: cartLoading, isFetching: cartFetching } = useCartQuery(authed);
   const { addItem, updateQty, removeItem } = useCartMutations();
-  useWishlistQuery(authed);
+  useSavedQuery(authed);
   const {
-    addProduct: addWishProduct,
-    removeProduct: removeWishProduct,
-    addSeller: addWishSeller,
-    removeSeller: removeWishSeller,
-  } = useWishlistMutations();
+    addProduct: addSavedProduct,
+    removeProduct: removeSavedProduct,
+    addSeller: addSavedSeller,
+    removeSeller: removeSavedSeller,
+  } = useSavedMutations();
 
   useEffect(() => {
     if (!authed) {
       setCart([]);
       setSelectedCartIds(null);
-      setWish([]);
-      setWishSellers([]);
+      setSavedProducts([]);
+      setSavedSellers([]);
     }
-  }, [authed, setCart, setSelectedCartIds, setWish, setWishSellers]);
+  }, [authed, setCart, setSelectedCartIds, setSavedProducts, setSavedSellers]);
 
   // Keep the checkout selection valid as the cart changes: drop ids for items
   // that left the cart. The `null` ("all selected") sentinel passes through, so
@@ -118,22 +115,6 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   const scrollTop = useCallback(() => {
     window.scrollTo(0, 0);
   }, []);
-
-  const toast = useCallback(
-    (msg: string, variant?: ToastVariant, options?: { undo?: () => void }) => {
-      setToastMsg({
-        msg,
-        id: Date.now(),
-        variant: variant ?? inferToastVariant(msg),
-        undo: options?.undo,
-      });
-      if (toastTimer.current) {
-        clearTimeout(toastTimer.current);
-      }
-      toastTimer.current = setTimeout(() => setToastMsg(null), TOAST_VISIBLE_MS);
-    },
-    [],
-  );
 
   const promptLogin = useCallback(
     (message?: string) => {
@@ -171,56 +152,62 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
     [promptLogin],
   );
 
-  // Self-reference so the "Saved to wishlist" toast can offer an Undo that
-  // re-runs the toggle (now a remove) without making toggleWish depend on
-  // itself in useCallback.
-  const toggleWishRef = useRef<(productId: string) => Promise<void>>(async () => {});
+  // Self-reference so the "Saved" toast can offer an Undo that re-runs the
+  // toggle (now a remove) without making toggleSaved depend on itself in
+  // useCallback.
+  const toggleSavedRef = useRef<(productId: string) => Promise<void>>(async () => {});
 
-  const toggleWish = useCallback(
-    async (productId: string) => {
-      if (!ensureAuthed(t("toast.signInWishlistProduct"))) return;
-      const prev = useBazaarStore.getState().wish;
+  const toggleSaved = useCallback(
+    async (productId: string, productName?: string) => {
+      if (!ensureAuthed(t("toast.signInSaveProduct"))) return;
+      const prev = useBazaarStore.getState().savedProducts;
       const isSaved = prev.includes(productId);
-      setWish(isSaved ? prev.filter((id) => id !== productId) : [...prev, productId]);
+      setSavedProducts(isSaved ? prev.filter((id) => id !== productId) : [...prev, productId]);
       if (isSaved) {
-        toast(t("toast.removedFromWishlist"));
+        toast.success(t("toast.removedFromSaved"));
       } else {
-        toast(t("toast.savedToWishlist"), undefined, {
-          undo: () => void toggleWishRef.current(productId),
-        });
+        toast.success(
+          productName ? t("toast.saved", { name: productName }) : t("toast.savedGeneric"),
+          {
+            action: {
+              label: t("common.undo"),
+              onClick: () => void toggleSavedRef.current(productId),
+            },
+          },
+        );
       }
       try {
         if (isSaved) {
-          await removeWishProduct.mutateAsync(productId);
+          await removeSavedProduct.mutateAsync(productId);
         } else {
-          await addWishProduct.mutateAsync(productId);
+          await addSavedProduct.mutateAsync(productId);
         }
       } catch {
-        setWish(prev);
+        setSavedProducts(prev);
       }
     },
-    [addWishProduct, ensureAuthed, removeWishProduct, setWish, toast, t],
+    [addSavedProduct, ensureAuthed, removeSavedProduct, setSavedProducts, t],
   );
-  toggleWishRef.current = toggleWish;
+  toggleSavedRef.current = toggleSaved;
 
-  const toggleSellerWish = useCallback(
+  const toggleSavedSeller = useCallback(
     async (sellerId: string) => {
-      if (!ensureAuthed(t("toast.signInWishlistSeller"))) return;
-      const prev = useBazaarStore.getState().wishSellers;
+      if (!ensureAuthed(t("toast.signInSaveSeller"))) return;
+      const prev = useBazaarStore.getState().savedSellers;
       const isSaved = prev.includes(sellerId);
-      setWishSellers(isSaved ? prev.filter((id) => id !== sellerId) : [...prev, sellerId]);
-      toast(isSaved ? t("toast.unfollowedSeller") : t("toast.sellerSaved"));
+      setSavedSellers(isSaved ? prev.filter((id) => id !== sellerId) : [...prev, sellerId]);
+      toast.success(isSaved ? t("toast.unfollowedSeller") : t("toast.sellerSaved"));
       try {
         if (isSaved) {
-          await removeWishSeller.mutateAsync(sellerId);
+          await removeSavedSeller.mutateAsync(sellerId);
         } else {
-          await addWishSeller.mutateAsync(sellerId);
+          await addSavedSeller.mutateAsync(sellerId);
         }
       } catch {
-        setWishSellers(prev);
+        setSavedSellers(prev);
       }
     },
-    [addWishSeller, ensureAuthed, removeWishSeller, setWishSellers, toast, t],
+    [addSavedSeller, ensureAuthed, removeSavedSeller, setSavedSellers, t],
   );
 
   const nav = useCallback(
@@ -270,12 +257,15 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   }, [router, scrollTop, pathname]);
 
   const openProduct = useCallback(
-    (product: Product) => {
+    (product: Product, options?: { offer?: boolean }) => {
       setActiveProduct(product);
       // Optimistic screen — avoids flashing the previous page (e.g. browse)
       // while Next.js updates the URL to /product/:id.
       useBazaarStore.getState().setScreenOverride("pdp");
-      router.push(pathFromScreen("pdp", product.id));
+      // `?offer=1` carries the "Make an offer" intent from the bargain rails so the
+      // PDP opens the bargain modal on arrival — same path as its own offer button.
+      const path = pathFromScreen("pdp", product.id);
+      router.push(options?.offer ? `${path}?offer=1` : path);
       setTimeout(scrollTop, 0);
     },
     [router, scrollTop, setActiveProduct],
@@ -324,14 +314,14 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
             : qty > 1
               ? t("toast.qtyAddedToCart", { count: qty })
               : t("toast.addedToCart");
-        toast(successMessage ?? defaultMsg);
+        toast.success(successMessage ?? defaultMsg);
       } catch (error) {
         const msg = error instanceof ApiRequestError ? error.message : t("toast.couldNotAddToCart");
-        toast(msg, "error");
+        toast.error(msg);
         throw error;
       }
     },
-    [addItem, ensureAuthed, setSelectedCartIds, toast, t],
+    [addItem, ensureAuthed, setSelectedCartIds, t],
   );
 
   const updateCartQty = useCallback(
@@ -346,10 +336,10 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         const msg =
           error instanceof ApiRequestError ? error.message : t("toast.couldNotUpdateCart");
-        toast(msg, "error");
+        toast.error(msg);
       }
     },
-    [removeItem, updateQty, toast, t],
+    [removeItem, updateQty, t],
   );
 
   const removeFromCart = useCallback(
@@ -360,10 +350,10 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         const msg =
           error instanceof ApiRequestError ? error.message : t("toast.couldNotRemoveItem");
-        toast(msg, "error");
+        toast.error(msg);
       }
     },
-    [removeItem, toast, t],
+    [removeItem, t],
   );
 
   const buyNow = useCallback(
@@ -383,10 +373,10 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
         nav("checkout");
       } catch (error) {
         const msg = error instanceof ApiRequestError ? error.message : t("toast.couldNotAddToCart");
-        toast(msg, "error");
+        toast.error(msg);
       }
     },
-    [addItem, ensureAuthed, nav, setSelectedCartIds, toast, t],
+    [addItem, ensureAuthed, nav, setSelectedCartIds, t],
   );
 
   const placeOrder = useCallback(
@@ -412,21 +402,11 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         const msg =
           error instanceof ApiRequestError ? error.message : t("toast.couldNotPlaceOrder");
-        toast(msg, "error");
+        toast.error(msg);
         throw error;
       }
     },
-    [
-      ensureAuthed,
-      nav,
-      queryClient,
-      setCart,
-      setLastOrderId,
-      setOrderTotal,
-      setSelectedCartIds,
-      toast,
-      t,
-    ],
+    [ensureAuthed, nav, queryClient, setCart, setLastOrderId, setOrderTotal, setSelectedCartIds, t],
   );
 
   // eSewa checkout: creates an awaiting_payment order and returns the signed
@@ -450,20 +430,11 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         const msg =
           error instanceof ApiRequestError ? error.message : t("toast.couldNotStartPayment");
-        toast(msg, "error");
+        toast.error(msg);
         throw error;
       }
     },
-    [
-      ensureAuthed,
-      queryClient,
-      setCart,
-      setLastOrderId,
-      setOrderTotal,
-      setSelectedCartIds,
-      toast,
-      t,
-    ],
+    [ensureAuthed, queryClient, setCart, setLastOrderId, setOrderTotal, setSelectedCartIds, t],
   );
 
   const cartCount = cart.reduce((sum, item) => sum + item.qty, 0);
@@ -506,11 +477,10 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       removeFromCart,
       buyNow,
       cartCount,
-      wish,
-      wishSellers,
-      toggleWish,
-      toggleSellerWish,
-      toast,
+      savedProducts,
+      savedSellers,
+      toggleSaved,
+      toggleSavedSeller,
       promptLogin,
       query,
       setQuery,
@@ -521,7 +491,6 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       authed,
       setAuthed,
       product: productFromRoute,
-      toastMsg,
     }),
     [
       screen,
@@ -537,11 +506,10 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       removeFromCart,
       buyNow,
       cartCount,
-      wish,
-      wishSellers,
-      toggleWish,
-      toggleSellerWish,
-      toast,
+      savedProducts,
+      savedSellers,
+      toggleSaved,
+      toggleSavedSeller,
       promptLogin,
       query,
       setQuery,
@@ -552,19 +520,25 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       authed,
       setAuthed,
       productFromRoute,
-      toastMsg,
     ],
   );
 
   return (
     <>
       <BazaarCtx.Provider value={value}>{children}</BazaarCtx.Provider>
-      <LoginPromptModal
-        open={authPrompt != null}
-        message={authPrompt ?? ""}
-        onClose={closeAuthPrompt}
-        onSignIn={goToSignIn}
-      />
+      {/* Guest sign-in prompt is buyer chrome but renders outside the shell, so
+          opt it into the buyer button pack explicitly. */}
+      <BuyerPack>
+        <LoginPromptModal
+          open={authPrompt != null}
+          message={authPrompt ?? ""}
+          onClose={closeAuthPrompt}
+          onSignIn={goToSignIn}
+        />
+      </BuyerPack>
+      {/* One toast outlet for the whole app — buyer and seller surfaces alike.
+          Mounted outside the buyer pack so it stays theme-neutral everywhere. */}
+      <ToastContainer />
     </>
   );
 }

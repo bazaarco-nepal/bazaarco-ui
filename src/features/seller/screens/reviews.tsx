@@ -4,7 +4,8 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, RatingStars, ChipGroup, ApiState } from "@/components/ui";
 import { useSellerReviews } from "@/hooks/use-seller";
-import { useBz, BuyerAvatar } from "@/components/common";
+import { BuyerAvatar } from "@/components/common";
+import { toast } from "@/lib/toast";
 import {
   SellerHelpBar,
   SellerPageHeader,
@@ -23,7 +24,6 @@ function formatReviewDate(iso: string): string {
 
 export function SellerReviews() {
   const { t } = useTranslation();
-  const { toast } = useBz();
   const { data: REVIEWS_DATA = [], isLoading, isError, error } = useSellerReviews();
   const [filter, setFilter] = useState("all");
   const list = REVIEWS_DATA.filter(
@@ -131,14 +131,14 @@ export function SellerReviews() {
                 </div>
               ) : (
                 <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                  <Button variant="primary" size="sm" onClick={() => toast("Reply sent")}>
+                  <Button variant="primary" size="sm" onClick={() => toast.success("Reply sent")}>
                     Reply
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     icon="flag"
-                    onClick={() => toast("Reported to BazaarCo")}
+                    onClick={() => toast.success("Reported to BazaarCo")}
                   >
                     Report
                   </Button>

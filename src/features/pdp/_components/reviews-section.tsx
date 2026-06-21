@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { Icon, RatingStars } from "@/components/ui";
+import { toast } from "@/lib/toast";
 import { BuyerAvatar, useBz } from "@/components/common";
 import {
   useCreateProductReview,
@@ -55,7 +56,7 @@ interface ReviewsSectionProps {
 }
 
 function ReviewComposer({ productId, onDone }: { productId: string; onDone: () => void }) {
-  const { toast, authed, promptLogin } = useBz();
+  const { authed, promptLogin } = useBz();
   const createReview = useCreateProductReview(productId);
   const uploadImage = useUploadImage();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -73,7 +74,7 @@ function ReviewComposer({ productId, onDone }: { productId: string; onDone: () =
     const files = Array.from(filesList);
     const slots = MAX_REVIEW_PHOTOS - attachments.length;
     if (slots <= 0) {
-      toast(`Max ${MAX_REVIEW_PHOTOS} photos.`);
+      toast.error(`Max ${MAX_REVIEW_PHOTOS} photos.`);
       return;
     }
     const accepted = files.slice(0, slots);
@@ -125,7 +126,7 @@ function ReviewComposer({ productId, onDone }: { productId: string; onDone: () =
         text: text.trim(),
         ...(photoUrls.length ? { photoUrls } : {}),
       });
-      toast("Thanks! Your review is posted.");
+      toast.success("Thanks! Your review is posted.");
       attachments.forEach((a) => URL.revokeObjectURL(a.previewUrl));
       setAttachments([]);
       setStars(0);
@@ -137,7 +138,7 @@ function ReviewComposer({ productId, onDone }: { productId: string; onDone: () =
       } else if (err instanceof ApiRequestError && err.status === 409) {
         setError("You've already reviewed this product.");
       } else {
-        toast("Could not post review. Try again.");
+        toast.error("Could not post review. Try again.");
       }
     }
   };

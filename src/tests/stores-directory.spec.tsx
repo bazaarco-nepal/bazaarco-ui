@@ -67,7 +67,7 @@ vi.mock("@/hooks/use-catalog", () => ({
 }));
 
 import { BazaarCtx } from "@/components/common";
-import { Stores } from "@/features/stores/stores";
+import { Stores } from "@/buyer/features/stores/stores";
 
 const openStore = vi.fn();
 

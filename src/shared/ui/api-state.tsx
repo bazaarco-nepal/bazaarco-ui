@@ -7,7 +7,9 @@ import { Spinner } from "@/components/ui";
 interface ApiStateProps {
   isLoading: boolean;
   isError?: boolean;
-  error?: Error | null;
+  // TanStack Query v5 surfaces an un-annotated query error as `unknown`, so
+  // accept that and narrow before reading `.message` below.
+  error?: unknown;
   children: React.ReactNode;
   fallback?: React.ReactNode;
 }
@@ -31,7 +33,7 @@ export function ApiState({ isLoading, isError = false, error, children, fallback
           {t("common.apiState.errorTitle")}
         </p>
         <p style={{ margin: "8px 0 0", fontSize: ".875rem", color: "var(--ink-500)" }}>
-          {error?.message ?? t("common.apiState.errorMessage")}
+          {error instanceof Error ? error.message : t("common.apiState.errorMessage")}
         </p>
       </div>
     );

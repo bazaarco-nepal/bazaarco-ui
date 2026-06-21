@@ -55,7 +55,7 @@ vi.mock("@/hooks/use-search", () => ({
 }));
 
 import { BazaarCtx } from "@/components/common";
-import { Browse } from "@/features/browse/browse";
+import { Browse } from "@/buyer/features/browse/browse";
 import { useBazaarStore } from "@/store/bazaar-store";
 
 // Minimal context backed by the REAL store so Browse's setQuery writes it and

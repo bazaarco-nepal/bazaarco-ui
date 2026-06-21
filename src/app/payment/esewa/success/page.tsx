@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { EsewaCallback } from "@/features/payment/esewa-callback";
+import { EsewaCallback } from "@/buyer/features/payment/esewa-callback";
 
 // eSewa success redirect target. A real route (not a SPA screen) so the cold
 // full-page load from eSewa lands somewhere that can read the response and

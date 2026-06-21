@@ -2,7 +2,7 @@ import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { Badge, OptionChip, RatingInline } from "@/components/ui";
-import { TrustChips } from "@/features/pdp/_components/trust-chips";
+import { TrustChips } from "@/buyer/features/pdp/_components/trust-chips";
 import type { Product } from "@/types";
 
 // The PDP consistency refactor pulls badges, option chips and the compact rating

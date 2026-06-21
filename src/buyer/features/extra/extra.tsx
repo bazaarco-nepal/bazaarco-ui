@@ -43,7 +43,7 @@ import { useCatalog } from "@/hooks/use-catalog";
 import { useTracking } from "@/hooks/use-tracking";
 import { useCancelOrder, useOrder } from "@/hooks/use-orders";
 import { canCancelOrder } from "@/lib/order-utils";
-import { ConfirmModal } from "@/features/checkout/checkout";
+import { ConfirmModal } from "@/buyer/features/checkout/checkout";
 import { useAcceptCounterOffer, useBargains } from "@/hooks/use-bargains";
 import { bargainExpiryLabel } from "@/lib/bargain-expiry";
 import { useSavedQuery } from "@/hooks/use-saved";

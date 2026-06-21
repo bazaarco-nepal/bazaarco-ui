@@ -13,6 +13,7 @@ import {
   SkeletonCard,
   StoreAvatar,
   AppLink,
+  LocalErrorBoundary,
 } from "@/components/ui";
 import { toast } from "@/lib/toast";
 import { BuyerAvatar, ProductCard, useBz } from "@/components/common";
@@ -444,7 +445,8 @@ export function Store() {
 
           {/* reviews */}
           {tab === "reviews" && (
-            <div style={{ marginBottom: 40 }}>
+            <LocalErrorBoundary label="store-reviews">
+              <div style={{ marginBottom: 40 }}>
               {reviews.length === 0 ? (
                 <EmptyState
                   title={t("store.noReviewsTitle")}
@@ -533,7 +535,8 @@ export function Store() {
                   ))}
                 </div>
               )}
-            </div>
+              </div>
+            </LocalErrorBoundary>
           )}
 
           {rating && <RateStoreModal seller={seller} onClose={() => setRating(false)} />}

@@ -39,7 +39,7 @@ import { useCatalog } from "@/hooks/use-catalog";
 import { formatNPR, roundRs } from "@/lib/money";
 import { bargainExpiryLabel } from "@/lib/bargain-expiry";
 import { useAddresses, pickDefaultAddress } from "@/hooks/use-addresses";
-import { SavedAddressPicker } from "@/features/profile/addresses";
+import { SavedAddressPicker } from "@/buyer/features/profile/addresses";
 import {
   ADDRESS_LABEL_PRESETS,
   isAddressComplete,

@@ -34,6 +34,7 @@ import {
   BackToTop,
   ApiState,
   AppLink,
+  LocalErrorBoundary,
 } from "@/components/ui";
 import { pathFromScreen, productShareUrl, searchPath } from "@/config/routes";
 import { useBazaarStore } from "@/store/bazaar-store";
@@ -1735,12 +1736,16 @@ export function PDP({ p: pProp }: PdpProps) {
 
           <section className="bz-pdp-msec">
             <h4>Reviews</h4>
-            <ReviewsSection productId={p.id} rating={p.rating} reviewCount={p.reviews} />
+            <LocalErrorBoundary label="pdp-reviews">
+              <ReviewsSection productId={p.id} rating={p.rating} reviewCount={p.reviews} />
+            </LocalErrorBoundary>
           </section>
 
           <section className="bz-pdp-msec">
             <h4>Q&amp;A</h4>
-            <QASection productId={p.id} />
+            <LocalErrorBoundary label="pdp-qa">
+              <QASection productId={p.id} />
+            </LocalErrorBoundary>
           </section>
         </div>
 
@@ -1840,7 +1845,9 @@ export function PDP({ p: pProp }: PdpProps) {
           {/* Customer Reviews */}
           <section style={detailCardStyle}>
             <h2 style={detailTitleStyle}>Customer Reviews</h2>
-            <ReviewsSection productId={p.id} rating={p.rating} reviewCount={p.reviews} />
+            <LocalErrorBoundary label="pdp-reviews">
+              <ReviewsSection productId={p.id} rating={p.rating} reviewCount={p.reviews} />
+            </LocalErrorBoundary>
           </section>
 
           {/* Questions & Answers */}
@@ -1849,19 +1856,23 @@ export function PDP({ p: pProp }: PdpProps) {
             <p style={{ margin: "-4px 0 16px", fontSize: ".8125rem", color: "var(--ink-500)" }}>
               Ask questions about product details, warranty, delivery, or usage.
             </p>
-            <QASection productId={p.id} />
+            <LocalErrorBoundary label="pdp-qa">
+              <QASection productId={p.id} />
+            </LocalErrorBoundary>
           </section>
         </div>
 
         {similarItems.length > 0 && (
-          <div className="bz-pdp-similar">
-            <SectionHead title="Similar items" />
-            <div className="bz-picks-grid">
-              {similarItems.map((rp) => (
-                <ProductCard key={rp.id} p={rp} onClick={openProduct} />
-              ))}
+          <LocalErrorBoundary label="pdp-similar">
+            <div className="bz-pdp-similar">
+              <SectionHead title="Similar items" />
+              <div className="bz-picks-grid">
+                {similarItems.map((rp) => (
+                  <ProductCard key={rp.id} p={rp} onClick={openProduct} />
+                ))}
+              </div>
             </div>
-          </div>
+          </LocalErrorBoundary>
         )}
 
         {bargain && bargainingAvailable && (

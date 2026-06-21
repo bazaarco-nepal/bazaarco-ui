@@ -52,7 +52,7 @@ import { useCancelOrder, useOrders } from "@/hooks/use-orders";
 import { canCancelOrder } from "@/lib/order-utils";
 import { formatNPR } from "@/lib/money";
 import { toast } from "@/lib/toast";
-import { ConfirmModal } from "@/features/checkout/checkout";
+import { ConfirmModal } from "@/buyer/features/checkout/checkout";
 import { useChatInbox } from "@/hooks/use-chat";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { displayName } from "@/lib/display";

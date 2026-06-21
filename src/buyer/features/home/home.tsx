@@ -26,6 +26,7 @@ import {
   AppLink,
   StoreAvatar,
   RowLimitedGrid,
+  LocalErrorBoundary,
 } from "@/components/ui";
 import { browsePath, pathFromScreen, videoPath } from "@/config/routes";
 import { ASSETS } from "@/config/assets";
@@ -396,7 +397,9 @@ export function Home() {
           <W className="bz-home-hero" style={{ paddingTop: 22 }}>
             <div className="bz-home-herorow">
               <HomeHero />
-              <NewArrivalsRail products={newArrivalItems} loading={homeLoading} />
+              <LocalErrorBoundary label="home-new-arrivals">
+                <NewArrivalsRail products={newArrivalItems} loading={homeLoading} />
+              </LocalErrorBoundary>
             </div>
           </W>
         </div>
@@ -441,19 +444,27 @@ export function Home() {
         {/* New arrivals — mobile placement (after categories, per the revamp). */}
         <div className="bz-show-mobile">
           <W>
-            <NewArrivalsMobile products={newArrivalItems} loading={homeLoading} />
+            <LocalErrorBoundary label="home-new-arrivals">
+              <NewArrivalsMobile products={newArrivalItems} loading={homeLoading} />
+            </LocalErrorBoundary>
           </W>
         </div>
 
-        <PicksSections topPicks={homeData?.topPicks} homeLoading={homeLoading} />
+        <LocalErrorBoundary label="home-picks">
+          <PicksSections topPicks={homeData?.topPicks} homeLoading={homeLoading} />
+        </LocalErrorBoundary>
 
         {/* Featured zones — the only two sections on a full-bleed tinted band. */}
         <Band variant="watch">
-          <WatchSection />
+          <LocalErrorBoundary label="home-watch">
+            <WatchSection />
+          </LocalErrorBoundary>
         </Band>
 
         <Band variant="bargain">
-          <BargainSection />
+          <LocalErrorBoundary label="home-bargain">
+            <BargainSection />
+          </LocalErrorBoundary>
         </Band>
 
         {/* Endless product feed — shown on both web and mobile */}

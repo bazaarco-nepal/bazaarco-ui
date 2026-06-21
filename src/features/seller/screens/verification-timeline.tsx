@@ -3,7 +3,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Button, ApiState } from "@/components/ui";
-import { SellerIcon } from "../_shared/icons";
+import { SellerIcon } from "@/seller/ui/icons";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { useSellerOrganization } from "@/hooks/use-seller";
 import { useBz } from "@/components/common";

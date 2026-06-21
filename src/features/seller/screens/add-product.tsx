@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Spinner, Price, EmptyState, AppLink } from "@/components/ui";
-import { SellerIcon } from "../_shared/icons";
+import { SellerIcon } from "@/seller/ui/icons";
 import {
   FormActionBar,
   MessageBar,

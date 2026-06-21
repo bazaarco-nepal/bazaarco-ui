@@ -12,7 +12,7 @@ import {
   AppLink,
   StoreAvatar,
 } from "@/components/ui";
-import { SellerIcon } from "../_shared/icons";
+import { SellerIcon } from "@/seller/ui/icons";
 import { useCompleteOnboarding } from "@/hooks/use-auth";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { displayName } from "@/lib/display";

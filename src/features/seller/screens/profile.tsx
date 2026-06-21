@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui";
-import { SellerIcon } from "../_shared/icons";
+import { SellerIcon } from "@/seller/ui/icons";
 import { useLogout, useUpdateProfile } from "@/hooks/use-auth";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { displayName, userInitial } from "@/lib/display";

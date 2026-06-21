@@ -14,7 +14,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui";
-import { SellerIcon } from "./icons";
+import { SellerIcon } from "@/seller/ui/icons";
 
 /* ---------- Section progress ---------- */
 

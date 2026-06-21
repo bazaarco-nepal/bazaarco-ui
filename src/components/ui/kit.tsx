@@ -11,7 +11,7 @@ import { tintForName, STORE_TINTS } from "@/lib/store-tint";
 import { formatNPR } from "@/lib/money";
 import { MapPinPicker } from "@/components/ui/map-pin-picker";
 import { CLOUDINARY_CLOUD_NAME, publicIdFromVideoUrl } from "@/lib/cloudinary";
-import { SellerIcon } from "@/features/seller/_shared/icons";
+import { SellerIcon } from "@/seller/ui/icons";
 import "cloudinary-video-player/cld-video-player.min.css";
 
 /* ============================================================

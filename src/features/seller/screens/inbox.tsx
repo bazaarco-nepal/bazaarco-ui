@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChipGroup, usePages, PageBar, ApiState } from "@/components/ui";
-import { SellerIcon } from "../_shared/icons";
+import { SellerIcon } from "@/seller/ui/icons";
 import { type OrderStatus } from "@/lib/order-utils";
 import { useSellerInbox } from "@/hooks/use-seller";
 import { useBz } from "@/components/common";

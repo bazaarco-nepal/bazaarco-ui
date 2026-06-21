@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 import { Button } from "@/components/ui";
-import { SellerIcon } from "@/features/seller/_shared/icons";
+import { SellerIcon } from "@/seller/ui/icons";
 
 export function SupportContactModal({
   open,

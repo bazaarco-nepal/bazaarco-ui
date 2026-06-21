@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { IconOverrideContext } from "@/components/ui";
-import { SellerIcon } from "../_shared/icons";
+import { SellerIcon } from "@/seller/ui/icons";
 import { SellerVerificationBanner } from "@/components/seller/seller-verification-banner";
 import { StoreSwitcherChip } from "../store-switcher";
 import { useLogout } from "@/hooks/use-auth";

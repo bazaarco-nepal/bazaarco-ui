@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Logo, Button, LandmarkAddress, ApiState, AppLink, StoreAvatar } from "@/components/ui";
-import { SellerIcon } from "../_shared/icons";
+import { SellerIcon } from "@/seller/ui/icons";
 import {
   useSellerStorefront,
   useUpdateStorefront,

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Chip } from "@/components/ui";
-import { SellerIcon } from "./icons";
+import { SellerIcon } from "@/seller/ui/icons";
 import { formatNPR } from "@/lib/money";
 import { BuyerAvatar } from "@/components/common";
 import { INBOX_LABEL, INBOX_TONE } from "./inbox";

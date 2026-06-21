@@ -3,7 +3,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Placeholder, VideoPlayer, EmptyState, ApiState } from "@/components/ui";
-import { SellerIcon } from "../_shared/icons";
+import { SellerIcon } from "@/seller/ui/icons";
 import { formatNPR } from "@/lib/money";
 import { useProduct } from "@/hooks/use-catalog";
 import { type SellerInventoryItem } from "@/services/api/seller";

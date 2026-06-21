@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui";
-import { SellerIcon } from "@/features/seller/_shared/icons";
+import { SellerIcon } from "@/seller/ui/icons";
 
 export function ConfirmModal({
   open,

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiState } from "@/components/ui";
-import { SellerIcon } from "../_shared/icons";
+import { SellerIcon } from "@/seller/ui/icons";
 import { SellerVideoLibrary } from "@/components/seller/seller-video-library";
 import { useSellerVideos, useSellerOrganization } from "@/hooks/use-seller";
 import { SellerHelpBar } from "../_shared/components";

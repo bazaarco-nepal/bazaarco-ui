@@ -12,7 +12,7 @@ import {
   PageBar,
   ApiState,
 } from "@/components/ui";
-import { SellerIcon } from "../_shared/icons";
+import { SellerIcon } from "@/seller/ui/icons";
 import { ProductDeleteConfirmModal } from "@/components/seller/product-delete-confirm-modal";
 import { formatNPR } from "@/lib/money";
 import { toast } from "@/lib/toast";

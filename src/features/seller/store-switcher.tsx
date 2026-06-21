@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 
 import { StoreAvatar, Button, LandmarkAddress } from "@/components/ui";
-import { SellerIcon } from "./_shared/icons";
+import { SellerIcon } from "@/seller/ui/icons";
 import { useBz } from "@/components/common";
 import { useCreateSellerStore, useSwitchActiveStore } from "@/hooks/use-seller";
 import type { SellerStoreSummary } from "@/services/api/seller-organization";

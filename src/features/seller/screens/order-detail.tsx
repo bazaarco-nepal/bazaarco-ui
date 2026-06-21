@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useTranslation, Trans } from "react-i18next";
 import { Button, Placeholder, EmptyState, AppLink } from "@/components/ui";
-import { SellerIcon } from "../_shared/icons";
+import { SellerIcon } from "@/seller/ui/icons";
 import { formatNPR } from "@/lib/money";
 import { toast } from "@/lib/toast";
 import { type OrderStatus } from "@/lib/order-utils";

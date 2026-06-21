@@ -48,7 +48,13 @@ const eslintConfig = [
     ),
   },
   {
-    files: ["src/components/ui/**", "src/features/**"],
+    files: [
+      "src/components/ui/**",
+      "src/features/**",
+      "src/shared/ui/**",
+      "src/buyer/ui/**",
+      "src/seller/ui/**",
+    ],
     rules: {
       "@typescript-eslint/no-unused-vars": "off",
       "@typescript-eslint/no-unused-expressions": "off",

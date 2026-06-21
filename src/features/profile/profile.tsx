@@ -25,7 +25,6 @@ import {
   OTPInput,
   ChipGroup,
   MobileBuyBar,
-  BottomNav,
   LandmarkAddress,
   VoiceMicButton,
   usePaged,

@@ -27,7 +27,6 @@ import {
   MenuRow,
   ChipGroup,
   MobileBuyBar,
-  BottomNav,
   LandmarkAddress,
   VoiceMicButton,
   usePaged,

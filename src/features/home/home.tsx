@@ -18,7 +18,6 @@ import {
   MenuRow,
   ChipGroup,
   MobileBuyBar,
-  BottomNav,
   LandmarkAddress,
   usePages,
   LoadMore,

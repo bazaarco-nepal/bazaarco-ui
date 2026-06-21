@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { usePathname } from "next/navigation";
 import { NO_FOOTER_SCREENS, NO_NAV_SCREENS, SELLER_SCREENS, screenFromPath } from "@/config/routes";
-import { BottomNav, BuyerPack } from "@/components/ui";
+import { BuyerPack, BuyerBottomNav } from "@/buyer/ui";
 import { SellerBottomNav } from "@/seller/ui";
 import { Footer, Navbar, useBz } from "@/components/common";
 import { AuthRoleGuard } from "@/components/layouts/auth-role-guard";
@@ -78,7 +78,7 @@ function BottomNavBridge() {
   }
 
   return (
-    <BottomNav
+    <BuyerBottomNav
       active={bottomNavActive}
       onNav={nav}
       cartCount={cartCount}

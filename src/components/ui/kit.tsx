@@ -11,7 +11,6 @@ import { tintForName, STORE_TINTS } from "@/lib/store-tint";
 import { formatNPR } from "@/lib/money";
 import { MapPinPicker } from "@/components/ui/map-pin-picker";
 import { CLOUDINARY_CLOUD_NAME, publicIdFromVideoUrl } from "@/lib/cloudinary";
-import { SellerIcon } from "@/seller/ui/icons";
 import { BzPack } from "@/shared/ui/pack";
 import "cloudinary-video-player/cld-video-player.min.css";
 
@@ -2894,108 +2893,6 @@ export function MobileBuyBar({
 }
 
 /* ---------- Mobile bottom nav (guide §1) ---------- */
-export function BottomNav({
-  active,
-  onNav,
-  seller,
-  cartCount = 0,
-  avatarUrl,
-}: {
-  active: string | null;
-  onNav: (screen: string) => void;
-  seller?: boolean;
-  cartCount?: number;
-  avatarUrl?: string | null;
-}) {
-  const { t } = useTranslation();
-  const buyerItems = [
-    { id: "home", icon: "home", label: t("bottomNav.home") },
-    { id: "browse", icon: "grid", label: t("bottomNav.categories") },
-    { id: "video", icon: "play", label: t("bottomNav.watch"), elevated: true },
-    { id: "cart", icon: "cart", label: t("bottomNav.cart"), badge: cartCount },
-    { id: "profile", icon: "user", label: t("bottomNav.account") },
-  ];
-  const sellerItems = [
-    { id: "s-dashboard", icon: "home", label: t("bottomNav.home") },
-    { id: "s-inbox", icon: "package", label: t("bottomNav.orders") },
-    { id: "s-add", icon: "plus", label: t("bottomNav.add") },
-    { id: "s-bargain", icon: "bargain", label: t("bottomNav.bargain") },
-    { id: "__menu", icon: "menu", label: t("bottomNav.more") },
-  ];
-  const items = seller ? sellerItems : buyerItems;
-  // Fall back to the user icon if the avatar image fails to load (e.g. an
-  // expired/blocked Google photo) instead of showing a broken-image glyph.
-  const [avatarFailed, setAvatarFailed] = useState(false);
-  useEffect(() => {
-    setAvatarFailed(false);
-  }, [avatarUrl]);
-  return (
-    // The seller nav lives outside the seller shell, so it opts into the
-    // Fluent skin itself — that re-points the accent/badge to blue and swaps
-    // in Segoe UI to match the rest of the seller console.
-    <nav
-      className="bz-bnav"
-      data-skin={seller ? "fluent" : undefined}
-      aria-label={t("bottomNav.aria")}
-    >
-      {items.map((it) => (
-        <button
-          key={it.id}
-          type="button"
-          onClick={() => {
-            if (it.id === "__menu") {
-              window.dispatchEvent(new CustomEvent("bz-seller-menu"));
-              return;
-            }
-            onNav(it.id);
-          }}
-          aria-current={active === it.id ? "page" : undefined}
-          className={`bz-bnav__item${active === it.id ? " bz-bnav__item--active" : ""}${
-            "elevated" in it && it.elevated ? " bz-bnav__item--raised" : ""
-          }`}
-        >
-          {"elevated" in it && it.elevated ? (
-            // Center "Watch" — a raised red disc that floats above the bar.
-            <span className="bz-bnav__raise">
-              <Icon name={it.icon} size={26} fill="currentColor" color="#fff" />
-            </span>
-          ) : (
-            <span className="bz-bnav__ic">
-              {it.id === "profile" && avatarUrl && !avatarFailed ? (
-                <img
-                  src={avatarUrl}
-                  alt=""
-                  referrerPolicy="no-referrer"
-                  onError={() => setAvatarFailed(true)}
-                  style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: "50%",
-                    objectFit: "cover",
-                    border:
-                      active === it.id ? "2px solid var(--blue)" : "2px solid var(--line-200)",
-                  }}
-                />
-              ) : seller ? (
-                // Fluent icons (filled when active) to match the seller sidebar.
-                <SellerIcon name={it.icon} size={22} filled={active === it.id} />
-              ) : (
-                <Icon name={it.icon} size={22} />
-              )}
-              {"badge" in it && it.badge > 0 ? (
-                <span className="bz-bnav__badge tnum" aria-hidden>
-                  {it.badge > 9 ? "9+" : it.badge}
-                </span>
-              ) : null}
-            </span>
-          )}
-          <span className="bz-bnav__label">{it.label}</span>
-        </button>
-      ))}
-    </nav>
-  );
-}
-
 /* ---------- Landmark address picker ---------- */
 export function LandmarkAddress({ value, onChange }) {
   const { t } = useTranslation();

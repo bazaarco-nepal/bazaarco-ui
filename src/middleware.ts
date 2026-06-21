@@ -1,10 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 /* Level 1 — intentional global maintenance. When NEXT_PUBLIC_MAINTENANCE_MODE
-   is "true" (set for scheduled upgrades), every buyer request is rewritten to
-   the /maintenance page. We REWRITE (not redirect) so the URL stays put and a
-   Refresh just re-hits the gate — no reload loop. A ?bypass=<token> query sets a
-   cookie so an admin can verify the site before flipping the flag off. */
+   is "true" (set for scheduled upgrades), every buyer request is redirected to
+   /maintenance. We REDIRECT (not rewrite) because the buyer SPA routes off the
+   browser URL — a rewrite leaves the URL unchanged, so the SPA would keep
+   rendering the requested screen. The pathname === "/maintenance" early-return
+   stops a redirect loop. A ?bypass=<token> query sets a cookie so an admin can
+   verify the site before flipping the flag off. */
 
 const BYPASS_COOKIE = "bz_maint_bypass";
 
@@ -33,7 +35,8 @@ export function middleware(req: NextRequest) {
 
   const url = req.nextUrl.clone();
   url.pathname = "/maintenance";
-  return NextResponse.rewrite(url);
+  url.search = "";
+  return NextResponse.redirect(url);
 }
 
 export const config = {

@@ -1,7 +1,9 @@
 import { BUYER_SCREENS, SELLER_SCREENS } from "@/config/routes";
 import type { AuthUser } from "@/types/auth";
 
-const PUBLIC_SCREENS = new Set(["auth", "auth-callback"]);
+// `maintenance` is public so the Level 1 gate can land any visitor (guest,
+// buyer, or seller) on it without the route guard bouncing them to sign-in.
+const PUBLIC_SCREENS = new Set(["auth", "auth-callback", "maintenance"]);
 
 /**
  * Buyer screens a guest sees rendered normally (read-only browsing). `video` is

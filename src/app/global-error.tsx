@@ -9,6 +9,8 @@
 // it can't itself throw.
 import "@/styles/globals.css";
 
+import { useEffect } from "react";
+
 import { BuyerPack, MaintenanceMessage } from "@/components/ui";
 
 export default function GlobalError({
@@ -18,6 +20,10 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    console.error("[global-error] root render failure", error.digest ?? "", error);
+  }, [error]);
+
   return (
     <html lang="en">
       <body>

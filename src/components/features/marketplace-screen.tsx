@@ -61,7 +61,7 @@ import {
   BargainingGuidePage,
 } from "@/features";
 import { useBz } from "@/components/common";
-import { EmptyState, Spinner, SellerPack } from "@/components/ui";
+import { EmptyState, MaintenanceMessage, Spinner, SellerPack } from "@/components/ui";
 import { SELLER_SCREENS } from "@/config/routes";
 import { isBuyerScreen, isGuestViewableScreen, isSellerUser } from "@/lib/auth-rbac";
 
@@ -136,6 +136,9 @@ export function MarketplaceScreen() {
     return <ScreenLoader />;
   }
 
+  // Level 1 — scheduled maintenance. The middleware redirects all traffic here;
+  // it renders inside the shell so the header/footer stay for brand continuity.
+  if (screen === "maintenance") return <MaintenanceMessage variant="page" />;
   if (screen === "auth") return <Auth />;
   if (screen === "auth-callback") {
     return (

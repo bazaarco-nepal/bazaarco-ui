@@ -72,6 +72,7 @@ export const NO_FOOTER_SCREENS = new Set([
 const SCREEN_PATH: Record<string, string> = {
   auth: "/auth",
   "auth-callback": "/auth/callback",
+  maintenance: "/maintenance",
   home: "/home",
   browse: "/browse",
   search: "/search",
@@ -234,6 +235,7 @@ export function storeShareUrl(sellerId: string, origin?: string): string {
 const SCREEN_TITLES: Record<string, string> = {
   auth: "Sign In",
   "auth-callback": "Signing In",
+  maintenance: "Maintenance",
   home: "Home",
   browse: "Browse Products",
   search: "Search",

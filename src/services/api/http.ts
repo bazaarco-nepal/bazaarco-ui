@@ -22,7 +22,7 @@ export class ApiRequestError extends Error {
  * (handled by the auth flow) or 404 (handled as not-found). Minor widgets must
  * NOT use this; they keep their soft empty states.
  */
-export function throwOnCriticalError(error: unknown): boolean {
+export function throwOnCriticalError(error: Error): boolean {
   return !(error instanceof ApiRequestError && (error.status === 401 || error.status === 404));
 }
 

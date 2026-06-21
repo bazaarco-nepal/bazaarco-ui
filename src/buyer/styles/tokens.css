@@ -478,6 +478,10 @@ body {
   width: 100%;
   z-index: 100;
 }
+.bz-navbar__desktop,
+.bz-navbar__mobile {
+  width: 100%;
+}
 
 /* Brand mark sits in a cream tile so the colour logo reads on the navy bar. */
 .bz-navbar__brand {
@@ -657,6 +661,7 @@ body {
 
 /* ---------- Desktop: three stacked tiers ---------- */
 .bz-navbar__utility {
+  width: 100%;
   background: var(--blue-deep);
 }
 .bz-navbar__utility-inner {
@@ -685,6 +690,7 @@ body {
 }
 
 .bz-navbar__main {
+  width: 100%;
   background: var(--blue-deep);
 }
 .bz-navbar__main-inner {
@@ -787,6 +793,7 @@ body {
 }
 
 .bz-navbar__cats {
+  width: 100%;
   background: #fff;
   border-bottom: 1px solid var(--cream-line);
 }

@@ -31,7 +31,7 @@ export function BuyerBottomNav({
     { id: "home", icon: "home", label: t("bottomNav.home") },
     { id: "browse", icon: "grid", label: t("bottomNav.categories") },
     { id: "video", icon: "play", label: t("bottomNav.watch"), elevated: true },
-    { id: "cart", icon: "cart", label: t("bottomNav.cart"), badge: cartCount },
+    { id: "bargains", icon: "bargain", label: t("bottomNav.bargain") },
     { id: "profile", icon: "user", label: t("bottomNav.account") },
   ];
   // Fall back to the user icon if the avatar image fails to load (e.g. an

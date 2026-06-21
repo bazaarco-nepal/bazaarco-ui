@@ -205,14 +205,22 @@ export function searchPath(options?: SearchPathOptions): string {
   return qs ? `/search?${qs}` : "/search";
 }
 
-/** Build `/browse` — product listings delegate to `/search`; only the category browser stays on browse. */
+/** Build `/browse` — product listings delegate to `/search`; category browsing
+    and the all-products newest listing stay on Browse because Search has no
+    newest-created sort. */
 export function browsePath(options?: BrowsePathOptions): string {
   if (options?.view === "categories") {
     return "/browse?view=categories";
   }
+  const q = options?.q?.trim();
+  const cats = options?.cat;
+  const joinedCats = cats ? (Array.isArray(cats) ? cats : [cats]).filter(Boolean).join(",") : "";
+  if (!q && !joinedCats && options?.sort?.trim() === "newest") {
+    return "/browse?sort=newest";
+  }
   return searchPath({
-    q: options?.q,
-    cat: options?.cat,
+    q,
+    cat: joinedCats ? cats : undefined,
     sort: options?.sort,
   });
 }

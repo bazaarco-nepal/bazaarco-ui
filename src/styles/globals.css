@@ -231,6 +231,10 @@ a {
 
 /* ---------- Mobile breathing room: lighter, more compact product cards ---------- */
 @media (max-width: 768px) {
+  .bz-picks-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   /* Square image tile, same ratio as desktop so cards stay consistent. */
   .bz-pcard__img {
     aspect-ratio: 1 / 1 !important;

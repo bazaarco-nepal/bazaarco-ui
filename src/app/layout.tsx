@@ -51,9 +51,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: SITE_TITLE,
   description: SITE_DESCRIPTION,
-  // iOS ignores the web manifest for the home-screen icon and reads
-  // <link rel="apple-touch-icon"> directly.
+  // Declaring `icons` here suppresses Next's auto file-convention favicon, so the
+  // browser-tab icon must be listed explicitly alongside apple. iOS ignores the
+  // web manifest for the home-screen icon and reads <link rel="apple-touch-icon">.
   icons: {
+    icon: "/icon.png",
     apple: "/icons/icon-192.png",
   },
   // Emits <meta name="apple-mobile-web-app-capable" content="yes"> so Safari

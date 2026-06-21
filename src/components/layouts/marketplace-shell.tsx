@@ -44,7 +44,7 @@ function BottomNavBridge() {
     if (screen === "home") return "home";
     if (screen === "browse" || screen === "search") return "browse";
     if (screen === "video") return "video";
-    if (screen === "cart" || screen === "checkout") return "cart";
+    if (screen === "bargains") return "bargains";
     // Account groups the buyer's personal screens, including orders.
     if (
       screen === "orders" ||

@@ -198,7 +198,9 @@ function BargainSection() {
           <p className="bz-bargain-head__note">{t("home.bargainReassurance")}</p>
         </div>
         <AppLink href={pathFromScreen("bargainable-products")} className="bz-sec-head__action">
-          All bargainable products <Icon name="arrowRight" size={16} />
+          <span className="bz-hide-mobile">All bargainable products</span>
+          <span className="bz-show-mobile">All</span>
+          <Icon name="arrowRight" size={16} />
         </AppLink>
       </div>
       {isLoading && products.length === 0 ? (
@@ -411,6 +413,15 @@ export function Home() {
           </W>
         </div>
 
+        {/* New arrivals — mobile stacks directly under the hero as a compact rail. */}
+        <div className="bz-show-mobile">
+          <W>
+            <LocalErrorBoundary label="home-new-arrivals">
+              <NewArrivalsMobile products={newArrivalItems} loading={homeLoading} />
+            </LocalErrorBoundary>
+          </W>
+        </div>
+
         {/* Shop by categories — bordered card tiles (revamp). */}
         <W className="bz-home-section bz-home-categories">
           <SectionHead
@@ -440,15 +451,6 @@ export function Home() {
                 ))}
           </div>
         </W>
-
-        {/* New arrivals — mobile placement (after categories, per the revamp). */}
-        <div className="bz-show-mobile">
-          <W>
-            <LocalErrorBoundary label="home-new-arrivals">
-              <NewArrivalsMobile products={newArrivalItems} loading={homeLoading} />
-            </LocalErrorBoundary>
-          </W>
-        </div>
 
         <LocalErrorBoundary label="home-picks">
           <PicksSections topPicks={homeData?.topPicks} homeLoading={homeLoading} />

@@ -9,7 +9,13 @@ import { BuyerPack, ToastContainer } from "@/components/ui";
 import { useCartMutations, useCartQuery } from "@/buyer/hooks/use-cart";
 import { useSavedMutations, useSavedQuery } from "@/buyer/hooks/use-saved";
 import { useProduct } from "@/shared/hooks/use-catalog";
-import { searchPath, pathFromScreen, productIdFromPath, screenFromPath } from "@/config/routes";
+import {
+  searchPath,
+  browsePath,
+  pathFromScreen,
+  productIdFromPath,
+  screenFromPath,
+} from "@/config/routes";
 import { ordersApi } from "@/buyer/api/orders";
 import { ApiRequestError } from "@/shared/api/http";
 import { useBazaarStore } from "@/store/bazaar-store";
@@ -196,17 +202,19 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       const productId = state.activeProduct?.id;
       if (nextScreen === "browse") {
         const cat = options?.cat;
-        // Picking a category is a fresh category browse — drop any active text
-        // query so results show only that category, ranked by relevance (the
-        // default sort, which searchPath omits from the URL).
-        if (cat) state.setQuery("");
-        const q = cat ? undefined : state.query.trim() || undefined;
-        // Browse/category results render on the faceted /search screen, so the
-        // optimistic override must be "search". Using "browse" here never
-        // matches the /search route, so it would stick and leave the Browse
-        // spinner on screen forever.
-        state.setScreenOverride("search");
-        router.push(searchPath({ q, cat }));
+        if (cat) {
+          // Picking a category is a fresh category browse — drop any active text
+          // query so results show only that category, ranked by relevance (the
+          // default sort, which searchPath omits from the URL).
+          state.setQuery("");
+          state.setScreenOverride("search");
+          router.push(searchPath({ cat }));
+        } else {
+          // No category specified — show the all-categories page instead of all
+          // products so users can explore categories first.
+          state.setScreenOverride(null);
+          router.push(browsePath({ view: "categories" }));
+        }
       } else {
         state.setScreenOverride(null);
         router.push(pathFromScreen(nextScreen, productId));

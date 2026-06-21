@@ -171,6 +171,7 @@ export function ProductCard({
   onClick,
   preview = false,
   savable = true,
+  variant = "default",
   ctaLabel,
   ctaIcon,
   onCta,
@@ -181,6 +182,7 @@ export function ProductCard({
       the Add Product live preview so sellers see the exact buyer card. */
   preview?: boolean;
   savable?: boolean;
+  variant?: "default" | "compact";
   ctaLabel?: string;
   ctaIcon?: React.ComponentProps<typeof Icon>["name"];
   onCta?: (p: Product) => void;
@@ -195,22 +197,28 @@ export function ProductCard({
   const reviewCount = p.reviews ?? 0;
   const hasReviews = reviewCount > 0;
   const savings = p.original ? roundRs(p.original - p.price) : 0;
+  const compact = variant === "compact";
   return (
     <div
+      className={"bz-product-card" + (compact ? " bz-product-card--compact" : "")}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
         position: "relative",
         background: "#fff",
-        border: `1px solid ${hov ? "var(--ink-300)" : "var(--line-200)"}`,
-        borderRadius: "var(--r-lg)",
+        border: compact
+          ? `0.5px solid ${hov ? "var(--ink-300)" : "var(--bz-card-border)"}`
+          : `1px solid ${hov ? "var(--ink-300)" : "var(--line-200)"}`,
+        borderRadius: compact ? 11 : "var(--r-lg)",
         overflow: "hidden",
         cursor: preview ? "default" : "pointer",
         transition:
           "border-color var(--dur-standard) var(--ease), box-shadow var(--dur-standard) var(--ease)",
-        boxShadow: hov ? "var(--sh-1)" : "none",
+        boxShadow: hov && !compact ? "var(--sh-1)" : "none",
         display: "flex",
         flexDirection: "column",
+        minWidth: 0,
+        height: compact ? "100%" : undefined,
       }}
     >
       {/* Stretched link: a real <a> covering the card so the browser can open
@@ -226,14 +234,24 @@ export function ProductCard({
           style={{ position: "absolute", inset: 0, zIndex: 1 }}
         />
       )}
-      <div style={{ position: "relative" }}>
+      <div
+        style={{
+          position: "relative",
+          flex: compact ? "1 1 0" : undefined,
+          minHeight: compact ? 0 : undefined,
+          display: compact ? "flex" : undefined,
+        }}
+      >
         {p.img ? (
           <div
             className="bz-pcard__img"
             style={{
               position: "relative",
               width: "100%",
-              aspectRatio: "1 / 1",
+              height: compact ? "100%" : undefined,
+              flex: compact ? "1 1 auto" : undefined,
+              minHeight: compact ? 0 : undefined,
+              aspectRatio: compact ? undefined : "1 / 1",
               overflow: "hidden",
             }}
           >
@@ -245,11 +263,17 @@ export function ProductCard({
             />
           </div>
         ) : (
-          <Placeholder icon={p.icon} tint={p.tint} radius="0" ratio="1 / 1" />
+          <Placeholder
+            icon={p.icon}
+            tint={p.tint}
+            radius="0"
+            ratio={compact ? undefined : "1 / 1"}
+            style={compact ? { width: "100%", height: "100%" } : undefined}
+          />
         )}
         {/* Single discount badge — only one platform-badge style allowed */}
         {disc > 0 && (
-          <div style={{ position: "absolute", top: 10, left: 10 }}>
+          <div style={{ position: "absolute", top: compact ? 7 : 10, left: compact ? 7 : 10 }}>
             <Chip tone="red" size="sm">
               -{disc}%
             </Chip>
@@ -327,25 +351,26 @@ export function ProductCard({
       <div
         className="bz-pcard__body"
         style={{
-          padding: "10px 12px 12px",
+          padding: compact ? "7px 9px 8px" : "10px 12px 12px",
           display: "flex",
           flexDirection: "column",
-          gap: 5,
-          flex: 1,
+          gap: compact ? 3 : 5,
+          flex: compact ? "0 0 auto" : 1,
+          minWidth: 0,
         }}
       >
         <div
           className="bz-pcard__title"
           style={{
-            fontSize: ".875rem",
+            fontSize: compact ? "11.5px" : ".875rem",
             fontWeight: 600,
             color: "var(--ink-900)",
-            lineHeight: 1.35,
+            lineHeight: compact ? 1.2 : 1.35,
             display: "-webkit-box",
-            WebkitLineClamp: 2,
+            WebkitLineClamp: compact ? 1 : 2,
             WebkitBoxOrient: "vertical",
             overflow: "hidden",
-            minHeight: "2.7em",
+            minHeight: compact ? "1.2em" : "2.7em",
           }}
         >
           {productName}
@@ -353,55 +378,101 @@ export function ProductCard({
         {/* Rating row is ALWAYS rendered so cards keep equal height in a grid.
             Zero reviews shows an outline star + "No reviews yet" (house pattern,
             see RatingInline) — never a filled star against a misleading "(0)". */}
-        <div
-          className="bz-pcard__rating"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 5,
-            flexWrap: "wrap",
-            minHeight: "1.25rem",
-            fontSize: ".75rem",
-            color: "var(--ink-500)",
-          }}
-        >
-          {hasReviews ? (
-            <RatingStars value={p.rating ?? 0} size={12} count={reviewCount} />
-          ) : (
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 5,
-                color: "var(--ink-400)",
-              }}
-            >
-              <Icon name="star" size={12} color="var(--ink-300)" fill="none" />
-              {t("common.noReviews")}
-            </span>
-          )}
-        </div>
+        {!compact && (
+          <div
+            className="bz-pcard__rating"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+              flexWrap: "wrap",
+              minHeight: "1.25rem",
+              fontSize: ".75rem",
+              color: "var(--ink-500)",
+            }}
+          >
+            {hasReviews ? (
+              <RatingStars value={p.rating ?? 0} size={12} count={reviewCount} />
+            ) : (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  color: "var(--ink-400)",
+                }}
+              >
+                <Icon name="star" size={12} color="var(--ink-300)" fill="none" />
+                {t("common.noReviews")}
+              </span>
+            )}
+          </div>
+        )}
         {/* Single price line: all-in price + strikethrough original — via Price primitive */}
         {/* Trust row (cash on delivery / 7-day return) lives on the PDP only, not on cards. */}
         {/* marginTop:auto pins price to card bottom so price rows align across the grid */}
         {/* Reserves price + struck + savings space so no-discount and discount
             cards stay equal height. Bump the min-height once to realign all. */}
-        <div className="bz-pcard__price" style={{ marginTop: "auto", minHeight: 46 }}>
-          <Price value={p.price} original={p.original} size="md" />
-          {savings >= SAVINGS_THRESHOLD && (
+        <div
+          className="bz-pcard__price"
+          style={{ marginTop: "auto", minHeight: compact ? 16 : 46, minWidth: 0 }}
+        >
+          {compact ? (
             <div
               style={{
-                fontSize: ".6875rem",
-                fontWeight: 600,
-                color: "var(--success)",
-                marginTop: 3,
+                display: "flex",
+                alignItems: "baseline",
+                gap: 4,
+                minWidth: 0,
+                whiteSpace: "nowrap",
               }}
             >
-              {t("common.saveAmount", { amount: formatNPR(savings) })}
+              <strong
+                className="tnum"
+                style={{
+                  color: "var(--blue-deep)",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  lineHeight: 1.15,
+                  flex: "0 0 auto",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {formatNPR(p.price)}
+              </strong>
+              {p.original && (
+                <span
+                  className="tnum"
+                  style={{
+                    color: "var(--ink-400)",
+                    fontSize: 10.5,
+                    lineHeight: 1,
+                    textDecoration: "line-through",
+                  }}
+                >
+                  {formatNPR(p.original)}
+                </span>
+              )}
             </div>
+          ) : (
+            <>
+              <Price value={p.price} original={p.original} size="md" />
+              {savings >= SAVINGS_THRESHOLD && (
+                <div
+                  style={{
+                    fontSize: ".6875rem",
+                    fontWeight: 600,
+                    color: "var(--success)",
+                    marginTop: 3,
+                  }}
+                >
+                  {t("common.saveAmount", { amount: formatNPR(savings) })}
+                </div>
+              )}
+            </>
           )}
         </div>
-        {ctaLabel && onCta && (
+        {!compact && ctaLabel && onCta && (
           <div className="bz-pcard__cta-wrap">
             <Button
               variant="bargainOutline"

@@ -1,6 +1,13 @@
 "use client";
 
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type PlaceholderDataFunction,
+} from "@tanstack/react-query";
 import {
   catalogApi,
   type CreateProductQuestionPayload,
@@ -109,10 +116,14 @@ export function useCreateSellerReview(sellerId: string | null) {
   });
 }
 
-function useProducts(params?: ProductListParams) {
+function useProducts(
+  params?: ProductListParams,
+  placeholderData?: PlaceholderDataFunction<Awaited<ReturnType<typeof catalogApi.getProducts>>>,
+) {
   return useQuery({
     queryKey: queryKeys.catalog.products(params),
     queryFn: () => catalogApi.getProducts(params),
+    placeholderData,
     staleTime: STALE_TIME,
     throwOnError: throwOnCriticalError,
   });
@@ -129,6 +140,11 @@ export function useBargainableProducts(limit = 6) {
 }
 
 const BARGAINABLE_PAGE_SIZE = 24;
+
+/** Discrete page of bargainable products for large catalog listings. */
+export function useBargainableProductsPage(page = 1, limit = BARGAINABLE_PAGE_SIZE) {
+  return useProducts({ bargainable: true, page, limit }, keepPreviousData);
+}
 
 /** Paginated bargainable products for the full "All bargainable products" listing. */
 export function useBargainableProductsInfinite() {

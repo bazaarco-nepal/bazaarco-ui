@@ -3601,6 +3601,25 @@ body {
   font-size: 1rem !important;
   line-height: 1.35;
 }
+.bz-product-card--compact .bz-pcard__img {
+  aspect-ratio: auto !important;
+  height: 100% !important;
+}
+.bz-product-card--compact .bz-pcard__body {
+  padding: 7px 9px 8px !important;
+  gap: 3px !important;
+}
+.bz-product-card--compact .bz-pcard__title {
+  font-size: 11.5px !important;
+  line-height: 1.2 !important;
+  min-height: 1.2em !important;
+  max-height: 1.2em !important;
+  margin-bottom: 0 !important;
+}
+.bz-product-card--compact .bz-pcard__price .tnum:first-child {
+  font-size: 13px !important;
+  line-height: 1.15 !important;
+}
 
 /* Product-card CTA (e.g. bargain card "Make an offer") — the button itself is the
    <Button> component; this wrapper just spaces it and lifts it above the card's
@@ -3821,16 +3840,16 @@ body {
    cropped) and the rail takes the remaining width. */
 @media (min-width: 769px) {
   .bz-home-herorow {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
+    display: flex;
     gap: 18px;
     align-items: stretch;
     height: 440px;
   }
   .bz-home-herorow .bz-hero {
+    flex: 1 1 auto;
+    min-width: 0;
     height: 100%;
     width: auto;
-    justify-self: start;
   }
 }
 @media (max-width: 768px) {
@@ -3872,17 +3891,29 @@ body {
 .bz-arrivals-rail {
   display: flex;
   flex-direction: column;
+  flex: 0 1 clamp(300px, 32vw, 470px);
   background: transparent;
   border: 0;
   border-radius: 0;
   padding: 0;
+  width: clamp(300px, 32vw, 470px);
+  min-width: 300px;
+  min-height: 0;
+}
+.bz-arrivals-rail .bz-arrivals__head {
+  flex: 0 0 auto;
+  align-items: center;
+  margin-bottom: 10px;
 }
 .bz-arrivals-rail__grid {
   flex: 1 1 0;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(140px, 100%), 1fr));
-  gap: clamp(10px, 0.35vw + 8px, 14px);
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-auto-rows: 1fr;
+  gap: 9px;
+  align-content: stretch;
+  overflow: hidden;
 }
 
 .bz-arrivals-mobile__head {
@@ -3892,9 +3923,24 @@ body {
   margin-bottom: 12px;
 }
 .bz-arrivals-mobile__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr));
-  gap: var(--sp-4);
+  display: flex;
+  gap: 9px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.bz-arrivals-mobile__grid::-webkit-scrollbar {
+  display: none;
+}
+.bz-arrivals-mobile__grid > * {
+  flex: 0 0 148px;
+  height: 208px;
+  scroll-snap-align: start;
+}
+.bz-arrivals-mobile__grid > .bz-product-card--compact {
+  height: 208px !important;
 }
 /* ---------- BazaarCo Watch and Bargain panels ---------- */
 .bz-watch-panel,
@@ -4201,6 +4247,21 @@ body {
   font-family: var(--font-mono, ui-monospace, SFMono-Regular, monospace);
 }
 
+/* Mobile: collapse the reel pill to just the blue price. */
+@media (max-width: 600px) {
+  .bz-reel-card__pill {
+    background: none;
+    box-shadow: none;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .bz-reel-card__pill-icon,
+  .bz-reel-card__pill-name {
+    display: none;
+  }
+}
+
 .bz-bargain-panel__icon {
   display: inline-flex;
   align-items: center;
@@ -4230,6 +4291,10 @@ body {
 }
 
 .bz-bargainable-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
   margin-bottom: 20px;
 }
 
@@ -4261,10 +4326,24 @@ body {
 
 .bz-bargainable-page__copy {
   margin: 8px 0 0;
-  max-width: 560px;
+  max-width: 920px;
   color: var(--ink-500);
   font-size: 13px;
   line-height: 1.45;
+}
+
+.bz-bargainable-page__meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex: none;
+  margin-top: 10px;
+  color: var(--ink-500);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .bz-bargainable-page__more {
@@ -4274,8 +4353,19 @@ body {
 }
 
 @media (max-width: 768px) {
+  .bz-bargainable-page__head {
+    display: block;
+  }
+
   .bz-bargainable-page__title {
     font-size: 20px;
+  }
+
+  .bz-bargainable-page__meta {
+    justify-content: flex-start;
+    margin-top: 12px;
+    text-align: left;
+    white-space: normal;
   }
 }
 
@@ -4305,6 +4395,13 @@ body {
     padding: 14px;
   }
 
+  /* Align the Bargain content to the same left/right edges as "Recommended for
+     you": drop the panel's horizontal inset so only the .container gutter
+     remains (vertical breathing inside the band is kept). */
+  .bz-bargain-panel {
+    padding-inline: 0;
+  }
+
   .bz-watch-panel__head {
     gap: 10px;
   }
@@ -4332,7 +4429,7 @@ body {
   }
 
   .bz-bargain-grid {
-    grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .bz-bargain-empty {
@@ -4598,5 +4695,13 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 768px) {
+  [data-pack="buyer"] {
+    --chip-group-h: 32px;
+    --chip-group-px: 12px;
+    --chip-group-fs: 0.8125rem;
   }
 }

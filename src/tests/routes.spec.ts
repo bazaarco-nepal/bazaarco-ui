@@ -100,6 +100,10 @@ describe("browsePath", () => {
     expect(browsePath({ view: "categories" })).toBe("/browse?view=categories");
   });
 
+  it("keeps all-products newest sorting on /browse", () => {
+    expect(browsePath({ sort: "newest" })).toBe("/browse?sort=newest");
+  });
+
   it("drops empty/whitespace-only values", () => {
     expect(browsePath({ q: "   ", cat: [""], sort: "  " })).toBe("/search");
   });

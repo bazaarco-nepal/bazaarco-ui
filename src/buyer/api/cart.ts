@@ -1,6 +1,6 @@
-import { deleteData, getData, patchData, postData } from "./http";
+import { deleteData, getData, patchData, postData } from "@/shared/api/http";
 import type { CartLine } from "@/types/catalog";
-import { mapProduct } from "./catalog";
+import { mapProduct } from "@/shared/api/catalog";
 
 export interface CartResponse {
   items: CartLine[];

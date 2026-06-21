@@ -6,7 +6,7 @@ import {
   type CreateProductPayload,
   type UpdateProductPayload,
 } from "@/seller/api/seller";
-import type { SellerVideosResponse } from "@/services/api/media";
+import type { SellerVideosResponse } from "@/shared/api/media";
 import type { OrderStatus } from "@/lib/order-utils";
 import type { SellerReview } from "@/types/catalog";
 import {
@@ -22,7 +22,7 @@ import {
   type UpdateSellerSettingsPayload,
 } from "@/seller/api/seller-settings";
 import { storefrontApi, type UpdateStorefrontPayload } from "@/seller/api/storefront";
-import { queryKeys } from "@/services/api/query-keys";
+import { queryKeys } from "@/shared/api/query-keys";
 
 const STALE_TIME = 60 * 1000;
 

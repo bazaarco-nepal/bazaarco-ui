@@ -12,7 +12,7 @@ import {
 } from "@/shared/hooks/use-bargains";
 import { useSellerBargains, type SellerBargainOffer } from "@/seller/hooks/use-seller";
 import { BuyerAvatar } from "@/components/common";
-import { ApiRequestError } from "@/services/api/http";
+import { ApiRequestError } from "@/shared/api/http";
 import { toast } from "@/lib/toast";
 import { bargainStatus } from "../_shared/bargain";
 import { SellerHelpBar, SellerPageHeader, SellerEmptyState } from "../_shared/components";

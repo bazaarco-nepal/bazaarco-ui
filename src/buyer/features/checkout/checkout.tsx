@@ -51,7 +51,7 @@ import {
   DELIVERY_AREA_MESSAGE,
 } from "@/lib/delivery-location";
 import { useBazaarStore } from "@/store/bazaar-store";
-import { queryKeys } from "@/services/api/query-keys";
+import { queryKeys } from "@/shared/api/query-keys";
 import {
   BazaarCtx,
   useBz,
@@ -70,7 +70,7 @@ import {
 } from "@/lib/delivery-options";
 import { useOrder } from "@/buyer/hooks/use-orders";
 import { EsewaRedirectForm } from "@/components/payment/esewa-redirect-form";
-import type { EsewaPaymentInit } from "@/services/api/orders";
+import type { EsewaPaymentInit } from "@/buyer/api/orders";
 import {
   selectedLines,
   allSelected,

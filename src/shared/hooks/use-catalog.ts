@@ -7,9 +7,9 @@ import {
   type CreateProductReviewPayload,
   type CreateSellerReviewPayload,
   type ProductListParams,
-} from "@/services/api/catalog";
-import { throwOnCriticalError } from "@/services/api/http";
-import { queryKeys } from "@/services/api/query-keys";
+} from "@/shared/api/catalog";
+import { throwOnCriticalError } from "@/shared/api/http";
+import { queryKeys } from "@/shared/api/query-keys";
 import type { CategoryAttributeField, Product, Seller } from "@/types";
 
 const STALE_TIME = 5 * 60 * 1000;

@@ -10,7 +10,7 @@ import { screenFromPath } from "@/config/routes";
 import { resolvePostAuthScreen } from "@/lib/auth-rbac";
 import { setAccessToken } from "@/lib/auth-token";
 import { toast } from "@/lib/toast";
-import { establishBrowserSession, fetchCurrentUser } from "@/services/api/auth";
+import { establishBrowserSession, fetchCurrentUser } from "@/shared/api/auth";
 import { useBazaarStore } from "@/store/bazaar-store";
 
 export function AuthCallback() {

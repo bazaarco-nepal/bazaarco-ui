@@ -1,8 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { trackingApi } from "@/services/api/tracking";
-import { queryKeys } from "@/services/api/query-keys";
+import { trackingApi } from "@/buyer/api/tracking";
+import { queryKeys } from "@/shared/api/query-keys";
 
 const STALE_TIME = 60 * 1000;
 

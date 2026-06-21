@@ -1,4 +1,4 @@
-import { getData } from "./http";
+import { getData } from "@/shared/api/http";
 
 export interface TrackingNode {
   t: string;

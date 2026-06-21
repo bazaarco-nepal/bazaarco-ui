@@ -1,8 +1,8 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { bargainsApi, type CreateBargainOfferPayload } from "@/services/api/bargains";
-import { queryKeys } from "@/services/api/query-keys";
+import { bargainsApi, type CreateBargainOfferPayload } from "@/shared/api/bargains";
+import { queryKeys } from "@/shared/api/query-keys";
 
 const STALE_TIME = 60 * 1000;
 

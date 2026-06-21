@@ -14,7 +14,7 @@ import {
 } from "@/config/routes";
 import { displayCategoryLabel } from "@/lib/locale-display";
 import { useBazaarStore } from "@/store/bazaar-store";
-import type { SearchParams } from "@/services/api/search";
+import type { SearchParams } from "@/buyer/api/search";
 
 const PER_PAGE = 24;
 

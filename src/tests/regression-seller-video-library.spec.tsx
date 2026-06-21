@@ -50,7 +50,7 @@ vi.mock("@/components/ui", async () => {
 });
 
 import { SellerVideoLibrary } from "@/seller/components/seller-video-library";
-import type { SellerVideoItem } from "@/services/api/media";
+import type { SellerVideoItem } from "@/shared/api/media";
 
 const VIDEOS: SellerVideoItem[] = [
   {

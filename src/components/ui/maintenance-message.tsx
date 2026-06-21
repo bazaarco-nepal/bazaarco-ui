@@ -20,14 +20,13 @@ const SUPPORT_WHATSAPP_HREF = "https://wa.me/9779700053075";
 
 interface MaintenanceMessageProps {
   variant?: "page" | "inline";
-  /** Page variant: wired to error.tsx reset(); falls back to a full reload. */
-  onRefresh?: () => void;
 }
 
-export function MaintenanceMessage({ variant = "page", onRefresh }: MaintenanceMessageProps) {
-  const handleRefresh = () => {
-    if (onRefresh) onRefresh();
-    else if (typeof window !== "undefined") window.location.reload();
+export function MaintenanceMessage({ variant = "page" }: MaintenanceMessageProps) {
+  // Send the shopper back to the homepage — a clean, always-valid entry point
+  // that re-runs the whole app from a fresh load.
+  const goToRoot = () => {
+    if (typeof window !== "undefined") window.location.assign("/");
   };
 
   if (variant === "inline") {
@@ -55,7 +54,7 @@ export function MaintenanceMessage({ variant = "page", onRefresh }: MaintenanceM
         >
           {BODY}
         </p>
-        <Button variant="secondary" size="sm" icon="refresh" onClick={handleRefresh}>
+        <Button variant="secondary" size="sm" icon="refresh" onClick={goToRoot}>
           Refresh Page
         </Button>
         <SupportBlock compact />
@@ -115,7 +114,7 @@ export function MaintenanceMessage({ variant = "page", onRefresh }: MaintenanceM
         >
           {BODY}
         </p>
-        <Button variant="primary" size="lg" icon="refresh" onClick={handleRefresh}>
+        <Button variant="primary" size="lg" icon="refresh" onClick={goToRoot}>
           Refresh Page
         </Button>
         <SupportBlock />

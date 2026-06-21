@@ -1,5 +1,5 @@
 import type { VideoFeedResponse, VideoFeedTab } from "@/types/video";
-import { deleteData, getData, postData } from "./http";
+import { deleteData, getData, postData } from "@/shared/api/http";
 
 export interface VideoLikeResult {
   videoId: string;

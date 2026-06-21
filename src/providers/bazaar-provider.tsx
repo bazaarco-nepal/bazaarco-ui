@@ -10,10 +10,10 @@ import { useCartMutations, useCartQuery } from "@/buyer/hooks/use-cart";
 import { useSavedMutations, useSavedQuery } from "@/buyer/hooks/use-saved";
 import { useProduct } from "@/shared/hooks/use-catalog";
 import { searchPath, pathFromScreen, productIdFromPath, screenFromPath } from "@/config/routes";
-import { ordersApi } from "@/services/api/orders";
-import { ApiRequestError } from "@/services/api/http";
+import { ordersApi } from "@/buyer/api/orders";
+import { ApiRequestError } from "@/shared/api/http";
 import { useBazaarStore } from "@/store/bazaar-store";
-import { queryKeys } from "@/services/api/query-keys";
+import { queryKeys } from "@/shared/api/query-keys";
 import {
   cartLineKey,
   effectiveSelectedIds,
@@ -21,7 +21,7 @@ import {
   selectLine,
 } from "@/lib/cart-selection";
 import { toast } from "@/lib/toast";
-import type { CheckoutPayload, EsewaPaymentInit } from "@/services/api/orders";
+import type { CheckoutPayload, EsewaPaymentInit } from "@/buyer/api/orders";
 import type { Product } from "@/types";
 
 export function BazaarProvider({ children }: { children: React.ReactNode }) {

@@ -1,8 +1,8 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { mediaApi } from "@/services/api/media";
-import { queryKeys } from "@/services/api/query-keys";
+import { mediaApi } from "@/shared/api/media";
+import { queryKeys } from "@/shared/api/query-keys";
 
 export function useUploadImage() {
   return useMutation({

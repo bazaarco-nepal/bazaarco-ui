@@ -1,4 +1,4 @@
-import { deleteData, getData, patchData, postData } from "@/services/api/http";
+import { deleteData, getData, patchData, postData } from "@/shared/api/http";
 import type { Product } from "@/types";
 import type { StorefrontData } from "./storefront";
 import type { OrderStatus } from "@/lib/order-utils";

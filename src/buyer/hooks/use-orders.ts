@@ -1,8 +1,8 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ordersApi } from "@/services/api/orders";
-import { queryKeys } from "@/services/api/query-keys";
+import { ordersApi } from "@/buyer/api/orders";
+import { queryKeys } from "@/shared/api/query-keys";
 
 const STALE_TIME = 60 * 1000;
 

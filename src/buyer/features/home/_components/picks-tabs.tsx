@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Button, SectionHead, SkeletonCard } from "@/components/ui";
 import { ProductCard, useBz } from "@/components/common";
-import { catalogApi } from "@/services/api/catalog";
-import type { PaginatedData } from "@/services/api/types";
+import { catalogApi } from "@/shared/api/catalog";
+import type { PaginatedData } from "@/shared/api/types";
 import type { Product } from "@/types";
 
 const PICKS_PAGE_SIZE = 12;

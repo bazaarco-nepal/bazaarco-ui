@@ -1,4 +1,4 @@
-import type { SearchParams, SearchResponse } from "@/services/api/search";
+import type { SearchParams, SearchResponse } from "@/buyer/api/search";
 import {
   algoliaSearchClient,
   isAlgoliaConfigured,

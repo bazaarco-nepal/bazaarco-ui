@@ -2,8 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { savedApi } from "@/services/api/saved";
-import { queryKeys } from "@/services/api/query-keys";
+import { savedApi } from "@/buyer/api/saved";
+import { queryKeys } from "@/shared/api/query-keys";
 import { useBazaarStore } from "@/store/bazaar-store";
 
 function syncSavedToStore(data: Awaited<ReturnType<typeof savedApi.get>>) {

@@ -50,7 +50,7 @@ import type { VideoFeedItem } from "@/types/video";
 import { HomeHero } from "./_components/home-hero";
 import { NewArrivalsRail, NewArrivalsMobile } from "./_components/new-arrivals";
 import { ReelCard } from "./_components/reel-card";
-import type { PopularStore } from "@/services/api/home";
+import type { PopularStore } from "@/buyer/api/home";
 
 const WATCH_RAIL_LIMIT = 8;
 

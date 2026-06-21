@@ -2,9 +2,9 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { cartApi } from "@/services/api/cart";
-import { throwOnCriticalError } from "@/services/api/http";
-import { queryKeys } from "@/services/api/query-keys";
+import { cartApi } from "@/buyer/api/cart";
+import { throwOnCriticalError } from "@/shared/api/http";
+import { queryKeys } from "@/shared/api/query-keys";
 import { useBazaarStore } from "@/store/bazaar-store";
 import type { Product } from "@/types/catalog";
 

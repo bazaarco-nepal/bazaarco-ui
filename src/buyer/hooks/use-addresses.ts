@@ -1,8 +1,8 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { addressesApi, type SaveAddressPayload, type SavedAddress } from "@/services/api/addresses";
-import { queryKeys } from "@/services/api/query-keys";
+import { addressesApi, type SaveAddressPayload, type SavedAddress } from "@/buyer/api/addresses";
+import { queryKeys } from "@/shared/api/query-keys";
 
 const STALE_TIME = 2 * 60 * 1000;
 

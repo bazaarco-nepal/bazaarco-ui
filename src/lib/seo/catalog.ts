@@ -10,7 +10,7 @@
  * Every helper fails soft: SEO must never break a page render or the sitemap
  * build, so a backend hiccup is logged and returns null/[], never thrown.
  */
-import type { PaginatedData } from "@/services/api/types";
+import type { PaginatedData } from "@/shared/api/types";
 
 const REVALIDATE_SECONDS = 1800;
 const REQUEST_TIMEOUT_MS = 8000;

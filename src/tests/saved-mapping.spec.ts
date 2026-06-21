@@ -2,15 +2,15 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock only the transport — the real mapProduct/mapSeller run so we assert the
 // v3 -> UI field translation actually happens for saved payloads.
-vi.mock("@/services/api/http", () => ({
+vi.mock("@/shared/api/http", () => ({
   getData: vi.fn(),
   postData: vi.fn(),
   patchData: vi.fn(),
   deleteData: vi.fn(),
 }));
 
-import { getData, postData, deleteData } from "@/services/api/http";
-import { savedApi } from "@/services/api/saved";
+import { getData, postData, deleteData } from "@/shared/api/http";
+import { savedApi } from "@/buyer/api/saved";
 
 const mockedGet = getData as unknown as ReturnType<typeof vi.fn>;
 const mockedPost = postData as unknown as ReturnType<typeof vi.fn>;

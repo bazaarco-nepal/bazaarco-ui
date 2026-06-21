@@ -25,8 +25,8 @@ import {
   isDeliverableCity,
   DELIVERY_AREA_MESSAGE,
 } from "@/lib/delivery-location";
-import type { SavedAddress } from "@/services/api/addresses";
-import { ApiRequestError } from "@/services/api/http";
+import type { SavedAddress } from "@/buyer/api/addresses";
+import { ApiRequestError } from "@/shared/api/http";
 import { toast } from "@/lib/toast";
 
 const emptyForm = (): { label: string; location: DeliveryLocation } => ({

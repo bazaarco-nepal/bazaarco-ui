@@ -13,7 +13,7 @@ import {
   leaveConversation,
   sendChatMessage,
 } from "@/lib/chat-socket";
-import { chatApi, type ChatMessage, type ChatThread } from "@/services/api/chat";
+import { chatApi, type ChatMessage, type ChatThread } from "@/shared/api/chat";
 import { BuyerAvatar } from "@/components/common";
 import { toast } from "@/lib/toast";
 import { SellerHelpBar } from "../_shared/components";

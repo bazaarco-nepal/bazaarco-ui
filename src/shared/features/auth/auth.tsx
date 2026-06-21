@@ -15,8 +15,8 @@ import {
   useResendEmailVerification,
   useVerifyEmail,
 } from "@/shared/hooks/use-auth";
-import { getGoogleLoginUrl } from "@/services/api/auth";
-import { ApiRequestError } from "@/services/api/http";
+import { getGoogleLoginUrl } from "@/shared/api/auth";
+import { ApiRequestError } from "@/shared/api/http";
 import type { AuthUser, PendingEmailVerification } from "@/types/auth";
 import { isStrongPassword, passwordRequirementMessage } from "@/lib/password-validation";
 import { toast } from "@/lib/toast";

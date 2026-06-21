@@ -1,4 +1,4 @@
-import { postData } from "./http";
+import { postData } from "@/shared/api/http";
 
 export type PaymentVerifyStatus = "captured" | "pending" | "failed" | "cancelled" | "ambiguous";
 

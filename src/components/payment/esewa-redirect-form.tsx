@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, BuyerPack } from "@/components/ui";
-import type { EsewaFormFields } from "@/services/api/orders";
+import type { EsewaFormFields } from "@/buyer/api/orders";
 
 /**
  * Auto-submitting hidden form that hands the buyer off to eSewa. The fields are

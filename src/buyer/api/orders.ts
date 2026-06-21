@@ -1,4 +1,4 @@
-import { getData, postData } from "./http";
+import { getData, postData } from "@/shared/api/http";
 
 export interface OrderRider {
   name: string;

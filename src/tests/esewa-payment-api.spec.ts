@@ -2,14 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the shared HTTP layer so no network happens; assert the eSewa API calls
 // hit the right endpoints with the right payloads.
-vi.mock("@/services/api/http", () => ({
+vi.mock("@/shared/api/http", () => ({
   getData: vi.fn(),
   postData: vi.fn(),
 }));
 
-import { getData, postData } from "@/services/api/http";
-import { ordersApi } from "@/services/api/orders";
-import { paymentsApi } from "@/services/api/payments";
+import { getData, postData } from "@/shared/api/http";
+import { ordersApi } from "@/buyer/api/orders";
+import { paymentsApi } from "@/buyer/api/payments";
 
 const mockedPost = postData as unknown as ReturnType<typeof vi.fn>;
 void getData;

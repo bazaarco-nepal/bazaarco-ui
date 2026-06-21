@@ -36,7 +36,7 @@ import {
   PasswordInput,
 } from "@/components/ui";
 import { useCatalog, useCreateProductReview } from "@/shared/hooks/use-catalog";
-import { ApiRequestError } from "@/services/api/http";
+import { ApiRequestError } from "@/shared/api/http";
 import {
   useDeleteAccount,
   useLogout,

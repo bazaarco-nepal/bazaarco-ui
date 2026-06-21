@@ -1,7 +1,7 @@
 import type { Category, Product, Seller } from "@/types";
-import { getData } from "./http";
-import { mapProduct, mapSeller } from "./catalog";
-import type { PaginatedData } from "./types";
+import { getData } from "@/shared/api/http";
+import { mapProduct, mapSeller } from "@/shared/api/catalog";
+import type { PaginatedData } from "@/shared/api/types";
 
 export interface PopularStore extends Seller {
   productCount: number;

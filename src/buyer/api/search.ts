@@ -1,7 +1,7 @@
-import { apiClient } from "./http";
-import type { ApiSuccessResponse } from "./types";
+import { apiClient } from "@/shared/api/http";
+import type { ApiSuccessResponse } from "@/shared/api/types";
 import type { Product } from "@/types";
-import { mapProduct } from "./catalog";
+import { mapProduct } from "@/shared/api/catalog";
 
 export interface SearchParams {
   query: string;

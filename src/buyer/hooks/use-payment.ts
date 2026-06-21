@@ -1,8 +1,8 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { paymentsApi } from "@/services/api/payments";
-import { queryKeys } from "@/services/api/query-keys";
+import { paymentsApi } from "@/buyer/api/payments";
+import { queryKeys } from "@/shared/api/query-keys";
 
 /**
  * Verify an eSewa callback server-side. On a captured payment the order has been

@@ -1,5 +1,5 @@
-import { deleteData, getData, postData } from "./http";
-import { mapProduct, mapSeller } from "./catalog";
+import { deleteData, getData, postData } from "@/shared/api/http";
+import { mapProduct, mapSeller } from "@/shared/api/catalog";
 import type { Product, Seller } from "@/types/catalog";
 
 export interface SavedResponse {

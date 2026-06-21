@@ -9,7 +9,7 @@ import { useSellerInventory } from "@/seller/hooks/use-seller";
 import { VideoDeleteConfirmModal } from "@/seller/components/video-delete-confirm-modal";
 import { SellerPageHeader } from "@/seller/features/_shared/components";
 import { toast } from "@/lib/toast";
-import type { SellerVideoItem } from "@/services/api/media";
+import type { SellerVideoItem } from "@/shared/api/media";
 
 function VideoEditModal({
   video,

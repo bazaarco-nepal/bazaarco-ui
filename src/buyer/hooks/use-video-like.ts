@@ -2,7 +2,7 @@
 
 import { useMutation } from "@tanstack/react-query";
 
-import { videosApi } from "@/services/api/videos";
+import { videosApi } from "@/buyer/api/videos";
 
 export function useVideoLike() {
   return useMutation({

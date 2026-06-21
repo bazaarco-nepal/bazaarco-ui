@@ -19,8 +19,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 // with only the HTTP client mocked, then simulate the submit the screen should
 // perform. When the screen is fixed to call this same API, the assertion holds.
 
-vi.mock("@/services/api/catalog", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/services/api/catalog")>();
+vi.mock("@/shared/api/catalog", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/shared/api/catalog")>();
   return {
     ...actual,
     catalogApi: {
@@ -30,7 +30,7 @@ vi.mock("@/services/api/catalog", async (importOriginal) => {
   };
 });
 
-import { catalogApi } from "@/services/api/catalog";
+import { catalogApi } from "@/shared/api/catalog";
 import { useCreateProductReview } from "@/shared/hooks/use-catalog";
 
 const createReview = catalogApi.createProductReview as unknown as ReturnType<typeof vi.fn>;

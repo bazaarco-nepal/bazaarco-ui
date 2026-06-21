@@ -38,7 +38,7 @@ import {
 import { browsePath, categoryIdsFromSearchParams, pathFromScreen } from "@/config/routes";
 import { useCatalog } from "@/shared/hooks/use-catalog";
 import { useSearch } from "@/buyer/hooks/use-search";
-import type { SearchParams } from "@/services/api/search";
+import type { SearchParams } from "@/buyer/api/search";
 import type { Product } from "@/types";
 import {
   BazaarCtx,

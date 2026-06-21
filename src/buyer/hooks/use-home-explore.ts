@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { catalogApi } from "@/services/api/catalog";
-import type { PaginatedData } from "@/services/api/types";
+import { catalogApi } from "@/shared/api/catalog";
+import type { PaginatedData } from "@/shared/api/types";
 import type { Product } from "@/types";
 
 // 21 = a clean 3 rows at the common 7-up width; the grid renders only whole rows

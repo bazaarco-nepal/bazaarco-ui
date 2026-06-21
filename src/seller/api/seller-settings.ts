@@ -1,5 +1,5 @@
-import { apiClient, getData } from "@/services/api/http";
-import type { ApiSuccessResponse } from "@/services/api/types";
+import { apiClient, getData } from "@/shared/api/http";
+import type { ApiSuccessResponse } from "@/shared/api/types";
 
 export interface ShopRules {
   openTime: string;

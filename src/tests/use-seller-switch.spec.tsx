@@ -17,7 +17,7 @@ vi.mock("@/seller/api/seller-organization", () => ({
 
 import { sellerOrganizationApi } from "@/seller/api/seller-organization";
 import { useSwitchActiveStore } from "@/seller/hooks/use-seller";
-import { queryKeys } from "@/services/api/query-keys";
+import { queryKeys } from "@/shared/api/query-keys";
 
 const mockedApi = sellerOrganizationApi as unknown as {
   switchActiveStore: ReturnType<typeof vi.fn>;

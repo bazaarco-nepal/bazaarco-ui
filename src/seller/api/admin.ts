@@ -1,6 +1,6 @@
-import { apiClient } from "@/services/api/http";
+import { apiClient } from "@/shared/api/http";
 import type { SellerVerification } from "./seller-verification";
-import type { ApiSuccessResponse } from "@/services/api/types";
+import type { ApiSuccessResponse } from "@/shared/api/types";
 
 export interface PendingSellerVerification {
   sellerId: string;

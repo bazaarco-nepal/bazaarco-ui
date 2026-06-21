@@ -1,7 +1,7 @@
-import { apiClient, getData } from "@/services/api/http";
+import { apiClient, getData } from "@/shared/api/http";
 import type { StoreAddress } from "@/lib/store-address";
 import type { SellerVerification } from "./seller-verification";
-import type { ApiSuccessResponse } from "@/services/api/types";
+import type { ApiSuccessResponse } from "@/shared/api/types";
 
 export interface SellerStoreSummary {
   sellerId: string;

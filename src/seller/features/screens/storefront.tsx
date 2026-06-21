@@ -14,7 +14,7 @@ import {
 import { ImageCropModal } from "@/components/common/image-crop-modal";
 import { pathFromScreen } from "@/config/routes";
 import { toast } from "@/lib/toast";
-import { ApiRequestError } from "@/services/api/http";
+import { ApiRequestError } from "@/shared/api/http";
 import { emptyStoreAddress, formatStoreAddress, type StoreAddress } from "@/lib/store-address";
 import { SellerHelpBar, SellerPageHeader, Card, Field } from "../_shared/components";
 import { useIsNarrow } from "../_shared/hooks";

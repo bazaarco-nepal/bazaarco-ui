@@ -2,8 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { videosApi } from "@/services/api/videos";
-import { queryKeys } from "@/services/api/query-keys";
+import { videosApi } from "@/buyer/api/videos";
+import { queryKeys } from "@/shared/api/query-keys";
 import type { VideoFeedTab } from "@/types/video";
 
 const STALE_TIME = 2 * 60 * 1000;

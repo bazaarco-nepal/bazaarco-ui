@@ -1,5 +1,5 @@
-import { apiClient } from "@/services/api/http";
-import type { ApiSuccessResponse } from "@/services/api/types";
+import { apiClient } from "@/shared/api/http";
+import type { ApiSuccessResponse } from "@/shared/api/types";
 
 export type SellerVerificationStatus = "none" | "pending" | "approved" | "rejected";
 

@@ -1,8 +1,8 @@
 import { io, type Socket } from "socket.io-client";
 
 import { getAccessToken } from "@/lib/auth-token";
-import type { ChatMessage, SendChatMessagePayload } from "@/services/api/chat";
-import { chatApi } from "@/services/api/chat";
+import type { ChatMessage, SendChatMessagePayload } from "@/shared/api/chat";
+import { chatApi } from "@/shared/api/chat";
 
 function resolveWsBaseUrl(): string {
   const backend = process.env.NEXT_PUBLIC_BACKEND_URL?.trim();

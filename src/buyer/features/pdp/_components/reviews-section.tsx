@@ -13,7 +13,7 @@ import {
   useRatingDistribution,
 } from "@/shared/hooks/use-catalog";
 import { useUploadImage } from "@/shared/hooks/use-media-upload";
-import { ApiRequestError } from "@/services/api/http";
+import { ApiRequestError } from "@/shared/api/http";
 
 const MAX_REVIEW_PHOTOS = 8;
 

@@ -58,7 +58,7 @@ import { bargainExpiryLabel } from "@/lib/bargain-expiry";
 import { formatNPR } from "@/lib/money";
 import { matchSelectedVariants, toggleOption, variantBacksOption } from "@/lib/variant-selection";
 import { optionImageFor, selectionHeroImage, variantSwatchImage } from "@/lib/variant-images";
-import { ApiRequestError } from "@/services/api/http";
+import { ApiRequestError } from "@/shared/api/http";
 import { toast } from "@/lib/toast";
 import type { PdpProps } from "@/types";
 import {

@@ -1,4 +1,4 @@
-import { deleteData, getData, patchData, postData } from "./http";
+import { deleteData, getData, patchData, postData } from "@/shared/api/http";
 
 export interface SavedAddress {
   id: string;

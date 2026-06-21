@@ -18,7 +18,7 @@ import {
   resendEmailVerification,
   updateProfile,
   verifyEmail,
-} from "@/services/api/auth";
+} from "@/shared/api/auth";
 import type {
   ChangePasswordPayload,
   ConfirmPasswordResetPayload,
@@ -30,7 +30,7 @@ import type {
   UpdateProfilePayload,
   VerifyEmailPayload,
 } from "@/types/auth";
-import { queryKeys } from "@/services/api/query-keys";
+import { queryKeys } from "@/shared/api/query-keys";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { clearRoleHint, writeRoleHint } from "@/lib/auth-hint";
 

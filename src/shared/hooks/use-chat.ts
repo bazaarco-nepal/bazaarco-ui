@@ -1,8 +1,8 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { chatApi } from "@/services/api/chat";
-import { queryKeys } from "@/services/api/query-keys";
+import { chatApi } from "@/shared/api/chat";
+import { queryKeys } from "@/shared/api/query-keys";
 
 const STALE_TIME = 15_000;
 

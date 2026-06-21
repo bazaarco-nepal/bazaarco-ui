@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { cartApi } from "@/services/api/cart";
+import { throwOnCriticalError } from "@/services/api/http";
 import { queryKeys } from "@/services/api/query-keys";
 import { useBazaarStore } from "@/store/bazaar-store";
 import type { Product } from "@/types/catalog";
@@ -21,6 +22,7 @@ export function useCartQuery(enabled: boolean) {
     },
     enabled,
     staleTime: 30_000,
+    throwOnError: throwOnCriticalError,
   });
 }
 

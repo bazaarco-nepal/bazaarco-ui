@@ -26,7 +26,7 @@ vi.mock("next/navigation", () => {
 const switchMutate = vi.fn();
 const createMutateAsync = vi.fn().mockResolvedValue({});
 
-vi.mock("@/hooks/use-seller", () => ({
+vi.mock("@/seller/hooks/use-seller", () => ({
   useSwitchActiveStore: () => ({ mutate: switchMutate, isPending: false }),
   useCreateSellerStore: () => ({ mutateAsync: createMutateAsync, isPending: false }),
 }));
@@ -45,8 +45,8 @@ vi.mock("@/lib/toast", () => ({
 
 import { BazaarCtx } from "@/components/common";
 import { toast } from "@/lib/toast";
-import { StoreSwitcherChip } from "@/features/seller/store-switcher";
-import type { SellerStoreSummary } from "@/services/api/seller-organization";
+import { StoreSwitcherChip } from "@/seller/features/store-switcher";
+import type { SellerStoreSummary } from "@/seller/api/seller-organization";
 
 const STORES: SellerStoreSummary[] = [
   { sellerId: "shop_a", shopName: "Ram's Store", city: "Kathmandu", logoUrl: null, verified: true },

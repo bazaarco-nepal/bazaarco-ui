@@ -8,6 +8,7 @@ import {
   type CreateSellerReviewPayload,
   type ProductListParams,
 } from "@/services/api/catalog";
+import { throwOnCriticalError } from "@/services/api/http";
 import { queryKeys } from "@/services/api/query-keys";
 import type { CategoryAttributeField, Product, Seller } from "@/types";
 
@@ -49,6 +50,7 @@ export function useCategories() {
             (CATEGORY_ORDER_INDEX.get(b.id) ?? Number.MAX_SAFE_INTEGER) || a.en.localeCompare(b.en),
       ),
     staleTime: STALE_TIME,
+    throwOnError: throwOnCriticalError,
   });
 }
 
@@ -57,6 +59,7 @@ export function useSellers() {
     queryKey: queryKeys.catalog.sellers,
     queryFn: () => catalogApi.getSellers(),
     staleTime: STALE_TIME,
+    throwOnError: throwOnCriticalError,
   });
 }
 
@@ -66,6 +69,7 @@ export function useSeller(id: string | null) {
     queryFn: () => catalogApi.getSeller(id!),
     enabled: Boolean(id),
     staleTime: STALE_TIME,
+    throwOnError: throwOnCriticalError,
   });
 }
 
@@ -110,6 +114,7 @@ function useProducts(params?: ProductListParams) {
     queryKey: queryKeys.catalog.products(params),
     queryFn: () => catalogApi.getProducts(params),
     staleTime: STALE_TIME,
+    throwOnError: throwOnCriticalError,
   });
 }
 
@@ -144,6 +149,8 @@ export function useProduct(id: string | null) {
     queryFn: () => catalogApi.getProduct(id!),
     enabled: Boolean(id),
     staleTime: STALE_TIME,
+    // 404 stays soft (existing ApiState not-found path); only outages escalate.
+    throwOnError: throwOnCriticalError,
   });
 }
 

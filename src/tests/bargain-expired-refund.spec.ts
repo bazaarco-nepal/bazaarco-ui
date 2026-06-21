@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { bargainStatus } from "@/features/seller/_shared/bargain";
+import { bargainStatus } from "@/seller/features/_shared/bargain";
 
 // Step 5 — buyer expired/refund message + seller non-actionable expired state.
 

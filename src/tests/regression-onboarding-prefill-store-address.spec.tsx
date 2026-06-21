@@ -45,7 +45,7 @@ vi.mock("@/hooks/use-catalog", () => ({ useProduct: () => ({ data: null }) }));
 const noopMutation = { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
 let org: unknown = null;
 let storefront: unknown = undefined;
-vi.mock("@/hooks/use-seller", () => ({
+vi.mock("@/seller/hooks/use-seller", () => ({
   useSellerOrganization: () => ({ data: org, isLoading: false, isError: false, error: null }),
   useSellerStorefront: () => ({ data: storefront, isLoading: false, isError: false }),
   useSetupSellerOrganization: () => noopMutation,
@@ -53,7 +53,7 @@ vi.mock("@/hooks/use-seller", () => ({
 }));
 
 import { BazaarProvider } from "@/providers/bazaar-provider";
-import { SellerOnboarding } from "@/features/seller";
+import { SellerOnboarding } from "@/seller/features";
 import { useBazaarStore } from "@/store/bazaar-store";
 
 function renderPage() {

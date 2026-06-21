@@ -6,3 +6,5 @@
 export * from "@/shared/ui";
 export { BuyerPack } from "@/buyer/ui";
 export { SellerPack } from "@/seller/ui";
+export { MaintenanceMessage } from "./maintenance-message";
+export { LocalErrorBoundary } from "./local-error-boundary";

@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 // Switching the active store is store-scoped server-side, so the client must
 // refresh BOTH the seller workspace (["seller"]) and chat (["chat"]) — otherwise
 // the inbox/unread badge keep showing the previous store's threads.
-vi.mock("@/services/api/seller-organization", () => ({
+vi.mock("@/seller/api/seller-organization", () => ({
   sellerOrganizationApi: {
     getOrganization: vi.fn(),
     setupOrganization: vi.fn(),
@@ -15,8 +15,8 @@ vi.mock("@/services/api/seller-organization", () => ({
   },
 }));
 
-import { sellerOrganizationApi } from "@/services/api/seller-organization";
-import { useSwitchActiveStore } from "@/hooks/use-seller";
+import { sellerOrganizationApi } from "@/seller/api/seller-organization";
+import { useSwitchActiveStore } from "@/seller/hooks/use-seller";
 import { queryKeys } from "@/services/api/query-keys";
 
 const mockedApi = sellerOrganizationApi as unknown as {

@@ -53,7 +53,9 @@ const eslintConfig = [
       "src/features/**",
       "src/shared/ui/**",
       "src/buyer/ui/**",
+      "src/buyer/features/**",
       "src/seller/ui/**",
+      "src/seller/features/**",
     ],
     rules: {
       "@typescript-eslint/no-unused-vars": "off",

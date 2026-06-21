@@ -818,13 +818,16 @@ body {
 
 /* ---------- Mobile: stacked header + category strip ---------- */
 .bz-navbar__m-bar {
+  width: 100%;
   background: var(--blue-deep);
+}
+.bz-navbar__m-bar-inner {
   padding-top: 11px;
   padding-bottom: 12px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-width: none;
+  min-width: 0;
 }
 .bz-navbar__m-top {
   display: flex;
@@ -844,8 +847,11 @@ body {
   text-decoration: none;
 }
 .bz-navbar__cats-strip {
+  width: 100%;
   background: #fff;
   border-bottom: 1px solid var(--cream-line);
+}
+.bz-navbar__cats-strip-inner {
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
@@ -853,7 +859,7 @@ body {
   padding-top: 10px;
   padding-bottom: 10px;
   overflow-x: auto;
-  max-width: none;
+  min-width: 0;
 }
 .bz-navbar__cats-strip .bz-navbar__cat {
   font-size: 0.78125rem;

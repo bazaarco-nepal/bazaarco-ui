@@ -3,7 +3,7 @@ import {
   ADD_PRODUCT_DRAFT_KEY,
   productDraftHasContent,
   type ProductDraftPreview,
-} from "@/features/seller/_shared/form-workflow";
+} from "@/seller/features/_shared/form-workflow";
 
 // REGRESSION: a seller's "Save draft" on Add Product wrote the draft to
 // localStorage but NOTHING ever read it back — the draft was unreachable. The

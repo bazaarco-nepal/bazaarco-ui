@@ -31,7 +31,7 @@ vi.mock("@/hooks/use-media-upload", () => ({
   useUpdateSellerVideo: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
 
-vi.mock("@/hooks/use-seller", () => ({
+vi.mock("@/seller/hooks/use-seller", () => ({
   useSellerInventory: () => ({ data: [], isLoading: false }),
 }));
 
@@ -49,7 +49,7 @@ vi.mock("@/components/ui", async () => {
   };
 });
 
-import { SellerVideoLibrary } from "@/components/seller/seller-video-library";
+import { SellerVideoLibrary } from "@/seller/components/seller-video-library";
 import type { SellerVideoItem } from "@/services/api/media";
 
 const VIDEOS: SellerVideoItem[] = [

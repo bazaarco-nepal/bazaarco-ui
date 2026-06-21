@@ -1236,42 +1236,48 @@ export function Navbar() {
 
       {/* ===================== MOBILE ===================== */}
       <div className="bz-navbar__mobile bz-show-mobile">
-        <div className="bz-navbar__m-bar container">
-          <div className="bz-navbar__m-top">
-            <AppLink
-              href={pathFromScreen("home")}
-              ariaLabel={t("nav.homeAria")}
-              className="bz-navbar__brand"
-            >
-              <Logo height={24} />
-            </AppLink>
-            <div className="bz-navbar__m-icons">
+        <div className="bz-navbar__m-bar">
+          <div className="bz-navbar__m-bar-inner container">
+            <div className="bz-navbar__m-top">
               <AppLink
-                href={pathFromScreen("saved")}
-                ariaLabel={t("nav.saved")}
-                className="bz-navbar__m-icon"
+                href={pathFromScreen("home")}
+                ariaLabel={t("nav.homeAria")}
+                className="bz-navbar__brand"
               >
-                <Icon name="heart" size={22} color="var(--on-navy-300)" />
-                {savedCount > 0 && (
-                  <span className="bz-navbar__action-badge bz-navbar__action-badge--gold">
-                    {savedCount}
-                  </span>
-                )}
+                <Logo height={24} />
               </AppLink>
-              <AppLink
-                href={pathFromScreen("cart")}
-                ariaLabel={t("nav.cart")}
-                className="bz-navbar__m-icon"
-              >
-                <Icon name="cart" size={22} color="#fff" />
-                {cartCount > 0 && <span className="bz-navbar__action-badge">{cartCount}</span>}
-              </AppLink>
+              <div className="bz-navbar__m-icons">
+                <AppLink
+                  href={pathFromScreen("saved")}
+                  ariaLabel={t("nav.saved")}
+                  className="bz-navbar__m-icon"
+                >
+                  <Icon name="heart" size={22} color="var(--on-navy-300)" />
+                  {savedCount > 0 && (
+                    <span className="bz-navbar__action-badge bz-navbar__action-badge--gold">
+                      {savedCount}
+                    </span>
+                  )}
+                </AppLink>
+                <AppLink
+                  href={pathFromScreen("cart")}
+                  ariaLabel={t("nav.cart")}
+                  className="bz-navbar__m-icon"
+                >
+                  <Icon name="cart" size={22} color="#fff" />
+                  {cartCount > 0 && <span className="bz-navbar__action-badge">{cartCount}</span>}
+                </AppLink>
+              </div>
             </div>
+            {searchField}
+            {deliverChip}
           </div>
-          {searchField}
-          {deliverChip}
         </div>
-        <div className="bz-navbar__cats-strip container no-scrollbar">{mobileCategoryStrip}</div>
+        <div className="bz-navbar__cats-strip">
+          <div className="bz-navbar__cats-strip-inner container no-scrollbar">
+            {mobileCategoryStrip}
+          </div>
+        </div>
       </div>
 
       <DeliverToModal

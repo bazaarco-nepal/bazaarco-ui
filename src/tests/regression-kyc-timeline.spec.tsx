@@ -47,14 +47,14 @@ vi.mock("@/hooks/use-catalog", () => ({ useProduct: () => ({ data: null }) }));
 // The verification status under test is swapped per-test via this holder.
 const noopMutation = { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
 let org: unknown = null;
-vi.mock("@/hooks/use-seller", () => ({
+vi.mock("@/seller/hooks/use-seller", () => ({
   useSellerOrganization: () => ({ data: org, isLoading: false, isError: false, error: null }),
   useSetupSellerOrganization: () => noopMutation,
   useSubmitSellerVerification: () => noopMutation,
 }));
 
 import { BazaarProvider } from "@/providers/bazaar-provider";
-import { SellerVerificationTimeline } from "@/features/seller";
+import { SellerVerificationTimeline } from "@/seller/features";
 import { useBazaarStore } from "@/store/bazaar-store";
 
 function renderPage() {

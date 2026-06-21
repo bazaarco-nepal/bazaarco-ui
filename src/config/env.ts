@@ -17,6 +17,12 @@ const envSchema = z.object({
   NEXT_PUBLIC_ALGOLIA_APP_ID: requiredString(),
   NEXT_PUBLIC_ALGOLIA_SEARCH_KEY: requiredString(),
   NEXT_PUBLIC_ALGOLIA_INDEX_NAME: requiredString(),
+  // Scheduled-maintenance flag (Level 1). Optional with a "false" default so
+  // existing deploys and `next build` (which imports this) never break.
+  NEXT_PUBLIC_MAINTENANCE_MODE: z.preprocess(
+    (value) => (typeof value === "string" ? value.trim().toLowerCase() : value),
+    z.enum(["true", "false"]).optional().default("false"),
+  ),
 });
 
 const parseResult = envSchema.safeParse(process.env);

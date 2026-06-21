@@ -1,7 +1,7 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
-import { ProductPhotoPicker, type ProductPhoto } from "@/components/seller/product-photo-picker";
+import { ProductPhotoPicker, type ProductPhoto } from "@/seller/components/product-photo-picker";
 
 // Feature: sellers can pick MULTIPLE product photos at once instead of one at a
 // time. Selecting several files should queue them and walk the seller through

@@ -10,4 +10,4 @@ export * from "@/features/video";
 export * from "@/features/checkout";
 export * from "@/features/extra";
 export * from "@/features/profile";
-export * from "@/features/seller";
+export * from "@/seller/features";

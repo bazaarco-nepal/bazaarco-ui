@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Button, Icon, Spinner } from "@/components/ui";
 import { useCreateSellerVideo, useUploadVideo } from "@/hooks/use-media-upload";
-import { useSellerInventory } from "@/hooks/use-seller";
+import { useSellerInventory } from "@/seller/hooks/use-seller";
 
 const MIN_DURATION_SEC = 5;
 const MAX_DURATION_SEC = 30;

@@ -15,6 +15,17 @@ export class ApiRequestError extends Error {
   }
 }
 
+/**
+ * `throwOnError` predicate for CRITICAL React Query reads (catalog, product,
+ * cart). Lets the error propagate to the nearest error boundary — which shows
+ * the maintenance screen — on a real outage (5xx/network), but NOT on 401
+ * (handled by the auth flow) or 404 (handled as not-found). Minor widgets must
+ * NOT use this; they keep their soft empty states.
+ */
+export function throwOnCriticalError(error: unknown): boolean {
+  return !(error instanceof ApiRequestError && (error.status === 401 || error.status === 404));
+}
+
 /** Same-origin API base for JSON calls (via Next.js /api/v1 rewrite). */
 export function getApiBaseUrl(): string {
   return process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api/v1";

@@ -31,7 +31,7 @@ vi.mock("@/hooks/use-media-upload", () => ({
   useCreateSellerVideo: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
 
-vi.mock("@/hooks/use-seller", () => ({
+vi.mock("@/seller/hooks/use-seller", () => ({
   useSellerOrganization: () => ({ data: { sellerId: "sel_1" } }),
   useSellerInventory: () => ({
     data: [

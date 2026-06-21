@@ -43,7 +43,7 @@ const HANDMADE = {
   ],
 };
 
-vi.mock("@/hooks/use-catalog", () => ({
+vi.mock("@/shared/hooks/use-catalog", () => ({
   useCategories: () => ({ data: [HANDMADE] }),
   useProduct: () => ({ data: undefined }),
 }));

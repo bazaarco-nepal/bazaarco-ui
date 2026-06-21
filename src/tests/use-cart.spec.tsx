@@ -16,7 +16,7 @@ vi.mock("@/services/api/cart", () => ({
 }));
 
 import { cartApi } from "@/services/api/cart";
-import { useCartQuery, useCartMutations } from "@/hooks/use-cart";
+import { useCartQuery, useCartMutations } from "@/buyer/hooks/use-cart";
 import { useBazaarStore } from "@/store/bazaar-store";
 import type { Product } from "@/types/catalog";
 

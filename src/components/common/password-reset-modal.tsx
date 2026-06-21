@@ -5,7 +5,7 @@ import { Trans, useTranslation } from "react-i18next";
 
 import { Button, PasswordInput } from "@/components/ui";
 import { useBz } from "@/components/common/marketplace";
-import { useConfirmPasswordReset, useRequestPasswordReset } from "@/hooks/use-auth";
+import { useConfirmPasswordReset, useRequestPasswordReset } from "@/shared/hooks/use-auth";
 import { isStrongPassword, passwordRequirementMessage } from "@/lib/password-validation";
 import { toast } from "@/lib/toast";
 

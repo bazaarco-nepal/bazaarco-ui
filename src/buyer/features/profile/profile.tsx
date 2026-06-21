@@ -35,25 +35,25 @@ import {
   ApiState,
   PasswordInput,
 } from "@/components/ui";
-import { useCatalog, useCreateProductReview } from "@/hooks/use-catalog";
+import { useCatalog, useCreateProductReview } from "@/shared/hooks/use-catalog";
 import { ApiRequestError } from "@/services/api/http";
 import {
   useDeleteAccount,
   useLogout,
   useRequestAccountDeletionOtp,
   useUpdateProfile,
-} from "@/hooks/use-auth";
-import { useUploadImage } from "@/hooks/use-media-upload";
-import { useBargains } from "@/hooks/use-bargains";
-import { useAddresses } from "@/hooks/use-addresses";
-import { useCartQuery } from "@/hooks/use-cart";
-import { useSavedQuery } from "@/hooks/use-saved";
-import { useCancelOrder, useOrders } from "@/hooks/use-orders";
+} from "@/shared/hooks/use-auth";
+import { useUploadImage } from "@/shared/hooks/use-media-upload";
+import { useBargains } from "@/shared/hooks/use-bargains";
+import { useAddresses } from "@/buyer/hooks/use-addresses";
+import { useCartQuery } from "@/buyer/hooks/use-cart";
+import { useSavedQuery } from "@/buyer/hooks/use-saved";
+import { useCancelOrder, useOrders } from "@/buyer/hooks/use-orders";
 import { canCancelOrder } from "@/lib/order-utils";
 import { formatNPR } from "@/lib/money";
 import { toast } from "@/lib/toast";
 import { ConfirmModal } from "@/buyer/features/checkout/checkout";
-import { useChatInbox } from "@/hooks/use-chat";
+import { useChatInbox } from "@/shared/hooks/use-chat";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { displayName } from "@/lib/display";
 import {

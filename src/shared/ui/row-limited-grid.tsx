@@ -2,7 +2,7 @@
 
 import React, { useRef } from "react";
 
-import { useVisibleByRows } from "@/hooks/use-visible-by-rows";
+import { useVisibleByRows } from "@/shared/hooks/use-visible-by-rows";
 
 type RowLimitedGridProps<T> = {
   items: T[];

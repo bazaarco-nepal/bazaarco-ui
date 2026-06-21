@@ -38,8 +38,8 @@ import {
   StoreAvatar,
 } from "@/components/ui";
 import { pathFromScreen, productShareUrl, searchPath } from "@/config/routes";
-import { useVideoFeed } from "@/hooks/use-video-feed";
-import { useVideoLike } from "@/hooks/use-video-like";
+import { useVideoFeed } from "@/buyer/hooks/use-video-feed";
+import { useVideoLike } from "@/buyer/hooks/use-video-like";
 import { videosApi } from "@/services/api/videos";
 import type { VideoFeedItem } from "@/types/video";
 import type { Product } from "@/types";

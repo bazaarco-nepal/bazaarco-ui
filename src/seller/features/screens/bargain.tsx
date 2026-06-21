@@ -9,7 +9,7 @@ import {
   useAcceptBargainOffer,
   useRejectBargainOffer,
   useCounterBargainOffer,
-} from "@/hooks/use-bargains";
+} from "@/shared/hooks/use-bargains";
 import { useSellerBargains, type SellerBargainOffer } from "@/seller/hooks/use-seller";
 import { BuyerAvatar } from "@/components/common";
 import { ApiRequestError } from "@/services/api/http";

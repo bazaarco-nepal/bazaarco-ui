@@ -11,7 +11,7 @@ import {
   useDeleteAddress,
   useSetDefaultAddress,
   useUpdateAddress,
-} from "@/hooks/use-addresses";
+} from "@/buyer/hooks/use-addresses";
 import {
   ADDRESS_LABEL_PRESETS,
   deliveryToSavePayload,

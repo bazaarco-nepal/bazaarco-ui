@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button, Placeholder, VideoPlayer, EmptyState, ApiState } from "@/components/ui";
 import { SellerIcon } from "@/seller/ui/icons";
 import { formatNPR } from "@/lib/money";
-import { useProduct } from "@/hooks/use-catalog";
+import { useProduct } from "@/shared/hooks/use-catalog";
 import { type SellerInventoryItem } from "@/seller/api/seller";
 import { useBz, Footer } from "@/components/common";
 import { DetailTile, SellerHelpBar } from "../_shared/components";

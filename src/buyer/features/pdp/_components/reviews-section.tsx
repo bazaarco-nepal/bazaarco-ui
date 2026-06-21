@@ -11,8 +11,8 @@ import {
   useProductReviewEligibility,
   useProductReviews,
   useRatingDistribution,
-} from "@/hooks/use-catalog";
-import { useUploadImage } from "@/hooks/use-media-upload";
+} from "@/shared/hooks/use-catalog";
+import { useUploadImage } from "@/shared/hooks/use-media-upload";
 import { ApiRequestError } from "@/services/api/http";
 
 const MAX_REVIEW_PHOTOS = 8;

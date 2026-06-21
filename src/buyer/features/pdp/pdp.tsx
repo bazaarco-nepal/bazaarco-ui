@@ -39,7 +39,7 @@ import {
 import { pathFromScreen, productShareUrl, searchPath } from "@/config/routes";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { displayCategoryLabel } from "@/lib/locale-display";
-import { useProduct, useCategories, useSellerTrust, useProductProfile } from "@/hooks/use-catalog";
+import { useProduct, useCategories, useSellerTrust, useProductProfile } from "@/shared/hooks/use-catalog";
 import {
   BazaarCtx,
   useBz,
@@ -48,12 +48,12 @@ import {
   Navbar,
   Footer,
 } from "@/components/common";
-import { useSimilar } from "@/hooks/use-search";
+import { useSimilar } from "@/buyer/hooks/use-search";
 import {
   useAcceptCounterOffer,
   useBargainActivity,
   useCreateBargainOffer,
-} from "@/hooks/use-bargains";
+} from "@/shared/hooks/use-bargains";
 import { bargainExpiryLabel } from "@/lib/bargain-expiry";
 import { formatNPR } from "@/lib/money";
 import { matchSelectedVariants, toggleOption, variantBacksOption } from "@/lib/variant-selection";

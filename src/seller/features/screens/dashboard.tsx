@@ -13,7 +13,7 @@ import {
   StoreAvatar,
 } from "@/components/ui";
 import { SellerIcon } from "@/seller/ui/icons";
-import { useCompleteOnboarding } from "@/hooks/use-auth";
+import { useCompleteOnboarding } from "@/shared/hooks/use-auth";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { displayName } from "@/lib/display";
 import { formatNPR } from "@/lib/money";
@@ -26,7 +26,7 @@ import {
   useUpdateStoreHandle,
 } from "@/seller/hooks/use-seller";
 import { useBz, BuyerAvatar } from "@/components/common";
-import { useChatInbox } from "@/hooks/use-chat";
+import { useChatInbox } from "@/shared/hooks/use-chat";
 import { pathFromScreen, storeShareUrl } from "@/config/routes";
 import { SellerBarChart, SellerSparkline } from "../_shared/charts";
 import {

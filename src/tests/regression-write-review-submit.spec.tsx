@@ -31,7 +31,7 @@ vi.mock("@/services/api/catalog", async (importOriginal) => {
 });
 
 import { catalogApi } from "@/services/api/catalog";
-import { useCreateProductReview } from "@/hooks/use-catalog";
+import { useCreateProductReview } from "@/shared/hooks/use-catalog";
 
 const createReview = catalogApi.createProductReview as unknown as ReturnType<typeof vi.fn>;
 

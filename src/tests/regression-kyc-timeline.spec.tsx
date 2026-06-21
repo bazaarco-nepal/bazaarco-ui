@@ -26,14 +26,14 @@ vi.mock("next/navigation", () => ({
 vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({ invalidateQueries: vi.fn(), setQueryData: vi.fn() }),
 }));
-vi.mock("@/hooks/use-auth", () => ({
+vi.mock("@/shared/hooks/use-auth", () => ({
   useCurrentUser: () => ({ isFetched: true, isError: false, data: { id: "u1" } }),
 }));
-vi.mock("@/hooks/use-cart", () => ({
+vi.mock("@/buyer/hooks/use-cart", () => ({
   useCartQuery: () => ({ isLoading: false, isFetching: false }),
   useCartMutations: () => ({ addItem: {}, updateQty: {}, removeItem: {} }),
 }));
-vi.mock("@/hooks/use-saved", () => ({
+vi.mock("@/buyer/hooks/use-saved", () => ({
   useSavedQuery: () => ({}),
   useSavedMutations: () => ({
     addProduct: { mutateAsync: vi.fn() },
@@ -42,7 +42,7 @@ vi.mock("@/hooks/use-saved", () => ({
     removeSeller: { mutateAsync: vi.fn() },
   }),
 }));
-vi.mock("@/hooks/use-catalog", () => ({ useProduct: () => ({ data: null }) }));
+vi.mock("@/shared/hooks/use-catalog", () => ({ useProduct: () => ({ data: null }) }));
 
 // The verification status under test is swapped per-test via this holder.
 const noopMutation = { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };

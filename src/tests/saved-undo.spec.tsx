@@ -21,10 +21,10 @@ vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({ invalidateQueries: vi.fn(), setQueryData: vi.fn() }),
 }));
 // Authed buyer so ensureAuthed() lets the save through.
-vi.mock("@/hooks/use-auth", () => ({
+vi.mock("@/shared/hooks/use-auth", () => ({
   useCurrentUser: () => ({ isFetched: true, isError: false, data: { id: "u1" } }),
 }));
-vi.mock("@/hooks/use-cart", () => ({
+vi.mock("@/buyer/hooks/use-cart", () => ({
   useCartQuery: () => ({ isLoading: false, isFetching: false }),
   useCartMutations: () => ({ addItem: {}, updateQty: {}, removeItem: {} }),
 }));
@@ -32,7 +32,7 @@ vi.mock("@/hooks/use-cart", () => ({
 const empty = { productIds: [], sellerIds: [], products: [], sellers: [] };
 const addProduct = vi.fn().mockResolvedValue(empty);
 const removeProduct = vi.fn().mockResolvedValue(empty);
-vi.mock("@/hooks/use-saved", () => ({
+vi.mock("@/buyer/hooks/use-saved", () => ({
   useSavedQuery: () => ({}),
   useSavedMutations: () => ({
     addProduct: { mutateAsync: addProduct },
@@ -41,7 +41,7 @@ vi.mock("@/hooks/use-saved", () => ({
     removeSeller: { mutateAsync: vi.fn() },
   }),
 }));
-vi.mock("@/hooks/use-catalog", () => ({ useProduct: () => ({ data: null }) }));
+vi.mock("@/shared/hooks/use-catalog", () => ({ useProduct: () => ({ data: null }) }));
 
 import { BazaarProvider } from "@/providers/bazaar-provider";
 import { useBz } from "@/components/common";

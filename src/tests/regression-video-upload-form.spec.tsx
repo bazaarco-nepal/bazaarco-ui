@@ -26,7 +26,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(""),
 }));
 
-vi.mock("@/hooks/use-media-upload", () => ({
+vi.mock("@/shared/hooks/use-media-upload", () => ({
   useUploadVideo: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useCreateSellerVideo: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));
@@ -42,7 +42,7 @@ vi.mock("@/seller/hooks/use-seller", () => ({
   }),
 }));
 
-vi.mock("@/hooks/use-catalog", () => ({
+vi.mock("@/shared/hooks/use-catalog", () => ({
   useSellerProducts: () => ({
     data: [
       { id: "prod-1", name: "Chunky Bracelet" },

@@ -22,7 +22,7 @@ import {
   useSellerReviews,
   useSellerProducts,
   useCreateSellerReview,
-} from "@/hooks/use-catalog";
+} from "@/shared/hooks/use-catalog";
 import { storeIdFromPath, pathFromScreen } from "@/config/routes";
 import { formatStoreAddress } from "@/lib/store-address";
 import type { Seller } from "@/types";

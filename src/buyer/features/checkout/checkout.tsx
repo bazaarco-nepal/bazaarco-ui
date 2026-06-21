@@ -35,10 +35,10 @@ import {
   PageBar,
   BackToTop,
 } from "@/components/ui";
-import { useCatalog } from "@/hooks/use-catalog";
+import { useCatalog } from "@/shared/hooks/use-catalog";
 import { formatNPR, roundRs } from "@/lib/money";
 import { bargainExpiryLabel } from "@/lib/bargain-expiry";
-import { useAddresses, pickDefaultAddress } from "@/hooks/use-addresses";
+import { useAddresses, pickDefaultAddress } from "@/buyer/hooks/use-addresses";
 import { SavedAddressPicker } from "@/buyer/features/profile/addresses";
 import {
   ADDRESS_LABEL_PRESETS,
@@ -68,7 +68,7 @@ import {
   distinctSellerCount,
   deliveryTypeLabel,
 } from "@/lib/delivery-options";
-import { useOrder } from "@/hooks/use-orders";
+import { useOrder } from "@/buyer/hooks/use-orders";
 import { EsewaRedirectForm } from "@/components/payment/esewa-redirect-form";
 import type { EsewaPaymentInit } from "@/services/api/orders";
 import {

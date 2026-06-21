@@ -36,8 +36,8 @@ import {
   AppLink,
 } from "@/components/ui";
 import { browsePath, categoryIdsFromSearchParams, pathFromScreen } from "@/config/routes";
-import { useCatalog } from "@/hooks/use-catalog";
-import { useSearch } from "@/hooks/use-search";
+import { useCatalog } from "@/shared/hooks/use-catalog";
+import { useSearch } from "@/buyer/hooks/use-search";
 import type { SearchParams } from "@/services/api/search";
 import type { Product } from "@/types";
 import {

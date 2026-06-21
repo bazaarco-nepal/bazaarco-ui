@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button, Chip } from "@/components/ui";
 import { toast } from "@/lib/toast";
 import { useBz } from "@/components/common";
-import { useProductQuestions, useCreateProductQuestion } from "@/hooks/use-catalog";
+import { useProductQuestions, useCreateProductQuestion } from "@/shared/hooks/use-catalog";
 import type { ProductQuestion } from "@/types";
 
 function QuestionComposer({ productId, onDone }: { productId: string; onDone: () => void }) {

@@ -62,7 +62,7 @@ const useSellersMock = vi.fn(() => ({
   error: null,
 }));
 
-vi.mock("@/hooks/use-catalog", () => ({
+vi.mock("@/shared/hooks/use-catalog", () => ({
   useSellers: () => useSellersMock(),
 }));
 

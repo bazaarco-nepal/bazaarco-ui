@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 import { useSearchParams } from "next/navigation";
 import { Icon, PageBar, AppLink, SkeletonCard, Button } from "@/components/ui";
 import { ProductCard, useBz } from "@/components/common";
-import { useCatalog } from "@/hooks/use-catalog";
-import { useSearch } from "@/hooks/use-search";
+import { useCatalog } from "@/shared/hooks/use-catalog";
+import { useSearch } from "@/buyer/hooks/use-search";
 import {
   categoryIdsFromSearchParams,
   pathFromScreen,

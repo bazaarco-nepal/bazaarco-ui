@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useCurrentUser } from "@/hooks/use-auth";
+import { useCurrentUser } from "@/shared/hooks/use-auth";
 import { useBazaarStore } from "@/store/bazaar-store";
 
 /**

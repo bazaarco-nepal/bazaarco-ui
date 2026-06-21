@@ -4,7 +4,7 @@ import React from "react";
 
 import { Icon, Button, SkeletonCard, EmptyState, ApiState, AppLink } from "@/components/ui";
 import { BargainProductCard, useBz } from "@/components/common";
-import { useBargainableProductsInfinite } from "@/hooks/use-catalog";
+import { useBargainableProductsInfinite } from "@/shared/hooks/use-catalog";
 import { pathFromScreen, searchPath } from "@/config/routes";
 
 /** Full listing of every product whose seller is open to bargaining. Reached from

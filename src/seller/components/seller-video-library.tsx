@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { VideoUploadForm } from "@/components/common/video-upload-form";
 import { Button, EmptyState, Icon, Spinner, VideoPlayer } from "@/components/ui";
-import { useDeleteSellerVideo, useUpdateSellerVideo } from "@/hooks/use-media-upload";
+import { useDeleteSellerVideo, useUpdateSellerVideo } from "@/shared/hooks/use-media-upload";
 import { useSellerInventory } from "@/seller/hooks/use-seller";
 import { VideoDeleteConfirmModal } from "@/seller/components/video-delete-confirm-modal";
 import { SellerPageHeader } from "@/seller/features/_shared/components";

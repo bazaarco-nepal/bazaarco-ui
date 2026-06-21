@@ -12,7 +12,7 @@ import {
 } from "@/components/ui";
 import { useTranslation } from "react-i18next";
 import { useBz } from "@/components/common";
-import { useSellers } from "@/hooks/use-catalog";
+import { useSellers } from "@/shared/hooks/use-catalog";
 import { pathFromScreen } from "@/config/routes";
 import type { Seller } from "@/types";
 

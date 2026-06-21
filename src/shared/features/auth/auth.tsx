@@ -14,7 +14,7 @@ import {
   useRegister,
   useResendEmailVerification,
   useVerifyEmail,
-} from "@/hooks/use-auth";
+} from "@/shared/hooks/use-auth";
 import { getGoogleLoginUrl } from "@/services/api/auth";
 import { ApiRequestError } from "@/services/api/http";
 import type { AuthUser, PendingEmailVerification } from "@/types/auth";

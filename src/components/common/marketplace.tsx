@@ -20,10 +20,10 @@ import {
 import { useSearchParams } from "next/navigation";
 import { browsePath, categoryIdsFromSearchParams, pathFromScreen } from "@/config/routes";
 import { categoryImageBySlug } from "@/config/category-images";
-import { useLogout } from "@/hooks/use-auth";
-import { useCategories } from "@/hooks/use-catalog";
+import { useLogout } from "@/shared/hooks/use-auth";
+import { useCategories } from "@/shared/hooks/use-catalog";
 import { formatNPR, roundRs } from "@/lib/money";
-import { useAddresses, useCreateAddress } from "@/hooks/use-addresses";
+import { useAddresses, useCreateAddress } from "@/buyer/hooks/use-addresses";
 import { deliveryToSavePayload } from "@/lib/saved-address";
 import { displayName, firstName } from "@/lib/display";
 import { displayCategoryLabel, displayProductName } from "@/lib/locale-display";

@@ -6,7 +6,7 @@ import { Trans, useTranslation } from "react-i18next";
 
 import { Button, PasswordInput } from "@/components/ui";
 import { useBz } from "@/components/common/marketplace";
-import { useDeleteAccount, useRequestAccountDeletionOtp } from "@/hooks/use-auth";
+import { useDeleteAccount, useRequestAccountDeletionOtp } from "@/shared/hooks/use-auth";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { toast } from "@/lib/toast";
 

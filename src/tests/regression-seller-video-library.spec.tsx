@@ -26,7 +26,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(""),
 }));
 
-vi.mock("@/hooks/use-media-upload", () => ({
+vi.mock("@/shared/hooks/use-media-upload", () => ({
   useDeleteSellerVideo: () => ({ isPending: false, mutateAsync: vi.fn() }),
   useUpdateSellerVideo: () => ({ isPending: false, mutateAsync: vi.fn() }),
 }));

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next";
 import { Button, Spinner, EmptyState, TINTS, ApiState } from "@/components/ui";
 import { SellerIcon } from "@/seller/ui/icons";
-import { useChatInbox, useChatMessages, useInvalidateChat } from "@/hooks/use-chat";
+import { useChatInbox, useChatMessages, useInvalidateChat } from "@/shared/hooks/use-chat";
 import {
   connectChatSocket,
   emitTypingStart,

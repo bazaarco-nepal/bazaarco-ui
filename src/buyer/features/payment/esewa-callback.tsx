@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { useVerifyEsewaPayment } from "@/hooks/use-payment";
+import { useVerifyEsewaPayment } from "@/buyer/hooks/use-payment";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { Button, BuyerPack } from "@/components/ui";
 

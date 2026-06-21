@@ -30,11 +30,11 @@ import {
 } from "@/components/ui";
 import { browsePath, pathFromScreen, videoPath } from "@/config/routes";
 import { ASSETS } from "@/config/assets";
-import { useHome } from "@/hooks/use-home";
-import { useHomeExploreFeed } from "@/hooks/use-home-explore";
-import { useGridColumns } from "@/hooks/use-visible-by-rows";
-import { useVideoFeed } from "@/hooks/use-video-feed";
-import { useBargainableProducts } from "@/hooks/use-catalog";
+import { useHome } from "@/buyer/hooks/use-home";
+import { useHomeExploreFeed } from "@/buyer/hooks/use-home-explore";
+import { useGridColumns } from "@/shared/hooks/use-visible-by-rows";
+import { useVideoFeed } from "@/buyer/hooks/use-video-feed";
+import { useBargainableProducts } from "@/shared/hooks/use-catalog";
 import { useBazaarStore } from "@/store/bazaar-store";
 import {
   BazaarCtx,

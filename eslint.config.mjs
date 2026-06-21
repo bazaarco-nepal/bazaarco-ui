@@ -10,8 +10,10 @@ const compat = new FlatCompat({
 });
 
 // Buyer ⇄ seller import boundaries. Buyer and seller are two separate products
-// sharing one repo; `shared/` is the only common ground. Rules start at "warn"
-// during the migration and flip to "error" once every file has moved (Phase 5).
+// sharing one repo; `shared/` is the only common ground, and the neutral dirs
+// (components, store, types, config, i18n, lib bridges) are importable by both.
+// Enforced at "error" — buyer must not import seller, seller must not import
+// buyer, and shared must import neither.
 const SELLER_PATTERNS = ["@/seller", "@/seller/**"];
 const BUYER_PATTERNS = ["@/buyer", "@/buyer/**"];
 const boundary = (level, patterns, message) => ({
@@ -26,7 +28,7 @@ const eslintConfig = [
   {
     files: ["src/buyer/**", "src/app/(buyer)/**"],
     rules: boundary(
-      "warn",
+      "error",
       SELLER_PATTERNS,
       "Buyer code must not import seller code. Put anything shared in src/shared.",
     ),
@@ -34,7 +36,7 @@ const eslintConfig = [
   {
     files: ["src/seller/**", "src/app/(seller)/**"],
     rules: boundary(
-      "warn",
+      "error",
       BUYER_PATTERNS,
       "Seller code must not import buyer code. Put anything shared in src/shared.",
     ),
@@ -42,7 +44,7 @@ const eslintConfig = [
   {
     files: ["src/shared/**"],
     rules: boundary(
-      "warn",
+      "error",
       [...BUYER_PATTERNS, ...SELLER_PATTERNS],
       "Shared code must not import buyer or seller code — invert the dependency instead.",
     ),

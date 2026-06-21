@@ -101,5 +101,3 @@ export const toast = {
   /** Programmatically dismiss a toast by the id returned from a fire call. */
   dismiss: (id: number) => useToastStore.getState().dismiss(id),
 };
-
-export type Toast = typeof toast;

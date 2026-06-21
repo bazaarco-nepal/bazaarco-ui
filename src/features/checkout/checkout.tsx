@@ -56,14 +56,11 @@ import { queryKeys } from "@/services/api/query-keys";
 import {
   BazaarCtx,
   useBz,
-  Himalaya,
-  KathmanduSkyline,
   ProductCard,
   ProductRail,
   CategoryTile,
   Navbar,
   Footer,
-  DevViewSwitcher,
 } from "@/components/common";
 import { pathFromScreen, searchPath } from "@/config/routes";
 import {

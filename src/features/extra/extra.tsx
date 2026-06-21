@@ -53,14 +53,11 @@ import { toast } from "@/lib/toast";
 import {
   BazaarCtx,
   useBz,
-  Himalaya,
-  KathmanduSkyline,
   ProductCard,
   ProductRail,
   CategoryTile,
   Navbar,
   Footer,
-  DevViewSwitcher,
   SellerRow,
 } from "@/components/common";
 

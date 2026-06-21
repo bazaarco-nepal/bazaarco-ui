@@ -50,81 +50,6 @@ export const useBz = (): BazaarContextValue => {
   return ctx;
 };
 
-/* ---------- Himalayan outline (legacy hero accent) ---------- */
-export function Himalaya({
-  color = "rgba(255,255,255,.18)",
-  height = 90,
-  style,
-}: {
-  color?: string;
-  height?: number;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <svg
-      viewBox="0 0 1280 120"
-      preserveAspectRatio="none"
-      style={{ width: "100%", height, display: "block", ...style }}
-      aria-hidden="true"
-    >
-      <path
-        fill={color}
-        d="M0,120 L0,70 L120,42 L210,78 L330,30 L430,76 L520,18 L610,72 L700,40 L820,84 L900,48 L1010,90 L1110,52 L1190,82 L1280,58 L1280,120 Z"
-      />
-      <path
-        fill="none"
-        stroke={color}
-        strokeWidth="2"
-        d="M0,70 L120,42 L210,78 L330,30 L430,76 L520,18 L610,72 L700,40 L820,84 L900,48 L1010,90 L1110,52 L1190,82 L1280,58"
-      />
-    </svg>
-  );
-}
-
-/* ---------- Kathmandu valley skyline (image-based footer band) ---------- */
-export function KathmanduSkyline({
-  src = ASSETS.skyline,
-  height = 300,
-  opacity = 0.82,
-  scale = 0.82,
-  position = "center 60%",
-  style,
-}: {
-  src?: string;
-  height?: number;
-  opacity?: number;
-  scale?: number;
-  position?: string;
-  style?: React.CSSProperties;
-}) {
-  const mask =
-    "linear-gradient(to bottom, transparent 0%, #000 30%, #000 88%, transparent 100%), linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%)";
-  return (
-    <div
-      aria-hidden="true"
-      style={{
-        width: "100%",
-        height,
-        display: "block",
-        marginBottom: -1,
-        pointerEvents: "none",
-        backgroundImage: `url(${src})`,
-        backgroundSize: `${scale * 100}% auto`,
-        backgroundPosition: position,
-        backgroundRepeat: "no-repeat",
-        opacity,
-        filter: "invert(1) grayscale(1) brightness(1.6) contrast(1.45)",
-        mixBlendMode: "screen",
-        WebkitMaskImage: mask,
-        maskImage: mask,
-        WebkitMaskComposite: "source-in",
-        maskComposite: "intersect",
-        ...style,
-      }}
-    />
-  );
-}
-
 /* ---------- Seller row (PDP, cards) ---------- */
 export function SellerRow({
   seller,
@@ -749,51 +674,6 @@ export function CategoryTile({
         </div>
       </div>
     </Tag>
-  );
-}
-
-/* ---------- Navbar ---------- */
-export function DevViewSwitcher() {
-  const { t } = useTranslation();
-  const { screen } = useBz();
-  const SELLER = [
-    "s-onboarding",
-    "s-dashboard",
-    "s-inbox",
-    "s-order-detail",
-    "s-add",
-    "s-products",
-    "s-ledger",
-  ];
-  const isSeller = SELLER.includes(screen);
-  const target = isSeller ? "home" : "s-dashboard";
-  const icon = isSeller ? "cart" : "store";
-  const label = isSeller ? t("common.switchToBuyer") : t("common.switchToSeller");
-  return (
-    <AppLink
-      href={pathFromScreen(target)}
-      title={label}
-      ariaLabel={label}
-      style={{
-        position: "fixed",
-        left: 22,
-        bottom: 22,
-        zIndex: 200,
-        width: 56,
-        height: 56,
-        borderRadius: "50%",
-        background: "var(--blue-deep)",
-        color: "#fff",
-        border: "3px solid #fff",
-        boxShadow: "0 6px 20px rgba(11,18,32,.22)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: "pointer",
-      }}
-    >
-      <Icon name={icon} size={26} color="#fff" />
-    </AppLink>
   );
 }
 

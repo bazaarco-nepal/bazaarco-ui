@@ -44,14 +44,11 @@ import type { Product } from "@/types";
 import {
   BazaarCtx,
   useBz,
-  Himalaya,
-  KathmanduSkyline,
   ProductCard,
   ProductRail,
   CategoryTile,
   Navbar,
   Footer,
-  DevViewSwitcher,
 } from "@/components/common";
 import { displayCategoryLabel } from "@/lib/locale-display";
 import { useBazaarStore } from "@/store/bazaar-store";

@@ -43,13 +43,10 @@ import { useProduct, useCategories, useSellerTrust, useProductProfile } from "@/
 import {
   BazaarCtx,
   useBz,
-  Himalaya,
-  KathmanduSkyline,
   ProductCard,
   CategoryTile,
   Navbar,
   Footer,
-  DevViewSwitcher,
 } from "@/components/common";
 import { useSimilar } from "@/hooks/use-search";
 import {

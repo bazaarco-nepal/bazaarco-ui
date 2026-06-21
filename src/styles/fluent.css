@@ -185,25 +185,6 @@
 [data-skin="fluent"] .bz-card--flat {
   box-shadow: none;
 }
-[data-skin="fluent"] .bz-card--interactive {
-  cursor: pointer;
-  transition:
-    box-shadow 0.15s ease,
-    border-color 0.15s ease,
-    transform 0.15s ease;
-}
-[data-skin="fluent"] .bz-card--interactive:hover {
-  box-shadow: var(--sh-3);
-  border-color: var(--line-100);
-}
-
-/* A soft inset fill for secondary rows (e.g. the store URL row) — replaces a
-   harsh bordered box with a calm tinted surface. */
-[data-skin="fluent"] .bz-inset {
-  background: var(--line-100);
-  border-radius: var(--r-md);
-}
-
 /* Small square icon tile, very light tint — for metric cards / quick actions. */
 [data-skin="fluent"] .bz-icon-tile {
   width: 36px;

@@ -6,7 +6,6 @@
   /* Brand — homepage revamp palette */
   --red: #e2342b;
   --red-hover: #c92a37;
-  --red-pressed: #a81f2b;
   --blue: #1d4ed8;
   --blue-hover: #1e40af;
   --blue-deep: #102c65;
@@ -39,7 +38,6 @@
   --success: #16a34a;
   --warning: #f59e0b;
   --danger: #b91c1c;
-  --info: #0ea5e9;
 
   /* Toast — white card + status rail/chip (approved mockup palette). Change a
      status token here and that variant restyles everywhere. */
@@ -86,7 +84,6 @@
   --fs-h1: clamp(20px, 1.4vw + 14px, 26px);
   --fs-h2: clamp(18px, 1vw + 13px, 22px);
   --fs-h3: 1.5rem;
-  --fs-h4: 1.25rem;
   --fs-base: clamp(13px, 0.3vw + 12px, 15px);
   --fs-body: var(--fs-base);
   --fs-small: 0.9375rem;
@@ -95,7 +92,6 @@
   --w-heading: 700;
   --w-button: 600;
   --w-emphasis: 500;
-  --w-body: 400;
   --lh-tight: 1.2;
   --lh-normal: 1.5;
 
@@ -136,7 +132,6 @@
   /* Motion */
   --dur-micro: 120ms;
   --dur-standard: 200ms;
-  --dur-modal: 240ms;
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   --container-max: 1440px;
@@ -152,18 +147,11 @@
   --space-lg: 24px;
   --space-xl: 32px;
   --space-2xl: 48px;
-  --space-3xl: 64px;
-  --space-4xl: 72px;
-  --space-5xl: 88px;
-  --space-6xl: 96px;
-  --sp-1: var(--space-2xs);
-  --sp-2: var(--space-xs);
   --sp-3: var(--space-sm);
   --sp-4: clamp(12px, 0.4vw + 10px, 16px);
   --sp-5: clamp(16px, 0.5vw + 12px, 20px);
   --sp-6: clamp(18px, 0.7vw + 14px, 24px);
   --sp-8: clamp(24px, 1vw + 18px, 32px);
-  --sp-10: clamp(32px, 1.2vw + 24px, 40px);
 
   /* Homepage vertical rhythm. The contrast is the point: the gap BETWEEN
      sections must read clearly larger than the gaps WITHIN one (card/grid).
@@ -469,14 +457,6 @@ body {
   }
 }
 
-@keyframes bz-pulse-ring {
-  0% {
-    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.55);
-  }
-  100% {
-    box-shadow: 0 0 0 14px rgba(22, 163, 74, 0);
-  }
-}
 @keyframes bz-mic-pulse {
   0%,
   100% {
@@ -820,21 +800,6 @@ body {
   overflow-x: auto;
   min-width: 0;
 }
-.bz-navbar__allcats {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-  font-size: 0.84375rem;
-  font-weight: 700;
-  color: #fff;
-  background: var(--blue-deep);
-  padding: 8px 15px;
-  border-radius: 9px;
-  text-decoration: none;
-  cursor: pointer;
-}
 .bz-navbar__cat {
   flex-shrink: 0;
   white-space: nowrap;
@@ -890,7 +855,6 @@ body {
   overflow-x: auto;
   max-width: none;
 }
-.bz-navbar__cats-strip .bz-navbar__allcats,
 .bz-navbar__cats-strip .bz-navbar__cat {
   font-size: 0.78125rem;
   padding: 6px 12px;
@@ -1108,8 +1072,7 @@ body {
   transition: opacity 0.15s var(--ease);
 }
 .bz-seller-side.collapsed .bz-side-label,
-.bz-seller-side.collapsed .bz-side-group,
-.bz-seller-side.collapsed .bz-side-brand-text {
+.bz-seller-side.collapsed .bz-side-group {
   display: none;
 }
 .bz-seller-side.collapsed .bz-side-item {
@@ -1234,21 +1197,6 @@ body {
 }
 
 /* Sidebar header — brand + inline collapse toggle */
-.bz-side-head {
-  border-bottom: 1px solid var(--line-200);
-}
-.bz-side-head-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.bz-side-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 1;
-  min-width: 0;
-}
 .bz-side-toggle {
   width: 32px;
   height: 32px;
@@ -1687,14 +1635,6 @@ body {
   max-width: var(--seller-max-wide, var(--container));
 }
 
-/* Editing pages keep a readable, capped editable column (~680px) inside the
-   centered page instead of stretching inputs edge to edge. Anchor the column
-   with `.bz-seller-form-col`; the wider page chrome (headers, banners) can
-   still span full width above it. */
-.bz-seller-form-col {
-  max-width: 680px;
-}
-
 /* Seller page header — one shared pattern across every seller screen: a blue
    accent rail beside a dark title, a helper line, optional breadcrumb, and a
    right-aligned actions slot. Colors come from tokens so it follows the skin. */
@@ -1813,15 +1753,6 @@ body {
   grid-template-columns: minmax(0, 1fr);
   gap: 24px;
   align-items: start;
-  width: 100%;
-}
-
-/* Seller video page — align with full-width analytics cards */
-.bz-seller-video-kpi-row {
-  width: 100%;
-}
-
-.bz-seller-video-charts-row {
   width: 100%;
 }
 
@@ -2219,22 +2150,6 @@ body {
   height: 100%;
   background: var(--blue);
   transition: width 0.2s ease;
-}
-
-@media (max-width: 900px) {
-  .bz-seller-video-kpi-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-
-  .bz-seller-video-charts-row {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-@media (max-width: 520px) {
-  .bz-seller-video-kpi-row {
-    grid-template-columns: 1fr !important;
-  }
 }
 
 /* Seller responsive grid helper */
@@ -2922,11 +2837,6 @@ body {
   line-height: 1;
 }
 
-.bz-popular-store-card__rating--empty {
-  color: var(--ink-500);
-  background: var(--line-100);
-}
-
 .bz-popular-store-card__products {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -3231,108 +3141,6 @@ body {
   color: #fff;
 }
 
-.bz-pdp-seller-chip {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px 12px;
-  margin-top: 16px;
-  padding: 12px 14px;
-  border-radius: var(--r-lg);
-  border: 1px solid var(--line-200);
-  background: #fff;
-}
-
-.bz-pdp-seller-chip__lead {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.bz-pdp-seller-chip__avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  overflow: hidden;
-  flex-shrink: 0;
-  background: var(--ink-50);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--line-200);
-}
-
-.bz-pdp-seller-chip__avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.bz-pdp-seller-chip__name {
-  min-width: 0;
-  max-width: 100%;
-  font-size: 0.9375rem;
-  font-weight: 700;
-  color: var(--ink-900);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.bz-pdp-seller-chip__actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-@media (max-width: 768px) {
-  .bz-pdp-seller-chip {
-    flex-wrap: nowrap;
-  }
-
-  .bz-pdp-seller-chip__lead {
-    flex: 1 1 auto;
-    overflow: hidden;
-  }
-}
-
-.bz-pdp-seller-chip__actions button,
-.bz-pdp-seller-chip__actions a {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: var(--blue);
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 0;
-  font-family: inherit;
-}
-
-.bz-pdp-details {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 32px;
-  margin-top: 40px;
-  padding-top: 28px;
-  border-top: 1px solid var(--line-200);
-}
-
-@media (max-width: 768px) {
-  .bz-pdp-details {
-    margin-top: 20px;
-    padding-top: 0;
-    gap: 20px;
-    border-top: none;
-  }
-}
-
 .bz-pdp-similar {
   margin-top: 52px;
 }
@@ -3352,40 +3160,12 @@ body {
   font-weight: 700;
   color: var(--ink-900);
 }
-.bz-pdp-msec__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-.bz-pdp-msec__head > h4 {
-  margin: 0;
-}
-/* Empty-state card inside a mobile section (no reviews / no questions yet). */
-.bz-pdp-mempty {
-  border: 1px solid var(--line-200);
-  border-radius: var(--r-lg);
-  padding: 18px 14px;
-  text-align: center;
-  background: var(--card);
-}
-
 @media (max-width: 768px) {
   .bz-pdp-similar {
     margin: 0 -16px;
     padding: 16px;
     border-top: 8px solid var(--line-100);
   }
-}
-
-.bz-seller-preview-card__img {
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
-  display: block;
-  border-radius: var(--r-md);
-  border: 1px solid var(--line-200);
-  background: var(--line-100);
 }
 
 @media (max-width: 720px) {
@@ -3552,22 +3332,6 @@ body {
   background: var(--line-100);
 }
 
-/* List row (orders, audit) */
-.bz-list-row {
-  display: flex;
-  gap: 14px;
-  background: #fff;
-  border: 1px solid var(--line-200);
-  border-radius: var(--r-lg);
-  padding: 14px;
-  cursor: pointer;
-  transition: border-color var(--dur-standard) var(--ease);
-}
-.bz-list-row:hover {
-  border-color: var(--ink-300);
-  box-shadow: var(--sh-1);
-}
-
 /* Footer Links styling and premium hover state */
 .bz-footer-link {
   color: rgba(255, 255, 255, 0.65);
@@ -3627,19 +3391,6 @@ body {
   }
 }
 @media (max-width: 768px) {
-  .bz-stack-768 {
-    grid-template-columns: 1fr !important;
-    gap: 16px !important;
-  }
-  /* PDP detail tabs — more breathing room on mobile so the active tab and
-     content aren't cramped against each other. */
-  .bz-pdp-tabs {
-    padding: 16px 0 !important;
-    margin-top: 28px !important;
-  }
-  .bz-pdp-panel {
-    margin-top: 20px !important;
-  }
   /* Cart — fit the line cards to a phone column so nothing spills past the
      right edge (which `overflow-x: clip` would otherwise hide, leaving the
      gutters looking lopsided): smaller media, tighter card padding, and the
@@ -3737,47 +3488,7 @@ body {
   }
 }
 
-/* Hero sidebar splits (1fr + fixed 420/380/320) */
-@media (max-width: 900px) {
-  .bz-split-hero {
-    grid-template-columns: 1fr !important;
-    flex-direction: column !important;
-    gap: 16px !important;
-    min-height: auto !important;
-  }
-  .bz-split-hero > * {
-    width: 100% !important;
-    max-width: 100% !important;
-    padding: 28px 22px !important;
-  }
-}
-@media (max-width: 480px) {
-  .bz-split-hero > * {
-    padding: 24px 18px !important;
-  }
-  .bz-split-hero img {
-    max-width: 240px;
-  }
-}
-
-/* Auth centered column on small screens */
-@media (max-width: 480px) {
-  .bz-auth-page {
-    padding: 16px !important;
-  }
-  .bz-auth-hero-img {
-    width: 60vw !important;
-    height: 60vw !important;
-    max-width: 240px;
-    max-height: 240px;
-  }
-}
-
 /* Big hero typography — fluid clamp via class */
-.bz-hero-h1 {
-  font-size: clamp(1.75rem, 6vw, 3rem) !important;
-  line-height: 1.12 !important;
-}
 .bz-hero-h2 {
   font-size: clamp(1.5rem, 5vw, 2.25rem) !important;
   line-height: 1.15 !important;
@@ -3785,9 +3496,6 @@ body {
 .bz-stat-xl {
   font-size: clamp(1.875rem, 7vw, 3rem) !important;
   line-height: 1.05 !important;
-}
-.bz-stat-lg {
-  font-size: clamp(1.25rem, 4vw, 1.5rem) !important;
 }
 
 /* Containers — kill horizontal overflow on mobile.
@@ -3820,12 +3528,6 @@ body {
 @media (min-width: 769px) {
   .bz-home-hero {
     padding-top: var(--home-hero-top) !important;
-  }
-  /* The category card adds its own top/bottom margins — neutralize so the stack
-     gap stays the single source of section spacing. */
-  .bz-home-section .bz-cat-card {
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
   }
 }
 
@@ -4138,14 +3840,6 @@ body {
   justify-content: space-between;
   gap: 10px;
 }
-.bz-arrivals__eyebrow {
-  display: inline-flex;
-  color: var(--gold);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
 .bz-arrivals__title {
   margin: 2px 0 0;
   color: var(--blue-deep);
@@ -4170,11 +3864,6 @@ body {
   border-radius: 0;
   padding: 0;
 }
-.bz-arrivals-rail__sub {
-  font-size: 12px;
-  color: var(--ink-400);
-  margin: 6px 0 13px;
-}
 .bz-arrivals-rail__grid {
   flex: 1 1 0;
   min-height: 0;
@@ -4194,10 +3883,6 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr));
   gap: var(--sp-4);
 }
-.bz-arrivals-mobile__grid .bz-arrival__media {
-  aspect-ratio: 1 / 0.8;
-}
-
 /* ---------- BazaarCo Watch and Bargain panels ---------- */
 .bz-watch-panel,
 .bz-bargain-panel {
@@ -4208,8 +3893,7 @@ body {
   box-shadow: none;
 }
 
-.bz-watch-panel__head,
-.bz-bargain-panel__head {
+.bz-watch-panel__head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -4217,8 +3901,7 @@ body {
   margin-bottom: 15px;
 }
 
-.bz-watch-panel__eyebrow,
-.bz-bargain-panel__eyebrow {
+.bz-watch-panel__eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -4229,12 +3912,7 @@ body {
   text-transform: uppercase;
 }
 
-.bz-bargain-panel__eyebrow {
-  color: var(--gold);
-}
-
-.bz-watch-panel__title,
-.bz-bargain-panel__title {
+.bz-watch-panel__title {
   margin: 4px 0 0;
   color: var(--blue-deep);
   font-family: var(--font-display);
@@ -4243,8 +3921,7 @@ body {
   line-height: 1.12;
 }
 
-.bz-watch-panel__copy,
-.bz-bargain-panel__copy {
+.bz-watch-panel__copy {
   margin: 5px 0 0;
   color: var(--ink-400);
   font-size: 13px;
@@ -4511,13 +4188,6 @@ body {
   font-family: var(--font-mono, ui-monospace, SFMono-Regular, monospace);
 }
 
-.bz-bargain-panel__title--row {
-  margin: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-}
-
 .bz-bargain-panel__icon {
   display: inline-flex;
   align-items: center;
@@ -4536,114 +4206,6 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr));
   gap: var(--grid-gap);
   align-items: stretch;
-}
-
-/* Offer product card (revamp) — matches ProductCard.dc.html cta="offer". */
-.bz-offer-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  background: #fff;
-  border: 1px solid var(--cream-line);
-  border-radius: 14px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: box-shadow var(--dur-standard) var(--ease);
-}
-
-.bz-offer-card__media {
-  position: relative;
-  padding: 9px;
-}
-
-.bz-offer-card__tile {
-  position: relative;
-  aspect-ratio: 1 / 1;
-  border-radius: 9px;
-  overflow: hidden;
-}
-
-.bz-offer-card__img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.bz-offer-card__wish {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  z-index: 2;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.13);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 0;
-}
-
-.bz-offer-card__body {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  flex: 1;
-  padding: 3px 13px 14px;
-}
-
-.bz-offer-card__name {
-  height: 34px;
-  color: var(--ink-900);
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1.32;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.bz-offer-card__rating {
-  min-height: 1.1rem;
-}
-
-.bz-offer-card__price {
-  margin-top: 2px;
-  color: var(--ink-900);
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  font-family: var(--font-mono, ui-monospace, SFMono-Regular, monospace);
-}
-
-.bz-offer-card__cta {
-  position: relative;
-  z-index: 2;
-  margin-top: 6px;
-  height: 38px;
-  width: 100%;
-  border: none;
-  border-radius: 9px;
-  background: var(--red);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  transition: background var(--dur-micro) var(--ease);
-}
-
-.bz-offer-card__cta:hover {
-  background: #c52a22;
 }
 
 /* All-bargainable-products listing screen */
@@ -4730,18 +4292,15 @@ body {
     padding: 14px;
   }
 
-  .bz-watch-panel__head,
-  .bz-bargain-panel__head {
+  .bz-watch-panel__head {
     gap: 10px;
   }
 
-  .bz-watch-panel__title,
-  .bz-bargain-panel__title {
+  .bz-watch-panel__title {
     font-size: 18px;
   }
 
-  .bz-watch-panel__copy,
-  .bz-bargain-panel__copy {
+  .bz-watch-panel__copy {
     display: none;
   }
 
@@ -4769,12 +4328,6 @@ body {
   }
 }
 
-/* Category grid — icon tiles (no images). 6 cols desktop, 4 cols mobile. */
-.bz-cat-row {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 28px 12px;
-}
 /* Category tile (clickable cell). Base/mobile = transparent, no box — keeps the
    mobile layout identical to before. Desktop layers a real tile + hover state. */
 .bz-cat__tile {
@@ -4784,87 +4337,6 @@ body {
 }
 .bz-cat__en {
   color: var(--ink-700);
-}
-/* Card wrapper — `display:contents` on mobile so the wrapper is invisible and
-   SectionHead + grid flow exactly as before. Desktop turns it into a card. */
-.bz-cat-card {
-  display: contents;
-}
-
-/* Tablet + desktop — wrap the section in a subtle white card and make each
-   category a proper clickable tile. Mobile (<=768px) is untouched. */
-@media (min-width: 769px) {
-  .bz-cat-card {
-    display: block;
-    background: #ffffff;
-    border: 1px solid #edf0f5;
-    border-radius: 24px;
-    padding: 28px 32px 30px;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
-    margin-top: 32px;
-    margin-bottom: 36px;
-  }
-  .bz-cat-card .bz-sec-head {
-    margin-bottom: 24px !important;
-  }
-  .bz-cat-row .bz-cat__tile {
-    min-height: 112px;
-    border-radius: 18px;
-    justify-content: center;
-    gap: 10px;
-    padding: 8px 6px !important;
-  }
-  .bz-cat-row .bz-cat__tile:hover .bz-cat__en {
-    color: var(--blue-deep);
-  }
-  .bz-cat-row .bz-cat__en {
-    max-width: 100%;
-    font-size: 0.78rem !important;
-    line-height: 1.22;
-    overflow-wrap: anywhere;
-  }
-}
-/* Desktop — contained 6-col grid. The card now constrains width, so we use
-   clean stretchy 1fr columns (no more fixed-120px hack) aligned to the product
-   grid below. Tablet/mobile keep their own 4-col rules untouched. */
-@media (min-width: 1025px) {
-  .bz-cat-row {
-    grid-template-columns: repeat(6, 1fr);
-    column-gap: 20px;
-    row-gap: 22px;
-  }
-}
-/* Tablet — 4 across, all categories shown */
-@media (max-width: 1024px) {
-  .bz-cat-row {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 24px 10px;
-  }
-}
-/* Mobile — 3 across, cap to first 6 (3 + 3); rest via "All categories" */
-@media (max-width: 768px) {
-  .bz-cat-row {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px 6px;
-  }
-  .bz-cat-row > *:nth-child(n + 7) {
-    display: none !important;
-  }
-  .bz-cat-row .bz-cat__en {
-    font-size: 0.76rem !important;
-    line-height: 1.2;
-    overflow-wrap: anywhere;
-  }
-}
-
-/* Tables / wide content scroll wrapper */
-.bz-tbl-wrap {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-.bz-tbl-wrap table {
-  min-width: 480px;
 }
 
 /* Modal width — never exceed viewport */
@@ -4894,11 +4366,6 @@ body {
 @media (min-width: 769px) {
   .bz-show-mobile {
     display: none !important;
-  }
-  .bz-pdp-buy-actions {
-    display: flex;
-    gap: 12px;
-    margin-top: 12px;
   }
 }
 
@@ -5011,88 +4478,6 @@ body {
   .bz-store-actions {
     flex: 1 1 100%;
   }
-}
-
-/* PDP detail columns — vertical divider on desktop only */
-@media (min-width: 769px) {
-  .bz-pdp-details__col--right {
-    border-left: 1px solid var(--line-200);
-    padding-left: 32px;
-  }
-}
-
-/* PDP tabbed panes — tabs on desktop, stacked on mobile */
-@media (min-width: 769px) {
-  .bz-tab-pane--inactive {
-    display: none;
-  }
-  .bz-tab-pane__title {
-    display: none;
-  }
-  .bz-tab-pane {
-    margin-bottom: 0 !important;
-  }
-}
-@media (max-width: 768px) {
-  .bz-tab-bar {
-    display: none !important;
-  }
-  /* Stronger, calmer section headers on mobile (Description / Specifications /
-     Reviews / Q&A) so each block reads as a distinct resting point. */
-  .bz-tab-pane__title {
-    font-size: 1.25rem !important;
-    font-weight: 800 !important;
-    color: var(--ink-900) !important;
-    margin: 0 0 16px !important;
-  }
-  .bz-tab-pane {
-    margin-bottom: 24px !important;
-  }
-  .bz-pdp-details .bz-tab-pane {
-    margin-bottom: 32px !important;
-  }
-  .bz-pdp-details .bz-tab-pane:last-child {
-    margin-bottom: 0 !important;
-  }
-  /* Borderless specification list — left label muted, right value bold,
-     generous spacing instead of an invoice-style grid. */
-  .bz-spec-table tr {
-    border-bottom: none !important;
-  }
-  .bz-spec-table td {
-    padding: 9px 0 !important;
-    font-size: 0.9375rem !important;
-    vertical-align: top;
-  }
-  .bz-spec-table td:first-child {
-    width: 42% !important;
-    color: var(--ink-400) !important;
-    font-weight: 500 !important;
-  }
-  .bz-spec-table td:last-child {
-    text-align: right;
-    color: var(--ink-900) !important;
-    font-weight: 700 !important;
-  }
-}
-.bz-tab-btn {
-  background: none;
-  border: none;
-  padding: 10px 4px;
-  cursor: pointer;
-  color: var(--ink-500);
-  font-weight: 700;
-  font-size: 0.9375rem;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition: color var(--dur-standard) var(--ease);
-}
-.bz-tab-btn:hover {
-  color: var(--ink-700);
-}
-.bz-tab-btn--active {
-  color: var(--blue);
-  border-bottom-color: var(--blue);
 }
 
 /* Inline action link — underline on hover, color preserved */

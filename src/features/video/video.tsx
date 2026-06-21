@@ -48,14 +48,11 @@ import { toast } from "@/lib/toast";
 import {
   BazaarCtx,
   useBz,
-  Himalaya,
-  KathmanduSkyline,
   ProductCard,
   ProductRail,
   CategoryTile,
   Navbar,
   Footer,
-  DevViewSwitcher,
 } from "@/components/common";
 
 function useIsMobile(bp = 768) {

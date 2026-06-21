@@ -30,25 +30,6 @@
     opacity: 0;
   }
 }
-@keyframes bz-eq {
-  0%,
-  100% {
-    transform: scaleY(0.35);
-  }
-  50% {
-    transform: scaleY(1);
-  }
-}
-@keyframes bz-pulse-ring {
-  0% {
-    transform: scale(0.85);
-    opacity: 0.8;
-  }
-  100% {
-    transform: scale(1.8);
-    opacity: 0;
-  }
-}
 @keyframes bz-slide-up {
   from {
     transform: translateY(14px);
@@ -60,19 +41,10 @@
   }
 }
 
-.bz-reel-stage::-webkit-scrollbar,
-.bz-reel-chip-row::-webkit-scrollbar,
 .bz-reel-thumbs::-webkit-scrollbar,
 .bz-video-theater__thumbs::-webkit-scrollbar,
-.bz-video-panel::-webkit-scrollbar,
-.bz-hide-scrollbar::-webkit-scrollbar {
+.bz-video-panel::-webkit-scrollbar {
   display: none;
-}
-
-/* Hide scrollbar on horizontal rails (e.g. PDP "also bought" carousel). */
-.bz-hide-scrollbar {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
 }
 
 /* Immersive Watch page — fill viewport, no light page bleed */
@@ -186,9 +158,6 @@ a {
 .bz-mobile-only {
   display: none !important;
 }
-.bz-mobile-show {
-  display: none;
-}
 .bz-order-success__actions {
   width: 100%;
   display: flex;
@@ -201,9 +170,6 @@ a {
 @media (max-width: 768px) {
   .bz-mobile-only {
     display: flex !important;
-  }
-  .bz-mobile-show {
-    display: inline-flex !important;
   }
   .bz-mobile-hide {
     display: none !important;
@@ -318,9 +284,4 @@ a {
   .bz-sec-head__action {
     font-size: 13px !important;
   }
-}
-
-/* Variant image upload button — reveal overlay on hover */
-label:hover .bz-variant-img-hover {
-  opacity: 1 !important;
 }

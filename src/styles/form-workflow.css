@@ -196,7 +196,6 @@
 .bz-variant-step {
   --variant-accent: #0f6e56;
   --variant-accent-tint: #e3f3eb;
-  --variant-accent-border: #9fe1cb;
   --variant-card-border: #e7e9e4;
   --variant-muted-border: #d6dad3;
   --variant-strong: #16201c;
@@ -297,12 +296,6 @@
 .bz-option-name:focus {
   border-color: var(--variant-accent);
 }
-/* Inline note for the axis/value caps (e.g. "You can add up to 2 options"). */
-.bz-axis-note {
-  margin: 10px 0 0;
-  font-size: 12px;
-  color: var(--variant-muted);
-}
 .bz-option-remove {
   width: 30px;
   height: 30px;
@@ -344,19 +337,8 @@
   background: var(--variant-accent-tint);
   color: var(--variant-accent);
 }
-.bz-choice-chip__x {
-  font-size: 15px;
-  line-height: 1;
-  opacity: 0.7;
-}
 .bz-add-option-row {
   margin-top: 14px;
-}
-.bz-add-option--full {
-  width: 100%;
-  text-align: center;
-  border-style: dashed;
-  font-weight: 500;
 }
 .bz-add-option:disabled {
   opacity: 0.45;
@@ -433,22 +415,6 @@
 }
 .bz-radio-row.is-disabled input {
   cursor: not-allowed;
-}
-.bz-photo-more {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 78px;
-  height: 78px;
-  margin: 0 auto;
-  border-radius: 8px;
-  background: var(--variant-card-border);
-  color: var(--variant-muted);
-  font-size: 12px;
-  font-weight: 600;
-}
-.bz-photo-more > span {
-  margin: 0;
 }
 .bz-radio-row--compact {
   margin-top: 12px;
@@ -752,66 +718,7 @@
    "what's left" that still earns its space here. */
 @media (max-width: 768px) {
   .bz-form-nav,
-  .bz-seller-add-livepreview,
-  .bz-preview-picker {
+  .bz-seller-add-livepreview {
     display: none;
   }
-}
-
-/* Live-preview buyer-style variant selector (sidebar): primary axis pills, then
-   the secondary axis once one is picked — mirrors the PDP picker. */
-.bz-preview-picker {
-  background: #fff;
-  border: 1px solid var(--line-200);
-  border-radius: var(--r-lg);
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.bz-preview-picker__price {
-  font-size: 0.9375rem;
-  color: var(--ink-600);
-}
-.bz-preview-picker__price strong {
-  color: var(--ink-900);
-  font-size: 1.0625rem;
-}
-.bz-preview-picker__axis {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.bz-preview-picker__lbl {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--ink-500);
-}
-.bz-preview-picker__pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.bz-preview-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 34px;
-  padding: 6px 12px;
-  border-radius: var(--r-full);
-  border: 1.5px solid var(--line-200);
-  background: #fff;
-  color: var(--ink-700);
-  font: 600 0.8125rem var(--font-sans);
-  cursor: pointer;
-}
-.bz-preview-pill.is-on {
-  border-color: var(--blue);
-  background: var(--tint-blue-50);
-  color: var(--blue);
-}
-.bz-preview-pill.is-out {
-  opacity: 0.4;
-  text-decoration: line-through;
-  cursor: not-allowed;
 }

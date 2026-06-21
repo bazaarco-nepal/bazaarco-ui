@@ -39,14 +39,11 @@ import { useBazaarStore } from "@/store/bazaar-store";
 import {
   BazaarCtx,
   useBz,
-  Himalaya,
-  KathmanduSkyline,
   ProductCard,
   BargainProductCard,
   CategoryTile,
   Navbar,
   Footer,
-  DevViewSwitcher,
 } from "@/components/common";
 import { PicksSections } from "./_components/picks-tabs";
 import type { VideoFeedItem } from "@/types/video";

@@ -71,10 +71,6 @@ export function connectChatSocket(): Socket {
   return s;
 }
 
-export function disconnectChatSocket(): void {
-  if (socket?.connected) socket.disconnect();
-}
-
 export function joinConversation(conversationId: string): void {
   connectChatSocket().emit("join_conversation", { conversationId });
 }

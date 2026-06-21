@@ -9,17 +9,16 @@ import { postalForCity, isDeliverableCity, DELIVERY_AREA_MESSAGE } from "@/lib/d
 import { reverseGeocode } from "@/lib/reverse-geocode";
 import { tintForName, STORE_TINTS } from "@/lib/store-tint";
 import { formatNPR } from "@/lib/money";
-import { MapPinPicker } from "@/components/ui/map-pin-picker";
+import { MapPinPicker } from "@/shared/ui/map-pin-picker";
 import { CLOUDINARY_CLOUD_NAME, publicIdFromVideoUrl } from "@/lib/cloudinary";
 import { BzPack } from "@/shared/ui/pack";
 import "cloudinary-video-player/cld-video-player.min.css";
 
-// BzPack (shared) and the BuyerPack/SellerPack surface wrappers moved to their
-// design-system homes; re-exported so existing `@/components/ui` consumers keep
-// resolving until they are repointed in later phases.
+// BzPack moved to its own shared module; re-exported so existing `@/components/ui`
+// consumers keep resolving. The BuyerPack/SellerPack surface wrappers live in the
+// buyer/seller trees and are bridged by the @/components/ui barrel, not here —
+// shared/ must not import buyer/ or seller/.
 export { BzPack } from "@/shared/ui/pack";
-export { BuyerPack } from "@/buyer/ui/pack";
-export { SellerPack } from "@/seller/ui/pack";
 
 /* ============================================================
    BazaarCo — Component Kit

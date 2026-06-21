@@ -13,7 +13,7 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 // optional action button (e.g. Undo), keyboard/close dismissal, and dedupe of
 // repeat fires. If any regress, toasts break across cart, checkout, auth, etc.
 
-import { ToastContainer } from "@/components/ui/toast";
+import { ToastContainer } from "@/shared/ui/toast";
 import { toast, useToastStore } from "@/lib/toast";
 
 beforeEach(() => {

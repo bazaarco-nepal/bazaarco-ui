@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Icon } from "@/components/ui/kit";
+import { Icon } from "@/shared/ui/kit";
 
 type PasswordInputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> & {
   inputStyle?: React.CSSProperties;

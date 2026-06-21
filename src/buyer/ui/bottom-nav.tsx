@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Icon } from "@/components/ui";
+import { Icon } from "@/shared/ui";
 
 type NavItem = {
   id: string;

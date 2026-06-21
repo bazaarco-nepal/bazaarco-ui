@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Icon } from "@/components/ui/kit";
+import { Icon } from "@/shared/ui/kit";
 import { TOAST_ICON, useToastStore, type ToastItem } from "@/lib/toast";
 
 // Newest on top, at most three on screen at once; anything beyond that waits in

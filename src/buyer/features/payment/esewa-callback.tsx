@@ -48,7 +48,7 @@ export function EsewaCallback({ mode }: { mode: "success" | "failure" }) {
           setPhase("captured");
           // Hand off to the existing order-confirmed screen.
           useBazaarStore.getState().setLastOrderId(result.orderId);
-          router.replace("/checkout/success");
+          router.replace("/checkout/success", { scroll: false });
         } else if (result.status === "pending" || result.status === "ambiguous") {
           setPhase("pending");
         } else {
@@ -118,7 +118,10 @@ export function EsewaCallback({ mode }: { mode: "success" | "failure" }) {
                 <Button variant="primary" onClick={() => router.refresh()}>
                   {t("payment.callback.checkAgain")}
                 </Button>
-                <Button variant="secondary" onClick={() => router.push("/orders")}>
+                <Button
+                  variant="secondary"
+                  onClick={() => router.push("/orders", { scroll: false })}
+                >
                   {t("payment.callback.viewOrders")}
                 </Button>
               </div>
@@ -142,10 +145,13 @@ export function EsewaCallback({ mode }: { mode: "success" | "failure" }) {
                   flexWrap: "wrap",
                 }}
               >
-                <Button variant="primary" onClick={() => router.push("/checkout")}>
+                <Button
+                  variant="primary"
+                  onClick={() => router.push("/checkout", { scroll: false })}
+                >
                   {t("payment.callback.tryAgain")}
                 </Button>
-                <Button variant="secondary" onClick={() => router.push("/cart")}>
+                <Button variant="secondary" onClick={() => router.push("/cart", { scroll: false })}>
                   {t("payment.callback.backToCart")}
                 </Button>
               </div>

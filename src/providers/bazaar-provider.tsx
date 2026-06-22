@@ -98,6 +98,12 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
     setSelectedCartIds((prev) => pruneSelection(cart, prev));
   }, [cart, setSelectedCartIds]);
 
+  // Every navigation below pairs router.push with scrollTop and passes
+  // `scroll: false`. The matched route's page renders at the bottom of the DOM
+  // (after the shell + footer in PublicLayout), so Next's default
+  // scroll-into-view jumps the viewport down once that segment commits — which
+  // in prod happens after a server round-trip, beating this scrollTop. Disabling
+  // Next's scroll keeps scrollTop authoritative.
   const scrollTop = useCallback(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -125,7 +131,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       here && screenFromPath(here) !== "auth"
         ? `${authPath}?next=${encodeURIComponent(here)}`
         : authPath;
-    router.push(target);
+    router.push(target, { scroll: false });
     setTimeout(scrollTop, 0);
   }, [router, scrollTop, pathname]);
 
@@ -208,16 +214,16 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
           // default sort, which searchPath omits from the URL).
           state.setQuery("");
           state.setScreenOverride("search");
-          router.push(searchPath({ cat }));
+          router.push(searchPath({ cat }), { scroll: false });
         } else {
           // No category specified — show the all-categories page instead of all
           // products so users can explore categories first.
           state.setScreenOverride(null);
-          router.push(browsePath({ view: "categories" }));
+          router.push(browsePath({ view: "categories" }), { scroll: false });
         }
       } else {
         state.setScreenOverride(null);
-        router.push(pathFromScreen(nextScreen, productId));
+        router.push(pathFromScreen(nextScreen, productId), { scroll: false });
       }
       setTimeout(scrollTop, 0);
     },
@@ -228,7 +234,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
     (cat?: string) => {
       const q = useBazaarStore.getState().query.trim();
       useBazaarStore.getState().setScreenOverride("search");
-      router.push(searchPath({ q: q || undefined, cat: cat || undefined }));
+      router.push(searchPath({ q: q || undefined, cat: cat || undefined }), { scroll: false });
       setTimeout(scrollTop, 0);
     },
     [router, scrollTop],
@@ -239,7 +245,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
     const s = screenFromPath(pathname);
     if (s === "search" || s === "browse") {
       useBazaarStore.getState().setScreenOverride("search");
-      router.push(searchPath());
+      router.push(searchPath(), { scroll: false });
       setTimeout(scrollTop, 0);
     }
   }, [router, scrollTop, pathname]);
@@ -253,7 +259,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       // `?offer=1` carries the "Make an offer" intent from the bargain rails so the
       // PDP opens the bargain modal on arrival — same path as its own offer button.
       const path = pathFromScreen("pdp", product.id);
-      router.push(options?.offer ? `${path}?offer=1` : path);
+      router.push(options?.offer ? `${path}?offer=1` : path, { scroll: false });
       setTimeout(scrollTop, 0);
     },
     [router, scrollTop, setActiveProduct],
@@ -261,7 +267,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
 
   const openStore = useCallback(
     (sellerId: string) => {
-      router.push(pathFromScreen("store", sellerId));
+      router.push(pathFromScreen("store", sellerId), { scroll: false });
       setTimeout(scrollTop, 0);
     },
     [router, scrollTop],
@@ -270,7 +276,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   const openTracking = useCallback(
     (orderId: string) => {
       setLastOrderId(orderId);
-      router.push(pathFromScreen("tracking", undefined, undefined, orderId));
+      router.push(pathFromScreen("tracking", undefined, undefined, orderId), { scroll: false });
       setTimeout(scrollTop, 0);
     },
     [router, scrollTop, setLastOrderId],

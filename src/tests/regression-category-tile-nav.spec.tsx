@@ -91,7 +91,9 @@ it("clicking a category navigates to only that category (no stale query, relevan
   });
 
   // Only the category — no q, no sort (relevance is the omitted default).
-  expect(push).toHaveBeenCalledWith("/search?cat=electronics");
+  // scroll:false so Next doesn't scroll the bottom route segment into view on
+  // commit; the provider's own scrollTop keeps the results page at the top.
+  expect(push).toHaveBeenCalledWith("/search?cat=electronics", { scroll: false });
   // The stale term is cleared so the navbar box doesn't show it on the results page.
   expect(useBazaarStore.getState().query).toBe("");
 });

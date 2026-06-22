@@ -739,7 +739,11 @@ function useSpaLinkClick(href, onNavigate, target) {
     if (onNavigate) {
       onNavigate();
     } else if (href) {
-      router.push(href);
+      // scroll:false — the new route segment renders at the bottom of the DOM
+      // (after the shell + footer in PublicLayout), so Next's default
+      // scroll-into-view jumps the viewport down once the segment commits in
+      // prod. We've already scrolled to top above; keep that authoritative.
+      router.push(href, { scroll: false });
     }
   };
 }

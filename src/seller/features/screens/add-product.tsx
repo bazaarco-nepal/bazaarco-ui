@@ -1419,7 +1419,6 @@ export function SellerAddProduct({
     cat: category,
     seller: "",
     icon: editingProduct?.icon ?? "package",
-    tint: categoryMeta?.tint ?? editingProduct?.tint ?? "slate",
     rating: editingProduct?.rating ?? 0,
     reviews: editingProduct?.reviews ?? 0,
     img: mainPhoto[0]?.previewUrl,

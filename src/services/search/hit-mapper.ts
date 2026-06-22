@@ -1,5 +1,4 @@
 import type { Product } from "@/types";
-import type { Tint } from "@/types";
 
 type AlgoliaRecord = Record<string, unknown> & {
   _highlightResult?: { name?: { value?: string } };
@@ -48,7 +47,6 @@ export function toSearchProductHit(record: AlgoliaRecord): Product {
     cat: document.category,
     seller: document.seller_name,
     icon: "box",
-    tint: "slate" as Tint,
     rating: document.rating,
     reviews: document.reviews_count,
     img: document.img || undefined,

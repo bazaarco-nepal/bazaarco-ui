@@ -252,12 +252,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
               style={{ width: 72, height: 72, objectFit: "cover", borderRadius: "var(--r-md)" }}
             />
           ) : (
-            <Placeholder
-              icon={p.icon}
-              tint={p.tint}
-              style={{ width: 72, height: 72 }}
-              radius="var(--r-md)"
-            />
+            <Placeholder icon={p.icon} style={{ width: 72, height: 72 }} radius="var(--r-md)" />
           )}
           <div>
             <div style={{ fontWeight: 600 }}>{p.name}</div>
@@ -643,12 +638,7 @@ function BuyNowSheet({
               style={{ width: 72, height: 72, objectFit: "cover", borderRadius: "var(--r-md)" }}
             />
           ) : (
-            <Placeholder
-              icon={p.icon}
-              tint={p.tint}
-              style={{ width: 72, height: 72 }}
-              radius="var(--r-md)"
-            />
+            <Placeholder icon={p.icon} style={{ width: 72, height: 72 }} radius="var(--r-md)" />
           )}
           <div style={{ minWidth: 0 }}>
             <div
@@ -1337,7 +1327,7 @@ export function PDP({ p: pProp }: PdpProps) {
                 )}
               </>
             ) : (
-              <Placeholder icon={p.icon} tint={p.tint} ratio="1 / 1" radius="var(--r-lg)" />
+              <Placeholder icon={p.icon} ratio="1 / 1" radius="var(--r-lg)" />
             )}
           </div>
 
@@ -1555,7 +1545,7 @@ export function PDP({ p: pProp }: PdpProps) {
                 </div>
               ) : (
                 <div style={{ maxWidth: 420 }}>
-                  <Placeholder icon={p.icon} tint={p.tint} ratio="1 / 1" radius="var(--r-lg)" />
+                  <Placeholder icon={p.icon} ratio="1 / 1" radius="var(--r-lg)" />
                 </div>
               )}
             </div>

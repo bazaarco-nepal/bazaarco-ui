@@ -339,7 +339,6 @@ function TrackingSidebar({ nav, order }) {
               ) : (
                 <Placeholder
                   icon={product.icon}
-                  tint={product.tint}
                   style={{ width: 44, height: 44, flexShrink: 0 }}
                   radius="var(--r-sm)"
                 />
@@ -767,7 +766,6 @@ export function Bargains() {
                         ) : (
                           <Placeholder
                             icon={o.p.icon}
-                            tint={o.p.tint}
                             style={{ width: 56, height: 56 }}
                             radius="var(--r-md)"
                           />

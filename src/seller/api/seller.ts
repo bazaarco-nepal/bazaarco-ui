@@ -4,7 +4,7 @@ import type { StorefrontData } from "./storefront";
 import type { OrderStatus } from "@/shared/lib/order-utils";
 
 // What the Add Product form sends. The owning seller is resolved from auth on
-// the server; icon/tint are inherited from the category.
+// the server; icon is inherited from the category.
 export interface CreateProductVariantPayload {
   id: string;
   name: string;
@@ -82,7 +82,6 @@ export interface SellerInventoryItem extends PdpProductFields {
   hasVariants?: boolean;
   variants?: CreateProductVariantPayload[];
   icon: string;
-  tint: string;
   // Seller-only bargaining settings (the floor is never sent to buyers), used
   // to prefill the edit form.
   allowBargaining?: boolean;
@@ -106,7 +105,6 @@ export interface SellerOrder {
   time: string;
   phone: string;
   icon: string;
-  tint: string;
   canCancel: boolean;
   // Multi-seller order: this seller has accepted, but the order stays in
   // "placed" until the other sellers confirm their parcels too.

@@ -617,7 +617,6 @@ export function SellerInventory() {
                         ) : (
                           <Placeholder
                             icon={it.icon}
-                            tint={it.tint}
                             style={{ width: isMobile ? 48 : 52, height: isMobile ? 48 : 52 }}
                             radius="var(--r-md)"
                           />

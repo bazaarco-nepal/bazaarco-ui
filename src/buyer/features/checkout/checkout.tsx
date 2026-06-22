@@ -543,7 +543,6 @@ export function Cart() {
                   ) : (
                     <Placeholder
                       icon={it.icon}
-                      tint={it.tint}
                       style={{ width: 96, height: 96 }}
                       radius="var(--r-md)"
                     />
@@ -1152,7 +1151,6 @@ export function Checkout() {
                     ) : (
                       <Placeholder
                         icon={it.icon}
-                        tint={it.tint}
                         style={{ width: 64, height: 64 }}
                         radius="var(--r-md)"
                       />
@@ -1964,7 +1962,6 @@ export function OrderSuccess({ total }) {
                   <Placeholder
                     key={p.id ?? i}
                     icon={p.icon}
-                    tint={p.tint}
                     style={{ width: 56, height: 56 }}
                     radius="var(--r-md)"
                   />

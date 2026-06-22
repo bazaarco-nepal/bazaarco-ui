@@ -21,7 +21,6 @@ interface ApiProductPayload {
   cat: string;
   seller: string;
   icon: string;
-  tint: Product["tint"];
   rating: number;
   reviews: number;
   stock: number;
@@ -35,7 +34,6 @@ function base(overrides: Partial<ApiProductPayload> & { stock: number }): ApiPro
     cat: "c",
     seller: "s1",
     icon: "box",
-    tint: "blue",
     rating: 0,
     reviews: 0,
     ...overrides,

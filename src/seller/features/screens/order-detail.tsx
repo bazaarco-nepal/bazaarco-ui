@@ -273,12 +273,7 @@ export function SellerOrderDetail() {
             {t("seller.orderDetail.item")}
           </div>
           <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-            <Placeholder
-              icon={o.icon}
-              tint={o.tint}
-              style={{ width: 70, height: 70 }}
-              radius="var(--r-md)"
-            />
+            <Placeholder icon={o.icon} style={{ width: 70, height: 70 }} radius="var(--r-md)" />
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 600 }}>{o.item}</div>
               <div

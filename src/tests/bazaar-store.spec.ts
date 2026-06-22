@@ -15,7 +15,6 @@ function line(id: string, price: number, qty: number, seller = "s1"): CartLine {
     seller,
     cat: "c",
     icon: "box",
-    tint: "blue",
     rating: 0,
     reviews: 0,
   } as CartLine;

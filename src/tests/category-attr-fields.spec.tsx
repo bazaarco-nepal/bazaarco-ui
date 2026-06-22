@@ -33,8 +33,6 @@ vi.mock("next/navigation", () => {
 const HANDMADE = {
   id: "handmade",
   en: "Handmade",
-  tint: "saffron",
-  img: "",
   fields: [
     { k: "madeIn", en: "Made in", t: "text", req: true },
     { k: "material", en: "Material", t: "text" },

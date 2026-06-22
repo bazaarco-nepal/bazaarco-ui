@@ -281,7 +281,6 @@ export function Orders() {
                           ) : (
                             <Placeholder
                               icon={it.icon}
-                              tint={it.tint}
                               style={{ width: 44, height: 44 }}
                               radius="50%"
                             />
@@ -1337,12 +1336,7 @@ export function WriteReview({ productId }: WriteReviewProps) {
             style={{ width: 60, height: 60, borderRadius: "var(--r-md)", objectFit: "cover" }}
           />
         ) : (
-          <Placeholder
-            icon={p.icon}
-            tint={p.tint}
-            style={{ width: 60, height: 60 }}
-            radius="var(--r-md)"
-          />
+          <Placeholder icon={p.icon} style={{ width: 60, height: 60 }} radius="var(--r-md)" />
         )}
         <div>
           <div style={{ fontWeight: 700 }}>{p.name}</div>
@@ -1422,7 +1416,6 @@ export function WriteReview({ productId }: WriteReviewProps) {
             <Placeholder
               key={i}
               icon={p.icon}
-              tint={p.tint}
               style={{ width: 60, height: 60 }}
               radius="var(--r-sm)"
             />

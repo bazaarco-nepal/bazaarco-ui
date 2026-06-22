@@ -143,21 +143,23 @@ function ReelAction({
       >
         <Icon name={icon} size={24} fill={active && danger ? "currentColor" : "none"} />
       </button>
-      {count != null && (
-        <span
-          className="tnum"
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: "#fff",
-            textShadow: "0 1px 3px rgba(0,0,0,.6)",
-            letterSpacing: ".02em",
-            lineHeight: 1,
-          }}
-        >
-          {fmtCount(count)}
-        </span>
-      )}
+      {/* Show a real count when there is one; otherwise caption the action with
+          its label rather than a misleading hardcoded 0. */}
+      <span
+        className={count != null && count > 0 ? "tnum" : undefined}
+        style={{
+          fontSize: 11,
+          fontWeight: 700,
+          color: "#fff",
+          textShadow: "0 1px 3px rgba(0,0,0,.6)",
+          letterSpacing: ".02em",
+          lineHeight: 1,
+          textAlign: "center",
+          maxWidth: 60,
+        }}
+      >
+        {count != null && count > 0 ? fmtCount(count) : label}
+      </span>
     </div>
   );
 }
@@ -595,8 +597,7 @@ function ReelItem({
         {asProduct(p).allowBargaining && (
           <ReelAction
             icon="bargain"
-            label="Bargain & ask"
-            count={metrics.comments}
+            label="Bargain"
             inside={isMobile}
             onClick={() => {
               toast.info("Opening bargain chat…");
@@ -607,7 +608,6 @@ function ReelItem({
         <ReelAction
           icon="share"
           label="Share"
-          count={metrics.shares}
           inside={isMobile}
           onClick={() => {
             const url = productShareUrl(p.id);
@@ -624,7 +624,6 @@ function ReelItem({
         <ReelAction
           icon="heart"
           label="Save"
-          count={metrics.saves}
           active={isSaved}
           danger
           inside={isMobile}

@@ -28,7 +28,7 @@ const authClient = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-authClient.interceptors.request.use(async (config) => {
+authClient.interceptors.request.use((config) => {
   const token = getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -67,11 +67,11 @@ export async function establishBrowserSession(token: string): Promise<void> {
 }
 
 async function persistClientSession(token: string): Promise<void> {
-  await setAccessToken(token);
+  setAccessToken(token);
   try {
     await establishBrowserSession(token);
   } catch {
-    // The Preferences-backed bearer token still allows API calls if the proxy cookie fails.
+    // Bearer token in localStorage still allows API calls if the proxy cookie fails.
   }
 }
 
@@ -159,7 +159,7 @@ export async function logout(): Promise<void> {
   } catch (error) {
     throw mapAuthError(error);
   } finally {
-    await clearAccessToken();
+    clearAccessToken();
   }
 }
 
@@ -180,7 +180,7 @@ export async function deleteAccount(payload: { password?: string; otp: string })
   } catch (error) {
     throw mapAuthError(error);
   } finally {
-    await clearAccessToken();
+    clearAccessToken();
   }
 }
 
@@ -202,7 +202,7 @@ export async function confirmPasswordReset(payload: ConfirmPasswordResetPayload)
     throw mapAuthError(error);
   } finally {
     // Reset revokes all sessions server-side — drop the local token to force re-login.
-    await clearAccessToken();
+    clearAccessToken();
   }
 }
 
@@ -212,7 +212,7 @@ export async function changePassword(payload: ChangePasswordPayload): Promise<vo
   } catch (error) {
     throw mapAuthError(error);
   } finally {
-    await clearAccessToken();
+    clearAccessToken();
   }
 }
 

@@ -15,8 +15,6 @@
 /.next/
 /.next-prod/
 /out/
-!/out/
-!/out/index.html
 
 # production
 /build

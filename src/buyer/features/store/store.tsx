@@ -26,6 +26,7 @@ import {
   useSellerFollowState,
 } from "@/shared/hooks/use-catalog";
 import { storeIdFromPath, pathFromScreen } from "@/config/routes";
+import { useBazaarStore } from "@/store/bazaar-store";
 import type { StoreProductSort } from "@/shared/api/catalog";
 import type { Seller } from "@/types";
 import { SortSelect } from "@/buyer/features/search/faceted-results";
@@ -198,7 +199,10 @@ export function Store() {
   const pathname = usePathname();
   const router = useRouter();
   const urlParams = useSearchParams();
-  const storeId = storeIdFromPath(pathname);
+  // Prefer the URL once it commits; fall back to the id seeded by openStore so an
+  // optimistic open renders this store directly instead of with a null id.
+  const activeStoreId = useBazaarStore((s) => s.activeStoreId);
+  const storeId = storeIdFromPath(pathname) ?? activeStoreId;
   const { openProduct, nav, authed, promptLogin } = useBz();
 
   const sortOptions = useMemo(

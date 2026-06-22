@@ -25,6 +25,11 @@ export interface BazaarStoreState {
    *  onboarding flow restart even while verification is pending. */
   sellerReuploadIntent: boolean;
   activeProduct: Product | null;
+  /** Seller id seeded before the /store/:id URL commits, so the store screen can
+   *  render optimistically instead of flashing the source page. URL wins once committed. */
+  activeStoreId: string | null;
+  /** Product id seeded before the /video URL commits, for the same optimistic-open reason. */
+  activeVideoProductId: string | null;
   deliveryLocation: DeliveryLocation;
   deliveryHydrated: boolean;
   /** Buyer's contact phone — shared between profile and checkout. */
@@ -51,6 +56,8 @@ export interface BazaarStoreState {
   setLastOrderId: (id: string | null) => void;
   setSellerReuploadIntent: (intent: boolean) => void;
   setActiveProduct: (product: Product | null) => void;
+  setActiveStoreId: (sellerId: string | null) => void;
+  setActiveVideoProductId: (productId: string | null) => void;
   hydrateDelivery: () => void;
   setDeliveryLocation: (location: DeliveryLocation) => void;
   setDeliveryTier: (tier: DeliveryTier) => void;

@@ -43,11 +43,11 @@ export function AuthCallback() {
     (async () => {
       try {
         if (sessionToken) {
-          await setAccessToken(sessionToken);
+          setAccessToken(sessionToken);
           try {
             await establishBrowserSession(sessionToken);
           } catch {
-            // Storefront cookie may fail cross-origin; the Preferences-backed token still works.
+            // Storefront cookie may fail cross-origin; Bearer in localStorage still works.
           }
           if (typeof window !== "undefined") {
             const clean = new URL(window.location.href);

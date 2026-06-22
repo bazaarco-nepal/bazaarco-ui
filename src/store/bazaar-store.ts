@@ -34,6 +34,8 @@ export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
   lastOrderId: null,
   sellerReuploadIntent: false,
   activeProduct: null,
+  activeStoreId: null,
+  activeVideoProductId: null,
   deliveryLocation: DEFAULT_DELIVERY,
   deliveryHydrated: false,
   buyerPhone: "",
@@ -88,6 +90,8 @@ export const useBazaarStore = create<BazaarStoreState>((set, get) => ({
   setLastOrderId: (lastOrderId) => set({ lastOrderId }),
   setSellerReuploadIntent: (sellerReuploadIntent) => set({ sellerReuploadIntent }),
   setActiveProduct: (activeProduct) => set({ activeProduct }),
+  setActiveStoreId: (activeStoreId) => set({ activeStoreId }),
+  setActiveVideoProductId: (activeVideoProductId) => set({ activeVideoProductId }),
   setDeliveryTier: (deliveryTier) => set({ deliveryTier }),
   hydrateLocale: () => {
     if (get().localeHydrated) return;

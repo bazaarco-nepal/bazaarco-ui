@@ -1,9 +1,20 @@
 import type { VideoFeedResponse, VideoFeedTab } from "@/types/video";
 import { getData, postData } from "@/shared/api/http";
 
+export interface RecordViewPayload {
+  eventType: "qualified_view";
+  source?: string;
+  playbackPercent: number;
+  watchMs?: number;
+  videoDurationMs?: number;
+}
+
 export interface VideoViewResult {
   videoId: string;
   viewed: boolean;
+  counted?: boolean;
+  reason?: string;
+  viewCount?: number;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -34,7 +45,7 @@ export const videosApi = {
     const raw = await getData<VideoFeedResponse>("/videos/feed", { tab });
     return mapVideoFeedResponse(raw);
   },
-  recordView(videoId: string): Promise<VideoViewResult> {
-    return postData<VideoViewResult>(`/videos/${videoId}/view`);
+  recordView(videoId: string, payload: RecordViewPayload): Promise<VideoViewResult> {
+    return postData<VideoViewResult>(`/videos/${videoId}/view`, payload);
   },
 };

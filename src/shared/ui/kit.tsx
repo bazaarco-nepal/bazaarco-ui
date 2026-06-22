@@ -1,7 +1,7 @@
 // @ts-nocheck — legacy design prototype; typed incrementally
 "use client";
 
-import React, { useState, useEffect, useRef, useContext, createContext } from "react";
+import React, { useState, useEffect, useRef, useCallback, useContext, createContext } from "react";
 import { useRouter } from "next/navigation";
 import { Trans, useTranslation } from "react-i18next";
 import { ASSETS } from "@/config/assets";
@@ -1608,6 +1608,7 @@ export function VideoPlayer({
   onLongPressEnd,
   playbackRate,
   isActive,
+  onPlaybackMilestone,
   deferStream,
   streamProfile = "hd",
 }: {
@@ -1629,6 +1630,12 @@ export function VideoPlayer({
   onLongPressEnd?: () => void;
   playbackRate?: number;
   isActive?: boolean;
+  /** Fires once, the first time playback crosses 20% of the clip's duration. */
+  onPlaybackMilestone?: (payload: {
+    playbackPercent: number;
+    watchMs: number;
+    videoDurationMs: number;
+  }) => void;
   /** Wait for a play tap before attaching HLS / video src — keeps PDP light. */
   deferStream?: boolean;
   streamProfile?: "auto" | "hd" | "sd" | "full_hd" | "full_hd_wifi";
@@ -1643,6 +1650,23 @@ export function VideoPlayer({
   const [internalMuted, setInternalMuted] = useState(true);
   const [fastForwarding, setFastForwarding] = useState(false);
   const longPressTimer = useRef(null);
+  // Fire the 20%-watched milestone at most once per mounted player instance.
+  const milestoneFiredRef = useRef(false);
+  const milestoneCbRef = useRef(onPlaybackMilestone);
+  useEffect(() => {
+    milestoneCbRef.current = onPlaybackMilestone;
+  }, [onPlaybackMilestone]);
+  const reportPlayback = useCallback((currentTime, duration) => {
+    if (milestoneFiredRef.current || !(duration > 0)) return;
+    const playbackPercent = (currentTime / duration) * 100;
+    if (playbackPercent < 20) return;
+    milestoneFiredRef.current = true;
+    milestoneCbRef.current?.({
+      playbackPercent,
+      watchMs: Math.round(currentTime * 1000),
+      videoDurationMs: Math.round(duration * 1000),
+    });
+  }, []);
   const muted = externalMuted !== undefined ? externalMuted : internalMuted;
   const setMuted = (v) => {
     const next = typeof v === "function" ? v(muted) : v;
@@ -1708,10 +1732,18 @@ export function VideoPlayer({
     };
   }, [streamPublicId, streamProfile, useHls, shouldAttachStream]);
 
+  // A new clip mounted/swapped in → let its 20% milestone fire again.
+  useEffect(() => {
+    milestoneFiredRef.current = false;
+  }, [streamPublicId, src]);
+
   useEffect(() => {
     if (!useHls || !hlsReady || !videoRef.current) return;
     const el = videoRef.current;
-    const onTime = () => setT(el.currentTime || 0);
+    const onTime = () => {
+      setT(el.currentTime || 0);
+      reportPlayback(el.currentTime || 0, el.duration || 0);
+    };
     const onMeta = () => setDur(el.duration || 18);
     el.addEventListener("timeupdate", onTime);
     el.addEventListener("loadedmetadata", onMeta);
@@ -1719,7 +1751,7 @@ export function VideoPlayer({
       el.removeEventListener("timeupdate", onTime);
       el.removeEventListener("loadedmetadata", onMeta);
     };
-  }, [useHls, hlsReady, streamPublicId]);
+  }, [useHls, hlsReady, streamPublicId, reportPlayback]);
 
   useEffect(() => {
     if (hasSrc || !playing) return;
@@ -1773,7 +1805,10 @@ export function VideoPlayer({
 
     const el = videoRef.current;
     if (!el || !hasSrc) return;
-    const onTime = () => setT(el.currentTime);
+    const onTime = () => {
+      setT(el.currentTime);
+      reportPlayback(el.currentTime, el.duration || 0);
+    };
     const onMeta = () => setDur(el.duration || 18);
     el.addEventListener("timeupdate", onTime);
     el.addEventListener("loadedmetadata", onMeta);
@@ -1781,7 +1816,7 @@ export function VideoPlayer({
       el.removeEventListener("timeupdate", onTime);
       el.removeEventListener("loadedmetadata", onMeta);
     };
-  }, [hasSrc, src, useHls]);
+  }, [hasSrc, src, useHls, reportPlayback]);
 
   const handlePointerDown = (e) => {
     if (!hasSrc) return;

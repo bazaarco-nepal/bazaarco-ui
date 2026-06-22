@@ -258,6 +258,7 @@ function ReelItem({
   onMutedChange,
   radius,
   hideMuteBadge,
+  onMilestone,
 }: {
   item: VideoFeedItem;
   isMobile: boolean;
@@ -266,6 +267,10 @@ function ReelItem({
   onMutedChange: (muted: boolean) => void;
   radius?: string;
   hideMuteBadge?: boolean;
+  onMilestone: (
+    videoId: string | null,
+    payload: { playbackPercent: number; watchMs: number; videoDurationMs: number },
+  ) => void;
 }) {
   const { t } = useTranslation();
   const { openProduct, addToCart, toggleSaved, savedProducts } = useBz();
@@ -354,6 +359,7 @@ function ReelItem({
         onMutedChange={onMutedChange}
         playbackRate={fastFwd ? 2.0 : 1.0}
         isActive={isActive}
+        onPlaybackMilestone={(payload) => onMilestone(p.videoId, payload)}
       />
 
       {/* index pill */}
@@ -680,15 +686,22 @@ export function VideoTheater() {
     if (vids.length > 0 && activeIndex >= vids.length) setActiveIndex(0);
   }, [vids.length, activeIndex]);
 
-  useEffect(() => {
-    const current = vids[activeIndex];
-    if (!current?.videoId) return;
-    const videoId = current.videoId;
-    const timer = setTimeout(() => {
-      videosApi.recordView(videoId).catch(() => {});
-    }, 10_000);
-    return () => clearTimeout(timer);
-  }, [activeIndex, vids]);
+  // A qualified view is recorded once 20% of a reel has actually played, and
+  // only once per video per page session (the backend dedupes per viewer/day too).
+  const sessionViewedVideoIds = useRef(new Set<string>());
+  const handleMilestone = useCallback(
+    (
+      videoId: string | null,
+      payload: { playbackPercent: number; watchMs: number; videoDurationMs: number },
+    ) => {
+      if (!videoId || sessionViewedVideoIds.current.has(videoId)) return;
+      sessionViewedVideoIds.current.add(videoId);
+      videosApi
+        .recordView(videoId, { eventType: "qualified_view", source: "watch_feed", ...payload })
+        .catch(() => {});
+    },
+    [],
+  );
 
   // Scroll programmatically to a target reel index (smooth)
   const scrollToIndex = useCallback(
@@ -797,6 +810,7 @@ export function VideoTheater() {
             onMutedChange={setMuted}
             radius={radius || "0"}
             hideMuteBadge={!isMobile}
+            onMilestone={handleMilestone}
           />
         </div>
       ))}

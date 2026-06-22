@@ -1,14 +1,20 @@
 import type { VideoFeedResponse, VideoFeedTab } from "@/types/video";
-import { deleteData, getData, postData } from "@/shared/api/http";
+import { getData, postData } from "@/shared/api/http";
 
-export interface VideoLikeResult {
-  videoId: string;
-  liked: boolean;
+export interface RecordViewPayload {
+  eventType: "qualified_view";
+  source?: string;
+  playbackPercent: number;
+  watchMs?: number;
+  videoDurationMs?: number;
 }
 
 export interface VideoViewResult {
   videoId: string;
   viewed: boolean;
+  counted?: boolean;
+  reason?: string;
+  viewCount?: number;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -17,6 +23,8 @@ function mapVideoItem(raw: any) {
     ...raw,
     price: raw.price,
     original: raw.original ?? null,
+    productId: raw.productId ?? raw.id,
+    videoId: raw.videoId ?? null,
     sellerId: raw.sellerId ?? raw.storeId ?? "",
     img: raw.img ?? raw.coverImageUrl ?? null,
     reviews: raw.reviews ?? raw.reviewsCount ?? 0,
@@ -37,13 +45,7 @@ export const videosApi = {
     const raw = await getData<VideoFeedResponse>("/videos/feed", { tab });
     return mapVideoFeedResponse(raw);
   },
-  like(videoId: string): Promise<VideoLikeResult> {
-    return postData<VideoLikeResult>(`/videos/${videoId}/like`);
-  },
-  unlike(videoId: string): Promise<VideoLikeResult> {
-    return deleteData<VideoLikeResult>(`/videos/${videoId}/like`);
-  },
-  recordView(videoId: string): Promise<VideoViewResult> {
-    return postData<VideoViewResult>(`/videos/${videoId}/view`);
+  recordView(videoId: string, payload: RecordViewPayload): Promise<VideoViewResult> {
+    return postData<VideoViewResult>(`/videos/${videoId}/view`, payload);
   },
 };

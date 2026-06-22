@@ -9,7 +9,7 @@ import {
   Logo,
   Button,
   Spinner,
-  Chip,
+  Badge,
   Price,
   Placeholder,
   RatingStars,
@@ -192,7 +192,6 @@ export function ProductCard({
   const locale = useBazaarStore((s) => s.locale);
   const productName = displayProductName(p, locale);
   const [hov, setHov] = useState(false);
-  const disc = p.original ? Math.round((1 - p.price / p.original) * 100) : 0;
   const isSaved = savable && savedProducts.includes(p.id);
   const reviewCount = p.reviews ?? 0;
   const hasReviews = reviewCount > 0;
@@ -270,14 +269,6 @@ export function ProductCard({
             ratio={compact ? undefined : "1 / 1"}
             style={compact ? { width: "100%", height: "100%" } : undefined}
           />
-        )}
-        {/* Single discount badge — only one platform-badge style allowed */}
-        {disc > 0 && (
-          <div style={{ position: "absolute", top: compact ? 7 : 10, left: compact ? 7 : 10 }}>
-            <Chip tone="red" size="sm">
-              -{disc}%
-            </Chip>
-          </div>
         )}
         {/* save — 44×44 per WCAG / Material touch target */}
         {savable && (
@@ -415,7 +406,7 @@ export function ProductCard({
             cards stay equal height. Bump the min-height once to realign all. */}
         <div
           className="bz-pcard__price"
-          style={{ marginTop: "auto", minHeight: compact ? 16 : 46, minWidth: 0 }}
+          style={{ marginTop: "auto", minHeight: compact ? 16 : 56, minWidth: 0 }}
         >
           {compact ? (
             <div
@@ -458,15 +449,10 @@ export function ProductCard({
             <>
               <Price value={p.price} original={p.original} size="md" />
               {savings >= SAVINGS_THRESHOLD && (
-                <div
-                  style={{
-                    fontSize: ".6875rem",
-                    fontWeight: 600,
-                    color: "var(--success)",
-                    marginTop: 3,
-                  }}
-                >
-                  {t("common.saveAmount", { amount: formatNPR(savings) })}
+                <div style={{ marginTop: 6 }}>
+                  <Badge tone="success">
+                    {t("common.saveAmount", { amount: formatNPR(savings) })}
+                  </Badge>
                 </div>
               )}
             </>

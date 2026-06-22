@@ -55,11 +55,11 @@ describe("ProductCard — equal-height slots", () => {
     expect(screen.getByText("(128)")).toBeInTheDocument();
   });
 
-  it("shows struck price + savings line for a meaningful discount", () => {
+  it("shows struck price + savings pill for a meaningful discount", () => {
     renderCard(makeProduct({ price: 1000, original: 1500 }));
     expect(screen.getByText("Rs. 1,500")).toBeInTheDocument(); // struck original
     expect(screen.getByText("Save Rs. 500")).toBeInTheDocument(); // 500 >= 50
-    expect(screen.getByText("-33%")).toBeInTheDocument(); // discount badge
+    expect(screen.queryByText(/-\d+%/)).not.toBeInTheDocument(); // no top-corner % badge
   });
 
   it("shows the struck price but no savings line below the threshold", () => {

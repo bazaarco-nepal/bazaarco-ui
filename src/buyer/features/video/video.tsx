@@ -40,7 +40,9 @@ import {
 import { pathFromScreen, productShareUrl, searchPath } from "@/config/routes";
 import { useVideoFeed } from "@/buyer/hooks/use-video-feed";
 import { videosApi } from "@/buyer/api/videos";
-import type { VideoFeedItem } from "@/types/video";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/shared/api/query-keys";
+import type { VideoFeedItem, VideoFeedResponse } from "@/types/video";
 import type { Product } from "@/types";
 import { toast } from "@/shared/lib/toast";
 import {
@@ -645,6 +647,7 @@ export function VideoTheater() {
     else nav("home");
   }, [router, nav]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const queryClient = useQueryClient();
   const { data: feed, isLoading, isError, error } = useVideoFeed();
   const vids: VideoFeedItem[] = (feed?.items ?? []).filter(
     (v) => typeof v.videoUrl === "string" && v.videoUrl.trim().length > 0,
@@ -698,9 +701,26 @@ export function VideoTheater() {
       sessionViewedVideoIds.current.add(videoId);
       videosApi
         .recordView(videoId, { eventType: "qualified_view", source: "watch_feed", ...payload })
+        .then((res) => {
+          // Reflect the server's authoritative count once the view actually
+          // counted; a duplicate (counted:false) leaves the displayed number be.
+          if (!res.counted || res.viewCount == null) return;
+          queryClient.setQueryData<VideoFeedResponse>(queryKeys.videos.feed("foryou"), (prev) =>
+            prev
+              ? {
+                  ...prev,
+                  items: prev.items.map((it) =>
+                    it.videoId === videoId
+                      ? { ...it, engagement: { ...it.engagement, views: res.viewCount as number } }
+                      : it,
+                  ),
+                }
+              : prev,
+          );
+        })
         .catch(() => {});
     },
-    [],
+    [queryClient],
   );
 
   // Scroll programmatically to a target reel index (smooth)

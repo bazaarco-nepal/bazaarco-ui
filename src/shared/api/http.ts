@@ -90,7 +90,7 @@ apiClient.interceptors.response.use(
     if (axios.isAxiosError(error) && error.response?.status === 401) {
       const store = useBazaarStore.getState();
       if (store.authed) {
-        void clearAccessToken();
+        clearAccessToken();
         store.setAuthed(false);
         store.setUser(null);
         store.setCart([]);

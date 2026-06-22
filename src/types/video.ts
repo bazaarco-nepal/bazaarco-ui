@@ -21,6 +21,8 @@ export interface VideoFeedSeller {
 
 export interface VideoFeedItem {
   id: string;
+  productId: string;
+  videoId: string | null;
   name: string;
   price: number;
   original: number | null;

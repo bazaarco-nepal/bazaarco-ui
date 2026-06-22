@@ -65,6 +65,8 @@ const WATCH_RAIL_LIMIT = 8;
 const WATCH_FALLBACK_REELS: VideoFeedItem[] = [
   {
     id: "watch-sneakers",
+    productId: "watch-sneakers",
+    videoId: null,
     name: "Sneakers with close-up stitching",
     price: 2450,
     original: null,
@@ -86,6 +88,8 @@ const WATCH_FALLBACK_REELS: VideoFeedItem[] = [
   },
   {
     id: "watch-bags",
+    productId: "watch-bags",
+    videoId: null,
     name: "Daily carry bag demo",
     price: 1890,
     original: null,
@@ -107,6 +111,8 @@ const WATCH_FALLBACK_REELS: VideoFeedItem[] = [
   },
   {
     id: "watch-audio",
+    productId: "watch-audio",
+    videoId: null,
     name: "Bluetooth speaker preview",
     price: 3200,
     original: null,
@@ -128,6 +134,8 @@ const WATCH_FALLBACK_REELS: VideoFeedItem[] = [
   },
   {
     id: "watch-fashion",
+    productId: "watch-fashion",
+    videoId: null,
     name: "Kurti fabric movement",
     price: 1350,
     original: null,

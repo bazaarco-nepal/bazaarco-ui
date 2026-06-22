@@ -784,9 +784,10 @@ export function VideoTheater() {
 
   useEffect(() => {
     const current = vids[activeIndex];
-    if (!current) return;
+    if (!current?.videoId) return;
+    const videoId = current.videoId;
     const timer = setTimeout(() => {
-      videosApi.recordView(current.id).catch(() => {});
+      videosApi.recordView(videoId).catch(() => {});
     }, 10_000);
     return () => clearTimeout(timer);
   }, [activeIndex, vids]);

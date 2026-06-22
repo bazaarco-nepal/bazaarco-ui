@@ -17,6 +17,8 @@ function mapVideoItem(raw: any) {
     ...raw,
     price: raw.price,
     original: raw.original ?? null,
+    productId: raw.productId ?? raw.id,
+    videoId: raw.videoId ?? null,
     sellerId: raw.sellerId ?? raw.storeId ?? "",
     img: raw.img ?? raw.coverImageUrl ?? null,
     reviews: raw.reviews ?? raw.reviewsCount ?? 0,

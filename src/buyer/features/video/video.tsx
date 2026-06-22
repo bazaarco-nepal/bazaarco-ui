@@ -581,11 +581,12 @@ function ReelItem({
         </div>
       </div>
 
-      {/* action rail */}
+      {/* action rail — inside the reel on every breakpoint (the stage clips
+          overflow, so it must not sit outside the right edge) */}
       <div
         style={{
           position: "absolute",
-          right: isMobile ? 10 : -68,
+          right: 10,
           bottom: isMobile ? 200 : 90,
           display: "flex",
           flexDirection: "column",
@@ -598,7 +599,7 @@ function ReelItem({
           <ReelAction
             icon="bargain"
             label="Bargain"
-            inside={isMobile}
+            inside
             onClick={() => {
               toast.info("Opening bargain chat…");
               openProduct(asProduct(p));
@@ -608,7 +609,7 @@ function ReelItem({
         <ReelAction
           icon="share"
           label="Share"
-          inside={isMobile}
+          inside
           onClick={() => {
             const url = productShareUrl(p.id);
             if (navigator.share) {
@@ -626,7 +627,7 @@ function ReelItem({
           label="Save"
           active={isSaved}
           danger
-          inside={isMobile}
+          inside
           onClick={() => toggleSaved(p.id, p.name)}
         />
       </div>
@@ -777,7 +778,7 @@ export function VideoTheater() {
     return () => el.removeEventListener("wheel", onWheel);
   }, [activeIndex, isMobile, scrollToIndex]);
 
-  // Keyboard: arrows + j/k navigate, m toggles mute, l likes active product
+  // Keyboard: arrows + j/k navigate, m toggles mute, s saves the active product
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (e.target && /input|textarea/i.test((e.target as HTMLElement).tagName)) return;
@@ -787,11 +788,16 @@ export function VideoTheater() {
       } else if (e.key === "ArrowUp" || e.key.toLowerCase() === "k") {
         e.preventDefault();
         scrollToIndex(activeIndex - 1);
-      } else if (e.key.toLowerCase() === "m") setMuted((m) => !m);
+      } else if (e.key.toLowerCase() === "m") {
+        setMuted((m) => !m);
+      } else if (e.key.toLowerCase() === "s") {
+        const active = vids[Math.min(activeIndex, vids.length - 1)];
+        if (active) toggleSaved(active.id, active.name);
+      }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [activeIndex, scrollToIndex]);
+  }, [activeIndex, scrollToIndex, vids, toggleSaved]);
 
   /* ---- snap-scroll feed (renders all reels stacked) ---- */
   const reelFeed = (radius?: string) => (
@@ -1307,7 +1313,7 @@ export function VideoTheater() {
               <kbd style={kbd}>↓</kbd> swipe
             </span>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-              <kbd style={kbd}>L</kbd> like
+              <kbd style={kbd}>S</kbd> save
             </span>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
               <kbd style={kbd}>M</kbd> mute

@@ -163,7 +163,7 @@ export function Auth() {
     // original path verbatim so product ids and browse filters are preserved.
     // Otherwise fall back to the role-resolved default screen.
     if (next && requestedScreen && resolved === requestedScreen) {
-      router.push(next);
+      router.push(next, { scroll: false });
       if (typeof window !== "undefined") window.scrollTo({ top: 0 });
     } else {
       nav(resolved);

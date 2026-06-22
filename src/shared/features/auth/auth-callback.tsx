@@ -82,7 +82,7 @@ export function AuthCallback() {
         const requestedScreen = nextPath ? screenFromPath(nextPath) : null;
         const resolved = resolvePostAuthScreen(user, requestedScreen);
         if (nextPath && requestedScreen && resolved === requestedScreen) {
-          router.push(nextPath);
+          router.push(nextPath, { scroll: false });
           if (typeof window !== "undefined") window.scrollTo({ top: 0 });
         } else {
           nav(resolved);

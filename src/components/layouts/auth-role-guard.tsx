@@ -36,7 +36,7 @@ export function AuthRoleGuard() {
 
     if (!authed || !user) {
       if (!isGuestAllowedScreen(screen)) {
-        router.replace(`/auth?next=${encodeURIComponent(pathname)}`);
+        router.replace(`/auth?next=${encodeURIComponent(pathname)}`, { scroll: false });
       }
       return;
     }
@@ -46,12 +46,12 @@ export function AuthRoleGuard() {
     const seller = isSellerUser(user);
 
     if (seller && isBuyerScreen(screen)) {
-      router.replace(pathFromScreen(defaultScreenForUser(user)));
+      router.replace(pathFromScreen(defaultScreenForUser(user)), { scroll: false });
       return;
     }
 
     if (!seller && isSellerScreen(screen)) {
-      router.replace(pathFromScreen("home"));
+      router.replace(pathFromScreen("home"), { scroll: false });
     }
   }, [authReady, authed, user, pathname, router]);
 

@@ -41,7 +41,14 @@ function ProductSection({
       <SectionHead
         title={title}
         action={seeAllHref ? t("common.seeAll") : undefined}
-        onAction={seeAllHref ? () => router.push(seeAllHref) : undefined}
+        onAction={
+          seeAllHref
+            ? () => {
+                window.scrollTo({ top: 0, behavior: "instant" });
+                router.push(seeAllHref, { scroll: false });
+              }
+            : undefined
+        }
       />
 
       <div className="bz-picks-grid">

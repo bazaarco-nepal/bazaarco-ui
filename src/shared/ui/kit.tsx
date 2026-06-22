@@ -1893,56 +1893,63 @@ export function VideoPlayer({
           2x
         </div>
       )}
-      {shouldAttachStream ? (
-        <video
-          ref={videoRef}
-          src={useHls ? undefined : src || undefined}
-          poster={thumb || undefined}
-          playsInline
-          loop
-          muted={muted}
-          preload="none"
-          className={
-            useHls ? (fill ? "cld-video-player" : "cld-video-player cld-fluid") : undefined
-          }
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-          }}
-        />
-      ) : thumb ? (
-        <img
-          src={thumb}
-          alt=""
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-          }}
-        />
-      ) : hasSrc ? null : (
-        <Icon
-          name={icon}
-          color={c[2]}
-          stroke={1.3}
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            width: "46%",
-            height: "46%",
-            transform: `translate(-50%,-50%) scale(${playing ? 1.08 : 1})`,
-            opacity: 0.5,
-            transition: "transform 4s ease",
-            animation: playing ? "bz-kenburns 8s ease-in-out infinite alternate" : "none",
-          }}
-        />
-      )}
+      {/* Media layer wrapper: the Cloudinary/HLS player moves the <video> into
+          its own generated container on init. Keeping that media element inside
+          this dedicated, always-mounted div means React only ever reconciles the
+          overlays below against THIS wrapper — never against the relocated
+          <video> — so toggling an overlay can't throw insertBefore. */}
+      <div style={{ position: "absolute", inset: 0 }}>
+        {shouldAttachStream ? (
+          <video
+            ref={videoRef}
+            src={useHls ? undefined : src || undefined}
+            poster={thumb || undefined}
+            playsInline
+            loop
+            muted={muted}
+            preload="none"
+            className={
+              useHls ? (fill ? "cld-video-player" : "cld-video-player cld-fluid") : undefined
+            }
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+          />
+        ) : thumb ? (
+          <img
+            src={thumb}
+            alt=""
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+          />
+        ) : hasSrc ? null : (
+          <Icon
+            name={icon}
+            color={c[2]}
+            stroke={1.3}
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              width: "46%",
+              height: "46%",
+              transform: `translate(-50%,-50%) scale(${playing ? 1.08 : 1})`,
+              opacity: 0.5,
+              transition: "transform 4s ease",
+              animation: playing ? "bz-kenburns 8s ease-in-out infinite alternate" : "none",
+            }}
+          />
+        )}
+      </div>
       {/* live tag */}
       {label !== false && (
         <div

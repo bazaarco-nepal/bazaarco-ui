@@ -39,6 +39,7 @@ export const queryKeys = {
   tracking: (orderId: string) => ["tracking", orderId] as const,
   bargains: ["bargains"] as const,
   videos: {
+    all: ["videos"] as const,
     feed: (tab: string) => ["videos", "feed", tab] as const,
   },
   chat: {

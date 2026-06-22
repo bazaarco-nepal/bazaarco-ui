@@ -19,9 +19,9 @@ type SellerCardProps = {
 
 /**
  * PDP seller card. Shows only what's genuinely known: verified badge, store
- * rating, computed orders/products-sold and positive-rating %, plus store age.
- * When a store has no reviews/orders yet it reads "New seller" rather than
- * fabricating numbers. All figures come from GET /catalog/sellers/:id/trust.
+ * rating, computed orders/products-sold and positive-rating %. Sellers without
+ * earned trust signals simply show their identity and actions. All figures come
+ * from GET /catalog/sellers/:id/trust.
  */
 export function SellerCard({
   sellerId,
@@ -61,8 +61,8 @@ export function SellerCard({
   const stats = trust ? buildStats(trust) : [];
 
   if (slim) {
-    // One-line strip for the mobile PDP. Trust subtitle is the first real stat
-    // (or an honest "New seller …") so it never fabricates numbers.
+    // One-line strip for the mobile PDP. Only show an earned trust signal;
+    // account-age labels such as "New seller" do not help a buying decision.
     const sub = stats[0];
     const subtitle = loading
       ? "Loading seller info…"
@@ -284,25 +284,5 @@ function buildStats(trust: SellerTrust): { label: string; value: string }[] {
     out.push({ value: trust.productsSold.toLocaleString(), label: "items sold" });
   }
 
-  // Nothing earned yet → an honest "New seller" rather than empty/zeroed stats.
-  if (out.length === 0) {
-    return [{ value: "New seller", label: storeAge(trust.joinedAt) }];
-  }
-
-  const age = storeAge(trust.joinedAt);
-  if (age) out.push({ value: "Joined", label: age });
   return out;
-}
-
-function storeAge(joinedAt: string): string {
-  const joined = new Date(joinedAt);
-  if (Number.isNaN(joined.getTime())) return "";
-  const months = Math.max(
-    0,
-    Math.round((Date.now() - joined.getTime()) / (1000 * 60 * 60 * 24 * 30)),
-  );
-  if (months < 1) return "";
-  if (months < 12) return `${months} ${months === 1 ? "month" : "months"} on BazaarCo`;
-  const years = Math.floor(months / 12);
-  return `${years}+ ${years === 1 ? "year" : "years"} on BazaarCo`;
 }

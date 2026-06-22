@@ -14,7 +14,7 @@ import {
 } from "@/buyer/features/pdp/_components/product-actions";
 import { AppLink, Button, EmptyState, Icon, IconButton } from "@/components/ui";
 import { useBz } from "@/components/common";
-import { productShareUrl, searchPath } from "@/config/routes";
+import { pathFromScreen, productShareUrl, searchPath } from "@/config/routes";
 import { queryKeys } from "@/shared/api/query-keys";
 import { formatNPR } from "@/shared/lib/money";
 import { toast } from "@/shared/lib/toast";
@@ -165,93 +165,174 @@ function ShopPanel({ item }: { item: VideoFeedItem }) {
 
 function ProductDock({ item }: { item: VideoFeedItem }) {
   const product = asProduct(item);
+  const discount = discountPercent(item);
+  const { openProduct } = useBz();
+
   return (
     <div className="watch__dock">
-      <div className="watch__dock-row">
-        <span className="watch__dock-thumb">
-          <ProductImage item={item} />
-        </span>
-        <span className="watch__dock-copy">
+      <AppLink
+        href={pathFromScreen("pdp", item.id)}
+        onNavigate={() => openProduct(product)}
+        className="watch__dock-product"
+        ariaLabel={`View ${item.name}`}
+      >
+        <span className="watch__dock-info">
           <span className="watch__dock-name">{item.name}</span>
-          <span className="watch__dock-price">{formatNPR(item.price)}</span>
+          <span className="watch__dock-price">
+            {formatNPR(item.price)}
+            {item.original && item.original > item.price ? (
+              <span className="watch__dock-discount">-{discount}%</span>
+            ) : null}
+          </span>
         </span>
-      </div>
+        <span className="watch__dock-view">
+          View product
+          <Icon name="arrowRight" size={16} />
+        </span>
+      </AppLink>
       <div className="watch__dock-actions">
-        <span>
-          <PdpMakeOfferButton product={product} size="md" />
-        </span>
-        <span>
-          <PdpAddToCartButton product={product} size="md" label="Add" />
-        </span>
+        <PdpMakeOfferButton product={product} size="md" />
+        <PdpAddToCartButton product={product} size="md" label="Add to cart" />
       </div>
     </div>
   );
 }
 
-function ShopSheet({ item, onClose }: { item: VideoFeedItem; onClose: () => void }) {
-  const cardRef = useRef<HTMLDivElement | null>(null);
-  const startY = useRef<number | null>(null);
-
-  useEffect(() => {
-    const card = cardRef.current;
-    if (!card) return;
-    const focusables = Array.from(
-      card.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
-      ),
-    );
-    focusables[0]?.focus();
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-        return;
-      }
-      if (event.key !== "Tab" || focusables.length === 0) return;
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      if (!first || !last) return;
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
+function WatchSlide({
+  item,
+  index,
+  total,
+  active,
+  load,
+  muted,
+  playing,
+  onTogglePlay,
+  onToggleMute,
+  onShare,
+  onRecordView,
+  registerVideo,
+  registerSlide,
+}: {
+  item: VideoFeedItem;
+  index: number;
+  total: number;
+  active: boolean;
+  load: boolean;
+  muted: boolean;
+  playing: boolean;
+  onTogglePlay: () => void;
+  onToggleMute: () => void;
+  onShare: (item: VideoFeedItem) => void;
+  onRecordView: (
+    item: VideoFeedItem,
+    playbackPercent: number,
+    duration: number,
+    currentTime: number,
+  ) => void;
+  registerVideo: (index: number, el: HTMLVideoElement | null) => void;
+  registerSlide: (index: number, el: HTMLDivElement | null) => void;
+}) {
+  const [progress, setProgress] = useState(0);
+  const { savedProducts, toggleSaved } = useBz();
+  const saved = savedProducts.includes(item.id);
 
   return (
-    <div className="watch__sheet" onClick={onClose}>
-      <div
-        ref={cardRef}
-        className="watch__sheet-card"
-        role="dialog"
-        aria-modal="true"
-        aria-label={`Shop ${item.name}`}
-        onClick={(event) => event.stopPropagation()}
-        onTouchStart={(event) => {
-          startY.current = event.touches[0]?.clientY ?? null;
-        }}
-        onTouchEnd={(event) => {
-          const endY = event.changedTouches[0]?.clientY;
-          if (startY.current != null && endY != null && endY - startY.current > 72) onClose();
-          startY.current = null;
-        }}
-      >
-        <div className="watch__sheet-grab" />
-        <div className="watch__sheet-head">
-          <div className="watch__media">
-            <ProductImage item={item} />
-          </div>
-          <div className="watch__sheet-details">
-            <ProductSummary item={item} />
-          </div>
-          <IconButton name="close" label="Close shop panel" onClick={onClose} size={36} />
+    <div
+      className="watch__slide"
+      data-active={active}
+      data-index={index}
+      ref={(el) => registerSlide(index, el)}
+    >
+      <div className="watch__player" onClick={onTogglePlay}>
+        <video
+          ref={(el) => registerVideo(index, el)}
+          className="watch__video"
+          src={load ? (item.videoUrl ?? undefined) : undefined}
+          poster={item.videoThumb ?? undefined}
+          loop
+          playsInline
+          preload="metadata"
+          onTimeUpdate={(event) => {
+            const video = event.currentTarget;
+            const next = video.duration > 0 ? (video.currentTime / video.duration) * 100 : 0;
+            setProgress(next);
+            onRecordView(item, next, video.duration, video.currentTime);
+          }}
+        />
+
+        <div className="watch__player-top">
+          <IconButton
+            name={muted ? "mute" : "volume"}
+            label={muted ? "Unmute" : "Mute"}
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggleMute();
+            }}
+            className="watch__iconbtn"
+            size={36}
+          />
         </div>
-        <div className="watch__actions">
-          <ShopActions item={item} />
+
+        {active && !playing ? (
+          <span className="watch__play-overlay" aria-hidden="true">
+            <Icon name="play" size={30} fill="currentColor" />
+          </span>
+        ) : null}
+
+        <div className="watch__rail">
+          <span className="watch__rail-action">
+            <IconButton
+              name="heart"
+              label={saved ? `Remove ${item.name} from saved products` : `Save ${item.name}`}
+              active={saved}
+              onClick={(event) => {
+                event.stopPropagation();
+                void toggleSaved(item.id, item.name);
+              }}
+              className="watch__iconbtn"
+              size={36}
+            />
+            <span>{saved ? "Saved" : "Save"}</span>
+          </span>
+          <span className="watch__rail-action">
+            <IconButton
+              name="share"
+              label="Share product"
+              onClick={(event) => {
+                event.stopPropagation();
+                onShare(item);
+              }}
+              className="watch__iconbtn"
+              size={36}
+            />
+            <span>Share</span>
+          </span>
+        </div>
+
+        <div className="watch__player-foot">
+          <div className="watch__seller">
+            <SellerAvatar item={item} />
+            <AppLink
+              href={item.seller.url}
+              className="watch__seller-name"
+              ariaLabel={`Visit ${item.seller.name} storefront`}
+            >
+              {item.seller.name}
+            </AppLink>
+            <span className="watch__views">
+              <Icon name="eye" size={13} />
+              {formatViews(item.engagement.views)}
+            </span>
+          </div>
+          <div className="watch__caption">{item.caption || item.name}</div>
+          <div className="watch__scrub">
+            <div className="watch__scrub-track">
+              <div className="watch__scrub-fill" style={{ width: `${progress}%` }} />
+            </div>
+            <span className="watch__scrub-count">
+              {index + 1} / {total}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -274,44 +355,87 @@ export function VideoTheater() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [muted, setMuted] = useState(true);
   const [playing, setPlaying] = useState(true);
-  const [progress, setProgress] = useState(0);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const touchStartY = useRef<number | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
+  const slideRefs = useRef<Array<HTMLDivElement | null>>([]);
   const viewedIds = useRef(new Set<string>());
   const startProductId = searchParams.get("product")?.trim();
 
-  const active = items[Math.min(activeIndex, Math.max(items.length - 1, 0))];
+  const clamped = Math.min(activeIndex, Math.max(items.length - 1, 0));
+  const active = items[clamped];
 
   const goBack = useCallback(() => {
     if (window.history.length > 1) router.back();
     else nav("home");
   }, [nav, router]);
 
-  const selectIndex = useCallback(
+  const scrollToSlide = useCallback((index: number, smooth = true) => {
+    const stage = stageRef.current;
+    const slide = slideRefs.current[index];
+    if (!stage || !slide) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const top =
+      stage.scrollTop + slide.getBoundingClientRect().top - stage.getBoundingClientRect().top;
+    stage.scrollTo({
+      top,
+      behavior: smooth && !reduceMotion ? "smooth" : "auto",
+    });
+  }, []);
+
+  const goTo = useCallback(
     (next: number) => {
       if (items.length === 0) return;
-      setActiveIndex(Math.max(0, Math.min(items.length - 1, next)));
-      setProgress(0);
+      const target = Math.max(0, Math.min(items.length - 1, next));
+      setActiveIndex(target);
       setPlaying(true);
-      setSheetOpen(false);
+      scrollToSlide(target);
     },
-    [items.length],
+    [items.length, scrollToSlide],
   );
 
+  // Deep link: ?product=<id> opens that reel.
   useEffect(() => {
     if (!startProductId || items.length === 0) return;
     const index = items.findIndex((item) => item.id === startProductId);
-    if (index >= 0) selectIndex(index);
-  }, [items, selectIndex, startProductId]);
+    if (index < 0) return;
+    setActiveIndex(index);
+    scrollToSlide(index, false);
+  }, [items, scrollToSlide, startProductId]);
 
+  // Only the in-view reel plays; the rest pause and rewind.
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.muted = muted;
-    if (playing) void video.play().catch(() => setPlaying(false));
-    else video.pause();
-  }, [active?.id, muted, playing]);
+    videoRefs.current.forEach((video, index) => {
+      if (!video) return;
+      video.muted = muted;
+      if (index === clamped) {
+        if (playing) void video.play().catch(() => setPlaying(false));
+        else video.pause();
+      } else {
+        video.pause();
+        if (video.currentTime > 0) video.currentTime = 0;
+      }
+    });
+  }, [clamped, muted, playing, items.length]);
+
+  // Mobile vertical scroll drives the active reel.
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage || items.length === 0) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting || entry.intersectionRatio < 0.6) continue;
+          const index = Number((entry.target as HTMLElement).dataset.index);
+          if (Number.isNaN(index)) continue;
+          setActiveIndex(index);
+          setPlaying(true);
+        }
+      },
+      { root: stage, threshold: [0.6] },
+    );
+    slideRefs.current.forEach((el) => el && observer.observe(el));
+    return () => observer.disconnect();
+  }, [items.length]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -319,17 +443,17 @@ export function VideoTheater() {
         return;
       if (event.key === "ArrowDown") {
         event.preventDefault();
-        selectIndex(activeIndex + 1);
+        goTo(clamped + 1);
       } else if (event.key === "ArrowUp") {
         event.preventDefault();
-        selectIndex(activeIndex - 1);
+        goTo(clamped - 1);
       } else if (event.key.toLowerCase() === "m") {
         setMuted((value) => !value);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeIndex, selectIndex]);
+  }, [clamped, goTo]);
 
   const recordView = useCallback(
     (item: VideoFeedItem, playbackPercent: number, duration: number, currentTime: number) => {
@@ -368,12 +492,11 @@ export function VideoTheater() {
     [queryClient],
   );
 
-  const share = useCallback(async () => {
-    if (!active) return;
-    const url = productShareUrl(active.id);
+  const share = useCallback(async (item: VideoFeedItem) => {
+    const url = productShareUrl(item.id);
     try {
       if (navigator.share) {
-        await navigator.share({ title: active.name, url });
+        await navigator.share({ title: item.name, url });
       } else {
         await navigator.clipboard.writeText(url);
         toast.info("Link copied");
@@ -382,7 +505,7 @@ export function VideoTheater() {
       if (shareError instanceof Error && shareError.name === "AbortError") return;
       toast.error("Could not share this product");
     }
-  }, [active]);
+  }, []);
 
   if (isLoading) {
     return (
@@ -452,7 +575,7 @@ export function VideoTheater() {
             <span className="watch__hint">
               <kbd className="watch__kbd">↑</kbd>
               <kbd className="watch__kbd">↓</kbd>
-              swipe
+              scroll
             </span>
             <span className="watch__hint">
               <kbd className="watch__kbd">M</kbd>
@@ -470,8 +593,8 @@ export function VideoTheater() {
               <WatchQueueItem
                 key={item.id}
                 item={item}
-                active={index === activeIndex}
-                onSelect={() => selectIndex(index)}
+                active={index === clamped}
+                onSelect={() => goTo(index)}
               />
             ))}
           </div>
@@ -479,129 +602,48 @@ export function VideoTheater() {
 
         <div className="watch__stage">
           <div
-            className="watch__player"
-            onTouchStart={(event) => {
-              touchStartY.current = event.touches[0]?.clientY ?? null;
-            }}
-            onTouchEnd={(event) => {
-              const endY = event.changedTouches[0]?.clientY;
-              if (touchStartY.current == null || endY == null) return;
-              const delta = endY - touchStartY.current;
-              if (Math.abs(delta) > 64) selectIndex(activeIndex + (delta < 0 ? 1 : -1));
-              touchStartY.current = null;
-            }}
+            className="watch__stage-scroller"
+            ref={stageRef}
+            aria-label="Video feed"
+            tabIndex={0}
           >
-            <video
-              key={active.id}
-              ref={videoRef}
-              className="watch__video"
-              src={active.videoUrl ?? undefined}
-              poster={active.videoThumb ?? undefined}
-              muted={muted}
-              autoPlay
-              loop
-              playsInline
-              preload="metadata"
-              onClick={() => setPlaying((value) => !value)}
-              onTimeUpdate={(event) => {
-                const video = event.currentTarget;
-                const nextProgress =
-                  video.duration > 0 ? (video.currentTime / video.duration) * 100 : 0;
-                setProgress(nextProgress);
-                recordView(active, nextProgress, video.duration, video.currentTime);
-              }}
-            />
-
-            <div className="watch__player-top">
-              <IconButton
-                name={muted ? "mute" : "volume"}
-                label={muted ? "Unmute" : "Mute"}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setMuted((value) => !value);
+            {items.map((item, index) => (
+              <WatchSlide
+                key={item.id}
+                item={item}
+                index={index}
+                total={items.length}
+                active={index === clamped}
+                load={Math.abs(index - clamped) <= 1}
+                muted={muted}
+                playing={playing}
+                onTogglePlay={() => setPlaying((value) => !value)}
+                onToggleMute={() => setMuted((value) => !value)}
+                onShare={(target) => void share(target)}
+                onRecordView={recordView}
+                registerVideo={(i, el) => {
+                  videoRefs.current[i] = el;
                 }}
-                className="watch__iconbtn"
-                size={36}
+                registerSlide={(i, el) => {
+                  slideRefs.current[i] = el;
+                }}
               />
-            </div>
-
-            <div className="watch__mobile">
-              <button
-                type="button"
-                className="watch__product-pill"
-                onClick={() => setSheetOpen(true)}
-              >
-                <span className="watch__pill-thumb">
-                  <ProductImage item={active} />
-                </span>
-                <span className="watch__pill-copy">
-                  <span className="watch__pill-name">{active.name}</span>
-                  <span className="watch__pill-price">{formatNPR(active.price)}</span>
-                </span>
-                <Icon name="arrowRight" size={14} />
-              </button>
-              <IconButton
-                name={muted ? "mute" : "volume"}
-                label={muted ? "Unmute" : "Mute"}
-                onClick={() => setMuted((value) => !value)}
-                className="watch__iconbtn"
-                size={36}
-              />
-            </div>
-
-            <div className="watch__rail">
-              <span className="watch__rail-action">
-                <IconButton
-                  name="share"
-                  label="Share product"
-                  onClick={() => void share()}
-                  className="watch__iconbtn"
-                  size={36}
-                />
-                <span>Share</span>
-              </span>
-            </div>
-
-            <div className="watch__player-foot">
-              <div className="watch__seller">
-                <SellerAvatar item={active} />
-                <AppLink
-                  href={active.seller.url}
-                  className="watch__seller-name"
-                  ariaLabel={`Visit ${active.seller.name} storefront`}
-                >
-                  {active.seller.name}
-                </AppLink>
-                <span className="watch__views">
-                  <Icon name="eye" size={13} />
-                  {formatViews(active.engagement.views)}
-                </span>
-              </div>
-              <div className="watch__caption">{active.caption || active.name}</div>
-              <div className="watch__scrub">
-                <div className="watch__scrub-track">
-                  <div className="watch__scrub-fill" style={{ width: `${progress}%` }} />
-                </div>
-                <span className="watch__scrub-count">
-                  {activeIndex + 1} / {items.length}
-                </span>
-              </div>
-            </div>
+            ))}
           </div>
 
           <div className="watch__stage-nav">
             <IconButton
               name="chevronUp"
               label="Previous video"
-              onClick={() => selectIndex(activeIndex - 1)}
-              disabled={activeIndex === 0}
+              onClick={() => goTo(clamped - 1)}
+              disabled={clamped === 0}
               className="watch__iconbtn"
             />
             <IconButton
               name="chevronDown"
               label="Next video"
-              onClick={() => selectIndex(activeIndex + 1)}
-              disabled={activeIndex === items.length - 1}
+              onClick={() => goTo(clamped + 1)}
+              disabled={clamped === items.length - 1}
               className="watch__iconbtn"
             />
           </div>
@@ -611,7 +653,6 @@ export function VideoTheater() {
       </div>
 
       <ProductDock item={active} />
-      {sheetOpen ? <ShopSheet item={active} onClose={() => setSheetOpen(false)} /> : null}
     </section>
   );
 }

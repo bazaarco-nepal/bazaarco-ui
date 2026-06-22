@@ -1481,7 +1481,8 @@ export function PDP({ p: pProp }: PdpProps) {
                     position: "relative",
                     width: "100%",
                     maxWidth: 420,
-                    height: 460,
+                    height: 552,
+                    maxHeight: "72vh",
                     borderRadius: "var(--r-lg)",
                     overflow: "hidden",
                     background: "#fff",
@@ -1512,9 +1513,9 @@ export function PDP({ p: pProp }: PdpProps) {
                       style={{
                         width: "100%",
                         height: "100%",
-                        // Fill the box (no top/bottom whitespace). The lightbox
-                        // shows the full uncropped image on zoom.
-                        objectFit: "cover",
+                        // Preserve the whole product photo. Tall listing images
+                        // use the extra vertical room instead of being cropped.
+                        objectFit: "contain",
                         pointerEvents: "none",
                       }}
                     />

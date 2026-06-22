@@ -38,6 +38,7 @@ export interface VideoFeedItem {
   videoThumb: string | null;
   videoUrl: string | null;
   videoPublicId?: string | null;
+  uploadedAt: string;
   img: string | null;
   seller: VideoFeedSeller;
   engagement: VideoFeedEngagement;

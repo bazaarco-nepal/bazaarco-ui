@@ -33,8 +33,7 @@
 }
 
 .watch__iconbtn:focus-visible,
-.watch__queue-card:focus-visible,
-.watch__product-pill:focus-visible {
+.watch__queue-card:focus-visible {
   outline: none;
   box-shadow: 0 0 0 var(--sp-1) var(--focus-ring);
 }
@@ -165,9 +164,7 @@
 
 .watch__queue-thumb img,
 .watch__media-img,
-.watch__avatar img,
-.watch__dock-thumb img,
-.watch__pill-thumb img {
+.watch__avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -213,10 +210,29 @@
   gap: var(--sp-4);
 }
 
+.watch__stage-scroller {
+  width: min(100%, 400px);
+  height: min(74vh, 711px);
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scroll-behavior: smooth;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+}
+
+.watch__stage-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.watch__stage-scroller:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: var(--sp-1);
+}
+
 .watch__player {
   position: relative;
-  width: min(100%, 400px);
-  aspect-ratio: 9 / 16;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   border-radius: var(--radius-card);
   background: var(--bz-navy);
@@ -229,6 +245,32 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.watch__slide {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+.watch__play-overlay {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  width: 64px;
+  height: 64px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-full);
+  background: color-mix(in srgb, var(--bz-navy) 45%, transparent);
+  color: var(--bz-surface);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
 }
 
 .watch__player-top {
@@ -494,9 +536,7 @@
   margin-left: auto;
 }
 
-.watch__mobile,
-.watch__dock,
-.watch__sheet {
+.watch__dock {
   display: none;
 }
 
@@ -530,10 +570,17 @@
 }
 
 @media (max-width: 680px) {
+  /* Watch is immersive and does not render the buyer bottom nav. Override the
+     generic mobile main reservation so the feed uses the full viewport. */
+  .bz-main.bz-main--video {
+    padding-bottom: 0;
+  }
+
   .watch {
     display: flex;
-    min-height: 100dvh;
+    height: 100dvh;
     flex-direction: column;
+    overflow: hidden;
   }
 
   .watch__head {
@@ -559,22 +606,44 @@
     padding: 0;
   }
 
-  .watch__shop,
   .watch__queue-wrap,
+  .watch__shop,
   .watch__stage-nav {
     display: none;
   }
 
   .watch__stage {
-    position: relative;
+    display: block;
     min-height: 0;
     flex: 1;
-    display: block;
+  }
+
+  /* Stage = the vertical, scroll-snapping reels feed. */
+  .watch__stage-scroller {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .watch__stage-scroller::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Show every slide; each fills the feed and snaps into place. */
+  .watch__slide,
+  .watch__slide[data-active="true"] {
+    display: flex;
+    height: 100%;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
   }
 
   .watch__player {
-    position: absolute;
-    inset: 0;
+    position: relative;
+    inset: auto;
     width: 100%;
     height: 100%;
     border-radius: 0;
@@ -582,106 +651,89 @@
   }
 
   .watch__player-top {
-    display: none;
-  }
-
-  .watch__mobile {
-    position: absolute;
-    z-index: 3;
+    display: block;
     top: var(--sp-3);
     right: var(--sp-3);
-    left: var(--sp-3);
+  }
+
+  .watch__rail {
+    bottom: 128px;
+  }
+
+  /* Product dock pinned under the feed, above the bottom nav. */
+  .watch__dock {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--sp-2);
-  }
-
-  .watch__product-pill {
-    display: inline-flex;
-    max-width: 78%;
-    align-items: center;
-    gap: var(--sp-2);
-    padding: var(--sp-1) var(--sp-3) var(--sp-1) var(--sp-1);
-    overflow: hidden;
-    border: 0;
-    border-radius: var(--r-full);
-    background: color-mix(in srgb, var(--bz-surface) 95%, transparent);
-    cursor: pointer;
-  }
-
-  .watch__pill-thumb {
-    width: 30px;
-    height: 30px;
     flex: none;
-    overflow: hidden;
-    border-radius: var(--radius-sm);
-    background: var(--bz-img-bg);
+    flex-direction: column;
+    gap: var(--sp-2);
+    padding: var(--sp-2) var(--sp-3) var(--sp-3);
+    border-top: 1px solid color-mix(in srgb, var(--bz-surface) 10%, transparent);
+    background: var(--bz-navy);
   }
 
-  .watch__pill-copy {
+  .watch__dock-info {
+    display: flex;
     min-width: 0;
-    text-align: left;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--sp-1);
   }
 
-  .watch__pill-name,
+  .watch__dock-product {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: var(--sp-3);
+    padding: var(--sp-2);
+    border-radius: var(--radius-lg);
+    background: color-mix(in srgb, var(--bz-surface) 8%, transparent);
+    color: inherit;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .watch__dock-product:active {
+    background: color-mix(in srgb, var(--bz-surface) 15%, transparent);
+    transform: scale(0.99);
+  }
+
+  .watch__dock-product:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
   .watch__dock-name {
     overflow: hidden;
+    color: var(--bz-surface);
     font-size: var(--fs-sm);
     font-weight: var(--fw-med);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .watch__pill-name {
-    color: var(--bz-navy);
+  .watch__dock-price {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--sp-2);
+    color: var(--bz-surface);
+    font-size: var(--fs-md);
+    font-weight: var(--fw-med);
   }
 
-  .watch__pill-price {
+  .watch__dock-discount {
     color: var(--bz-red);
     font-size: var(--fs-xs);
     font-weight: var(--fw-med);
   }
 
-  .watch__rail {
-    bottom: 112px;
-  }
-
-  .watch__dock {
-    display: block;
+  .watch__dock-view {
+    display: inline-flex;
     flex: none;
-    padding: var(--sp-3) var(--sp-4) calc(var(--sp-4) + env(safe-area-inset-bottom));
-    border-top: 1px solid color-mix(in srgb, var(--bz-surface) 8%, transparent);
-    background: var(--bz-navy);
-  }
-
-  .watch__dock-row {
-    display: flex;
     align-items: center;
-    gap: var(--sp-3);
-    margin-bottom: var(--sp-3);
-  }
-
-  .watch__dock-thumb {
-    width: 44px;
-    height: 44px;
-    flex: none;
-    overflow: hidden;
-    border-radius: var(--radius-md);
-    background: var(--bz-img-bg);
-  }
-
-  .watch__dock-copy {
-    min-width: 0;
-  }
-
-  .watch__dock-name {
-    color: var(--bz-surface);
-  }
-
-  .watch__dock-price {
-    color: var(--on-navy-300);
+    gap: var(--sp-1);
+    color: var(--on-navy-100);
     font-size: var(--fs-xs);
+    font-weight: var(--fw-med);
   }
 
   .watch__dock-actions {
@@ -689,51 +741,11 @@
     gap: var(--sp-2);
   }
 
-  .watch__dock-actions > span {
-    min-width: 0;
-    flex: 1;
+  .watch__dock-actions .btn {
+    min-height: 44px;
   }
 
-  .watch__sheet {
-    position: fixed;
-    z-index: 100;
-    inset: 0;
-    display: flex;
-    align-items: flex-end;
-    background: color-mix(in srgb, var(--bz-navy) 60%, transparent);
-  }
-
-  .watch__sheet-card {
-    width: 100%;
-    max-height: 88dvh;
-    overflow: auto;
-    padding: var(--sp-3) var(--sp-4) calc(var(--sp-5) + env(safe-area-inset-bottom));
-    border-radius: var(--sp-5) var(--sp-5) 0 0;
-    background: var(--bz-surface);
-    color: var(--bz-ink);
-  }
-
-  .watch__sheet-grab {
-    width: 38px;
-    height: var(--sp-1);
-    margin: 0 auto var(--sp-3);
-    border-radius: var(--r-full);
-    background: var(--bz-card-border);
-  }
-
-  .watch__sheet-head {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--sp-3);
-  }
-
-  .watch__sheet-head .watch__media {
-    width: 84px;
-    flex: none;
-    margin: 0;
-  }
-
-  .watch__sheet-details {
+  .watch__dock-actions > * {
     min-width: 0;
     flex: 1;
   }
@@ -742,5 +754,11 @@
 @media (prefers-reduced-motion: no-preference) {
   .watch__scrub-fill {
     transition: width var(--dur-standard) linear;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .watch__stage-scroller {
+    scroll-behavior: auto;
   }
 }

@@ -15,6 +15,7 @@ import { ImageCropModal } from "@/components/common/image-crop-modal";
 import { pathFromScreen } from "@/config/routes";
 import { toast } from "@/shared/lib/toast";
 import { ApiRequestError } from "@/shared/api/http";
+import { IMAGE_PRESETS } from "@/shared/lib/imagePresets";
 import {
   emptyStoreAddress,
   formatStoreAddress,
@@ -56,6 +57,7 @@ export function SellerStorefront() {
 
   const logoUrl = storefront?.logoUrl;
   const bannerUrl = storefront?.bannerUrl;
+  const storeAnalytics = storefront?.analytics;
   const busy =
     updateStorefront.isPending ||
     uploadLogo.isPending ||
@@ -267,34 +269,22 @@ export function SellerStorefront() {
     <ApiState isLoading={isLoading} isError={isError} error={error}>
       {logoCropUrl ? (
         <ImageCropModal
-          objectUrl={logoCropUrl}
-          aspectRatio={1}
-          outputWidth={512}
-          outputHeight={512}
-          maskShape="circle"
-          showBrightness={false}
-          title="Crop shop logo"
-          subtitle="Drag and zoom to fit your logo inside the circle"
-          confirmLabel="Save logo"
-          fileNamePrefix="shop-logo"
+          image={logoCropUrl}
+          aspect={IMAGE_PRESETS.logo.aspect}
+          cropShape={IMAGE_PRESETS.logo.cropShape}
+          maxEdge={IMAGE_PRESETS.logo.maxEdge}
           onCancel={closeLogoCrop}
-          onConfirm={(file) => void saveLogoCrop(file)}
+          onComplete={(file) => void saveLogoCrop(file)}
         />
       ) : null}
       {bannerCropUrl ? (
         <ImageCropModal
-          objectUrl={bannerCropUrl}
-          aspectRatio={3}
-          outputWidth={1500}
-          outputHeight={500}
-          maskShape="rect"
-          showBrightness
-          title="Crop shop banner"
-          subtitle="Drag to position · zoom to fill the frame"
-          confirmLabel="Save banner"
-          fileNamePrefix="shop-banner"
+          image={bannerCropUrl}
+          aspect={IMAGE_PRESETS.banner.aspect}
+          cropShape={IMAGE_PRESETS.banner.cropShape}
+          maxEdge={IMAGE_PRESETS.banner.maxEdge}
           onCancel={closeBannerCrop}
-          onConfirm={(file) => void saveBannerCrop(file)}
+          onComplete={(file) => void saveBannerCrop(file)}
         />
       ) : null}
       <div
@@ -318,6 +308,52 @@ export function SellerStorefront() {
             )
           }
         />
+
+        <Card
+          title="Store followers"
+          label="Buyer audience"
+          action={
+            <AppLink href={pathFromScreen("s-analytics")} className="bz-store-followers-link">
+              View analytics
+            </AppLink>
+          }
+        >
+          <div className="bz-store-followers-grid">
+            {[
+              {
+                icon: "user",
+                label: "Total followers",
+                value: storeAnalytics?.followerCount ?? 0,
+                note: "People following your store",
+              },
+              {
+                icon: "trendingUp",
+                label: "New this week",
+                value: storeAnalytics?.newFollowers7d ?? 0,
+                note: "Last 7 days",
+              },
+              {
+                icon: "clock",
+                label: "New this month",
+                value: storeAnalytics?.newFollowers30d ?? 0,
+                note: "Last 30 days",
+              },
+            ].map((item) => (
+              <div key={item.label} className="bz-store-followers-stat">
+                <span className="bz-icon-tile">
+                  <SellerIcon name={item.icon} size={18} color="var(--blue)" />
+                </span>
+                <div>
+                  <div className="bz-store-followers-stat__label">{item.label}</div>
+                  <div className="bz-store-followers-stat__value tnum">
+                    {item.value.toLocaleString("en-IN")}
+                  </div>
+                  <div className="bz-store-followers-stat__note">{item.note}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
 
         <input
           ref={logoInputRef}

@@ -1,78 +1,67 @@
+import { Preferences } from "@capacitor/preferences";
+
 const STORAGE_KEY = "bz_access_token";
 
-function readStorage(get: (key: string) => string | null): string | null {
+let cachedToken: string | null = null;
+let hydrated = false;
+let hydrationPromise: Promise<string | null> | null = null;
+
+function takeLegacyToken(): string | null {
+  if (typeof window === "undefined") return null;
+
   try {
-    return get(STORAGE_KEY);
+    const token =
+      window.localStorage.getItem(STORAGE_KEY) ?? window.sessionStorage.getItem(STORAGE_KEY);
+    window.localStorage.removeItem(STORAGE_KEY);
+    window.sessionStorage.removeItem(STORAGE_KEY);
+    return token;
   } catch {
     return null;
   }
 }
 
-function writeStorage(
-  set: (key: string, value: string) => void,
-  remove: (key: string) => void,
-  token: string | null,
-) {
-  try {
-    if (token) {
-      set(STORAGE_KEY, token);
-    } else {
-      remove(STORAGE_KEY);
-    }
-  } catch {
-    /* ignore quota / private mode */
-  }
-}
-
 /**
- * JWT for Authorization headers when the httpOnly cookie is unavailable.
- * Uses localStorage so Google OAuth sessions survive new tabs and refresh
- * (sessionStorage is tab-scoped and broke production Google sign-in).
+ * Hydrates the in-memory token before authenticated requests or sockets start.
+ * Preferences maps to native system storage in the Capacitor applications.
  */
+export function hydrateAccessToken(): Promise<string | null> {
+  if (hydrated) return Promise.resolve(cachedToken);
+  if (hydrationPromise) return hydrationPromise;
+
+  hydrationPromise = Preferences.get({ key: STORAGE_KEY })
+    .then(async ({ value }) => {
+      const legacyToken = value ? null : takeLegacyToken();
+      cachedToken = value ?? legacyToken;
+      if (legacyToken) {
+        await Preferences.set({ key: STORAGE_KEY, value: legacyToken });
+      }
+      hydrated = true;
+      return cachedToken;
+    })
+    .catch(() => {
+      cachedToken = null;
+      hydrated = true;
+      return null;
+    })
+    .finally(() => {
+      hydrationPromise = null;
+    });
+
+  return hydrationPromise;
+}
+
 export function getAccessToken(): string | null {
-  if (typeof window === "undefined") return null;
-
-  const fromLocal = readStorage((k) => localStorage.getItem(k));
-  if (fromLocal) return fromLocal;
-
-  const legacy = readStorage((k) => sessionStorage.getItem(k));
-  if (legacy) {
-    writeStorage(
-      (k, v) => localStorage.setItem(k, v),
-      (k) => localStorage.removeItem(k),
-      legacy,
-    );
-    sessionStorage.removeItem(STORAGE_KEY);
-    return legacy;
-  }
-
-  return null;
+  return cachedToken;
 }
 
-export function setAccessToken(token: string): void {
-  if (typeof window === "undefined") return;
-  writeStorage(
-    (k, v) => localStorage.setItem(k, v),
-    (k) => localStorage.removeItem(k),
-    token,
-  );
-  try {
-    sessionStorage.removeItem(STORAGE_KEY);
-  } catch {
-    /* ignore */
-  }
+export async function setAccessToken(token: string): Promise<void> {
+  cachedToken = token;
+  hydrated = true;
+  await Preferences.set({ key: STORAGE_KEY, value: token });
 }
 
-export function clearAccessToken(): void {
-  if (typeof window === "undefined") return;
-  writeStorage(
-    (k, v) => localStorage.setItem(k, v),
-    (k) => localStorage.removeItem(k),
-    null,
-  );
-  try {
-    sessionStorage.removeItem(STORAGE_KEY);
-  } catch {
-    /* ignore */
-  }
+export async function clearAccessToken(): Promise<void> {
+  cachedToken = null;
+  hydrated = true;
+  await Preferences.remove({ key: STORAGE_KEY });
 }

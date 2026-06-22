@@ -11,7 +11,7 @@ import type {
   SellerTrust,
 } from "@/types";
 import type { PaginatedData } from "./types";
-import { getData, postData } from "./http";
+import { deleteData, getData, postData } from "./http";
 
 export interface CreateSellerReviewPayload {
   stars: number;
@@ -111,6 +111,25 @@ export interface BrowseResponse extends PaginatedData<Product> {
   facets?: { categories: BrowseFacet[]; sellers: BrowseFacet[] };
 }
 
+export type StoreProductSort = "relevance" | "newest" | "price_low" | "price_high" | "rating";
+
+export interface SellerProductParams {
+  q?: string;
+  categories?: string[];
+  sort?: StoreProductSort;
+}
+
+export interface SellerProductsResponse {
+  items: Product[];
+  total: number;
+  facets?: { categories: BrowseFacet[] };
+}
+
+export interface StoreFollowState {
+  isFollowing: boolean;
+  followerCount: number;
+}
+
 export interface TopPicksParams {
   days?: number;
   page?: number;
@@ -151,8 +170,20 @@ export const catalogApi = {
   },
 
   async getSellerProducts(id: string): Promise<Product[]> {
-    const items = await getData<Product[]>(`/catalog/sellers/${id}/products`);
-    return items.map(mapProduct);
+    return (await this.getSellerProductsPage(id)).items;
+  },
+
+  async getSellerProductsPage(
+    id: string,
+    params?: SellerProductParams,
+  ): Promise<SellerProductsResponse> {
+    const query: Record<string, string> = {};
+    const q = params?.q?.trim();
+    if (q) query.q = q;
+    if (params?.categories?.length) query.categories = params.categories.join(",");
+    if (params?.sort) query.sort = params.sort;
+    const raw = await getData<SellerProductsResponse>(`/catalog/sellers/${id}/products`, query);
+    return { ...raw, items: raw.items.map(mapProduct) };
   },
 
   getSellerTrust(id: string): Promise<SellerTrust> {
@@ -161,6 +192,18 @@ export const catalogApi = {
 
   createSellerReview(id: string, payload: CreateSellerReviewPayload): Promise<SellerReview> {
     return postData<SellerReview>(`/catalog/sellers/${id}/reviews`, payload);
+  },
+
+  getSellerFollowState(id: string): Promise<StoreFollowState> {
+    return getData<StoreFollowState>(`/catalog/sellers/${id}/follow`);
+  },
+
+  followSeller(id: string): Promise<StoreFollowState> {
+    return postData<StoreFollowState>(`/catalog/sellers/${id}/follow`, {});
+  },
+
+  unfollowSeller(id: string): Promise<StoreFollowState> {
+    return deleteData<StoreFollowState>(`/catalog/sellers/${id}/follow`);
   },
 
   async getProducts(params?: ProductListParams): Promise<PaginatedData<Product>> {

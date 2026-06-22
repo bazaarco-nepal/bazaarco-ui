@@ -748,6 +748,38 @@ function useSpaLinkClick(href, onNavigate, target) {
   };
 }
 
+function ButtonAnchor({
+  href,
+  onNavigate,
+  target,
+  onClick,
+  children,
+  ...rest
+}: {
+  href: string;
+  onNavigate?: () => void;
+  target?: string;
+  onClick?: React.MouseEventHandler<HTMLAnchorElement>;
+  children: React.ReactNode;
+  [key: string]: any;
+}) {
+  const linkClick = useSpaLinkClick(href, onNavigate, target);
+  return (
+    <a
+      href={href}
+      target={target}
+      rel={target === "_blank" ? "noopener noreferrer" : undefined}
+      onClick={(e) => {
+        onClick?.(e);
+        linkClick(e);
+      }}
+      {...rest}
+    >
+      {children}
+    </a>
+  );
+}
+
 export function AppLink({
   href,
   onNavigate,
@@ -831,7 +863,6 @@ export function Button({
   [key: string]: any;
 }) {
   const pack = useContext(BzPack);
-  const linkClick = useSpaLinkClick(href, onNavigate, target);
   const [hov, setHov] = useState(false);
 
   // ---- Buyer surface: class-based button-system (button.css) ----
@@ -881,20 +912,19 @@ export function Button({
 
     if (href && !disabled && !loading) {
       return (
-        <a
+        <ButtonAnchor
           href={href}
+          onNavigate={onNavigate}
           className={cls}
           style={mergedStyle}
           target={target}
-          rel={target === "_blank" ? "noopener noreferrer" : undefined}
           onClick={(e) => {
-            onClick?.(e as React.MouseEvent<HTMLButtonElement>);
-            linkClick(e);
+            onClick?.(e as unknown as React.MouseEvent<HTMLButtonElement>);
           }}
           {...rest}
         >
           {content}
-        </a>
+        </ButtonAnchor>
       );
     }
     return (
@@ -990,22 +1020,21 @@ export function Button({
   // buttons fall back to a plain button so they stay inert.
   if (href && !disabled && !loading) {
     return (
-      <a
+      <ButtonAnchor
         href={href}
+        onNavigate={onNavigate}
         className={className}
         style={merged}
         target={target}
-        rel={target === "_blank" ? "noopener noreferrer" : undefined}
         onMouseEnter={() => setHov(true)}
         onMouseLeave={() => setHov(false)}
         onClick={(e) => {
-          onClick?.(e);
-          linkClick(e);
+          onClick?.(e as unknown as React.MouseEvent<HTMLButtonElement>);
         }}
         {...rest}
       >
         {inner}
-      </a>
+      </ButtonAnchor>
     );
   }
 
@@ -1051,6 +1080,9 @@ type IconButtonProps = {
   href?: string;
   onNavigate?: () => void;
   target?: React.HTMLAttributeAnchorTarget;
+  className?: string;
+  style?: React.CSSProperties;
+  disabled?: boolean;
 };
 
 export function IconButton({
@@ -1064,6 +1096,9 @@ export function IconButton({
   href,
   onNavigate,
   target,
+  className,
+  style,
+  disabled,
 }: IconButtonProps) {
   const [hov, setHov] = useState(false);
   const linkClick = useSpaLinkClick(href, onNavigate, target);
@@ -1083,6 +1118,9 @@ export function IconButton({
       }
       title={title || label}
       aria-label={label}
+      className={className}
+      disabled={Tag === "button" ? disabled : undefined}
+      aria-disabled={disabled || undefined}
       style={{
         width: size,
         height: size,
@@ -1097,6 +1135,7 @@ export function IconButton({
         color: active ? "var(--red)" : "var(--ink-700)",
         transition: "all var(--dur-standard) var(--ease)",
         flexShrink: 0,
+        ...style,
       }}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
@@ -1665,6 +1704,7 @@ export function VideoPlayer({
     const playbackPercent = (currentTime / duration) * 100;
     if (playbackPercent < 20) return;
     milestoneFiredRef.current = true;
+    console.warn("[views-debug] 20% milestone reached", { streamPublicId, src, playbackPercent }); // DEBUG: remove after mobile-view investigation
     milestoneCbRef.current?.({
       playbackPercent,
       watchMs: Math.round(currentTime * 1000),
@@ -1774,7 +1814,8 @@ export function VideoPlayer({
       if (playing && active) {
         try {
           player.play();
-        } catch {
+        } catch (err) {
+          console.warn("[views-debug] HLS player.play() rejected", { streamPublicId, err }); // DEBUG: remove after mobile-view investigation
           setPlaying(false);
         }
       } else {
@@ -1789,7 +1830,10 @@ export function VideoPlayer({
     // stacked <video> elements and only one plays at a time.
     el.muted = muted || !active;
     if (playing && active) {
-      void el.play().catch(() => setPlaying(false));
+      void el.play().catch((err) => {
+        console.warn("[views-debug] video.play() rejected", { src, err }); // DEBUG: remove after mobile-view investigation
+        setPlaying(false);
+      });
     } else {
       el.pause();
     }

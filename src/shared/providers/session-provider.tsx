@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useCurrentUser } from "@/shared/hooks/use-auth";
+import { hydrateAccessToken } from "@/shared/lib/auth-token";
 import { useBazaarStore } from "@/store/bazaar-store";
 
 /**
@@ -13,7 +14,8 @@ import { useBazaarStore } from "@/store/bazaar-store";
  * in the buyer provider.
  */
 export function SessionProvider({ children }: { children: React.ReactNode }) {
-  const meQuery = useCurrentUser(true);
+  const [storageReady, setStorageReady] = useState(false);
+  const meQuery = useCurrentUser(storageReady);
   const setAuthReady = useBazaarStore((s) => s.setAuthReady);
   const hydrateRoleHint = useBazaarStore((s) => s.hydrateRoleHint);
   const hydrateBuyerPhone = useBazaarStore((s) => s.hydrateBuyerPhone);
@@ -26,6 +28,16 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, [hydrateRoleHint, hydrateBuyerPhone]);
 
   useEffect(() => {
+    let active = true;
+    void hydrateAccessToken().finally(() => {
+      if (active) setStorageReady(true);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
     if (meQuery.isFetched) {
       setAuthReady(true);
     }
@@ -35,6 +47,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       useBazaarStore.getState().setRoleHint(null);
     }
   }, [meQuery.isFetched, meQuery.isError, setAuthReady]);
+
+  if (!storageReady) return null;
 
   return <>{children}</>;
 }

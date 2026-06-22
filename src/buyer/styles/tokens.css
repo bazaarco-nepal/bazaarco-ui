@@ -48,6 +48,22 @@
   --bz-ink-muted: #b4b2a9; /* dismiss icon */
   --bz-toast-shadow: 0 4px 16px rgba(22, 38, 74, 0.08);
   --bz-toast-radius: 14px;
+  /* Canonical buyer design-system aliases. New surfaces consume these names;
+     legacy components can keep using the older palette variables above. */
+  --bz-blue-hover: var(--blue-hover);
+  --bz-red: #d6402e;
+  --bz-red-hover: #b8321f;
+  --bz-red-tint: #fdecea;
+  --bz-save: #0f6e56;
+  --bz-cream: var(--page);
+  --bz-surface: var(--card);
+  --bz-surface-tint: var(--line-100);
+  --bz-img-bg: #eef0f3;
+  --bz-shadow: var(--bz-toast-shadow);
+  --bz-ink: var(--ink-900);
+  --bz-star: #ef9f27;
+  --bz-star-empty: #d8d4c9;
+  --focus-ring: rgba(39, 67, 176, 0.35);
 
   /* status: rail colour / chip bg / chip icon colour */
   --toast-success-rail: #0f6e56;
@@ -84,7 +100,11 @@
   --fs-h1: clamp(20px, 1.4vw + 14px, 26px);
   --fs-h2: clamp(18px, 1vw + 13px, 22px);
   --fs-h3: 1.5rem;
+  --fs-xs: 12px;
+  --fs-sm: clamp(12px, 0.25vw + 11.5px, 13px);
   --fs-base: clamp(13px, 0.3vw + 12px, 15px);
+  --fs-md: 16px;
+  --fs-lg: 18px;
   --fs-body: var(--fs-base);
   --fs-small: 0.9375rem;
   --fs-caption: 0.8125rem;
@@ -92,6 +112,8 @@
   --w-heading: 700;
   --w-button: 600;
   --w-emphasis: 500;
+  --fw-reg: 400;
+  --fw-med: 500;
   --lh-tight: 1.2;
   --lh-normal: 1.5;
 
@@ -101,6 +123,10 @@
   --r-lg: 14px;
   --r-xl: 20px;
   --r-full: 999px;
+  --radius-sm: 8px;
+  --radius-md: var(--r-md);
+  --radius-lg: 12px;
+  --radius-card: var(--r-lg);
   /* Two semantic radii so pills and controls never drift apart:
      --r-pill for badges/status pills, --r-control for inputs/chips/buttons. */
   --r-pill: var(--r-full);
@@ -147,11 +173,16 @@
   --space-lg: 24px;
   --space-xl: 32px;
   --space-2xl: 48px;
+  --sp-1: var(--space-2xs);
+  --sp-2: var(--space-xs);
   --sp-3: var(--space-sm);
   --sp-4: clamp(12px, 0.4vw + 10px, 16px);
   --sp-5: clamp(16px, 0.5vw + 12px, 20px);
   --sp-6: clamp(18px, 0.7vw + 14px, 24px);
   --sp-8: clamp(24px, 1vw + 18px, 32px);
+  --sp-10: 40px;
+  --sp-12: var(--space-2xl);
+  --sp-16: 64px;
 
   /* Homepage vertical rhythm. The contrast is the point: the gap BETWEEN
      sections must read clearly larger than the gaps WITHIN one (card/grid).
@@ -170,7 +201,10 @@ html,
 body {
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
+  /* `clip` (not `hidden`) blocks horizontal scroll without making the root a
+     scroll container, so the sticky navbar stays pinned to the viewport on
+     every page — matches the #app-scroll fix in globals.css. */
+  overflow-x: clip;
 }
 body {
   font-family: var(--font-sans);
@@ -242,6 +276,9 @@ body {
 }
 .bz-hover-dim:hover {
   opacity: 0.75;
+}
+.bz-hover-underline:hover {
+  text-decoration: underline;
 }
 
 @keyframes bz-skel {
@@ -481,6 +518,34 @@ body {
 .bz-navbar__desktop,
 .bz-navbar__mobile {
   width: 100%;
+}
+
+/* Slim checkout header — pinned like the navbar, but logo + secure cue only. */
+.bz-checkout-header {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 100;
+  background: var(--blue-deep);
+}
+.bz-checkout-header__inner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding-top: 12px;
+  padding-bottom: 12px;
+  min-width: 0;
+}
+.bz-checkout-header__secure {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--on-navy-300);
+  font-size: 0.8125rem;
+  font-weight: var(--fw-med);
 }
 
 /* Brand mark sits in a cream tile so the colour logo reads on the navy bar. */
@@ -4989,5 +5054,363 @@ body {
     --chip-group-h: 32px;
     --chip-group-px: 12px;
     --chip-group-fs: 0.8125rem;
+  }
+}
+
+.bz-storefront-page {
+  width: 100%;
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: var(--sp-6) var(--gutter) 0;
+}
+
+.bz-storefront-crumbs {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+  color: var(--ink-400);
+  font-size: 0.8125rem;
+}
+
+.bz-storefront-crumbs > span {
+  color: var(--ink-700);
+}
+
+.bz-storefront-banner {
+  position: relative;
+  min-height: 260px;
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-1);
+}
+
+.bz-storefront-banner img {
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  display: block;
+  object-fit: cover;
+}
+
+.bz-storefront-card {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--sp-5);
+  align-items: center;
+  margin: 0 0 var(--sp-5);
+  padding: var(--sp-5);
+  border: 1px solid var(--line-200);
+  border-radius: var(--r-lg);
+  background: var(--card);
+  box-shadow: var(--sh-2);
+}
+
+.bz-storefront-card.has-banner {
+  margin: calc(var(--sp-8) * -1) var(--sp-5) var(--sp-5);
+}
+
+.bz-storefront-logo {
+  border-radius: var(--r-lg);
+  box-shadow:
+    0 0 0 4px var(--card),
+    var(--sh-1);
+}
+
+.bz-storefront-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.bz-storefront-title-row h1 {
+  margin: 0;
+  color: var(--ink-900);
+  font-size: 1.5rem;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bz-storefront-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+  color: var(--ink-500);
+  font-size: 0.875rem;
+}
+
+.bz-storefront-bio {
+  max-width: 760px;
+  margin: var(--sp-3) 0 0;
+  color: var(--ink-600);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.bz-storefront-actions {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.bz-storefront-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-5);
+  padding: var(--sp-3) 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--line-200);
+  background: var(--card);
+}
+
+.bz-storefront-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.bz-storefront-tabs button,
+.bz-storefront-category-row button {
+  appearance: none;
+  border: 1.5px solid var(--line-200);
+  border-radius: var(--r-full);
+  background: var(--card);
+  color: var(--ink-600);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: 0 0 auto;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: var(--sp-2) var(--sp-4);
+  transition:
+    background var(--dur-standard) var(--ease),
+    border-color var(--dur-standard) var(--ease),
+    color var(--dur-standard) var(--ease);
+}
+
+.bz-storefront-tabs button.is-active,
+.bz-storefront-category-row button.is-active {
+  border-color: var(--blue);
+  background: var(--tint-blue-50);
+  color: var(--blue);
+}
+
+.bz-storefront-tabs span,
+.bz-storefront-category-row span {
+  display: inline-flex;
+  align-items: center;
+}
+
+.bz-storefront-tabs .bz-storefront-count,
+.bz-storefront-category-row .bz-storefront-count {
+  justify-content: center;
+  min-width: 1.35rem;
+  border-radius: var(--r-full);
+  background: var(--line-100);
+  color: var(--ink-400);
+  font-size: 0.75rem;
+  padding: 0 var(--sp-2);
+}
+
+.bz-storefront-tabs button.is-active .bz-storefront-count,
+.bz-storefront-category-row button.is-active .bz-storefront-count {
+  background: var(--blue);
+  color: var(--card);
+}
+
+.bz-storefront-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+
+.bz-storefront-search {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  border: 1.5px solid var(--line-200);
+  border-radius: var(--r-md);
+  background: var(--card);
+  padding: 0 var(--sp-3);
+}
+
+.bz-storefront-search input {
+  width: 100%;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--ink-900);
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  padding: var(--sp-3) 0;
+}
+
+.bz-storefront-category-row {
+  display: flex;
+  flex-wrap: nowrap;
+  min-width: 0;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.bz-storefront-category-row::-webkit-scrollbar {
+  display: none;
+}
+
+.bz-storefront-result-count {
+  margin-bottom: var(--sp-4);
+  color: var(--ink-500);
+  font-size: 0.875rem;
+}
+
+.bz-storefront-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr));
+  gap: var(--grid-gap);
+  margin-bottom: var(--sp-10);
+}
+
+.bz-storefront-reviews {
+  margin-bottom: var(--sp-10);
+}
+
+.bz-storefront-review-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.bz-storefront-review {
+  padding: var(--sp-4);
+  border: 1px solid var(--line-200);
+  border-radius: var(--r-md);
+  background: var(--card);
+}
+
+.bz-storefront-review__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+}
+
+.bz-storefront-review__buyer {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink-900);
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.bz-storefront-review__date {
+  margin-bottom: var(--sp-2);
+  color: var(--ink-400);
+  font-size: 0.75rem;
+}
+
+.bz-storefront-review p {
+  margin: 0;
+  color: var(--ink-700);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.bz-storefront-review__reply {
+  margin-top: var(--sp-3);
+  padding: var(--sp-3);
+  border-left: 3px solid var(--blue);
+  border-radius: var(--r-sm);
+  background: var(--line-100);
+}
+
+.bz-storefront-review__reply > div {
+  margin-bottom: var(--sp-1);
+  color: var(--ink-500);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .bz-storefront-page {
+    padding-inline: var(--gutter);
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+
+  .bz-storefront-banner {
+    min-height: 150px;
+  }
+
+  .bz-storefront-card {
+    grid-template-columns: 1fr;
+    gap: var(--sp-4);
+    margin: 0 0 var(--sp-5);
+    text-align: center;
+  }
+
+  .bz-storefront-card.has-banner {
+    margin: calc(var(--sp-7) * -1) var(--sp-3) var(--sp-5);
+  }
+
+  .bz-storefront-logo {
+    justify-self: center;
+  }
+
+  .bz-storefront-title-row,
+  .bz-storefront-meta {
+    justify-content: center;
+  }
+
+  .bz-storefront-bio {
+    width: 100%;
+    max-width: none;
+    overflow-wrap: anywhere;
+  }
+
+  .bz-storefront-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+    width: 100%;
+  }
+
+  .bz-storefront-actions > * {
+    width: 100%;
+  }
+
+  .bz-storefront-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .bz-storefront-toolbar label {
+    width: 100%;
+  }
+
+  .bz-storefront-search {
+    flex: 0 0 auto;
+    min-height: 44px;
+  }
+
+  .bz-storefront-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

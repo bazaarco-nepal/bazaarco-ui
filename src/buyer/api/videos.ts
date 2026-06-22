@@ -23,6 +23,8 @@ function mapVideoItem(raw: any) {
     ...raw,
     price: raw.price,
     original: raw.original ?? null,
+    allowBargaining: Boolean(raw.allowBargaining),
+    outOfStock: Boolean(raw.outOfStock),
     productId: raw.productId ?? raw.id,
     videoId: raw.videoId ?? null,
     sellerId: raw.sellerId ?? raw.storeId ?? "",
@@ -31,7 +33,10 @@ function mapVideoItem(raw: any) {
     icon: raw.icon ?? "box",
     tint: raw.tint ?? "blue",
     // Core API returns the merchant under `store`; the storefront models it as `seller`.
-    seller: raw.store,
+    seller: {
+      ...(raw.store ?? {}),
+      url: raw.store?.url ?? (raw.store?.id ? `/store/${raw.store.id}` : "/stores"),
+    },
   };
 }
 

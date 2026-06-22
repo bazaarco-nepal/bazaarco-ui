@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { Icon, RatingStars } from "@/components/ui";
@@ -14,6 +14,8 @@ import {
 } from "@/shared/hooks/use-catalog";
 import { useUploadImage } from "@/shared/hooks/use-media-upload";
 import { ApiRequestError } from "@/shared/api/http";
+import { ImageCropModal } from "@/components/common/image-crop-modal";
+import { IMAGE_PRESETS } from "@/shared/lib/imagePresets";
 
 const MAX_REVIEW_PHOTOS = 8;
 
@@ -49,6 +51,10 @@ type Attachment = {
   error?: string;
 };
 
+type ReviewCropDraft = {
+  objectUrl: string;
+};
+
 interface ReviewsSectionProps {
   productId: string;
   rating: number;
@@ -60,16 +66,77 @@ function ReviewComposer({ productId, onDone }: { productId: string; onDone: () =
   const createReview = useCreateProductReview(productId);
   const uploadImage = useUploadImage();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const cropDraftRef = useRef<ReviewCropDraft | null>(null);
+  const cropQueueRef = useRef<ReviewCropDraft[]>([]);
   const [stars, setStars] = useState(0);
   const [hover, setHover] = useState(0);
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [cropDraft, setCropDraft] = useState<ReviewCropDraft | null>(null);
+  const [cropQueue, setCropQueue] = useState<ReviewCropDraft[]>([]);
+  cropDraftRef.current = cropDraft;
+  cropQueueRef.current = cropQueue;
   const shown = hover || stars;
   const anyUploading = attachments.some((a) => a.uploading);
   const canSubmit = stars > 0 && text.trim().length > 0 && !createReview.isPending && !anyUploading;
 
-  const onPickFiles = async (filesList: FileList | null) => {
+  const revokeObjectUrl = (url: string) => {
+    try {
+      URL.revokeObjectURL(url);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (cropDraftRef.current) revokeObjectUrl(cropDraftRef.current.objectUrl);
+      cropQueueRef.current.forEach((draft) => revokeObjectUrl(draft.objectUrl));
+    };
+  }, []);
+
+  const advanceCropQueue = () => {
+    const next = cropQueueRef.current[0];
+    const remaining = cropQueueRef.current.slice(1);
+    setCropQueue(remaining);
+    setCropDraft(next ?? null);
+  };
+
+  const uploadCroppedAttachment = async (file: File) => {
+    const attachment: Attachment = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      file,
+      previewUrl: URL.createObjectURL(file),
+      uploading: true,
+    };
+    setAttachments((prev) => [...prev, attachment]);
+    try {
+      const result = await uploadImage.mutateAsync({ file });
+      setAttachments((prev) =>
+        prev.map((a) => (a.id === attachment.id ? { ...a, uploading: false, url: result.url } : a)),
+      );
+    } catch {
+      setAttachments((prev) =>
+        prev.map((a) =>
+          a.id === attachment.id ? { ...a, uploading: false, error: "Upload failed" } : a,
+        ),
+      );
+    }
+  };
+
+  const completeCrop = (file: File) => {
+    if (cropDraftRef.current) revokeObjectUrl(cropDraftRef.current.objectUrl);
+    void uploadCroppedAttachment(file);
+    advanceCropQueue();
+  };
+
+  const cancelCrop = () => {
+    if (cropDraftRef.current) revokeObjectUrl(cropDraftRef.current.objectUrl);
+    advanceCropQueue();
+  };
+
+  const onPickFiles = (filesList: FileList | null) => {
     if (!filesList) return;
     const files = Array.from(filesList);
     const slots = MAX_REVIEW_PHOTOS - attachments.length;
@@ -77,31 +144,14 @@ function ReviewComposer({ productId, onDone }: { productId: string; onDone: () =
       toast.error(`Max ${MAX_REVIEW_PHOTOS} photos.`);
       return;
     }
-    const accepted = files.slice(0, slots);
-    const newOnes: Attachment[] = accepted.map((file) => ({
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      file,
-      previewUrl: URL.createObjectURL(file),
-      uploading: true,
-    }));
-    setAttachments((prev) => [...prev, ...newOnes]);
-
-    await Promise.all(
-      newOnes.map(async (att) => {
-        try {
-          const result = await uploadImage.mutateAsync({ file: att.file });
-          setAttachments((prev) =>
-            prev.map((a) => (a.id === att.id ? { ...a, uploading: false, url: result.url } : a)),
-          );
-        } catch {
-          setAttachments((prev) =>
-            prev.map((a) =>
-              a.id === att.id ? { ...a, uploading: false, error: "Upload failed" } : a,
-            ),
-          );
-        }
-      }),
-    );
+    const batch = files
+      .filter((file) => file.type.startsWith("image/"))
+      .slice(0, slots)
+      .map((file) => ({ objectUrl: URL.createObjectURL(file) }));
+    const first = batch[0];
+    if (!first) return;
+    setCropDraft(first);
+    setCropQueue(batch.slice(1));
   };
 
   const removeAttachment = (id: string) => {
@@ -295,6 +345,17 @@ function ReviewComposer({ productId, onDone }: { productId: string; onDone: () =
           e.target.value = "";
         }}
       />
+
+      {cropDraft ? (
+        <ImageCropModal
+          image={cropDraft.objectUrl}
+          aspect={IMAGE_PRESETS.reviewPhoto.aspect}
+          cropShape={IMAGE_PRESETS.reviewPhoto.cropShape}
+          maxEdge={IMAGE_PRESETS.reviewPhoto.maxEdge}
+          onCancel={cancelCrop}
+          onComplete={completeCrop}
+        />
+      ) : null}
 
       {error && (
         <div style={{ marginTop: 6, fontSize: ".75rem", color: "var(--red)" }}>{error}</div>

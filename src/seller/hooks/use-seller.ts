@@ -68,6 +68,12 @@ export interface SellerAnalyticsData {
   salesByDay?: SellerChartPoint[];
   topProducts?: SellerTopProduct[];
   moneyBuckets?: { c: string; en: string; v: number }[];
+  followers?: {
+    total: number;
+    new7d: number;
+    new30d: number;
+    trend7d: SellerChartPoint[];
+  };
 }
 
 export interface SellerLedgerData {

@@ -44,6 +44,11 @@ export interface Seller {
   storeAddress?: StoreAddress | null;
   tint?: Tint;
   avatar: string;
+  bannerUrl?: string | null;
+  aboutText?: string | null;
+  verified?: boolean;
+  followerCount?: number;
+  isFollowing?: boolean;
 }
 
 /** Inline seller snapshot embedded in the product detail response. */

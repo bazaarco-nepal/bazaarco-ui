@@ -413,6 +413,7 @@
     "showResult": "{{count}} नतिजा देखाउनुहोस्"
   },
   "checkout": {
+    "secure": "सुरक्षित चेकआउट",
     "myCart": "मेरो कार्ट",
     "yourCart": "तपाईंको कार्ट",
     "continueShopping": "किनमेल जारी राख्नुहोस्",

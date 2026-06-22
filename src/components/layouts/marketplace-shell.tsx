@@ -12,7 +12,7 @@ import {
 } from "@/config/routes";
 import { BuyerPack, BuyerBottomNav } from "@/buyer/ui";
 import { SellerBottomNav } from "@/seller/ui";
-import { Footer, Navbar, useBz } from "@/components/common";
+import { CheckoutHeader, Footer, Navbar, useBz } from "@/components/common";
 import { AuthRoleGuard } from "@/components/layouts/auth-role-guard";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { Icon, Button, AppLink } from "@/components/ui";
@@ -281,7 +281,9 @@ export function MarketplaceShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const screen = screenFromPath(pathname);
 
-  const showNavbar = !NO_NAV_SCREENS.has(screen);
+  const isCheckout = screen === "checkout";
+  // Checkout swaps the full navbar for a slim header to keep buyers in the funnel.
+  const showNavbar = !isCheckout && !NO_NAV_SCREENS.has(screen);
   const showFooter = !NO_FOOTER_SCREENS.has(screen);
   const isVideoScreen = screen === "video";
   const hideNavbarOnMobile = screen === "pdp";
@@ -290,6 +292,7 @@ export function MarketplaceShell({ children }: { children: React.ReactNode }) {
     <BuyerPack>
       <AuthRoleGuard />
       <div id="app-scroll" ref={scrollRef} className={isVideoScreen ? "bz-app--video" : undefined}>
+        {isCheckout && <CheckoutHeader />}
         {showNavbar &&
           (hideNavbarOnMobile ? (
             <div className="bz-hide-mobile">

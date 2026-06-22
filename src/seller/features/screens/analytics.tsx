@@ -17,7 +17,10 @@ export function SellerAnalytics() {
   const salesByDay = analytics?.salesByDay ?? [];
   const topProducts = analytics?.topProducts ?? [];
   const moneyBuckets = analytics?.moneyBuckets ?? [];
+  const followers = analytics?.followers;
+  const followerTrend = followers?.trend7d ?? [];
   const maxBucket = Math.max(...moneyBuckets.map((b: { v: number }) => b.v), 0) || 1;
+  const maxFollowerTrend = Math.max(...followerTrend.map((d) => d.value), 0) || 1;
   const soldToday = moneyBuckets.find((b: { en: string }) => b.en === "Sold today")?.v ?? 0;
   const withCourier = moneyBuckets.find((b: { en: string }) => b.en === "With courier")?.v ?? 0;
   const bestDay = salesByDay.reduce(
@@ -47,6 +50,105 @@ export function SellerAnalytics() {
         </div>
 
         <div className="bz-seller-analytics-layout">
+          <div className="bz-seller-analytics-span-12" style={cardStyle}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                gap: 16,
+                flexWrap: "wrap",
+                marginBottom: 16,
+              }}
+            >
+              <div>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: "1.125rem",
+                    fontWeight: 600,
+                    color: "var(--ink-900)",
+                  }}
+                >
+                  Store followers
+                </h2>
+                <p style={{ margin: "3px 0 0", color: "var(--ink-500)", fontSize: ".875rem" }}>
+                  Buyers who chose to keep your store close.
+                </p>
+              </div>
+              <span
+                className="tnum"
+                style={{
+                  color: "var(--blue)",
+                  fontSize: "1.75rem",
+                  fontWeight: 700,
+                  lineHeight: 1,
+                }}
+              >
+                {(followers?.total ?? 0).toLocaleString("en-IN")}
+              </span>
+            </div>
+            <div className="bz-store-followers-grid">
+              {[
+                { label: "New this week", value: followers?.new7d ?? 0, icon: "trendingUp" },
+                { label: "New this month", value: followers?.new30d ?? 0, icon: "clock" },
+                {
+                  label: "7-day peak",
+                  value: followerTrend.reduce((best, d) => Math.max(best, d.value), 0),
+                  icon: "star",
+                },
+              ].map((item) => (
+                <div key={item.label} className="bz-store-followers-stat">
+                  <span className="bz-icon-tile">
+                    <SellerIcon name={item.icon} size={18} color="var(--blue)" />
+                  </span>
+                  <div>
+                    <div className="bz-store-followers-stat__label">{item.label}</div>
+                    <div className="bz-store-followers-stat__value tnum">
+                      {item.value.toLocaleString("en-IN")}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+                gap: 8,
+                alignItems: "end",
+                minHeight: 96,
+                marginTop: 18,
+                paddingTop: 16,
+                borderTop: "1px solid var(--line-200)",
+              }}
+              aria-label="Follower trend for the last 7 days"
+            >
+              {followerTrend.map((d) => (
+                <div key={d.label} style={{ display: "grid", gap: 6, minWidth: 0 }}>
+                  <div
+                    title={`${d.value} new followers`}
+                    style={{
+                      height: `${Math.max(8, (d.value / maxFollowerTrend) * 64)}px`,
+                      borderRadius: "var(--r-sm)",
+                      background: d.value > 0 ? "var(--blue)" : "var(--line-200)",
+                    }}
+                  />
+                  <div
+                    style={{
+                      color: "var(--ink-400)",
+                      fontSize: ".7rem",
+                      fontWeight: 600,
+                      textAlign: "center",
+                    }}
+                  >
+                    {d.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="bz-seller-analytics-span-4" style={cardStyle}>
             <div style={{ fontSize: ".8125rem", fontWeight: 600, color: "var(--ink-500)" }}>
               Today you sold

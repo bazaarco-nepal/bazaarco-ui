@@ -215,3 +215,56 @@
 [data-skin="fluent"] .bz-store-link__badge {
   border-radius: var(--chip-radius);
 }
+
+[data-skin="fluent"] .bz-store-followers-link {
+  color: var(--blue);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+[data-skin="fluent"] .bz-store-followers-link:hover {
+  text-decoration: underline;
+}
+
+[data-skin="fluent"] .bz-store-followers-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-3);
+}
+
+[data-skin="fluent"] .bz-store-followers-stat {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border: 1px solid var(--line-200);
+  border-radius: var(--r-md);
+  background: var(--line-100);
+}
+
+[data-skin="fluent"] .bz-store-followers-stat__label {
+  color: var(--ink-500);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+[data-skin="fluent"] .bz-store-followers-stat__value {
+  margin-top: var(--sp-1);
+  color: var(--ink-900);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+[data-skin="fluent"] .bz-store-followers-stat__note {
+  margin-top: var(--sp-1);
+  color: var(--ink-400);
+  font-size: 0.75rem;
+}
+
+@media (max-width: 768px) {
+  [data-skin="fluent"] .bz-store-followers-grid {
+    grid-template-columns: 1fr;
+  }
+}

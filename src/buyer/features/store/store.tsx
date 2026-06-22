@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
-import { usePathname } from "next/navigation";
+import React, { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import {
   Icon,
   Button,
   RatingStars,
-  Chip,
   EmptyState,
   ApiState,
   SkeletonCard,
@@ -22,10 +21,14 @@ import {
   useSellerReviews,
   useSellerProducts,
   useCreateSellerReview,
+  useCategories,
+  useSellerFollowMutation,
+  useSellerFollowState,
 } from "@/shared/hooks/use-catalog";
 import { storeIdFromPath, pathFromScreen } from "@/config/routes";
-import { formatStoreAddress } from "@/shared/lib/store-address";
+import type { StoreProductSort } from "@/shared/api/catalog";
 import type { Seller } from "@/types";
+import { SortSelect } from "@/buyer/features/search/faceted-results";
 
 const RATING_LABEL_KEYS = [
   "",
@@ -193,23 +196,84 @@ function RateStoreModal({ seller, onClose }: { seller: Seller; onClose: () => vo
 export function Store() {
   const { t } = useTranslation();
   const pathname = usePathname();
+  const router = useRouter();
+  const urlParams = useSearchParams();
   const storeId = storeIdFromPath(pathname);
   const { openProduct, nav, authed, promptLogin } = useBz();
 
+  const sortOptions = useMemo(
+    () => [
+      { value: "relevance" as const, label: t("search.sortRelevance") },
+      { value: "newest" as const, label: t("search.sortNewest") },
+      { value: "rating" as const, label: t("search.sortTopRated") },
+      { value: "price_low" as const, label: t("search.sortPriceLow") },
+      { value: "price_high" as const, label: t("search.sortPriceHigh") },
+    ],
+    [t],
+  );
+  const sortFromUrl = (
+    ["relevance", "newest", "rating", "price_low", "price_high"].includes(
+      urlParams.get("sort") ?? "",
+    )
+      ? urlParams.get("sort")
+      : "relevance"
+  ) as StoreProductSort;
+  const [tab, setTab] = useState<"products" | "reviews">("products");
+  const [rating, setRating] = useState(false);
+  const [search, setSearch] = useState(urlParams.get("q") ?? "");
+  const [category, setCategory] = useState(urlParams.get("cat") ?? "");
+  const [sort, setSort] = useState<StoreProductSort>(sortFromUrl);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (search.trim()) params.set("q", search.trim());
+    if (category) params.set("cat", category);
+    if (sort !== "relevance") params.set("sort", sort);
+    const qs = params.toString();
+    router.replace(`${pathname}${qs ? `?${qs}` : ""}`, { scroll: false });
+  }, [category, pathname, router, search, sort]);
+
+  const productParams = useMemo(
+    () => ({
+      q: search,
+      categories: category ? [category] : undefined,
+      sort,
+    }),
+    [category, search, sort],
+  );
+
   const sellerQuery = useSeller(storeId);
   const reviewsQuery = useSellerReviews(storeId);
-  const productsQuery = useSellerProducts(storeId);
+  const productsQuery = useSellerProducts(storeId, productParams);
+  const allProductsQuery = useSellerProducts(storeId);
+  const categoriesQuery = useCategories();
+  const followQuery = useSellerFollowState(storeId, authed);
+  const followMutation = useSellerFollowMutation(storeId);
 
   const seller = sellerQuery.data;
   const reviews = reviewsQuery.data ?? [];
-  const products = productsQuery.data ?? [];
+  const productsPage = productsQuery.data;
+  const products = productsPage?.items ?? [];
+  const baseProductCount = allProductsQuery.data?.total ?? productsPage?.total ?? products.length;
+  const followerCountFromApi = followQuery.data?.followerCount ?? seller?.followerCount ?? 0;
+  const isFollowingFromApi = followQuery.data?.isFollowing ?? seller?.isFollowing ?? false;
+  const [followerCount, setFollowerCount] = useState(followerCountFromApi);
+  const [isFollowing, setIsFollowing] = useState(isFollowingFromApi);
 
-  const isLoading = sellerQuery.isLoading || reviewsQuery.isLoading || productsQuery.isLoading;
+  useEffect(() => {
+    setFollowerCount(followerCountFromApi);
+    setIsFollowing(isFollowingFromApi);
+  }, [followerCountFromApi, isFollowingFromApi]);
+
+  const isLoading = sellerQuery.isLoading || reviewsQuery.isLoading || allProductsQuery.isLoading;
   const isError = sellerQuery.isError;
   const error = sellerQuery.error;
 
-  const [tab, setTab] = useState<"products" | "reviews">("products");
-  const [rating, setRating] = useState(false);
+  const categoryLabels = useMemo(() => {
+    return new Map((categoriesQuery.data ?? []).map((c) => [c.id, c.en]));
+  }, [categoriesQuery.data]);
+  const categoryRows =
+    productsPage?.facets?.categories ?? allProductsQuery.data?.facets?.categories ?? [];
 
   const openRate = () => {
     if (!authed) {
@@ -229,6 +293,42 @@ export function Store() {
       sessionStorage.setItem("bz_open_chat_seller", seller.id);
     }
     nav("messages");
+  };
+
+  const toggleFollow = async () => {
+    if (!authed) {
+      promptLogin("Please sign in to follow this store.");
+      return;
+    }
+    const next = !isFollowing;
+    const prevFollowing = isFollowing;
+    const prevCount = followerCount;
+    setIsFollowing(next);
+    setFollowerCount(Math.max(0, prevCount + (next ? 1 : -1)));
+    try {
+      const data = await followMutation.mutateAsync(next);
+      setIsFollowing(data.isFollowing);
+      setFollowerCount(data.followerCount);
+    } catch {
+      setIsFollowing(prevFollowing);
+      setFollowerCount(prevCount);
+      toast.error("Could not update follow status");
+    }
+  };
+
+  const shareStore = async () => {
+    if (!seller) return;
+    const url = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: seller.name, url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      toast.success("Store link copied");
+    } catch {
+      toast.error("Could not share store");
+    }
   };
 
   return (
@@ -253,125 +353,75 @@ export function Store() {
       }
     >
       {seller && (
-        <div
-          className="bz-store-page"
-          style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "20px 28px 0" }}
-        >
-          {/* breadcrumb */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              fontSize: ".8125rem",
-              color: "var(--ink-400)",
-              marginBottom: 18,
-            }}
-          >
+        <div className="bz-storefront-page">
+          <div className="bz-storefront-crumbs">
             <AppLink href={pathFromScreen("home")} className="bz-crumb">
               {t("common.home")}
             </AppLink>
             <Icon name="chevronRight" size={13} color="var(--ink-300)" />
-            <span style={{ color: "var(--ink-700)" }}>{seller.name}</span>
+            <AppLink href={pathFromScreen("stores")} className="bz-crumb">
+              {t("screens.stores")}
+            </AppLink>
+            <Icon name="chevronRight" size={13} color="var(--ink-300)" />
+            <span>{seller.name}</span>
           </div>
 
-          {/* store header */}
-          <div
-            className="bz-store-header"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 20,
-              padding: "20px 24px",
-              borderRadius: "var(--r-lg)",
-              border: "1px solid var(--line-200)",
-              background: "var(--card)",
-              boxShadow: "var(--sh-1)",
-              marginBottom: 22,
-            }}
-          >
-            <StoreAvatar src={seller.avatar} name={seller.name} size={72} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                <h1
-                  style={{
-                    margin: 0,
-                    fontSize: "1.5rem",
-                    fontWeight: 800,
-                    color: "var(--ink-900)",
-                    letterSpacing: "-.01em",
-                  }}
-                >
-                  {seller.name}
-                </h1>
+          {seller.bannerUrl ? (
+            <div className="bz-storefront-banner">
+              <img src={seller.bannerUrl} alt="" />
+            </div>
+          ) : null}
+
+          <section className={`bz-storefront-card${seller.bannerUrl ? " has-banner" : ""}`}>
+            <div className="bz-storefront-logo">
+              <StoreAvatar src={seller.avatar} name={seller.name} size={96} />
+            </div>
+            <div className="bz-storefront-info">
+              <div className="bz-storefront-title-row">
+                <h1>{seller.name}</h1>
+                {seller.verified ? <Icon name="badgeCheck" size={18} color="var(--blue)" /> : null}
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  marginTop: 10,
-                  flexWrap: "wrap",
-                }}
-              >
-                <Chip tone="neutral" icon="mapPin">
-                  {formatStoreAddress(seller.storeAddress, seller.city) || seller.city}
-                </Chip>
-                <span
-                  aria-hidden
-                  style={{
-                    width: 4,
-                    height: 4,
-                    borderRadius: "50%",
-                    background: "var(--line-200)",
-                  }}
-                />
+              <div className="bz-storefront-meta">
                 {seller.rating > 0 ? (
                   <RatingStars value={seller.rating} size={15} showVal count={seller.reviews} />
                 ) : (
-                  <span style={{ fontSize: ".8125rem", color: "var(--ink-400)" }}>
-                    {t("store.noRatings")}
-                  </span>
+                  <span>{t("store.noRatings")}</span>
                 )}
+                <span className="tnum">{baseProductCount.toLocaleString("en-IN")} products</span>
+                <span className="tnum">{followerCount.toLocaleString("en-IN")} followers</span>
               </div>
+              {seller.aboutText ? <p className="bz-storefront-bio">{seller.aboutText}</p> : null}
             </div>
-            <div
-              className="bz-store-actions"
-              style={{ display: "flex", gap: 10, flexShrink: 0, flexWrap: "wrap" }}
-            >
-              <Button variant="primary" size="sm" icon="messageDots" onClick={openChat}>
+            <div className="bz-storefront-actions">
+              <Button
+                variant="primary"
+                size="md"
+                icon={isFollowing ? "check" : "plus"}
+                loading={followMutation.isPending}
+                onClick={() => void toggleFollow()}
+              >
+                {isFollowing ? "Following" : "Follow"}
+              </Button>
+              <Button variant="secondary" size="md" icon="messageDots" onClick={openChat}>
                 {t("store.chatWithSeller")}
               </Button>
-              <Button variant="secondary" size="sm" icon="star" onClick={openRate}>
-                {t("store.rateStore")}
+              <Button
+                variant="secondary"
+                size="md"
+                icon="share"
+                aria-label="Share"
+                onClick={shareStore}
+              >
+                Share
               </Button>
             </div>
-          </div>
+          </section>
 
-          {/* tabs */}
-          <div
-            style={{
-              display: "flex",
-              gap: 8,
-              marginBottom: 22,
-              borderBottom: "1px solid var(--line-200)",
-              paddingBottom: 16,
-            }}
-          >
+          <div className="bz-storefront-tabs">
             {(
               [
-                {
-                  id: "products",
-                  label: t("store.tabProducts"),
-                  icon: "store",
-                  count: products.length,
-                },
-                {
-                  id: "reviews",
-                  label: t("store.tabReviews"),
-                  icon: "star",
-                  count: reviews.length,
-                },
+                { id: "products", label: t("store.tabProducts"), count: baseProductCount },
+                { id: "reviews", label: t("store.tabReviews"), count: reviews.length },
               ] as const
             ).map((t) => {
               const active = tab === t.id;
@@ -381,72 +431,82 @@ export function Store() {
                   type="button"
                   aria-pressed={active}
                   onClick={() => setTab(t.id)}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 7,
-                    padding: "9px 16px",
-                    borderRadius: "var(--r-md)",
-                    border: `1.5px solid ${active ? "var(--blue)" : "var(--line-200)"}`,
-                    background: active ? "var(--tint-blue-50)" : "#fff",
-                    color: active ? "var(--blue)" : "var(--ink-500)",
-                    fontFamily: "var(--font-sans)",
-                    fontWeight: 700,
-                    fontSize: ".875rem",
-                    cursor: "pointer",
-                    transition:
-                      "background var(--dur-standard) var(--ease), border-color var(--dur-standard) var(--ease), color var(--dur-standard) var(--ease)",
-                  }}
+                  className={active ? "is-active" : undefined}
                 >
-                  <Icon name={t.icon} size={16} />
-                  {t.label}
-                  <span
-                    className="tnum"
-                    style={{
-                      fontSize: ".75rem",
-                      fontWeight: 700,
-                      padding: "1px 7px",
-                      borderRadius: "var(--r-full)",
-                      background: active ? "var(--blue)" : "var(--line-100)",
-                      color: active ? "#fff" : "var(--ink-400)",
-                    }}
-                  >
-                    {t.count}
-                  </span>
+                  <span className="bz-storefront-tab-label">{t.label}</span>
+                  <span className="bz-storefront-count tnum">{t.count}</span>
                 </button>
               );
             })}
           </div>
 
-          {/* products */}
           {tab === "products" && (
-            <div style={{ marginBottom: 40 }}>
+            <>
+              <div className="bz-storefront-toolbar">
+                <label className="bz-storefront-search">
+                  <Icon name="search" size={18} color="var(--ink-400)" />
+                  <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search this store"
+                    aria-label="Search this store"
+                  />
+                </label>
+                <SortSelect
+                  label={t("search.sort")}
+                  value={sort}
+                  options={sortOptions}
+                  onChange={setSort}
+                />
+              </div>
+              <div className="bz-storefront-category-row">
+                <button
+                  type="button"
+                  className={!category ? "is-active" : undefined}
+                  onClick={() => setCategory("")}
+                >
+                  <span className="bz-storefront-chip-label">All</span>
+                  <span className="bz-storefront-count tnum">{baseProductCount}</span>
+                </button>
+                {categoryRows.map((row) => (
+                  <button
+                    key={row.value}
+                    type="button"
+                    className={category === row.value ? "is-active" : undefined}
+                    onClick={() => setCategory(category === row.value ? "" : row.value)}
+                  >
+                    <span className="bz-storefront-chip-label">
+                      {categoryLabels.get(row.value) ?? row.value}
+                    </span>
+                    <span className="bz-storefront-count tnum">{row.count}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="bz-storefront-result-count tnum">
+                {productsQuery.isFetching && !productsPage
+                  ? t("search.searching")
+                  : t("search.productsFound", {
+                      count: (productsPage?.total ?? products.length).toLocaleString("en-IN"),
+                    })}
+              </div>
               {products.length === 0 ? (
                 <EmptyState
                   title={t("store.noProductsTitle")}
                   message={t("store.noProductsMessage")}
                 />
               ) : (
-                <div
-                  className="bz-grid-cards"
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-                    gap: 18,
-                  }}
-                >
+                <div className="bz-storefront-grid">
                   {products.map((p) => (
                     <ProductCard key={p.id} p={p} onClick={openProduct} />
                   ))}
                 </div>
               )}
-            </div>
+            </>
           )}
 
-          {/* reviews */}
           {tab === "reviews" && (
             <LocalErrorBoundary label="store-reviews">
-              <div style={{ marginBottom: 40 }}>
+              <div className="bz-storefront-reviews">
                 {reviews.length === 0 ? (
                   <EmptyState
                     title={t("store.noReviewsTitle")}
@@ -455,25 +515,10 @@ export function Store() {
                     onCta={openRate}
                   />
                 ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  <div className="bz-storefront-review-list">
                     {reviews.map((r) => (
-                      <div
-                        key={r.id}
-                        style={{
-                          padding: "16px 18px",
-                          borderRadius: "var(--r-md)",
-                          border: "1px solid var(--line-200)",
-                          background: "#fff",
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 10,
-                            marginBottom: 8,
-                          }}
-                        >
+                      <div key={r.id} className="bz-storefront-review">
+                        <div className="bz-storefront-review__head">
                           <BuyerAvatar
                             src={r.avatar}
                             name={r.buyer}
@@ -481,56 +526,15 @@ export function Store() {
                             fontSize=".875rem"
                             border="1.5px solid var(--line-200)"
                           />
-                          <div style={{ fontWeight: 700, fontSize: ".9375rem" }}>{r.buyer}</div>
-                          <div style={{ marginLeft: "auto" }}>
-                            <RatingStars value={r.stars} size={13} />
-                          </div>
+                          <div className="bz-storefront-review__buyer">{r.buyer}</div>
+                          <RatingStars value={r.stars} size={13} />
                         </div>
-                        <div
-                          style={{ fontSize: ".75rem", color: "var(--ink-400)", marginBottom: 8 }}
-                        >
-                          {formatReviewDate(r.time)}
-                        </div>
-                        <p
-                          style={{
-                            margin: 0,
-                            color: "var(--ink-700)",
-                            fontSize: ".875rem",
-                            lineHeight: 1.6,
-                          }}
-                        >
-                          {r.text}
-                        </p>
+                        <div className="bz-storefront-review__date">{formatReviewDate(r.time)}</div>
+                        <p>{r.text}</p>
                         {r.replied && r.reply && (
-                          <div
-                            style={{
-                              marginTop: 12,
-                              padding: "10px 14px",
-                              borderRadius: "var(--r-sm)",
-                              background: "var(--line-100)",
-                              borderLeft: "3px solid var(--blue)",
-                            }}
-                          >
-                            <div
-                              style={{
-                                fontSize: ".75rem",
-                                fontWeight: 700,
-                                color: "var(--ink-500)",
-                                marginBottom: 3,
-                              }}
-                            >
-                              {t("store.replyFrom", { name: seller.name })}
-                            </div>
-                            <p
-                              style={{
-                                margin: 0,
-                                fontSize: ".8125rem",
-                                color: "var(--ink-700)",
-                                lineHeight: 1.55,
-                              }}
-                            >
-                              {r.reply}
-                            </p>
+                          <div className="bz-storefront-review__reply">
+                            <div>{t("store.replyFrom", { name: seller.name })}</div>
+                            <p>{r.reply}</p>
                           </div>
                         )}
                       </div>

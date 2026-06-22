@@ -56,6 +56,8 @@ import { ConfirmModal } from "@/buyer/features/checkout/checkout";
 import { useChatInbox } from "@/shared/hooks/use-chat";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { displayName } from "@/shared/lib/display";
+import { ImageCropModal } from "@/components/common/image-crop-modal";
+import { IMAGE_PRESETS } from "@/shared/lib/imagePresets";
 import {
   BazaarCtx,
   useBz,
@@ -1501,6 +1503,7 @@ export function ProfileEdit() {
   const fileInputRef = useRef(null);
   const [form, setForm] = useState(() => ({ ...profileFormFromUser(user), phone: buyerPhone }));
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? null);
+  const [avatarCropUrl, setAvatarCropUrl] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   useEffect(() => {
     // Preserve the shared phone across user refreshes.
@@ -1510,6 +1513,11 @@ export function ProfileEdit() {
   useEffect(() => {
     setForm((f) => ({ ...f, phone: buyerPhone }));
   }, [buyerPhone]);
+  useEffect(() => {
+    return () => {
+      if (avatarCropUrl) URL.revokeObjectURL(avatarCropUrl);
+    };
+  }, [avatarCropUrl]);
   const [showPhoneOtp, setShowPhoneOtp] = useState(false);
   const [otpDigits, setOtpDigits] = useState("");
 
@@ -1526,7 +1534,12 @@ export function ProfileEdit() {
     }
   };
   const changePhoto = () => fileInputRef.current?.click();
+  const cancelAvatarCrop = () => {
+    if (avatarCropUrl) URL.revokeObjectURL(avatarCropUrl);
+    setAvatarCropUrl(null);
+  };
   const uploadPhoto = async (file) => {
+    cancelAvatarCrop();
     setUploadProgress(0);
     try {
       const uploaded = await uploadImage.mutateAsync({
@@ -1634,7 +1647,10 @@ export function ProfileEdit() {
               hidden
               onChange={(event) => {
                 const file = event.target.files?.[0];
-                if (file) uploadPhoto(file);
+                if (file) {
+                  if (avatarCropUrl) URL.revokeObjectURL(avatarCropUrl);
+                  setAvatarCropUrl(URL.createObjectURL(file));
+                }
               }}
             />
             <Button
@@ -1660,6 +1676,17 @@ export function ProfileEdit() {
           </div>
         </div>
       </div>
+
+      {avatarCropUrl ? (
+        <ImageCropModal
+          image={avatarCropUrl}
+          aspect={IMAGE_PRESETS.avatar.aspect}
+          cropShape={IMAGE_PRESETS.avatar.cropShape}
+          maxEdge={IMAGE_PRESETS.avatar.maxEdge}
+          onCancel={cancelAvatarCrop}
+          onComplete={(file) => void uploadPhoto(file)}
+        />
+      ) : null}
 
       {/* Identity */}
       <div style={section}>

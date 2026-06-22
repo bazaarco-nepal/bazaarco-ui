@@ -13,6 +13,7 @@ export interface VideoFeedEngagement {
 export interface VideoFeedSeller {
   id: string;
   name: string;
+  url: string;
   rating: number;
   reviewsCount: number;
   avatar: string;
@@ -25,6 +26,8 @@ export interface VideoFeedItem {
   name: string;
   price: number;
   original: number | null;
+  allowBargaining: boolean;
+  outOfStock: boolean;
   cat: string;
   sellerId: string;
   icon: string;

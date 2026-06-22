@@ -1441,6 +1441,30 @@ export function Navbar() {
   );
 }
 
+/* ---------- Checkout header ----------
+   Slim header for the payment funnel: clickable logo back to safety + a "secure"
+   cue, and no search/categories that would tempt the buyer back out of checkout. */
+export function CheckoutHeader() {
+  const { t } = useTranslation();
+  return (
+    <header className="bz-checkout-header">
+      <div className="bz-checkout-header__inner container">
+        <AppLink
+          href={pathFromScreen("home")}
+          ariaLabel={t("nav.homeAria")}
+          className="bz-navbar__brand"
+        >
+          <Logo height={32} />
+        </AppLink>
+        <span className="bz-checkout-header__secure">
+          <Icon name="shieldCheck" size={18} color="var(--on-navy-300)" />
+          {t("checkout.secure")}
+        </span>
+      </div>
+    </header>
+  );
+}
+
 /* ---------- Footer ---------- */
 export function Footer() {
   const { t } = useTranslation();

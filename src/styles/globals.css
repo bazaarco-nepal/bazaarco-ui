@@ -1,5 +1,6 @@
 @import "../buyer/styles/tokens.css";
 @import "../buyer/styles/button.css";
+@import "../buyer/features/video/video.css";
 @import "../seller/styles/fluent.css";
 @import "../seller/styles/form-workflow.css";
 @import "../seller/styles/seller-kit.css";
@@ -50,14 +51,14 @@
 /* Immersive Watch page — fill viewport, no light page bleed */
 #app-scroll.bz-app--video {
   min-height: 100dvh;
-  background: var(--ink-900);
+  background: var(--bz-navy);
 }
 
 .bz-main--video {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: var(--ink-900);
+  background: var(--bz-navy);
   padding: 0;
   min-height: 0;
 }
@@ -68,7 +69,7 @@
   flex-direction: column;
   width: 100%;
   min-height: calc(100dvh - 72px);
-  background: var(--ink-900);
+  background: var(--bz-navy);
 }
 
 .bz-video-theater__header {

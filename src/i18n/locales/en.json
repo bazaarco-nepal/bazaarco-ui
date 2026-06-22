@@ -380,6 +380,7 @@
     "showResult": "Show {{count}} result"
   },
   "checkout": {
+    "secure": "Secure checkout",
     "myCart": "My cart",
     "yourCart": "Your cart",
     "continueShopping": "Continue shopping",
@@ -882,7 +883,7 @@
       "photoModeOptionDesc": "Add one photo per {{attr}}. Sizes share it.",
       "photoModeOptionDescLegacy": "Add one photo per choice — it shows on every matching version.",
       "photoModeOptionLabel": "Yes — different by option",
-      "photoModeOptionLabelAttr": "Yes — different by {{attr}}",
+      "photoModeOptionLabelAttr": "Yes, different {{attr}} have different photos.",
       "photoModeProductDesc": "Every version shows your main product photo.",
       "photoModeProductLabel": "No, the photo is the same",
       "photoModeProductLabelLegacy": "Same photo for all",
@@ -984,7 +985,7 @@
       "versionNoLegacyDesc": "One price and one stock for the whole product.",
       "versionNoLegacyLabel": "No — just one version",
       "versionPhotosHelper": "You can change this anytime.",
-      "versionPhotosQuestion": "Do the versions look different in photos?",
+      "versionPhotosQuestion": "Does different variants/catalog have different photo ? Like Red Tshirt, Bl",
       "versionYesDesc": "Different colours, sizes, and so on.",
       "versionYesLabel": "Yes, a few versions",
       "versionYesLegacyDesc": "Set a price and stock for each version.",

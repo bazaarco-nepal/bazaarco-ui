@@ -21,6 +21,11 @@ export interface StorefrontData {
   city?: string;
   storeAddress?: StoreAddress | null;
   tint?: string;
+  analytics?: {
+    followerCount: number;
+    newFollowers7d: number;
+    newFollowers30d: number;
+  };
 }
 
 export interface UpdateStorefrontPayload {

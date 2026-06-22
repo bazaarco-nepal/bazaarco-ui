@@ -14,6 +14,7 @@ import {
   type CreateProductReviewPayload,
   type CreateSellerReviewPayload,
   type ProductListParams,
+  type SellerProductParams,
 } from "@/shared/api/catalog";
 import { throwOnCriticalError } from "@/shared/api/http";
 import { queryKeys } from "@/shared/api/query-keys";
@@ -89,12 +90,37 @@ export function useSellerReviews(id: string | null) {
   });
 }
 
-export function useSellerProducts(id: string | null) {
+export function useSellerProducts(id: string | null, params?: SellerProductParams) {
   return useQuery({
-    queryKey: queryKeys.catalog.sellerProducts(id ?? ""),
-    queryFn: () => catalogApi.getSellerProducts(id!),
+    queryKey: queryKeys.catalog.sellerProducts(id ?? "", params),
+    queryFn: () => catalogApi.getSellerProductsPage(id!, params),
     enabled: Boolean(id),
     staleTime: STALE_TIME,
+  });
+}
+
+export function useSellerFollowState(id: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: queryKeys.catalog.sellerFollow(id ?? ""),
+    queryFn: () => catalogApi.getSellerFollowState(id!),
+    enabled: Boolean(id) && enabled,
+    staleTime: STALE_TIME,
+  });
+}
+
+export function useSellerFollowMutation(id: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (follow: boolean) =>
+      follow ? catalogApi.followSeller(id!) : catalogApi.unfollowSeller(id!),
+    onSuccess: async (data) => {
+      if (!id) return;
+      queryClient.setQueryData(queryKeys.catalog.sellerFollow(id), data);
+      queryClient.setQueryData<Seller | undefined>(queryKeys.catalog.seller(id), (seller) =>
+        seller ? { ...seller, ...data } : seller,
+      );
+      await queryClient.invalidateQueries({ queryKey: queryKeys.catalog.seller(id) });
+    },
   });
 }
 

@@ -2,8 +2,10 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui";
+import { ImageCropModal } from "@/components/common/image-crop-modal";
+import { IMAGE_PRESETS } from "@/shared/lib/imagePresets";
 
 export type ProductPhoto = {
   id: string;
@@ -17,8 +19,6 @@ export type ProductPhoto = {
 };
 
 const MAX_PHOTOS = 5;
-const CROP_VIEW = 300;
-const OUTPUT_SIZE = 1200;
 const ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif";
 
 type CropDraft = {
@@ -29,324 +29,6 @@ type CropDraft = {
 
 function normalizeFileName(name: string) {
   return name.trim().toLowerCase();
-}
-
-function clampOffset(
-  offset: { x: number; y: number },
-  dw: number,
-  dh: number,
-): { x: number; y: number } {
-  const minX = CROP_VIEW - dw;
-  const minY = CROP_VIEW - dh;
-  return {
-    x: Math.min(0, Math.max(minX, offset.x)),
-    y: Math.min(0, Math.max(minY, offset.y)),
-  };
-}
-
-async function renderCroppedImage(
-  img: HTMLImageElement,
-  zoom: number,
-  offset: { x: number; y: number },
-  brightness: number,
-): Promise<Blob> {
-  const nw = img.naturalWidth;
-  const nh = img.naturalHeight;
-  const baseScale = Math.max(CROP_VIEW / nw, CROP_VIEW / nh);
-  const scale = baseScale * zoom;
-  const dw = nw * scale;
-  const dh = nh * scale;
-  const ix = (CROP_VIEW - dw) / 2 + offset.x;
-  const iy = (CROP_VIEW - dh) / 2 + offset.y;
-  const sx = (0 - ix) / scale;
-  const sy = (0 - iy) / scale;
-  const sw = CROP_VIEW / scale;
-  const sh = CROP_VIEW / scale;
-
-  const canvas = document.createElement("canvas");
-  canvas.width = OUTPUT_SIZE;
-  canvas.height = OUTPUT_SIZE;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Canvas not supported");
-  ctx.filter = `brightness(${brightness}%)`;
-  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
-
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error("Could not process image"))),
-      "image/jpeg",
-      0.9,
-    );
-  });
-}
-
-function ImageCropModal({
-  objectUrl,
-  onConfirm,
-  onCancel,
-  stepCurrent,
-  stepTotal,
-}: {
-  objectUrl: string;
-  onConfirm: (file: File, previewUrl: string) => void;
-  onCancel: () => void;
-  // When a seller picks several photos at once we crop them one after another;
-  // these drive the "Photo 2 of 4" progress hint. Absent for a single photo.
-  stepCurrent?: number;
-  stepTotal?: number;
-}) {
-  const imgRef = useRef<HTMLImageElement>(null);
-  const dragRef = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [zoom, setZoom] = useState(1);
-  const [brightness, setBrightness] = useState(100);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [busy, setBusy] = useState(false);
-
-  const layout = useCallback(() => {
-    const img = imgRef.current;
-    if (!img?.naturalWidth) return null;
-    const nw = img.naturalWidth;
-    const nh = img.naturalHeight;
-    const baseScale = Math.max(CROP_VIEW / nw, CROP_VIEW / nh);
-    const scale = baseScale * zoom;
-    const dw = nw * scale;
-    const dh = nh * scale;
-    return { dw, dh, scale };
-  }, [zoom]);
-
-  const resetPosition = useCallback(() => {
-    const L = layout();
-    if (!L) return;
-    setOffset(clampOffset({ x: 0, y: 0 }, L.dw, L.dh));
-  }, [layout]);
-
-  useEffect(() => {
-    if (loaded) resetPosition();
-  }, [loaded, zoom, resetPosition]);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onCancel();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onCancel]);
-
-  const onPointerDown = (e: React.PointerEvent) => {
-    e.currentTarget.setPointerCapture(e.pointerId);
-    dragRef.current = { x: e.clientX, y: e.clientY, ox: offset.x, oy: offset.y };
-  };
-
-  const onPointerMove = (e: React.PointerEvent) => {
-    if (!dragRef.current) return;
-    const L = layout();
-    if (!L) return;
-    const dx = e.clientX - dragRef.current.x;
-    const dy = e.clientY - dragRef.current.y;
-    setOffset(clampOffset({ x: dragRef.current.ox + dx, y: dragRef.current.oy + dy }, L.dw, L.dh));
-  };
-
-  const onPointerUp = () => {
-    dragRef.current = null;
-  };
-
-  const handleUse = async () => {
-    const img = imgRef.current;
-    if (!img?.naturalWidth) return;
-    setBusy(true);
-    try {
-      const blob = await renderCroppedImage(img, zoom, offset, brightness);
-      const file = new File([blob], `product-${Date.now()}.jpg`, { type: "image/jpeg" });
-      const previewUrl = URL.createObjectURL(file);
-      onConfirm(file, previewUrl);
-    } catch {
-      /* keep modal open */
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const L = layout();
-  const ix = L ? (CROP_VIEW - L.dw) / 2 + offset.x : 0;
-  const iy = L ? (CROP_VIEW - L.dh) / 2 + offset.y : 0;
-  const isBatch = !!stepTotal && stepTotal > 1;
-  const moreToCome = isBatch && (stepCurrent ?? 0) < (stepTotal ?? 0);
-
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Crop and adjust photo"
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 10000,
-        background: "rgba(11,18,32,.72)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 16,
-      }}
-      onClick={onCancel}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: "100%",
-          maxWidth: 420,
-          background: "#fff",
-          borderRadius: "var(--r-lg)",
-          padding: 20,
-          boxShadow: "var(--sh-3)",
-        }}
-      >
-        <h3
-          style={{
-            margin: "0 0 4px",
-            fontSize: "1.125rem",
-            fontWeight: 800,
-            color: "var(--blue-deep)",
-          }}
-        >
-          Crop & adjust
-        </h3>
-        <p style={{ margin: "0 0 16px", fontSize: ".8125rem", color: "var(--ink-500)" }}>
-          {isBatch
-            ? `Photo ${stepCurrent} of ${stepTotal} · drag to position`
-            : "Drag to position · zoom and brightness below"}
-        </p>
-
-        <div
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
-          style={{
-            position: "relative",
-            width: CROP_VIEW,
-            height: CROP_VIEW,
-            margin: "0 auto",
-            borderRadius: "var(--r-md)",
-            overflow: "hidden",
-            background: "#111",
-            cursor: loaded ? "grab" : "default",
-            touchAction: "none",
-          }}
-        >
-          <img
-            ref={imgRef}
-            src={objectUrl}
-            alt=""
-            onLoad={() => setLoaded(true)}
-            draggable={false}
-            style={{
-              position: "absolute",
-              left: ix,
-              top: iy,
-              width: L?.dw ?? "100%",
-              height: L?.dh ?? "auto",
-              maxWidth: "none",
-              pointerEvents: "none",
-              userSelect: "none",
-              filter: `brightness(${brightness}%)`,
-            }}
-          />
-          <div
-            aria-hidden
-            style={{
-              position: "absolute",
-              inset: 0,
-              boxShadow: "inset 0 0 0 2px rgba(255,255,255,.85)",
-              pointerEvents: "none",
-            }}
-          />
-        </div>
-
-        <label
-          style={{
-            display: "block",
-            marginTop: 16,
-            fontSize: ".75rem",
-            fontWeight: 700,
-            color: "var(--ink-600)",
-          }}
-        >
-          Zoom
-        </label>
-        <input
-          type="range"
-          min={1}
-          max={3}
-          step={0.02}
-          value={zoom}
-          onChange={(e) => setZoom(parseFloat(e.target.value))}
-          style={{ width: "100%", accentColor: "var(--blue)" }}
-        />
-
-        <label
-          style={{
-            display: "block",
-            marginTop: 12,
-            fontSize: ".75rem",
-            fontWeight: 700,
-            color: "var(--ink-600)",
-          }}
-        >
-          Brightness
-        </label>
-        <input
-          type="range"
-          min={70}
-          max={130}
-          step={1}
-          value={brightness}
-          onChange={(e) => setBrightness(parseInt(e.target.value, 10))}
-          style={{ width: "100%", accentColor: "var(--saffron)" }}
-        />
-
-        <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={busy}
-            className="bz-hover-dim"
-            style={{
-              flex: 1,
-              padding: "12px 16px",
-              borderRadius: "var(--r-md)",
-              border: "1.5px solid var(--red)",
-              background: "#fff",
-              color: "var(--red)",
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
-          >
-            {isBatch ? "Skip" : "Cancel"}
-          </button>
-          <button
-            type="button"
-            onClick={() => void handleUse()}
-            disabled={!loaded || busy}
-            className="bz-hover-dim"
-            style={{
-              flex: 1,
-              padding: "12px 16px",
-              borderRadius: "var(--r-md)",
-              border: "none",
-              background: "var(--blue)",
-              color: "#fff",
-              fontWeight: 800,
-              cursor: loaded && !busy ? "pointer" : "not-allowed",
-              opacity: loaded && !busy ? 1 : 0.6,
-            }}
-          >
-            {busy ? "Saving…" : moreToCome ? "Use & next" : "Use photo"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export function ProductPhotoPicker({
@@ -497,9 +179,10 @@ export function ProductPhotoPicker({
     if (photo?.file) revoke(photo.previewUrl);
   };
 
-  const onCropConfirm = (file: File, previewUrl: string) => {
+  const onCropComplete = (file: File) => {
     if (!cropDraft) return;
     revoke(cropDraft.objectUrl);
+    const previewUrl = URL.createObjectURL(file);
     const id = crypto.randomUUID?.() ?? String(Date.now());
     const next: ProductPhoto = { id, previewUrl, file, sourceName: cropDraft.sourceName };
     // Use the live ref, not the closed-over prop: across a batch each confirm
@@ -694,11 +377,17 @@ export function ProductPhotoPicker({
 
       {cropDraft && (
         <ImageCropModal
-          objectUrl={cropDraft.objectUrl}
-          onConfirm={onCropConfirm}
+          image={cropDraft.objectUrl}
+          aspect={IMAGE_PRESETS.product.aspect}
+          cropShape={IMAGE_PRESETS.product.cropShape}
+          maxEdge={IMAGE_PRESETS.product.maxEdge}
+          subtitle={
+            batchTotal > 1
+              ? `Photo ${batchTotal - cropQueue.length} of ${batchTotal} · drag to position`
+              : undefined
+          }
+          onComplete={onCropComplete}
           onCancel={closeCrop}
-          stepCurrent={batchTotal - cropQueue.length}
-          stepTotal={batchTotal}
         />
       )}
     </>

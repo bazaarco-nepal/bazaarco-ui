@@ -1,5 +1,6 @@
 "use client";
 
+import type { KeyboardEvent } from "react";
 import { Icon, StoreAvatar, Button } from "@/components/ui";
 import { useBz } from "@/components/common";
 import type { ProductSeller, SellerTrust } from "@/types";
@@ -38,6 +39,14 @@ export function SellerCard({
   const avatar = (trust?.avatar || seller?.avatar || "").trim();
   const rating = trust?.rating ?? seller?.rating ?? 0;
 
+  const goToStore = () => openStore(sellerId);
+  const onStoreKey = (e: KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      goToStore();
+    }
+  };
+
   const openChat = () => {
     if (!authed) {
       promptLogin("Please sign in to chat with this seller.");
@@ -73,7 +82,16 @@ export function SellerCard({
           borderTop: "1px solid var(--line-200)",
         }}
       >
-        <StoreAvatar src={avatar || null} name={name} size={36} />
+        <span
+          role="link"
+          tabIndex={0}
+          aria-label={`Visit ${name} store`}
+          onClick={goToStore}
+          onKeyDown={onStoreKey}
+          style={{ cursor: "pointer", display: "inline-flex", flex: "0 0 auto" }}
+        >
+          <StoreAvatar src={avatar || null} name={name} size={36} />
+        </span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
@@ -85,7 +103,19 @@ export function SellerCard({
               color: "var(--ink-900)",
             }}
           >
-            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <span
+              role="link"
+              tabIndex={0}
+              className="bz-hover-underline"
+              onClick={goToStore}
+              onKeyDown={onStoreKey}
+              style={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                cursor: "pointer",
+              }}
+            >
               {name}
             </span>
             {trust?.verified && <Icon name="badgeCheck" size={13} color="var(--blue)" />}
@@ -105,11 +135,11 @@ export function SellerCard({
         <Button
           variant="secondary"
           size="sm"
-          aria-label={`Chat with ${name}`}
+          aria-label={`Message ${name}`}
           onClick={openChat}
           style={{ flex: "0 0 auto" }}
         >
-          Chat
+          Message
         </Button>
       </div>
     );
@@ -145,7 +175,16 @@ export function SellerCard({
         {/* The store's uploaded logo when set; otherwise the shared brand-mark
             monogram (store initial on a deterministic tint) — never a generic
             icon, so every seller reads as a real shop. */}
-        <StoreAvatar src={avatar || null} name={name} size={44} />
+        <span
+          role="link"
+          tabIndex={0}
+          aria-label={`Visit ${name} store`}
+          onClick={goToStore}
+          onKeyDown={onStoreKey}
+          style={{ cursor: "pointer", display: "inline-flex", flexShrink: 0 }}
+        >
+          <StoreAvatar src={avatar || null} name={name} size={44} />
+        </span>
         <div style={{ minWidth: 0 }}>
           <div
             style={{
@@ -157,7 +196,19 @@ export function SellerCard({
               fontSize: ".9375rem",
             }}
           >
-            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <span
+              role="link"
+              tabIndex={0}
+              className="bz-hover-underline"
+              onClick={goToStore}
+              onKeyDown={onStoreKey}
+              style={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                cursor: "pointer",
+              }}
+            >
               {name}
             </span>
             {trust?.verified && <Icon name="badgeCheck" size={15} color="var(--blue)" />}
@@ -204,19 +255,16 @@ export function SellerCard({
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 14 }}>
-        <Button variant="secondary" size="md" full icon="store" onClick={() => openStore(sellerId)}>
-          Visit store
-        </Button>
+      <div style={{ marginTop: 14 }}>
         <Button
           variant="secondary"
           size="md"
           full
           icon="messageDots"
-          aria-label={`Chat with ${name}`}
+          aria-label={`Message ${name}`}
           onClick={openChat}
         >
-          Chat
+          Message the seller
         </Button>
       </div>
     </div>
@@ -253,7 +301,7 @@ function storeAge(joinedAt: string): string {
     0,
     Math.round((Date.now() - joined.getTime()) / (1000 * 60 * 60 * 24 * 30)),
   );
-  if (months < 1) return "joined this month";
+  if (months < 1) return "";
   if (months < 12) return `${months} ${months === 1 ? "month" : "months"} on BazaarCo`;
   const years = Math.floor(months / 12);
   return `${years}+ ${years === 1 ? "year" : "years"} on BazaarCo`;

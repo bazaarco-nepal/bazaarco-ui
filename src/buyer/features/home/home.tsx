@@ -57,110 +57,7 @@ import type { PopularStore } from "@/buyer/api/home";
 
 const WATCH_RAIL_LIMIT = 8;
 
-// DEBT: BazaarCo Watch falls back to these placeholder reels until a dedicated
-// homepage video endpoint lands — owner-approved temporary static data.
-// Shown only when the live video feed returns zero playable reels, so the rail
-// is never empty. Shaped exactly like a feed item (see VideoFeedItem / the API's
-// mapFeedItem) — no media URLs, so each card renders its dark placeholder tint.
-const WATCH_FALLBACK_REELS: VideoFeedItem[] = [
-  {
-    id: "watch-sneakers",
-    productId: "watch-sneakers",
-    videoId: null,
-    name: "Sneakers with close-up stitching",
-    price: 2450,
-    original: null,
-    cat: "",
-    sellerId: "",
-    icon: "box",
-    tint: "blue",
-    rating: 0,
-    reviews: 0,
-    hasVideo: false,
-    videoThumb: null,
-    videoUrl: null,
-    videoPublicId: null,
-    img: null,
-    seller: { id: "", name: "Sajilo Deals", rating: 0, reviewsCount: 0, avatar: "" },
-    engagement: { views: 12400, comments: 0, shares: 0, saves: 0 },
-    caption: "Walkaround video",
-  },
-  {
-    id: "watch-bags",
-    productId: "watch-bags",
-    videoId: null,
-    name: "Daily carry bag demo",
-    price: 1890,
-    original: null,
-    cat: "",
-    sellerId: "",
-    icon: "box",
-    tint: "saffron",
-    rating: 0,
-    reviews: 0,
-    hasVideo: false,
-    videoThumb: null,
-    videoUrl: null,
-    videoPublicId: null,
-    img: null,
-    seller: { id: "", name: "Thamel Bags", rating: 0, reviewsCount: 0, avatar: "" },
-    engagement: { views: 8900, comments: 0, shares: 0, saves: 0 },
-    caption: "Inside pocket check",
-  },
-  {
-    id: "watch-audio",
-    productId: "watch-audio",
-    videoId: null,
-    name: "Bluetooth speaker preview",
-    price: 3200,
-    original: null,
-    cat: "",
-    sellerId: "",
-    icon: "box",
-    tint: "green",
-    rating: 0,
-    reviews: 0,
-    hasVideo: false,
-    videoThumb: null,
-    videoUrl: null,
-    videoPublicId: null,
-    img: null,
-    seller: { id: "", name: "SoundHub Nepal", rating: 0, reviewsCount: 0, avatar: "" },
-    engagement: { views: 15800, comments: 0, shares: 0, saves: 0 },
-    caption: "Sound test clip",
-  },
-  {
-    id: "watch-fashion",
-    productId: "watch-fashion",
-    videoId: null,
-    name: "Kurti fabric movement",
-    price: 1350,
-    original: null,
-    cat: "",
-    sellerId: "",
-    icon: "box",
-    tint: "red",
-    rating: 0,
-    reviews: 0,
-    hasVideo: false,
-    videoThumb: null,
-    videoUrl: null,
-    videoPublicId: null,
-    img: null,
-    seller: { id: "", name: "Maya Fashion", rating: 0, reviewsCount: 0, avatar: "" },
-    engagement: { views: 6700, comments: 0, shares: 0, saves: 0 },
-    caption: "Fit and fabric",
-  },
-];
-
-function WatchSection() {
-  const { data } = useVideoFeed();
-  const liveReels = (data?.items ?? []).filter(
-    (v) => typeof v.videoUrl === "string" && v.videoUrl.trim().length > 0,
-  );
-  // Fall back to the hardcoded reels only when the feed has no playable video.
-  const reels = liveReels.length > 0 ? liveReels.slice(0, WATCH_RAIL_LIMIT) : WATCH_FALLBACK_REELS;
-
+function WatchSection({ reels }: { reels: VideoFeedItem[] }) {
   return (
     <section className="bz-watch-rail">
       <div className="bz-watch-rail__head">
@@ -356,6 +253,15 @@ export function Home() {
   const newArrivalTotal = homeData?.newArrivals?.total ?? newArrivalItems.length;
   const popularStores = homeData?.popularStores ?? [];
 
+  const { data: videoFeed } = useVideoFeed();
+  const watchReels = React.useMemo(
+    () =>
+      (videoFeed?.items ?? [])
+        .filter((v) => typeof v.videoUrl === "string" && v.videoUrl.trim().length > 0)
+        .slice(0, WATCH_RAIL_LIMIT),
+    [videoFeed],
+  );
+
   // "Recommended for you" is an auto-fill grid whose column count shifts with
   // width/zoom (7-up at 100%, 6-up at 125%, …), so a fixed page size can't keep
   // the last row full. Render only whole rows while more can load — the trailing
@@ -465,11 +371,13 @@ export function Home() {
         </LocalErrorBoundary>
 
         {/* Featured zones — the only two sections on a full-bleed tinted band. */}
-        <Band variant="watch">
-          <LocalErrorBoundary label="home-watch">
-            <WatchSection />
-          </LocalErrorBoundary>
-        </Band>
+        {watchReels.length > 0 && (
+          <Band variant="watch">
+            <LocalErrorBoundary label="home-watch">
+              <WatchSection reels={watchReels} />
+            </LocalErrorBoundary>
+          </Band>
+        )}
 
         <Band variant="bargain">
           <LocalErrorBoundary label="home-bargain">

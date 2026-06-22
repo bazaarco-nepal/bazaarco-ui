@@ -7,8 +7,10 @@ export const queryKeys = {
     categories: ["catalog", "categories"] as const,
     sellers: ["catalog", "sellers"] as const,
     seller: (id: string) => ["catalog", "seller", id] as const,
+    sellerFollow: (id: string) => ["catalog", "seller", id, "follow"] as const,
     sellerReviews: (id: string) => ["catalog", "seller", id, "reviews"] as const,
-    sellerProducts: (id: string) => ["catalog", "seller", id, "products"] as const,
+    sellerProducts: (id: string, params?: object) =>
+      ["catalog", "seller", id, "products", params ?? {}] as const,
     sellerTrust: (id: string) => ["catalog", "seller", id, "trust"] as const,
     products: (params?: object) => ["catalog", "products", params ?? {}] as const,
     topPicks: (days: number) => ["catalog", "top-picks", days] as const,

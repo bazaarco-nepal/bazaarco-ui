@@ -35,7 +35,6 @@ export interface SellerTopProduct {
   name: string;
   rev: string | number;
   units: number;
-  tint: string;
   spark?: number[];
 }
 

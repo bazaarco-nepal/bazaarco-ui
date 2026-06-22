@@ -18,10 +18,6 @@ export interface CategoryAttributeField {
 export interface Category {
   id: string;
   en: string;
-  // Icon is resolved from a code map by id (see CATEGORY_ICON in
-  // components/common/marketplace.tsx), not served by the API.
-  tint: Tint;
-  img: string;
   fields: CategoryAttributeField[];
 }
 
@@ -81,7 +77,6 @@ export interface Product {
   /** Inline seller info from the product detail endpoint. */
   sellerInfo?: ProductSeller;
   icon: string;
-  tint: Tint;
   rating: number;
   reviews: number;
   hasVideo?: boolean;

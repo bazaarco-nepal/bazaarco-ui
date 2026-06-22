@@ -31,8 +31,10 @@ import {
 import { browsePath, pathFromScreen, videoPath } from "@/config/routes";
 import { ASSETS } from "@/config/assets";
 import { useHome } from "@/buyer/hooks/use-home";
-import { useHomeExploreFeed } from "@/buyer/hooks/use-home-explore";
+import { useHomeExploreFeed, EXPLORE_AUTOLOAD_MAX_PAGES } from "@/buyer/hooks/use-home-explore";
 import { useGridColumns } from "@/shared/hooks/use-visible-by-rows";
+import { useInfiniteScroll } from "@/shared/hooks/use-infinite-scroll";
+import { useIsNarrow } from "@/shared/hooks/use-is-narrow";
 import { useVideoFeed } from "@/buyer/hooks/use-video-feed";
 import { useBargainableProducts } from "@/shared/hooks/use-catalog";
 import { useBazaarStore } from "@/store/bazaar-store";
@@ -290,6 +292,16 @@ export function Home() {
   const exploreVisibleCount =
     exploreFeed.hasNextPage && exploreWholeRows > 0 ? exploreWholeRows : exploreFeed.items.length;
 
+  // Mobile-only hybrid: auto infinite-scroll for the first few pages, then fall
+  // back to the manual "Load More" button. Desktop is never narrow, so it keeps
+  // the button from the first page exactly as before.
+  const isMobile = useIsNarrow(768);
+  const exploreAutoLoad =
+    isMobile && exploreFeed.hasNextPage && exploreFeed.page < EXPLORE_AUTOLOAD_MAX_PAGES;
+  const exploreSentinelRef = useInfiniteScroll(() => void exploreFeed.loadMore(), {
+    enabled: exploreAutoLoad,
+  });
+
   const W = ({
     children,
     style,
@@ -433,30 +445,46 @@ export function Home() {
                       .slice(0, exploreVisibleCount)
                       .map((p) => <ProductCard key={p.id} p={p} onClick={openProduct} />)}
               </div>
-              {!homeLoading && exploreFeed.total > 0 && (
-                <LoadMore
-                  paged={{
-                    visible: exploreFeed.items,
-                    shown: exploreFeed.items.length,
-                    total: exploreFeed.total,
-                    pageSize: exploreFeed.pageSize,
-                    hasMore: exploreFeed.hasNextPage,
-                    nextBatch: Math.min(
-                      exploreFeed.pageSize,
-                      Math.max(0, exploreFeed.total - exploreFeed.items.length),
-                    ),
-                    page: exploreFeed.page,
-                    pageCount: Math.max(1, exploreFeed.totalPages),
-                    more: () => {
-                      void exploreFeed.loadMore();
-                    },
-                    goPage: () => {},
-                    reset: () => {},
+              {exploreAutoLoad ? (
+                <div
+                  ref={exploreSentinelRef}
+                  aria-hidden="true"
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    minHeight: 48,
+                    paddingBottom: 12,
                   }}
-                  noun="products"
-                  size="sm"
-                  style={{ paddingBottom: 12 }}
-                />
+                >
+                  {exploreFeed.isFetchingNextPage && <Spinner />}
+                </div>
+              ) : (
+                !homeLoading &&
+                exploreFeed.total > 0 && (
+                  <LoadMore
+                    paged={{
+                      visible: exploreFeed.items,
+                      shown: exploreFeed.items.length,
+                      total: exploreFeed.total,
+                      pageSize: exploreFeed.pageSize,
+                      hasMore: exploreFeed.hasNextPage,
+                      nextBatch: Math.min(
+                        exploreFeed.pageSize,
+                        Math.max(0, exploreFeed.total - exploreFeed.items.length),
+                      ),
+                      page: exploreFeed.page,
+                      pageCount: Math.max(1, exploreFeed.totalPages),
+                      more: () => {
+                        void exploreFeed.loadMore();
+                      },
+                      goPage: () => {},
+                      reset: () => {},
+                    }}
+                    noun="products"
+                    size="sm"
+                    style={{ paddingBottom: 12 }}
+                  />
+                )
               )}
             </>
           )}

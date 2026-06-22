@@ -264,7 +264,6 @@ export function ProductCard({
         ) : (
           <Placeholder
             icon={p.icon}
-            tint={p.tint}
             radius="0"
             ratio={compact ? undefined : "1 / 1"}
             style={compact ? { width: "100%", height: "100%" } : undefined}
@@ -501,20 +500,6 @@ export function ProductRail({
   );
 }
 
-/* ---------- Category tile ---------- */
-// Per-category pastel tint → soft circle bg + saturated line-icon color.
-// Harmonized with the BazaarCo brand palette (red primary, warm Nepali tones).
-const CAT_TINTS = {
-  red: { bg: "#fff1f2", fg: "#e63946" },
-  blue: { bg: "#eff6ff", fg: "#1d4ed8" },
-  saffron: { bg: "#fff4e5", fg: "#f77f00" },
-  purple: { bg: "#f4f0ff", fg: "#7c3aed" },
-  slate: { bg: "#f1f5f9", fg: "#475569" },
-  green: { bg: "#ecfdf5", fg: "#059669" },
-  gold: { bg: "#fdf5e1", fg: "#c08a00" },
-  teal: { bg: "#e9fbf7", fg: "#0d9488" },
-};
-
 // Canonical category icons, keyed by category id. Overrides whatever icon the
 // backend serves so the storefront stays correct without a re-seed. Keep in
 // sync with the backend taxonomy in
@@ -623,7 +608,6 @@ export function CategoryTile({
 }) {
   const [hov, setHov] = useState(false);
   const locale = useBazaarStore((s) => s.locale);
-  const tint = CAT_TINTS[c.tint] ?? CAT_TINTS.red;
   const label = displayCategoryLabel(c, locale);
   const shortLabel = shortOnMobile ? CATEGORY_SHORT_NAME[c.id] : undefined;
   const iconName = CATEGORY_ICON[c.id] ?? "tag";
@@ -650,7 +634,7 @@ export function CategoryTile({
           {image ? (
             <img src={image.imageSrc} alt="" aria-hidden="true" draggable={false} loading="lazy" />
           ) : (
-            <Icon name={iconName} size={30} color={tint.fg} stroke={1.8} />
+            <Icon name={iconName} size={30} color="#475569" stroke={1.8} />
           )}
         </div>
         <span className="bz-cat__card-label">
@@ -693,7 +677,7 @@ export function CategoryTile({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: tint.bg,
+          background: "#f1f5f9",
           boxShadow: hov ? "var(--sh-2)" : "var(--sh-1)",
           transform: hov ? "translateY(-2px)" : "translateY(0)",
           transition: "all var(--dur-standard) var(--ease)",
@@ -715,7 +699,7 @@ export function CategoryTile({
             }}
           />
         ) : (
-          <Icon name={iconName} size={27} color={tint.fg} stroke={1.8} />
+          <Icon name={iconName} size={27} color="#475569" stroke={1.8} />
         )}
       </div>
       <div style={{ textAlign: "center", lineHeight: 1.2 }}>

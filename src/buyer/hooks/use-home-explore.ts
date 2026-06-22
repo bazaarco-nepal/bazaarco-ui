@@ -9,6 +9,11 @@ import type { Product } from "@/types";
 // for narrower column counts, so the page size just sets how much each fetch adds.
 const EXPLORE_PAGE_SIZE = 21;
 
+// Mobile feed auto-loads its first 3 pages (~63 products) on scroll, then hands
+// off to the manual "Load More" button — frictionless discovery up front without
+// the lag/footer-blocking of unbounded infinite scroll deeper in.
+export const EXPLORE_AUTOLOAD_MAX_PAGES = 3;
+
 export function useHomeExploreFeed(initial?: PaginatedData<Product>) {
   const [items, setItems] = useState<Product[]>(initial?.items ?? []);
   const [page, setPage] = useState(initial?.page ?? 1);

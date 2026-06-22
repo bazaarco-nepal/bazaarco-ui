@@ -202,7 +202,6 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
           <div style={{ marginBottom: 24 }}>
             <Placeholder
               icon={item.icon}
-              tint={item.tint}
               style={{ width: 120, height: 120 }}
               radius="var(--r-md)"
             />

@@ -15,7 +15,6 @@ export type SellerInboxOrderItem = {
   time: string;
   phone: string;
   icon: string;
-  tint: string;
   canCancel: boolean;
   // Multi-seller order: this seller accepted, but the order waits in "placed"
   // until the remaining sellers confirm their parcels too.

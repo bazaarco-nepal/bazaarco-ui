@@ -1360,7 +1360,6 @@ export function SellerDashboard() {
                 >
                   <Placeholder
                     icon={p.icon}
-                    tint={p.tint}
                     style={{ width: 40, height: 40 }}
                     radius="var(--r-sm)"
                   />

@@ -15,6 +15,7 @@ import {
   pathFromScreen,
   productIdFromPath,
   screenFromPath,
+  videoPath,
 } from "@/config/routes";
 import { ordersApi } from "@/buyer/api/orders";
 import { ApiRequestError } from "@/shared/api/http";
@@ -67,6 +68,8 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   const query = useBazaarStore((s) => s.query);
   const activeProduct = useBazaarStore((s) => s.activeProduct);
   const setActiveProduct = useBazaarStore((s) => s.setActiveProduct);
+  const setActiveStoreId = useBazaarStore((s) => s.setActiveStoreId);
+  const setActiveVideoProductId = useBazaarStore((s) => s.setActiveVideoProductId);
   const setCart = useBazaarStore((s) => s.setCart);
   const setSelectedCartIds = useBazaarStore((s) => s.setSelectedCartIds);
   const setOrderTotal = useBazaarStore((s) => s.setOrderTotal);
@@ -267,10 +270,27 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
 
   const openStore = useCallback(
     (sellerId: string) => {
+      // Optimistic screen + seeded id — the store screen reads its id from the URL,
+      // which hasn't committed yet, so seed it to render directly instead of flashing
+      // the source page (same pattern as openProduct).
+      setActiveStoreId(sellerId);
+      useBazaarStore.getState().setScreenOverride("store");
       router.push(pathFromScreen("store", sellerId), { scroll: false });
       setTimeout(scrollTop, 0);
     },
-    [router, scrollTop],
+    [router, scrollTop, setActiveStoreId],
+  );
+
+  const openVideo = useCallback(
+    (productId?: string) => {
+      // Optimistic open of the watch feed; seed the reel id since VideoTheater reads
+      // it from the URL query, which hasn't committed yet.
+      setActiveVideoProductId(productId ?? null);
+      useBazaarStore.getState().setScreenOverride("video");
+      router.push(videoPath(productId), { scroll: false });
+      setTimeout(scrollTop, 0);
+    },
+    [router, scrollTop, setActiveVideoProductId],
   );
 
   const openTracking = useCallback(
@@ -464,6 +484,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       nav,
       openProduct,
       openStore,
+      openVideo,
       openTracking,
       cart,
       cartLoading: cartLoading || cartFetching,
@@ -492,6 +513,7 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
       nav,
       openProduct,
       openStore,
+      openVideo,
       openTracking,
       cart,
       cartLoading,

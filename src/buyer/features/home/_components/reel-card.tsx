@@ -24,7 +24,15 @@ function formatViews(n: number): string {
   return String(n);
 }
 
-export function ReelCard({ reel, href }: { reel: VideoFeedItem; href: string }) {
+export function ReelCard({
+  reel,
+  href,
+  onNavigate,
+}: {
+  reel: VideoFeedItem;
+  href: string;
+  onNavigate?: () => void;
+}) {
   const cover = reel.videoThumb ?? reel.img;
   const seller = reel.seller;
   const initial = (seller?.name ?? "?").trim().charAt(0).toUpperCase() || "?";
@@ -32,6 +40,7 @@ export function ReelCard({ reel, href }: { reel: VideoFeedItem; href: string }) 
   return (
     <AppLink
       href={href}
+      onNavigate={onNavigate}
       className="bz-reel-card"
       style={{ background: REEL_BACKDROP[reel.tint] ?? "#22304f" }}
       ariaLabel={`Watch ${reel.name}`}

@@ -14,6 +14,7 @@ import {
 } from "@/buyer/features/pdp/_components/product-actions";
 import { AppLink, Button, EmptyState, Icon, IconButton } from "@/components/ui";
 import { useBz } from "@/components/common";
+import { useBazaarStore } from "@/store/bazaar-store";
 import { pathFromScreen, productShareUrl, searchPath } from "@/config/routes";
 import { queryKeys } from "@/shared/api/query-keys";
 import { formatNPR } from "@/shared/lib/money";
@@ -343,6 +344,7 @@ export function VideoTheater() {
   const { nav } = useBz();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const activeVideoProductId = useBazaarStore((s) => s.activeVideoProductId);
   const queryClient = useQueryClient();
   const { data: feed, isLoading, isError, error } = useVideoFeed();
   const items = useMemo(
@@ -359,7 +361,10 @@ export function VideoTheater() {
   const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
   const slideRefs = useRef<Array<HTMLDivElement | null>>([]);
   const viewedIds = useRef(new Set<string>());
-  const startProductId = searchParams.get("product")?.trim();
+  // URL wins once it commits; fall back to the id seeded by openVideo so an
+  // optimistic open lands on the clicked reel rather than the feed's first item.
+  const startProductId =
+    searchParams.get("product")?.trim() || activeVideoProductId?.trim() || undefined;
 
   const clamped = Math.min(activeIndex, Math.max(items.length - 1, 0));
   const active = items[clamped];

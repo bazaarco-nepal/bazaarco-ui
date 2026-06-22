@@ -8,6 +8,8 @@ export interface BazaarContextValue {
   nav: (screen: string, options?: { cat?: string }) => void;
   openProduct: (product: Product, options?: { offer?: boolean }) => void;
   openStore: (sellerId: string) => void;
+  /** Open the watch feed; pass a product id to open that reel first. */
+  openVideo: (productId?: string) => void;
   openTracking: (orderId: string) => void;
   cart: CartLine[];
   cartLoading: boolean;

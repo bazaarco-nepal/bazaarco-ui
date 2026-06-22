@@ -58,6 +58,7 @@ import type { PopularStore } from "@/buyer/api/home";
 const WATCH_RAIL_LIMIT = 8;
 
 function WatchSection({ reels }: { reels: VideoFeedItem[] }) {
+  const { openVideo } = useBz();
   return (
     <section className="bz-watch-rail">
       <div className="bz-watch-rail__head">
@@ -69,6 +70,7 @@ function WatchSection({ reels }: { reels: VideoFeedItem[] }) {
           variant="link"
           className="bz-watch-rail__feed"
           href={pathFromScreen("video")}
+          onNavigate={() => openVideo()}
           iconRight="arrowRight"
           style={{ marginLeft: "auto" }}
         >
@@ -78,7 +80,7 @@ function WatchSection({ reels }: { reels: VideoFeedItem[] }) {
       <div className="bz-watch-rail__scroll no-scrollbar">
         {reels.map((reel) => (
           <div key={reel.id} className="bz-watch-rail__item">
-            <ReelCard reel={reel} href={videoPath(reel.id)} />
+            <ReelCard reel={reel} href={videoPath(reel.id)} onNavigate={() => openVideo(reel.id)} />
           </div>
         ))}
       </div>
@@ -141,7 +143,7 @@ function BargainSection() {
 
 function PopularStoresSection({ stores }: { stores: PopularStore[] }) {
   const { t } = useTranslation();
-  const { nav, openStore } = useBz();
+  const { openVideo, openStore } = useBz();
   if (stores.length === 0) return null;
 
   return (
@@ -215,7 +217,7 @@ function PopularStoresSection({ stores }: { stores: PopularStore[] }) {
                   className="bz-popular-store-card__action--grow"
                   onClick={(event) => {
                     event.stopPropagation();
-                    nav("video");
+                    openVideo();
                   }}
                 >
                   {t("home.watchFeed")}

@@ -1721,7 +1721,7 @@ export function Checkout() {
             >
               <Icon name="lock" size={13} color="var(--ink-400)" /> Your details are safe with us
             </div>
-            <p
+            {/*<p
               style={{
                 textAlign: "center",
                 fontSize: ".75rem",
@@ -1733,7 +1733,7 @@ export function Checkout() {
             >
               💙 Sorry, it's cash on delivery only for now — digital payments are on the way. Thanks
               for your patience!
-            </p>
+            </p>*/}
           </div>
         </div>
       </div>

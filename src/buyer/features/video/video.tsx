@@ -272,7 +272,7 @@ export function VideoTheater() {
     [feed],
   );
   const [activeIndex, setActiveIndex] = useState(0);
-  const [muted, setMuted] = useState(false);
+  const [muted, setMuted] = useState(true);
   const [playing, setPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
   const [sheetOpen, setSheetOpen] = useState(false);

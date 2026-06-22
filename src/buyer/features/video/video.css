@@ -550,11 +550,12 @@
     display: none;
   }
 
-  .watch__layout {
+  .watch .watch__layout {
     display: flex;
     min-height: 0;
     flex: 1;
     flex-direction: column;
+    align-items: stretch;
     padding: 0;
   }
 

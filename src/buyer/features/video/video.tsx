@@ -622,10 +622,11 @@ function ReelItem({
           }}
         />
         <ReelAction
-          icon="tag"
+          icon="heart"
           label="Save"
           count={metrics.saves}
           active={isSaved}
+          danger
           inside={isMobile}
           onClick={() => toggleSaved(p.id, p.name)}
         />

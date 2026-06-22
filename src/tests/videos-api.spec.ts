@@ -35,9 +35,9 @@ describe("Watch feed API contract", () => {
 
     const feed = await videosApi.getFeed("foryou");
 
-    expect(feed.items[0].id).toBe("prod-1");
-    expect(feed.items[0].productId).toBe("prod-1");
-    expect(feed.items[0].videoId).toBe("vid-1");
+    expect(feed.items[0]?.id).toBe("prod-1");
+    expect(feed.items[0]?.productId).toBe("prod-1");
+    expect(feed.items[0]?.videoId).toBe("vid-1");
   });
 
   it("falls back to id for productId and null for videoId when absent", async () => {
@@ -48,8 +48,8 @@ describe("Watch feed API contract", () => {
 
     const feed = await videosApi.getFeed("foryou");
 
-    expect(feed.items[0].productId).toBe("prod-9");
-    expect(feed.items[0].videoId).toBeNull();
+    expect(feed.items[0]?.productId).toBe("prod-9");
+    expect(feed.items[0]?.videoId).toBeNull();
   });
 
   it("records a view against the store video id with the qualified-view payload", async () => {

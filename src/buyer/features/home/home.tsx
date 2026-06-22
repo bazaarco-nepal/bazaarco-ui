@@ -258,6 +258,21 @@ export function Home() {
     () =>
       (videoFeed?.items ?? [])
         .filter((v) => typeof v.videoUrl === "string" && v.videoUrl.trim().length > 0)
+        .map((reel, apiIndex) => ({
+          reel,
+          apiIndex,
+          uploadedAt: Date.parse(reel.uploadedAt),
+        }))
+        .sort((a, b) => {
+          const aHasDate = Number.isFinite(a.uploadedAt);
+          const bHasDate = Number.isFinite(b.uploadedAt);
+          if (aHasDate && bHasDate && a.uploadedAt !== b.uploadedAt) {
+            return b.uploadedAt - a.uploadedAt;
+          }
+          if (aHasDate !== bHasDate) return bHasDate ? 1 : -1;
+          return a.apiIndex - b.apiIndex;
+        })
+        .map(({ reel }) => reel)
         .slice(0, WATCH_RAIL_LIMIT),
     [videoFeed],
   );

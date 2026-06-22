@@ -24,6 +24,7 @@ export function useCreateSellerVideo() {
     mutationFn: mediaApi.createSellerVideo,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.seller.videos });
+      queryClient.invalidateQueries({ queryKey: queryKeys.videos.all });
     },
   });
 }
@@ -42,6 +43,7 @@ export function useUpdateSellerVideo() {
     }) => mediaApi.updateSellerVideo(videoId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.seller.videos });
+      queryClient.invalidateQueries({ queryKey: queryKeys.videos.all });
     },
   });
 }
@@ -52,6 +54,7 @@ export function useDeleteSellerVideo() {
     mutationFn: (videoId: string) => mediaApi.deleteSellerVideo(videoId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.seller.videos });
+      queryClient.invalidateQueries({ queryKey: queryKeys.videos.all });
     },
   });
 }

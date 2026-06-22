@@ -1,10 +1,5 @@
 import type { VideoFeedResponse, VideoFeedTab } from "@/types/video";
-import { deleteData, getData, postData } from "@/shared/api/http";
-
-export interface VideoLikeResult {
-  videoId: string;
-  liked: boolean;
-}
+import { getData, postData } from "@/shared/api/http";
 
 export interface VideoViewResult {
   videoId: string;
@@ -38,12 +33,6 @@ export const videosApi = {
   async getFeed(tab: VideoFeedTab = "foryou"): Promise<VideoFeedResponse> {
     const raw = await getData<VideoFeedResponse>("/videos/feed", { tab });
     return mapVideoFeedResponse(raw);
-  },
-  like(videoId: string): Promise<VideoLikeResult> {
-    return postData<VideoLikeResult>(`/videos/${videoId}/like`);
-  },
-  unlike(videoId: string): Promise<VideoLikeResult> {
-    return deleteData<VideoLikeResult>(`/videos/${videoId}/like`);
   },
   recordView(videoId: string): Promise<VideoViewResult> {
     return postData<VideoViewResult>(`/videos/${videoId}/view`);

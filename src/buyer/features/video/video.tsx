@@ -39,7 +39,6 @@ import {
 } from "@/components/ui";
 import { pathFromScreen, productShareUrl, searchPath } from "@/config/routes";
 import { useVideoFeed } from "@/buyer/hooks/use-video-feed";
-import { useVideoLike } from "@/buyer/hooks/use-video-like";
 import { videosApi } from "@/buyer/api/videos";
 import type { VideoFeedItem } from "@/types/video";
 import type { Product } from "@/types";
@@ -255,8 +254,6 @@ function ReelItem({
   item,
   isMobile,
   isActive,
-  liked,
-  onToggleLike,
   muted,
   onMutedChange,
   radius,
@@ -265,8 +262,6 @@ function ReelItem({
   item: VideoFeedItem;
   isMobile: boolean;
   isActive: boolean;
-  liked: boolean;
-  onToggleLike: (videoId: string) => void;
   muted: boolean;
   onMutedChange: (muted: boolean) => void;
   radius?: string;
@@ -281,42 +276,14 @@ function ReelItem({
   const caption = item.caption;
   const tint = TINTS[p.tint as keyof typeof TINTS] || TINTS.blue;
 
-  const [bursts, setBursts] = useState<{ id: number; x: number; y: number }[]>([]);
   const [capExpand, setCapExpand] = useState(false);
   const [fastFwd, setFastFwd] = useState(false);
   const stageRef = useRef<HTMLDivElement | null>(null);
-  const lastTap = useRef(0);
   const longPressRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const wasLongPress = useRef(false);
-
-  const spawnBurst = (x: number, y: number) => {
-    const id = Date.now() + Math.random();
-    setBursts((b) => [...b, { id, x, y }]);
-    setTimeout(() => setBursts((b) => b.filter((h) => h.id !== id)), 900);
-  };
-
-  const onStageTap = (e: React.MouseEvent) => {
-    if (wasLongPress.current) {
-      wasLongPress.current = false;
-      return;
-    }
-    const now = Date.now();
-    if (now - lastTap.current < 300 && stageRef.current) {
-      const rect = stageRef.current.getBoundingClientRect();
-      const x = e.clientX - rect.left,
-        y = e.clientY - rect.top;
-      if (!liked) onToggleLike(p.id);
-      spawnBurst(x, y);
-      lastTap.current = 0;
-    } else {
-      lastTap.current = now;
-    }
-  };
 
   const onPointerDown = () => {
     longPressRef.current = setTimeout(() => {
       setFastFwd(true);
-      wasLongPress.current = true;
     }, 400);
   };
 
@@ -331,7 +298,6 @@ function ReelItem({
   return (
     <div
       ref={stageRef}
-      onClick={onStageTap}
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
       onPointerLeave={onPointerUp}
@@ -618,18 +584,6 @@ function ReelItem({
           zIndex: 4,
         }}
       >
-        <ReelAction
-          icon="heart"
-          label="Like"
-          count={metrics.likes + (liked ? 1 : 0)}
-          active={liked}
-          danger
-          inside={isMobile}
-          onClick={() => {
-            onToggleLike(p.id);
-            spawnBurst(160, 240);
-          }}
-        />
         {asProduct(p).allowBargaining && (
           <ReelAction
             icon="bargain"
@@ -668,27 +622,6 @@ function ReelItem({
           onClick={() => toggleSaved(p.id, p.name)}
         />
       </div>
-
-      {/* heart-burst layer */}
-      <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 6 }}>
-        {bursts.map((b) => (
-          <Icon
-            key={b.id}
-            name="heart"
-            size={88}
-            color="var(--red)"
-            fill="var(--red)"
-            style={{
-              position: "absolute",
-              left: b.x,
-              top: b.y,
-              transform: "translate(-50%,-50%)",
-              animation: "bz-heart-pop .9s ease-out forwards",
-              filter: "drop-shadow(0 6px 16px rgba(230,57,70,.5))",
-            }}
-          />
-        ))}
-      </div>
     </div>
   );
 }
@@ -697,11 +630,10 @@ function ReelItem({
    VideoTheater — orchestrator + snap scroll container
    ============================================================ */
 export function VideoTheater() {
-  const { openProduct, addToCart, toggleSaved, savedProducts, nav, authed, promptLogin } = useBz();
+  const { openProduct, addToCart, toggleSaved, savedProducts, nav } = useBz();
   const router = useRouter();
   const searchParams = useSearchParams();
   const startProductId = searchParams.get("product")?.trim() ?? null;
-  const likeMutation = useVideoLike();
   const goBack = useCallback(() => {
     if (typeof window !== "undefined" && window.history.length > 1) router.back();
     else nav("home");
@@ -710,40 +642,6 @@ export function VideoTheater() {
   const { data: feed, isLoading, isError, error } = useVideoFeed();
   const vids: VideoFeedItem[] = (feed?.items ?? []).filter(
     (v) => typeof v.videoUrl === "string" && v.videoUrl.trim().length > 0,
-  );
-  const [liked, setLiked] = useState<Set<string>>(() => new Set());
-
-  // Seed liked state from the server feed (reflects the signed-in user's likes).
-  useEffect(() => {
-    setLiked(new Set((feed?.items ?? []).filter((v) => v.liked).map((v) => v.id)));
-  }, [feed]);
-
-  const toggleLike = useCallback(
-    (videoId: string) => {
-      if (!authed) {
-        promptLogin("Please sign in to like videos.");
-        return;
-      }
-      const wasLiked = liked.has(videoId);
-      setLiked((prev) => {
-        const n = new Set(prev);
-        wasLiked ? n.delete(videoId) : n.add(videoId);
-        return n;
-      });
-      likeMutation.mutate(
-        { videoId, like: !wasLiked },
-        {
-          onError: () => {
-            setLiked((prev) => {
-              const n = new Set(prev);
-              wasLiked ? n.add(videoId) : n.delete(videoId);
-              return n;
-            });
-          },
-        },
-      );
-    },
-    [authed, liked, likeMutation, promptLogin],
   );
   const [muted, setMuted] = useState(true);
   const isMobile = useIsMobile();
@@ -857,13 +755,10 @@ export function VideoTheater() {
         e.preventDefault();
         scrollToIndex(activeIndex - 1);
       } else if (e.key.toLowerCase() === "m") setMuted((m) => !m);
-      else if (e.key.toLowerCase() === "l" && activeProductId) {
-        toggleLike(activeProductId);
-      }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [activeIndex, scrollToIndex, activeProductId, toggleLike]);
+  }, [activeIndex, scrollToIndex]);
 
   /* ---- snap-scroll feed (renders all reels stacked) ---- */
   const reelFeed = (radius?: string) => (
@@ -898,8 +793,6 @@ export function VideoTheater() {
             item={v}
             isMobile={isMobile}
             isActive={idx === activeIndex}
-            liked={liked.has(v.id)}
-            onToggleLike={toggleLike}
             muted={muted}
             onMutedChange={setMuted}
             radius={radius || "0"}

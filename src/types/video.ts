@@ -2,7 +2,6 @@ export type VideoFeedTab = "foryou" | "following" | "nepal" | "flash";
 
 export interface VideoFeedEngagement {
   views: number;
-  likes: number;
   comments: number;
   shares: number;
   saves: number;
@@ -40,7 +39,6 @@ export interface VideoFeedItem {
   seller: VideoFeedSeller;
   engagement: VideoFeedEngagement;
   caption: string;
-  liked: boolean;
 }
 
 export interface VideoFeedResponse {

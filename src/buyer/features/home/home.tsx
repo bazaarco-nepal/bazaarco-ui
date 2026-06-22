@@ -82,9 +82,8 @@ const WATCH_FALLBACK_REELS: VideoFeedItem[] = [
     videoPublicId: null,
     img: null,
     seller: { id: "", name: "Sajilo Deals", rating: 0, reviewsCount: 0, avatar: "" },
-    engagement: { views: 12400, likes: 0, comments: 0, shares: 0, saves: 0 },
+    engagement: { views: 12400, comments: 0, shares: 0, saves: 0 },
     caption: "Walkaround video",
-    liked: false,
   },
   {
     id: "watch-bags",
@@ -105,9 +104,8 @@ const WATCH_FALLBACK_REELS: VideoFeedItem[] = [
     videoPublicId: null,
     img: null,
     seller: { id: "", name: "Thamel Bags", rating: 0, reviewsCount: 0, avatar: "" },
-    engagement: { views: 8900, likes: 0, comments: 0, shares: 0, saves: 0 },
+    engagement: { views: 8900, comments: 0, shares: 0, saves: 0 },
     caption: "Inside pocket check",
-    liked: false,
   },
   {
     id: "watch-audio",
@@ -128,9 +126,8 @@ const WATCH_FALLBACK_REELS: VideoFeedItem[] = [
     videoPublicId: null,
     img: null,
     seller: { id: "", name: "SoundHub Nepal", rating: 0, reviewsCount: 0, avatar: "" },
-    engagement: { views: 15800, likes: 0, comments: 0, shares: 0, saves: 0 },
+    engagement: { views: 15800, comments: 0, shares: 0, saves: 0 },
     caption: "Sound test clip",
-    liked: false,
   },
   {
     id: "watch-fashion",
@@ -151,9 +148,8 @@ const WATCH_FALLBACK_REELS: VideoFeedItem[] = [
     videoPublicId: null,
     img: null,
     seller: { id: "", name: "Maya Fashion", rating: 0, reviewsCount: 0, avatar: "" },
-    engagement: { views: 6700, likes: 0, comments: 0, shares: 0, saves: 0 },
+    engagement: { views: 6700, comments: 0, shares: 0, saves: 0 },
     caption: "Fit and fabric",
-    liked: false,
   },
 ];
 

@@ -6,7 +6,8 @@ export type SellerInboxOrderItem = {
   id: string;
   buyer: string;
   buyerAvatarUrl?: string | null;
-  city: string;
+  email: string;
+  imageUrl?: string | null;
   item: string;
   qty: number;
   price: number;

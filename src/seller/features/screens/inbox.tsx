@@ -35,7 +35,7 @@ export function SellerInbox() {
 
   const q = search.trim().toLowerCase();
   const baseFiltered = INBOX_ORDERS.filter((o: SellerInboxOrderItem) => {
-    if (q && !`${o.id} ${o.buyer} ${o.city} ${o.item}`.toLowerCase().includes(q)) return false;
+    if (q && !`${o.id} ${o.buyer} ${o.item}`.toLowerCase().includes(q)) return false;
     if (!inDateRange(o, range)) return false;
     return true;
   });

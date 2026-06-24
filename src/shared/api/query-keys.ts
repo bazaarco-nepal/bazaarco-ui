@@ -53,6 +53,8 @@ export const queryKeys = {
     inventory: ["seller", "inventory"] as const,
     bargains: ["seller", "bargains"] as const,
     reviews: ["seller", "reviews"] as const,
+    productReviews: (product?: string) => ["seller", "product-reviews", product ?? "all"] as const,
+    questions: (status?: string) => ["seller", "questions", status ?? "all"] as const,
     chat: ["seller", "chat"] as const,
     promotions: ["seller", "promotions"] as const,
     videos: ["seller", "videos"] as const,

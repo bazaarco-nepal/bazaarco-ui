@@ -20,6 +20,12 @@ export const SELLER_NAV = [
       { id: "s-ledger", icon: "wallet", labelKey: "seller.navMoney" },
       { id: "s-analytics", icon: "trendingUp", labelKey: "seller.navAnalytics" },
       { id: "s-reviews", icon: "star", labelKey: "seller.navReviews" },
+      {
+        id: "s-questions",
+        icon: "chatHelp",
+        labelKey: "seller.navQuestions",
+        badgeKey: "questions",
+      },
       { id: "s-verification", icon: "shieldCheck", labelKey: "seller.navKyc" },
       { id: "s-settings", icon: "settings", labelKey: "seller.navSettings" },
     ],

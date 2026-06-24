@@ -1769,7 +1769,11 @@ export function PDP({ p: pProp }: PdpProps) {
           <section className="bz-pdp-msec">
             <h4>Q&amp;A</h4>
             <LocalErrorBoundary label="pdp-qa">
-              <QASection productId={p.id} />
+              <QASection
+                productId={p.id}
+                sellerName={p.sellerInfo?.name ?? "Seller"}
+                sellerAvatar={p.sellerInfo?.avatar ?? null}
+              />
             </LocalErrorBoundary>
           </section>
         </div>
@@ -1882,7 +1886,11 @@ export function PDP({ p: pProp }: PdpProps) {
               Ask questions about product details, warranty, delivery, or usage.
             </p>
             <LocalErrorBoundary label="pdp-qa">
-              <QASection productId={p.id} />
+              <QASection
+                productId={p.id}
+                sellerName={p.sellerInfo?.name ?? "Seller"}
+                sellerAvatar={p.sellerInfo?.avatar ?? null}
+              />
             </LocalErrorBoundary>
           </section>
         </div>

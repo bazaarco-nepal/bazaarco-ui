@@ -361,6 +361,14 @@ export function VideoTheater() {
   const videoRefs = useRef<Array<HTMLVideoElement | null>>([]);
   const slideRefs = useRef<Array<HTMLDivElement | null>>([]);
   const viewedIds = useRef(new Set<string>());
+  // Deepest playback reached per reel, kept monotonic so the looping <video>
+  // resetting to 0 never lowers it. Flushed when the viewer leaves so the stored
+  // watch depth reflects reality, not the 20% snapshot the view recorded.
+  const peakRef = useRef(
+    new Map<string, { percent: number; watchMs: number; durationMs: number }>(),
+  );
+  const progressSentIds = useRef(new Set<string>());
+  const activeVideoIdRef = useRef<string | null>(null);
   // URL wins once it commits; fall back to the id seeded by openVideo so an
   // optimistic open lands on the clicked reel rather than the feed's first item.
   const startProductId =
@@ -462,7 +470,18 @@ export function VideoTheater() {
 
   const recordView = useCallback(
     (item: VideoFeedItem, playbackPercent: number, duration: number, currentTime: number) => {
-      if (!item.videoId || playbackPercent < 20 || viewedIds.current.has(item.videoId)) return;
+      if (!item.videoId) return;
+
+      // Track the deepest watch on every tick (incl. below 20% and after the view
+      // is counted). Math.max keeps it monotonic so a loop back to 0 can't lower it.
+      const prevPeak = peakRef.current.get(item.videoId);
+      peakRef.current.set(item.videoId, {
+        percent: Math.max(prevPeak?.percent ?? 0, playbackPercent),
+        watchMs: Math.max(prevPeak?.watchMs ?? 0, Math.round(currentTime * 1000)),
+        durationMs: Math.round(duration * 1000),
+      });
+
+      if (playbackPercent < 20 || viewedIds.current.has(item.videoId)) return;
       viewedIds.current.add(item.videoId);
       void videosApi
         .recordView(item.videoId, {
@@ -496,6 +515,49 @@ export function VideoTheater() {
     },
     [queryClient],
   );
+
+  // Send the deepest watch once, when the viewer leaves a reel. Gated on the same
+  // 20% threshold the server enforces, and deduped per reel so it fires at most
+  // once a session. The keepalive path is for unload, when an axios promise may
+  // not settle before the page is torn down.
+  const flushProgress = useCallback((videoId: string | null, useKeepalive = false) => {
+    if (!videoId) return;
+    const peak = peakRef.current.get(videoId);
+    if (!peak || peak.percent < 20 || progressSentIds.current.has(videoId)) return;
+    progressSentIds.current.add(videoId);
+    const payload = {
+      playbackPercent: peak.percent,
+      watchMs: peak.watchMs,
+      videoDurationMs: peak.durationMs,
+    };
+    if (useKeepalive) videosApi.recordProgressKeepalive(videoId, payload);
+    else void videosApi.recordProgress(videoId, payload).catch(() => {});
+  }, []);
+
+  // Flush the outgoing reel as soon as a different one becomes active.
+  useEffect(() => {
+    const currentId = active?.videoId ?? null;
+    const previousId = activeVideoIdRef.current;
+    if (previousId && previousId !== currentId) flushProgress(previousId);
+    activeVideoIdRef.current = currentId;
+  }, [active?.videoId, flushProgress]);
+
+  // Flush the reel still playing when the feed unmounts (SPA route change).
+  useEffect(() => () => flushProgress(activeVideoIdRef.current), [flushProgress]);
+
+  // Flush on tab close / background — pagehide fires on mobile where unload won't.
+  useEffect(() => {
+    const flushActive = () => flushProgress(activeVideoIdRef.current, true);
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") flushActive();
+    };
+    window.addEventListener("pagehide", flushActive);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pagehide", flushActive);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [flushProgress]);
 
   const share = useCallback(async (item: VideoFeedItem) => {
     const url = productShareUrl(item.id);

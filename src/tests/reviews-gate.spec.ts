@@ -6,17 +6,25 @@ import { describe, it, expect } from "vitest";
 //   if (authed && eligibilityLoading) return null;
 //   if (!authed)                       return t("reviews.signInPurchase");
 //   if (!eligibility?.hasPurchased)    return t("reviews.purchaseToReview");
+//   if (!eligibility?.hasDelivered)    return t("reviews.availableAfterDelivery");
 //   if (eligibility?.hasReviewed)      return t("reviews.alreadyReviewed");
 //   return null;
 //
-// These tests ensure the gate message and empty-state message are never both
-// the same "sign in" string (the bug that was fixed: duplicate CTA copy).
+// A product review is only allowed once the order is DELIVERED (anti-fake-review
+// gate). These tests cover the delivery gate and ensure the gate message and the
+// empty-state message are never the same string.
 
-type Eligibility = { hasPurchased: boolean; hasReviewed: boolean; canReview: boolean } | null;
+type Eligibility = {
+  hasPurchased: boolean;
+  hasDelivered: boolean;
+  hasReviewed: boolean;
+  canReview: boolean;
+} | null;
 
 const T = {
   signInPurchase: "Sign in and purchase this product to write a review.",
   purchaseToReview: "Purchase this product to write a review.",
+  availableAfterDelivery: "Available after delivery.",
   alreadyReviewed: "You have already reviewed this product.",
   noReviewsYet: "No reviews yet — be the first to review this product.",
   noReviewsEmpty: "No reviews yet.",
@@ -30,6 +38,7 @@ function gateMessage(
   if (authed && eligibilityLoading) return null;
   if (!authed) return T.signInPurchase;
   if (!eligibility?.hasPurchased) return T.purchaseToReview;
+  if (!eligibility?.hasDelivered) return T.availableAfterDelivery;
   if (eligibility?.hasReviewed) return T.alreadyReviewed;
   return null;
 }
@@ -59,6 +68,14 @@ function emptyStateMessage(authed: boolean, eligibility: Eligibility): string {
   return canWriteReview(authed, eligibility) ? T.noReviewsYet : T.noReviewsEmpty;
 }
 
+const elig = (over: Partial<NonNullable<Eligibility>>): Eligibility => ({
+  hasPurchased: false,
+  hasDelivered: false,
+  hasReviewed: false,
+  canReview: false,
+  ...over,
+});
+
 describe("gateMessage", () => {
   it("returns null while eligibility is loading for a signed-in user", () => {
     expect(gateMessage(true, true, null)).toBeNull();
@@ -69,105 +86,74 @@ describe("gateMessage", () => {
   });
 
   it("returns purchaseToReview for a buyer who hasn't purchased", () => {
-    const elig: Eligibility = { hasPurchased: false, hasReviewed: false, canReview: false };
-    expect(gateMessage(true, false, elig)).toBe(T.purchaseToReview);
+    expect(gateMessage(true, false, elig({}))).toBe(T.purchaseToReview);
   });
 
-  it("returns alreadyReviewed for a buyer who already reviewed", () => {
-    const elig: Eligibility = { hasPurchased: true, hasReviewed: true, canReview: false };
-    expect(gateMessage(true, false, elig)).toBe(T.alreadyReviewed);
+  it("returns availableAfterDelivery for a buyer who ordered but isn't delivered yet", () => {
+    expect(gateMessage(true, false, elig({ hasPurchased: true }))).toBe(T.availableAfterDelivery);
   });
 
-  it("returns null for an eligible reviewer (purchased, not yet reviewed)", () => {
-    const elig: Eligibility = { hasPurchased: true, hasReviewed: false, canReview: true };
-    expect(gateMessage(true, false, elig)).toBeNull();
-  });
-});
-
-describe("emptyStateMessage — no duplicate of gateMessage (fix regression)", () => {
-  it("shows noReviewsEmpty (neutral) for a guest — does NOT repeat signInPurchase", () => {
-    const msg = emptyStateMessage(false, null);
-    expect(msg).toBe(T.noReviewsEmpty);
-    expect(msg).not.toBe(T.signInPurchase);
+  it("returns alreadyReviewed for a delivered buyer who already reviewed", () => {
+    expect(
+      gateMessage(true, false, elig({ hasPurchased: true, hasDelivered: true, hasReviewed: true })),
+    ).toBe(T.alreadyReviewed);
   });
 
-  it("shows noReviewsEmpty for a buyer who hasn't purchased", () => {
-    const elig: Eligibility = { hasPurchased: false, hasReviewed: false, canReview: false };
-    const msg = emptyStateMessage(true, elig);
-    expect(msg).toBe(T.noReviewsEmpty);
-    expect(msg).not.toBe(T.purchaseToReview);
-  });
-
-  it("shows noReviewsEmpty for a buyer who already reviewed", () => {
-    const elig: Eligibility = { hasPurchased: true, hasReviewed: true, canReview: false };
-    const msg = emptyStateMessage(true, elig);
-    expect(msg).toBe(T.noReviewsEmpty);
-    expect(msg).not.toBe(T.alreadyReviewed);
-  });
-
-  it("shows noReviewsYet for an eligible reviewer — the invitation to be first", () => {
-    const elig: Eligibility = { hasPurchased: true, hasReviewed: false, canReview: true };
-    const msg = emptyStateMessage(true, elig);
-    expect(msg).toBe(T.noReviewsYet);
-  });
-
-  it("gate message and empty-state message are never the same string", () => {
-    const cases: [boolean, boolean, Eligibility][] = [
-      [false, false, null],
-      [true, false, { hasPurchased: false, hasReviewed: false, canReview: false }],
-      [true, false, { hasPurchased: true, hasReviewed: true, canReview: false }],
-      [true, false, { hasPurchased: true, hasReviewed: false, canReview: true }],
-    ];
-
-    for (const [authed, loading, elig] of cases) {
-      const gate = gateMessage(authed, loading, elig);
-      const empty = emptyStateMessage(authed, elig);
-      if (gate !== null) {
-        expect(empty).not.toBe(gate);
-      }
-    }
+  it("returns null for an eligible reviewer (delivered, not yet reviewed)", () => {
+    expect(
+      gateMessage(true, false, elig({ hasPurchased: true, hasDelivered: true, canReview: true })),
+    ).toBeNull();
   });
 });
 
 describe("write review CTA visibility", () => {
-  it("shows the button only when the buyer can review", () => {
+  it("shows the button only when the buyer can review (delivered + not reviewed)", () => {
     expect(showWriteReviewButton(false, null)).toBe(false);
+    expect(showWriteReviewButton(true, elig({ hasPurchased: true }))).toBe(false);
     expect(
-      showWriteReviewButton(true, {
-        hasPurchased: false,
-        hasReviewed: false,
-        canReview: false,
-      }),
+      showWriteReviewButton(
+        true,
+        elig({ hasPurchased: true, hasDelivered: true, hasReviewed: true }),
+      ),
     ).toBe(false);
     expect(
-      showWriteReviewButton(true, {
-        hasPurchased: true,
-        hasReviewed: true,
-        canReview: false,
-      }),
-    ).toBe(false);
-    expect(
-      showWriteReviewButton(true, {
-        hasPurchased: true,
-        hasReviewed: false,
-        canReview: true,
-      }),
+      showWriteReviewButton(
+        true,
+        elig({ hasPurchased: true, hasDelivered: true, canReview: true }),
+      ),
     ).toBe(true);
   });
 
-  it("never shows the button and gate message together", () => {
+  it("never shows the active button and gate message together", () => {
     const cases: [boolean, boolean, Eligibility][] = [
       [false, false, null],
-      [true, false, { hasPurchased: false, hasReviewed: false, canReview: false }],
-      [true, false, { hasPurchased: true, hasReviewed: true, canReview: false }],
-      [true, false, { hasPurchased: true, hasReviewed: false, canReview: true }],
+      [true, false, elig({})],
+      [true, false, elig({ hasPurchased: true })],
+      [true, false, elig({ hasPurchased: true, hasDelivered: true, hasReviewed: true })],
+      [true, false, elig({ hasPurchased: true, hasDelivered: true, canReview: true })],
       [true, true, null],
     ];
 
-    for (const [authed, loading, elig] of cases) {
-      const button = showWriteReviewButton(authed, elig);
-      const gate = showGateMessage(authed, loading, elig);
+    for (const [authed, loading, e] of cases) {
+      const button = showWriteReviewButton(authed, e);
+      const gate = showGateMessage(authed, loading, e);
       expect(button && gate).toBe(false);
     }
+  });
+});
+
+describe("emptyStateMessage — never duplicates the gate message", () => {
+  it("shows noReviewsEmpty for an ordered-but-undelivered buyer (not availableAfterDelivery)", () => {
+    const msg = emptyStateMessage(true, elig({ hasPurchased: true }));
+    expect(msg).toBe(T.noReviewsEmpty);
+    expect(msg).not.toBe(T.availableAfterDelivery);
+  });
+
+  it("shows noReviewsYet for an eligible reviewer", () => {
+    const msg = emptyStateMessage(
+      true,
+      elig({ hasPurchased: true, hasDelivered: true, canReview: true }),
+    );
+    expect(msg).toBe(T.noReviewsYet);
   });
 });

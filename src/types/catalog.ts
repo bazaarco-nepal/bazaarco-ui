@@ -195,6 +195,8 @@ export interface ProductReview {
 export interface ProductReviewEligibility {
   canReview: boolean;
   hasPurchased: boolean;
+  // True only once a delivered order contains the product — the real gate to review.
+  hasDelivered: boolean;
   hasReviewed: boolean;
 }
 
@@ -226,6 +228,8 @@ export interface ProductQuestionAnswer {
 export interface ProductQuestion {
   id: string;
   askerName: string;
+  // null for guest askers (and signed-in users without a photo) — UI falls back to initials.
+  askerAvatarUrl: string | null;
   text: string;
   status: "pending" | "answered";
   createdAt: string;

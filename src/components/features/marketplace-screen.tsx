@@ -43,6 +43,7 @@ import {
   SellerChat,
   SellerBargain,
   SellerReviews,
+  SellerQuestions,
   SellerStorefront,
   SellerVideos,
   SellerAnalytics,
@@ -217,6 +218,7 @@ export function MarketplaceScreen() {
     else if (screen === "s-chat") inner = <SellerChat />;
     else if (screen === "s-bargain") inner = <SellerBargain />;
     else if (screen === "s-reviews") inner = <SellerReviews />;
+    else if (screen === "s-questions") inner = <SellerQuestions />;
     else if (screen === "s-storefront") inner = <SellerStorefront />;
     else if (screen === "s-videos") inner = <SellerVideos />;
     else if (screen === "s-analytics") inner = <SellerAnalytics />;

@@ -3698,25 +3698,6 @@ body {
   font-size: 1rem !important;
   line-height: 1.35;
 }
-.bz-product-card--compact .bz-pcard__img {
-  aspect-ratio: auto !important;
-  height: 100% !important;
-}
-.bz-product-card--compact .bz-pcard__body {
-  padding: 7px 9px 8px !important;
-  gap: 3px !important;
-}
-.bz-product-card--compact .bz-pcard__title {
-  font-size: 11.5px !important;
-  line-height: 1.2 !important;
-  min-height: 1.2em !important;
-  max-height: 1.2em !important;
-  margin-bottom: 0 !important;
-}
-.bz-product-card--compact .bz-pcard__price .tnum:first-child {
-  font-size: 13px !important;
-  line-height: 1.15 !important;
-}
 
 /* Product-card CTA (e.g. bargain card "Make an offer") — the button itself is the
    <Button> component; this wrapper just spaces it and lifts it above the card's

@@ -1,9 +1,16 @@
 import type { VideoFeedResponse, VideoFeedTab } from "@/types/video";
-import { getData, postData } from "@/shared/api/http";
+import { getApiBaseUrl, getData, postData } from "@/shared/api/http";
+import { getAccessToken } from "@/shared/lib/auth-token";
 
 export interface RecordViewPayload {
   eventType: "qualified_view";
   source?: string;
+  playbackPercent: number;
+  watchMs?: number;
+  videoDurationMs?: number;
+}
+
+export interface RecordProgressPayload {
   playbackPercent: number;
   watchMs?: number;
   videoDurationMs?: number;
@@ -52,5 +59,25 @@ export const videosApi = {
   },
   recordView(videoId: string, payload: RecordViewPayload): Promise<VideoViewResult> {
     return postData<VideoViewResult>(`/videos/${videoId}/view`, payload);
+  },
+  recordProgress(videoId: string, payload: RecordProgressPayload): Promise<void> {
+    return postData<void>(`/videos/${videoId}/view/progress`, payload);
+  },
+  // Unload-safe variant for pagehide/visibility-hidden, when the page may be torn
+  // down before an axios promise settles. `keepalive` lets the POST outlive the
+  // page; we keep the bearer header (sendBeacon can't) so a logged-in viewer keeps
+  // their `u:<userId>` identity instead of being mis-keyed as a guest.
+  recordProgressKeepalive(videoId: string, payload: RecordProgressPayload): void {
+    const token = getAccessToken();
+    void fetch(`${getApiBaseUrl()}/videos/${videoId}/view/progress`, {
+      method: "POST",
+      keepalive: true,
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(payload),
+    }).catch(() => {});
   },
 };

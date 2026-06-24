@@ -59,7 +59,7 @@ describe("ProductCard — equal-height slots", () => {
     renderCard(makeProduct({ price: 1000, original: 1500 }));
     expect(screen.getByText("Rs. 1,500")).toBeInTheDocument(); // struck original
     expect(screen.getByText("Save Rs. 500")).toBeInTheDocument(); // 500 >= 50
-    expect(screen.queryByText(/-\d+%/)).not.toBeInTheDocument(); // no top-corner % badge
+    expect(screen.getByText("-33%")).toBeInTheDocument(); // top-left discount badge
   });
 
   it("shows the struck price but no savings line below the threshold", () => {

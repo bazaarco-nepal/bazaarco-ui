@@ -15,6 +15,48 @@ import { inboxLabel, inboxTone, SELLER_ADVANCE } from "../_shared/inbox";
 import { sellerOrderRef } from "../_shared/refs";
 import { ConfirmModal } from "@/seller/components/confirm-modal";
 
+/* A tappable buyer-contact line: tinted icon chip + value, links out via tel:/mailto:. */
+function ContactRow({ icon, href, value }: { icon: string; href: string; value: string }) {
+  return (
+    <a
+      href={href}
+      className="bz-hover-tint"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        padding: "8px 10px",
+        borderRadius: "var(--r-md)",
+        border: "1px solid var(--line-200)",
+        textDecoration: "none",
+        color: "var(--ink-900)",
+        fontSize: ".9375rem",
+        fontWeight: 600,
+        minWidth: 0,
+      }}
+    >
+      <span
+        style={{
+          width: 32,
+          height: 32,
+          flexShrink: 0,
+          borderRadius: "var(--r-md)",
+          background: "var(--tint-blue-50)",
+          color: "var(--blue)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <SellerIcon name={icon} size={16} color="var(--blue)" />
+      </span>
+      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {value}
+      </span>
+    </a>
+  );
+}
+
 /* ---------- 4.3b Order detail — full-screen, one big action ---------- */
 export function SellerOrderDetail() {
   const { t } = useTranslation();
@@ -190,34 +232,22 @@ export function SellerOrderDetail() {
           >
             {t("seller.orderDetail.buyer")}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
             <BuyerAvatar
               src={o.buyerAvatarUrl}
               name={o.buyer}
+              email={o.email}
               size={56}
               fontSize="1.5rem"
               style={{ background: "var(--tint-blue-50)", color: "var(--blue)" }}
             />
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 600, fontSize: "1.0625rem" }}>{o.buyer}</div>
-              <div style={{ fontSize: ".875rem", color: "var(--ink-500)" }}>{o.city}</div>
             </div>
-            <a
-              href={`tel:${o.phone}`}
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: "50%",
-                background: "var(--success)",
-                color: "#fff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                textDecoration: "none",
-              }}
-            >
-              <SellerIcon name="phone" size={22} color="#fff" />
-            </a>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {o.phone && <ContactRow icon="phone" href={`tel:${o.phone}`} value={o.phone} />}
+            {o.email && <ContactRow icon="mail" href={`mailto:${o.email}`} value={o.email} />}
           </div>
         </div>
 
@@ -244,7 +274,23 @@ export function SellerOrderDetail() {
             {t("seller.orderDetail.item")}
           </div>
           <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-            <Placeholder icon={o.icon} style={{ width: 70, height: 70 }} radius="var(--r-md)" />
+            {o.imageUrl ? (
+              <img
+                src={o.imageUrl}
+                alt=""
+                style={{
+                  width: 70,
+                  height: 70,
+                  flexShrink: 0,
+                  borderRadius: "var(--r-md)",
+                  objectFit: "cover",
+                  border: "1px solid var(--line-200)",
+                  background: "var(--line-100)",
+                }}
+              />
+            ) : (
+              <Placeholder icon={o.icon} style={{ width: 70, height: 70 }} radius="var(--r-md)" />
+            )}
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 600 }}>{o.item}</div>
               <div

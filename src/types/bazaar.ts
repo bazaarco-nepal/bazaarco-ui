@@ -5,7 +5,7 @@ export type { ToastVariant } from "@/shared/lib/toast";
 
 export interface BazaarContextValue {
   screen: string;
-  nav: (screen: string, options?: { cat?: string }) => void;
+  nav: (screen: string, options?: { cat?: string; product?: string }) => void;
   openProduct: (product: Product, options?: { offer?: boolean }) => void;
   openStore: (sellerId: string) => void;
   /** Open the watch feed; pass a product id to open that reel first. */

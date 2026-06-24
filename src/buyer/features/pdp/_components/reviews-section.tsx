@@ -475,6 +475,7 @@ export function ReviewsSection({ productId, rating, reviewCount }: ReviewsSectio
     if (authed && eligibilityLoading) return null;
     if (!authed) return t("reviews.signInPurchase");
     if (!eligibility?.hasPurchased) return t("reviews.purchaseToReview");
+    if (!eligibility?.hasDelivered) return t("reviews.availableAfterDelivery");
     if (eligibility?.hasReviewed) return t("reviews.alreadyReviewed");
     return null;
   })();
@@ -516,13 +517,32 @@ export function ReviewsSection({ productId, rating, reviewCount }: ReviewsSectio
       {!composerOpen && !canWriteReview && gateMessage && (
         <div
           style={{
-            fontSize: ".75rem",
-            color: "var(--ink-400)",
-            textAlign: "right",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            gap: 2,
             marginBottom: 8,
           }}
         >
-          {gateMessage}
+          <button
+            type="button"
+            disabled
+            aria-disabled="true"
+            style={{
+              background: "none",
+              border: "none",
+              color: "var(--ink-300)",
+              fontSize: ".8125rem",
+              fontWeight: 700,
+              cursor: "not-allowed",
+              padding: 0,
+            }}
+          >
+            {t("reviews.writeReview")}
+          </button>
+          <div style={{ fontSize: ".75rem", color: "var(--ink-400)", textAlign: "right" }}>
+            {gateMessage}
+          </div>
         </div>
       )}
 

@@ -83,6 +83,20 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
           <div style={{ flex: 1 }} />
           <Button
             variant="secondary"
+            icon="star"
+            onClick={() => nav("s-reviews", { product: item.id })}
+          >
+            {t("seller.navReviews")}
+          </Button>
+          <Button
+            variant="secondary"
+            icon="chatHelp"
+            onClick={() => nav("s-questions", { product: item.id })}
+          >
+            {t("seller.navQuestions")}
+          </Button>
+          <Button
+            variant="secondary"
             icon="edit"
             onClick={() => {
               editProductRef.current = item;

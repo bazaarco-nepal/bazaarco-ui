@@ -207,7 +207,7 @@
       "choosePrompt": "Choose a video to upload",
       "durationOk": "Duration: {{seconds}}s · looks good",
       "fileLabel": "Video file",
-      "fileSpec": "MP4 or MOV · max 100 MB · 5–30 sec",
+      "fileSpec": "MP4 or MOV · max 100 MB · 5–60 sec",
       "loadingProducts": "Loading your products…",
       "noProducts": "You have no products yet — add a product first, then film a video for it.",
       "notVideo": "That isn't a video file. Choose an MP4, MOV, or other video.",
@@ -228,7 +228,7 @@
       "tooShortError": "Video is {{seconds}}s — must be at least {{min}} seconds long.",
       "uploadFailed": "Upload failed",
       "uploading": "Uploading… {{percent}}%",
-      "tipLength": "Keep it short — <strong>5 to 30 seconds</strong>."
+      "tipLength": "Keep it short — <strong>5 to 60 seconds</strong>."
     },
     "visitStore": "Visit store",
     "priceBreakdown": "{{item}} for item + {{delivery}} delivery = <strong>{{total}} to pay</strong>",

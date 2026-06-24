@@ -207,7 +207,7 @@
       "choosePrompt": "अपलोड गर्न भिडियो छान्नुहोस्",
       "durationOk": "अवधि: {{seconds}}s · ठिकै छ",
       "fileLabel": "भिडियो फाइल",
-      "fileSpec": "MP4 वा MOV · बढीमा १०० MB · ५ देखि ३० सेकेन्ड",
+      "fileSpec": "MP4 वा MOV · बढीमा १०० MB · ५ देखि ६० सेकेन्ड",
       "loadingProducts": "सामानहरू लोड हुँदैछन्…",
       "noProducts": "तपाईंसँग अहिले कुनै सामान लिस्टेड छैन — पहिले सामान थप्नुहोस् र त्यसको भिडियो खिच्नुहोस्।",
       "notVideo": "यो भिडियो फाइल होइन। MP4, MOV वा अरू भिडियो छान्नुहोस्।",
@@ -228,7 +228,7 @@
       "tooShortError": "भिडियो {{seconds}} सेकेन्ड लामो छ — कम्तीमा {{min}} सेकेन्ड लामो हुनुपर्छ।",
       "uploadFailed": "अपलोड भएन",
       "uploading": "अपलोड हुँदैछ… {{percent}}%",
-      "tipLength": "छोटो राख्नुहोस् — <strong>5 देखि 30 सेकेन्ड</strong>।"
+      "tipLength": "छोटो राख्नुहोस् — <strong>5 देखि 60 सेकेन्ड</strong>।"
     },
     "visitStore": "पसल हेर्नुहोस्",
     "priceBreakdown": "{{item}} सामानको + {{delivery}} डेलिभरी = <strong>{{total}} तिर्नुपर्ने</strong>",

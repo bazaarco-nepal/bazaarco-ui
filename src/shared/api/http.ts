@@ -78,6 +78,11 @@ uploadClient.interceptors.request.use((config) => {
   return config;
 });
 
+uploadClient.interceptors.response.use(
+  (response) => response,
+  (error) => Promise.reject(mapApiError(error)),
+);
+
 // An expired/invalid session surfaced mid-session (e.g. cookie expiry) should
 // drop the app back to guest state. AuthRoleGuard then bounces protected pages
 // to sign-in. The /auth/me probe uses a separate client, so guest loads stay quiet.

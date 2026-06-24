@@ -123,7 +123,7 @@ export function MapPinPicker({ city, lat, lng, onPick, height = 220 }: MapPinPic
       mapRef.current = null;
       markerRef.current = null;
     };
-  }, [city]); // re-init only on city change; lat/lng updates flow through the sync effect below
+  }, [city, t]); // re-init only on city/language change; lat/lng updates flow through the sync effect below
 
   useEffect(() => {
     if (!mapRef.current || !markerRef.current) return;

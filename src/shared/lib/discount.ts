@@ -6,7 +6,7 @@
 // struck-through `original` and the effective `price` is either the entered sale
 // price (amount mode) or computed from the percentage (percent mode).
 
-import { roundRs } from "./money";
+import { ceilRs } from "./money";
 
 export type SaleMode = "amount" | "percent";
 
@@ -26,10 +26,10 @@ export interface Pricing {
   discountPct: number | null;
 }
 
-/** Effective (sale) price for the given input (rupees, snapped to 2 dp). */
+/** Effective (sale) price for the given input (whole rupees; percent rounds up). */
 export function saleEffective(input: SaleInput): number {
   return input.mode === "percent"
-    ? roundRs(input.base * (1 - input.salePct / 100))
+    ? ceilRs(input.base * (1 - input.salePct / 100))
     : input.salePrice;
 }
 

@@ -19,9 +19,9 @@ const percent = (base: number, salePct: number): SaleInput => ({
 });
 
 describe("saleEffective", () => {
-  it("computes the discounted price for a percentage (rupees, 2 dp)", () => {
+  it("computes the discounted price for a percentage (whole rupees, rounded up)", () => {
     expect(saleEffective(percent(1000, 20))).toBe(800);
-    expect(saleEffective(percent(999, 10))).toBe(899.1); // keeps the decimal
+    expect(saleEffective(percent(999, 10))).toBe(900); // 899.1 ceils to a whole rupee
   });
   it("returns the entered sale price for amount mode", () => {
     expect(saleEffective(amount(1000, 750))).toBe(750);

@@ -5,7 +5,7 @@ import { Chip } from "@/components/ui";
 import { SellerIcon } from "@/seller/ui/icons";
 import { formatNPR } from "@/shared/lib/money";
 import { BuyerAvatar } from "@/components/common";
-import { INBOX_LABEL, INBOX_TONE } from "./inbox";
+import { inboxLabel, inboxTone } from "./inbox";
 import { type SellerInboxOrderItem } from "./types";
 
 /* ---------- Shared seller chrome ---------- */
@@ -284,15 +284,15 @@ export function OrderCard({
   o: SellerInboxOrderItem;
   onOpen: (order: SellerInboxOrderItem) => void;
 }) {
-  const lbl = INBOX_LABEL[o.status];
-  const tone = INBOX_TONE[o.status];
+  const lbl = inboxLabel(o.status);
+  const tone = inboxTone(o.status);
   return (
     <button
       onClick={() => onOpen(o)}
       className="bz-hover-lift"
       style={{
         background: "#fff",
-        border: `1.5px solid ${o.status === "placed" ? "var(--blue)" : "var(--line-200)"}`,
+        border: `1.5px solid ${o.status === "new_order" ? "var(--blue)" : "var(--line-200)"}`,
         borderRadius: "var(--r-lg)",
         padding: 12,
         textAlign: "left",

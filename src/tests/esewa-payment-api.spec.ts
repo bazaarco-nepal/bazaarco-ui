@@ -28,7 +28,7 @@ describe("eSewa frontend API contract", () => {
     await ordersApi.checkoutEsewa({ phone: "9800000000", paymentMethod: "esewa" });
 
     expect(mockedPost).toHaveBeenCalledWith(
-      "/orders/checkout",
+      "/orders",
       expect.objectContaining({ paymentMethod: "esewa", phone: "9800000000" }),
     );
   });
@@ -39,7 +39,7 @@ describe("eSewa frontend API contract", () => {
     await ordersApi.checkout({ phone: "9800000000", paymentMethod: "cod" });
 
     expect(mockedPost).toHaveBeenCalledWith(
-      "/orders/checkout",
+      "/orders",
       expect.objectContaining({ paymentMethod: "cod" }),
     );
   });

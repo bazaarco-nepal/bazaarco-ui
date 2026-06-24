@@ -22,7 +22,7 @@ import { browsePath, categoryIdsFromSearchParams, pathFromScreen } from "@/confi
 import { categoryImageBySlug } from "@/config/category-images";
 import { useLogout } from "@/shared/hooks/use-auth";
 import { useCategories } from "@/shared/hooks/use-catalog";
-import { formatNPR, roundRs } from "@/shared/lib/money";
+import { formatNPR } from "@/shared/lib/money";
 import { useAddresses, useCreateAddress } from "@/buyer/hooks/use-addresses";
 import { deliveryToSavePayload } from "@/buyer/lib/saved-address";
 import { displayName, firstName } from "@/shared/lib/display";
@@ -195,7 +195,7 @@ export function ProductCard({
   const isSaved = savable && savedProducts.includes(p.id);
   const reviewCount = p.reviews ?? 0;
   const hasReviews = reviewCount > 0;
-  const savings = p.original ? roundRs(p.original - p.price) : 0;
+  const savings = p.original ? p.original - p.price : 0;
   const compact = variant === "compact";
   return (
     <div
@@ -969,8 +969,8 @@ export function Navbar() {
   // strip can highlight the active pill — "All" when no category is selected.
   const activeCatIds = categoryIdsFromSearchParams(useSearchParams());
   // Cart subtotal shown in the navbar — recomputed from the live cart lines the
-  // same way checkout does (rupees, snapped per line) so it always matches.
-  const cartTotal = roundRs(cart.reduce((sum, line) => sum + roundRs(line.price * line.qty), 0));
+  // same way checkout does (whole rupees, plain integer sum) so it always matches.
+  const cartTotal = cart.reduce((sum, line) => sum + line.price * line.qty, 0);
   const savedCount = savedProducts.length + savedSellers.length;
   const [menuOpen, setMenuOpen] = useState(false);
   // Guest sign-in popover — auto-opens once auth settles on a guest session.

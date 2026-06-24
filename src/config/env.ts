@@ -11,6 +11,7 @@ function requiredString() {
 const envSchema = z.object({
   NEXT_PUBLIC_API_BASE_URL: requiredString(),
   NEXT_PUBLIC_BACKEND_URL: z.string().url(),
+  ORDERS_SERVICE_URL: z.string().url().optional(),
   NEXT_PUBLIC_CLARITY_PROJECT_ID: requiredString(),
   NEXT_PUBLIC_GA_MEASUREMENT_ID: requiredString(),
   NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: requiredString(),

@@ -1,6 +1,6 @@
 "use client";
 
-import { type OrderStatus } from "@/shared/lib/order-utils";
+import { type SuborderStatus } from "@/shared/lib/order-utils";
 
 export type SellerInboxOrderItem = {
   id: string;
@@ -11,12 +11,12 @@ export type SellerInboxOrderItem = {
   qty: number;
   price: number;
   pay: string;
-  status: OrderStatus;
+  status: SuborderStatus;
   time: string;
   phone: string;
   icon: string;
   canCancel: boolean;
-  // Multi-seller order: this seller accepted, but the order waits in "placed"
+  // Multi-seller order: this seller accepted, but the order waits in "new_order"
   // until the remaining sellers confirm their parcels too.
   awaitingOtherSellers?: boolean;
 };

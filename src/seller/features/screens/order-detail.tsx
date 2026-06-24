@@ -6,12 +6,12 @@ import { Button, Placeholder, EmptyState, AppLink } from "@/components/ui";
 import { SellerIcon } from "@/seller/ui/icons";
 import { formatNPR } from "@/shared/lib/money";
 import { toast } from "@/shared/lib/toast";
-import { type OrderStatus } from "@/shared/lib/order-utils";
+import { type SuborderStatus } from "@/shared/lib/order-utils";
 import { useSellerInbox, useUpdateSellerOrderStatus } from "@/seller/hooks/use-seller";
 import { useBz, BuyerAvatar } from "@/components/common";
 import { pathFromScreen } from "@/config/routes";
 import { SellerHelpBar } from "../_shared/components";
-import { INBOX_LABEL } from "../_shared/inbox";
+import { inboxLabel, inboxTone, SELLER_ADVANCE } from "../_shared/inbox";
 import { sellerOrderRef } from "../_shared/refs";
 import { ConfirmModal } from "@/seller/components/confirm-modal";
 
@@ -45,32 +45,25 @@ export function SellerOrderDetail() {
     );
   }
 
-  const nextStatus: Partial<Record<OrderStatus, OrderStatus>> = {
-    placed: "accepted",
-    accepted: "packaging_started",
-    packaging_started: "ready_for_pickup",
-    ready_for_pickup: "picked_up",
-    picked_up: "arrived_at_hub",
-    arrived_at_hub: "out_for_delivery",
-    out_for_delivery: "delivered",
+  // Label keyed by the TARGET status — mirrors SELLER_ADVANCE (which mirrors the
+  // orders service ALLOWED_SELLER_TRANSITIONS).
+  const advanceLabel: Record<string, string> = {
+    seller_processing: t("seller.orderDetail.actionStartProcessing"),
+    ready_for_hub: t("seller.orderDetail.actionMarkReadyForHub"),
+    on_the_way_to_hub: t("seller.orderDetail.actionSendToHub"),
+    received_at_hub: t("seller.orderDetail.actionMarkReceivedAtHub"),
+    verified: t("seller.orderDetail.actionMarkVerified"),
+    packed: t("seller.orderDetail.actionMarkPacked"),
+    issue_found: t("seller.orderDetail.actionReportIssue"),
   };
+  const [advancePrimary, advanceSecondary] = SELLER_ADVANCE[o.status] ?? [];
 
-  const nextLabel: Partial<Record<OrderStatus, string>> = {
-    placed: t("seller.orderDetail.actionAccept"),
-    accepted: t("seller.orderDetail.actionStartPackaging"),
-    packaging_started: t("seller.orderDetail.actionMarkReady"),
-    ready_for_pickup: t("seller.orderDetail.actionMarkPickedUp"),
-    picked_up: t("seller.orderDetail.actionMarkAtHub"),
-    arrived_at_hub: t("seller.orderDetail.actionMarkOutForDelivery"),
-    out_for_delivery: t("seller.orderDetail.actionMarkDelivered"),
-  };
-
-  const moveOrder = async (status: OrderStatus) => {
+  const moveOrder = async (status: SuborderStatus) => {
     try {
       const updated = await updateStatus.mutateAsync({ id: o.id, status });
       sellerOrderRef.current = updated;
       toast.success(
-        t("seller.orderDetail.statusUpdated", { id: o.id, status: INBOX_LABEL[status].en }),
+        t("seller.orderDetail.statusUpdated", { id: o.id, status: inboxLabel(status).en }),
       );
       nav("s-inbox");
     } catch {
@@ -118,59 +111,37 @@ export function SellerOrderDetail() {
         </AppLink>
 
         {(() => {
-          const bannerMap: Record<string, { bg: string; border: string; color: string }> = {
-            placed: {
-              bg: "linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%)",
-              border: "var(--blue)",
-              color: "var(--blue)",
-            },
-            accepted: {
-              bg: "linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%)",
-              border: "var(--blue)",
-              color: "var(--blue)",
-            },
-            packaging_started: {
-              bg: "linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%)",
-              border: "var(--saffron)",
-              color: "var(--saffron)",
-            },
-            ready_for_pickup: {
-              bg: "linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%)",
-              border: "var(--saffron)",
-              color: "var(--saffron)",
-            },
-            picked_up: {
-              bg: "linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%)",
-              border: "var(--saffron)",
-              color: "var(--saffron)",
-            },
-            arrived_at_hub: {
-              bg: "linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%)",
-              border: "var(--saffron)",
-              color: "var(--saffron)",
-            },
-            out_for_delivery: {
-              bg: "linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%)",
-              border: "var(--saffron)",
-              color: "var(--saffron)",
-            },
-            delivered: {
-              bg: "linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%)",
-              border: "var(--success)",
-              color: "var(--success)",
-            },
-            cancelled: {
-              bg: "linear-gradient(135deg, #fee2e2 0%, #fef3c7 100%)",
-              border: "var(--danger)",
-              color: "var(--danger)",
-            },
-          };
-          const fallback = {
+          // Banner colour follows the status tone (single source of truth in
+          // INBOX_TONE), so every SuborderStatus stays in sync automatically.
+          const blueBanner = {
             bg: "linear-gradient(135deg, #dbeafe 0%, #e0f2fe 100%)",
             border: "var(--blue)",
             color: "var(--blue)",
           };
-          const b = bannerMap[o.status] ?? fallback;
+          const toneBanner: Record<string, { bg: string; border: string; color: string }> = {
+            blue: blueBanner,
+            saffron: {
+              bg: "linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%)",
+              border: "var(--saffron)",
+              color: "var(--saffron)",
+            },
+            success: {
+              bg: "linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%)",
+              border: "var(--success)",
+              color: "var(--success)",
+            },
+            red: {
+              bg: "linear-gradient(135deg, #fee2e2 0%, #fef3c7 100%)",
+              border: "var(--danger)",
+              color: "var(--danger)",
+            },
+            neutral: {
+              bg: "linear-gradient(135deg, #f1f5f9 0%, #f8fafc 100%)",
+              border: "var(--ink-300)",
+              color: "var(--ink-500)",
+            },
+          };
+          const b = toneBanner[inboxTone(o.status)] ?? blueBanner;
           return (
             <div
               style={{
@@ -187,7 +158,7 @@ export function SellerOrderDetail() {
               <SellerIcon name="package" size={32} color={b.color} />
               <div>
                 <div style={{ fontWeight: 600, color: b.color, fontSize: "1rem" }}>
-                  {INBOX_LABEL[o.status].en}
+                  {inboxLabel(o.status).en}
                 </div>
                 <div style={{ fontSize: ".8125rem", color: "var(--ink-700)" }}>
                   {o.time} · {t("seller.orderDetail.orderNumber", { id: o.id })}
@@ -363,20 +334,35 @@ export function SellerOrderDetail() {
           >
             <SellerIcon name="check" size={18} /> {t("seller.orderDetail.awaitingOtherSellers")}
           </div>
-        ) : nextStatus[o.status] ? (
-          <Button
-            variant="primary"
-            size="md"
-            full
-            loading={updateStatus.isPending}
-            onClick={() => void moveOrder(nextStatus[o.status]!)}
-            icon="check"
-          >
-            {nextLabel[o.status]}
-          </Button>
+        ) : advancePrimary ? (
+          <>
+            <Button
+              variant="primary"
+              size="md"
+              full
+              loading={updateStatus.isPending}
+              onClick={() => void moveOrder(advancePrimary)}
+              icon="check"
+            >
+              {advanceLabel[advancePrimary]}
+            </Button>
+            {advanceSecondary && (
+              <Button
+                variant="ghost"
+                size="md"
+                full
+                disabled={updateStatus.isPending}
+                onClick={() => void moveOrder(advanceSecondary)}
+                icon="alertCircle"
+                style={{ marginTop: 8 }}
+              >
+                {advanceLabel[advanceSecondary]}
+              </Button>
+            )}
+          </>
         ) : (
           <Button variant="ghost" size="md" full disabled>
-            {INBOX_LABEL[o.status].en}
+            {inboxLabel(o.status).en}
           </Button>
         )}
         {o.canCancel && (

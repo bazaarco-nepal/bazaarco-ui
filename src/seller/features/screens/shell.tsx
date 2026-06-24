@@ -184,7 +184,7 @@ export function SellerShell({ screen, children }: { screen: string; children: Re
   const { invalidateInbox } = useInvalidateChat();
   const chatThreads = chatInbox?.threads ?? [];
   const newOrders = inbox.filter(
-    (o: SellerInboxOrderItem) => o.status === "placed" && !o.awaitingOtherSellers,
+    (o: SellerInboxOrderItem) => o.status === "new_order" && !o.awaitingOtherSellers,
   ).length;
   const badges = {
     orders: newOrders,

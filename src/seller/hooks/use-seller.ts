@@ -7,7 +7,7 @@ import {
   type UpdateProductPayload,
 } from "@/seller/api/seller";
 import type { SellerVideosResponse } from "@/shared/api/media";
-import type { OrderStatus } from "@/shared/lib/order-utils";
+import type { SuborderStatus } from "@/shared/lib/order-utils";
 import type { SellerReview } from "@/types/catalog";
 import {
   sellerOrganizationApi,
@@ -257,7 +257,7 @@ export function useSellerInbox() {
 export function useUpdateSellerOrderStatus() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: OrderStatus }) =>
+    mutationFn: ({ id, status }: { id: string; status: SuborderStatus }) =>
       sellerApi.updateOrderStatus(id, status),
     onSuccess: (order) => {
       void qc.invalidateQueries({ queryKey: ["seller", "inbox"] });

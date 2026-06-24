@@ -16,10 +16,50 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
+    const ordersServiceUrl = env.ORDERS_SERVICE_URL;
+    const coreApiUrl = env.NEXT_PUBLIC_BACKEND_URL;
+
+    if (ordersServiceUrl) {
+      return [
+        {
+          source: "/api/v1/orders/:path*",
+          destination: `${ordersServiceUrl}/orders/:path*`,
+        },
+        {
+          source: "/api/v1/orders",
+          destination: `${ordersServiceUrl}/orders`,
+        },
+        {
+          source: "/api/v1/payments/:path*",
+          destination: `${ordersServiceUrl}/payments/:path*`,
+        },
+        {
+          source: "/api/v1/checkout-sessions",
+          destination: `${ordersServiceUrl}/checkout-sessions`,
+        },
+        {
+          source: "/api/v1/seller/inbox",
+          destination: `${ordersServiceUrl}/seller/inbox`,
+        },
+        {
+          source: "/api/v1/seller/orders/:path*",
+          destination: `${ordersServiceUrl}/seller/orders/:path*`,
+        },
+        {
+          source: "/api/v1/tracking/:path*",
+          destination: `${ordersServiceUrl}/tracking/:path*`,
+        },
+        {
+          source: "/api/v1/:path*",
+          destination: `${coreApiUrl}/api/v1/:path*`,
+        },
+      ];
+    }
+
     return [
       {
         source: "/api/v1/:path*",
-        destination: `${env.NEXT_PUBLIC_BACKEND_URL}/api/v1/:path*`,
+        destination: `${coreApiUrl}/api/v1/:path*`,
       },
     ];
   },

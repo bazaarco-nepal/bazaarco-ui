@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChipGroup, usePages, PageBar, ApiState } from "@/components/ui";
 import { SellerIcon } from "@/seller/ui/icons";
-import { type OrderStatus } from "@/shared/lib/order-utils";
 import { useSellerInbox } from "@/seller/hooks/use-seller";
 import { useBz } from "@/components/common";
 import {
@@ -15,7 +14,13 @@ import {
   SellerEmptyState,
   SellerPage,
 } from "../_shared/components";
-import { INBOX_DATE_RANGES, INBOX_LABEL, INBOX_TONE, inDateRange } from "../_shared/inbox";
+import {
+  INBOX_DATE_RANGES,
+  INBOX_TAB_STATUSES,
+  inboxLabel,
+  inboxTone,
+  inDateRange,
+} from "../_shared/inbox";
 import { sellerOrderRef } from "../_shared/refs";
 import { type SellerInboxOrderItem } from "../_shared/types";
 
@@ -34,27 +39,18 @@ export function SellerInbox() {
     if (!inDateRange(o, range)) return false;
     return true;
   });
-  const counts = {
+  const counts: Record<string, number> = {
     all: baseFiltered.length,
-    placed: baseFiltered.filter((o) => o.status === "placed").length,
-    processing: baseFiltered.filter((o) =>
-      ["accepted", "packaging_started", "ready_for_pickup"].includes(o.status),
-    ).length,
-    shipped: baseFiltered.filter((o) =>
-      ["picked_up", "arrived_at_hub", "out_for_delivery"].includes(o.status),
-    ).length,
-    completed: baseFiltered.filter((o) => o.status === "delivered").length,
-    cancelled: baseFiltered.filter((o) => o.status === "cancelled").length,
+    ...Object.fromEntries(
+      Object.entries(INBOX_TAB_STATUSES).map(([id, statuses]) => [
+        id,
+        baseFiltered.filter((o) => statuses.includes(o.status)).length,
+      ]),
+    ),
   };
-  const list = baseFiltered.filter((o) => {
-    if (tab === "all") return true;
-    if (tab === "processing")
-      return ["accepted", "packaging_started", "ready_for_pickup"].includes(o.status);
-    if (tab === "shipped")
-      return ["picked_up", "arrived_at_hub", "out_for_delivery"].includes(o.status);
-    if (tab === "completed") return o.status === "delivered";
-    return o.status === tab;
-  });
+  const list = baseFiltered.filter(
+    (o) => tab === "all" || (INBOX_TAB_STATUSES[tab]?.includes(o.status) ?? false),
+  );
   const openOrder = (o: SellerInboxOrderItem) => {
     sellerOrderRef.current = o;
     nav("s-order-detail");
@@ -69,7 +65,7 @@ export function SellerInbox() {
 
   const tabs = [
     { id: "all", label: t("seller.inbox.tabAll") },
-    { id: "placed", label: t("seller.inbox.tabNew") },
+    { id: "new", label: t("seller.inbox.tabNew") },
     { id: "processing", label: t("seller.inbox.tabProcessing") },
     { id: "shipped", label: t("seller.inbox.tabShipped") },
     { id: "completed", label: t("seller.inbox.tabCompleted") },
@@ -201,7 +197,7 @@ export function SellerInbox() {
           <ChipGroup
             options={tabs.map((t) => ({
               value: t.id,
-              label: `${t.label} (${counts[t.id as keyof typeof counts]})`,
+              label: `${t.label} (${counts[t.id] ?? 0})`,
             }))}
             value={tab}
             onChange={setTab}
@@ -210,24 +206,15 @@ export function SellerInbox() {
 
         {view === "kanban" ? (
           <div className="bz-kanban">
-            {[
-              { id: "placed", statuses: ["placed"] },
-              { id: "processing", statuses: ["accepted", "packaging_started", "ready_for_pickup"] },
-              { id: "shipped", statuses: ["picked_up", "arrived_at_hub", "out_for_delivery"] },
-              { id: "completed", statuses: ["delivered"] },
-            ].map((col) => {
-              const sampleStatus = col.statuses[0] as OrderStatus;
-              const lbl =
-                col.id === "processing"
-                  ? { en: "Processing", icon: "package" }
-                  : col.id === "shipped"
-                    ? { en: "Shipped", icon: "truck" }
-                    : INBOX_LABEL[sampleStatus];
-              const tone = INBOX_TONE[sampleStatus];
-              const items = baseFiltered.filter((o) => col.statuses.includes(o.status));
+            {(["new", "processing", "shipped", "completed"] as const).map((colId) => {
+              const statuses = INBOX_TAB_STATUSES[colId] ?? [];
+              const sampleStatus = statuses[0] ?? "";
+              const lbl = inboxLabel(sampleStatus);
+              const tone = inboxTone(sampleStatus);
+              const items = baseFiltered.filter((o) => statuses.includes(o.status));
               return (
                 <div
-                  key={col.id}
+                  key={colId}
                   style={{
                     background: "var(--line-100)",
                     borderRadius: "var(--r-lg)",

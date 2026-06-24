@@ -101,17 +101,12 @@ export const ordersApi = {
     return getData<Order>(`/orders/${id}`);
   },
 
-  /** COD checkout — places the order and returns it (unchanged contract). */
   checkout(payload: CheckoutPayload): Promise<Order> {
-    return postData<Order>("/orders/checkout", { ...payload, paymentMethod: "cod" });
+    return postData<Order>("/orders", { ...payload, paymentMethod: "cod" });
   },
 
-  /**
-   * eSewa checkout — creates an awaiting_payment order and returns the signed
-   * form fields. The order is NOT placed until the payment is verified server-side.
-   */
   checkoutEsewa(payload: CheckoutPayload): Promise<EsewaCheckoutResult> {
-    return postData<EsewaCheckoutResult>("/orders/checkout", {
+    return postData<EsewaCheckoutResult>("/orders", {
       ...payload,
       paymentMethod: "esewa",
     });

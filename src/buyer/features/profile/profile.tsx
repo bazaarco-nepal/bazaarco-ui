@@ -80,12 +80,68 @@ import type { WriteReviewProps } from "@/types";
    ============================================================ */
 
 const ORDER_STATUS_META = {
-  placed: {
-    tone: "blue",
-    label: "Order placed",
+  // Canonical statuses (new service)
+  awaiting_payment: {
+    tone: "saffron",
+    label: "Awaiting payment",
+    action: "Pay now",
+    actionVariant: "primary",
+  },
+  payment_failed: {
+    tone: "neutral",
+    label: "Payment failed",
+    action: "Try again",
+    actionVariant: "secondary",
+  },
+  confirmed: { tone: "blue", label: "Confirmed", action: "Track", actionVariant: "secondary" },
+  seller_processing: {
+    tone: "saffron",
+    label: "Seller preparing",
     action: "Track",
     actionVariant: "secondary",
   },
+  waiting_for_hub: {
+    tone: "saffron",
+    label: "On the way to hub",
+    action: "Track",
+    actionVariant: "secondary",
+  },
+  partially_received_at_hub: {
+    tone: "blue",
+    label: "Partially at hub",
+    action: "Track",
+    actionVariant: "secondary",
+  },
+  received_at_hub: { tone: "blue", label: "At hub", action: "Track", actionVariant: "secondary" },
+  verified: { tone: "blue", label: "Verified", action: "Track", actionVariant: "secondary" },
+  packed_together: {
+    tone: "saffron",
+    label: "Packed",
+    action: "Track",
+    actionVariant: "secondary",
+  },
+  out_for_delivery: {
+    tone: "saffron",
+    label: "Out for delivery",
+    action: "Call rider",
+    actionVariant: "primary",
+  },
+  delivered: {
+    tone: "success",
+    label: "Delivered",
+    action: "Rate & review",
+    actionVariant: "primary",
+  },
+  completed: {
+    tone: "success",
+    label: "Completed",
+    action: "Rate & review",
+    actionVariant: "primary",
+  },
+  cancelled: { tone: "neutral", label: "Cancelled", action: "Order again", actionVariant: "ghost" },
+  refunded: { tone: "neutral", label: "Refunded", action: "Order again", actionVariant: "ghost" },
+  // Legacy statuses (old orders)
+  placed: { tone: "blue", label: "Order placed", action: "Track", actionVariant: "secondary" },
   applied: {
     tone: "blue",
     label: "Awaiting confirmation",
@@ -93,7 +149,6 @@ const ORDER_STATUS_META = {
     actionVariant: "secondary",
   },
   accepted: { tone: "blue", label: "Accepted", action: "Track", actionVariant: "secondary" },
-  confirmed: { tone: "blue", label: "Confirmed", action: "Track", actionVariant: "secondary" },
   packaging_started: {
     tone: "saffron",
     label: "Packaging",
@@ -108,31 +163,8 @@ const ORDER_STATUS_META = {
     actionVariant: "secondary",
   },
   picked_up: { tone: "blue", label: "Picked up", action: "Track", actionVariant: "secondary" },
-  arrived_at_hub: {
-    tone: "blue",
-    label: "At hub",
-    action: "Track",
-    actionVariant: "secondary",
-  },
-  out_for_delivery: {
-    tone: "saffron",
-    label: "Out for delivery",
-    action: "Call rider",
-    actionVariant: "primary",
-  },
-  shipped: {
-    tone: "saffron",
-    label: "On the way",
-    action: "Call rider",
-    actionVariant: "primary",
-  },
-  delivered: {
-    tone: "success",
-    label: "Delivered",
-    action: "Rate & review",
-    actionVariant: "primary",
-  },
-  cancelled: { tone: "neutral", label: "Cancelled", action: "Order again", actionVariant: "ghost" },
+  arrived_at_hub: { tone: "blue", label: "At hub", action: "Track", actionVariant: "secondary" },
+  shipped: { tone: "saffron", label: "On the way", action: "Call rider", actionVariant: "primary" },
 };
 
 const DEFAULT_ORDER_STATUS_META = {
@@ -162,25 +194,32 @@ export function Orders() {
   const orders = ordersData.filter((o) => {
     if (filter === "active")
       return [
+        "confirmed",
+        "seller_processing",
+        "waiting_for_hub",
+        "partially_received_at_hub",
+        "received_at_hub",
+        "verified",
+        "packed_together",
+        "out_for_delivery",
+        "awaiting_payment",
+        // Legacy
         "placed",
         "accepted",
         "packaging_started",
         "ready_for_pickup",
         "picked_up",
         "arrived_at_hub",
-        "out_for_delivery",
       ].includes(o.status);
-    if (filter === "delivered") return o.status === "delivered";
-    if (filter === "cancelled") return o.status === "cancelled";
+    if (filter === "delivered") return o.status === "delivered" || o.status === "completed";
+    if (filter === "cancelled")
+      return o.status === "cancelled" || o.status === "payment_failed" || o.status === "refunded";
     return true;
   });
 
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
-      <div
-        className="bz-container-pad"
-        style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "28px 28px 96px" }}
-      >
+      <div className="container" style={{ paddingTop: 28, paddingBottom: 96 }}>
         <h1
           style={{
             margin: "0 0 24px",

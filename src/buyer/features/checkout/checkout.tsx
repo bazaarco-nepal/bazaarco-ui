@@ -36,7 +36,7 @@ import {
   BackToTop,
 } from "@/components/ui";
 import { useCatalog } from "@/shared/hooks/use-catalog";
-import { formatNPR, roundRs } from "@/shared/lib/money";
+import { formatNPR } from "@/shared/lib/money";
 import { bargainExpiryLabel } from "@/shared/lib/bargain-expiry";
 import { useAddresses, pickDefaultAddress } from "@/buyer/hooks/use-addresses";
 import { SavedAddressPicker } from "@/buyer/features/profile/addresses";
@@ -91,9 +91,9 @@ function lineMaxQty(line) {
 }
 
 export function priceBreakdown(cart, deliveryTier = "standard") {
-  // Snap every line and the total to 2dp so float dust from non-integer
-  // (e.g. bargained) unit prices never reaches the displayed total.
-  const subtotal = roundRs(cart.reduce((s, it) => s + roundRs(it.price * it.qty), 0));
+  // Money is whole rupees end to end, so line totals and the sum are plain
+  // integer arithmetic — no rounding needed.
+  const subtotal = cart.reduce((s, it) => s + it.price * it.qty, 0);
   // Launch delivery pricing: a flat tier fee (Standard/Premium), auto-combined
   // when the cart spans 2+ sellers. No more free-over-Rs1000 threshold.
   const resolved = resolveDelivery(cart, deliveryTier);
@@ -103,7 +103,7 @@ export function priceBreakdown(cart, deliveryTier = "standard") {
     subtotal,
     delivery,
     discount,
-    total: roundRs(subtotal + delivery - discount),
+    total: subtotal + delivery - discount,
     deliveryLabel: resolved.label,
     deliveryType: resolved.type,
     combined: resolved.combined,
@@ -1206,7 +1206,7 @@ export function Checkout() {
                             whiteSpace: "nowrap",
                           }}
                         >
-                          {formatNPR(roundRs(it.price * it.qty))}
+                          {formatNPR(it.price * it.qty)}
                         </div>
                       </div>
                       <div

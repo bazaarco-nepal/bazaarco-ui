@@ -19,7 +19,7 @@ import {
   readRecentActivity,
   type RecentActivityItem,
 } from "@/buyer/lib/recent-activity";
-import { formatNPR, roundRs } from "@/shared/lib/money";
+import { formatNPR } from "@/shared/lib/money";
 import { bargainExpiryLabel } from "@/shared/lib/bargain-expiry";
 import type { BargainOffer } from "@/shared/api/bargains";
 import type { Order } from "@/buyer/api/orders";
@@ -102,7 +102,7 @@ function itemCountLabel(count: number) {
 }
 
 function cartTotal(cart: { price: number; qty: number }[]) {
-  return roundRs(cart.reduce((sum, item) => sum + roundRs(item.price * item.qty), 0));
+  return cart.reduce((sum, item) => sum + item.price * item.qty, 0);
 }
 
 function isActiveOrder(order: Order) {

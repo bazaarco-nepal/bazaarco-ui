@@ -32,15 +32,12 @@ export function getApiBaseUrl(): string {
 }
 
 /**
- * Direct Core API base for browser multipart uploads.
- * Next.js dev rewrites buffer large bodies and often abort mid-upload; hit the
- * API host directly when NEXT_PUBLIC_BACKEND_URL is set (local dev + prod).
+ * Same-origin base for browser multipart uploads. Uploads go through the
+ * /api/v1/media/upload/[type] route handler (which streams to the Core API),
+ * so the httpOnly session cookie rides along — a direct cross-origin call to the
+ * API host loses that cookie and fails with "Not authenticated".
  */
 export function getUploadApiBaseUrl(): string {
-  const backend = process.env.NEXT_PUBLIC_BACKEND_URL?.trim();
-  if (backend) {
-    return `${backend.replace(/\/$/, "")}/api/v1`;
-  }
   return getApiBaseUrl();
 }
 

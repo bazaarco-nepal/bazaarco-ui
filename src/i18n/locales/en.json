@@ -1068,6 +1068,13 @@
     },
     "orderDetail": {
       "actionAccept": "Accept order",
+      "actionStartProcessing": "Start processing",
+      "actionMarkReadyForHub": "Mark ready for hub",
+      "actionSendToHub": "Mark on the way to hub",
+      "actionMarkReceivedAtHub": "Mark received at hub",
+      "actionMarkVerified": "Mark verified",
+      "actionMarkPacked": "Mark packed",
+      "actionReportIssue": "Report an issue",
       "actionMarkAtHub": "Mark arrived at hub",
       "actionMarkDelivered": "Mark delivered",
       "actionMarkOutForDelivery": "Mark out for delivery",

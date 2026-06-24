@@ -327,7 +327,7 @@ export function SellerDashboard() {
   const todaySales = kpis[0]?.value ?? "Rs. 0";
   const ordersPlaced = funnel.length > 0 ? (funnel[funnel.length - 1]?.value ?? 0) : 0;
   const pendingOrders = inbox.filter(
-    (o: SellerInboxOrderItem) => o.status === "placed" && !o.awaitingOtherSellers,
+    (o: SellerInboxOrderItem) => o.status === "new_order" && !o.awaitingOtherSellers,
   ).length;
   const lowStock = inventory.filter((i: { stock?: number }) => (i.stock ?? 0) <= 3).length;
   const frozenListings = inventory.filter(

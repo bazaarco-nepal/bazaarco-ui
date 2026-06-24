@@ -1,7 +1,7 @@
 import { deleteData, getData, patchData, postData } from "@/shared/api/http";
 import type { Product } from "@/types";
 import type { StorefrontData } from "./storefront";
-import type { OrderStatus } from "@/shared/lib/order-utils";
+import type { SuborderStatus } from "@/shared/lib/order-utils";
 
 // What the Add Product form sends. The owning seller is resolved from auth on
 // the server; icon is inherited from the category.
@@ -101,7 +101,7 @@ export interface SellerOrder {
   qty: number;
   price: number;
   pay: string;
-  status: OrderStatus;
+  status: SuborderStatus;
   time: string;
   phone: string;
   icon: string;
@@ -164,7 +164,7 @@ export const sellerApi = {
     return getData<SellerOrder[]>("/seller/inbox");
   },
 
-  updateOrderStatus(id: string, status: OrderStatus): Promise<SellerOrder> {
+  updateOrderStatus(id: string, status: SuborderStatus): Promise<SellerOrder> {
     return patchData<SellerOrder>(`/seller/orders/${encodeURIComponent(id)}/status`, { status });
   },
 

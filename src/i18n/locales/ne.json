@@ -1101,6 +1101,13 @@
     },
     "orderDetail": {
       "actionAccept": "अर्डर स्वीकार गर्नुहोस्",
+      "actionStartProcessing": "प्रशोधन सुरु गर्नुहोस्",
+      "actionMarkReadyForHub": "हबका लागि तयार चिन्ह लगाउनुहोस्",
+      "actionSendToHub": "हबतर्फ पठाइयो चिन्ह लगाउनुहोस्",
+      "actionMarkReceivedAtHub": "हबमा प्राप्त भयो चिन्ह लगाउनुहोस्",
+      "actionMarkVerified": "प्रमाणित भयो चिन्ह लगाउनुहोस्",
+      "actionMarkPacked": "प्याक भयो चिन्ह लगाउनुहोस्",
+      "actionReportIssue": "समस्या रिपोर्ट गर्नुहोस्",
       "actionMarkAtHub": "हबमा आइपुग्यो चिन्ह लगाउनुहोस्",
       "actionMarkDelivered": "डेलिभर भयो चिन्ह लगाउनुहोस्",
       "actionMarkOutForDelivery": "डेलिभरीमा गयो चिन्ह लगाउनुहोस्",

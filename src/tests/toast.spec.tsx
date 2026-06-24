@@ -39,13 +39,19 @@ describe("Toast system", () => {
     expect(screen.getByText("Pixel 9 · 1 item")).toBeInTheDocument();
   });
 
-  it("uses an assertive alert role for errors and shows no countdown bar", () => {
+  it("uses an assertive alert role for errors and still shows a countdown bar", () => {
     const { container } = render(<ToastContainer />);
     act(() => void toast.error("Couldn't place order"));
     const card = screen.getByRole("alert");
     expect(card).toHaveAttribute("aria-live", "assertive");
-    // duration 0 → errors persist, so no progress countdown element.
-    expect(container.querySelector(".bz-toast__progress")).toBeNull();
+    // Errors now auto-dismiss within the 6s cap, so they render the flowing bar.
+    expect(container.querySelector(".bz-toast__progress")).not.toBeNull();
+  });
+
+  it("caps any toast duration at the 6s ceiling", () => {
+    render(<ToastContainer />);
+    act(() => void toast.info("Heads up", { duration: 99000 }));
+    expect(useToastStore.getState().toasts[0]?.duration).toBe(6000);
   });
 
   it("renders an action button that runs its handler", () => {

@@ -16,6 +16,11 @@ export interface SelectableVariant {
   optionValues?: Record<string, string> | null;
 }
 
+export interface VariantGroup {
+  name: string;
+  options: string[];
+}
+
 /** Variants whose every declared option matches the buyer's picks. */
 export function matchSelectedVariants<T extends SelectableVariant>(
   variants: T[],
@@ -37,6 +42,30 @@ export function toggleOption(
   if (next[group] === option) delete next[group];
   else next[group] = option;
   return next;
+}
+
+export function missingVariantSelectionMessage(
+  groups: VariantGroup[],
+  picks: Record<string, string>,
+): string | null {
+  const missing = groups
+    .map((g) => ({ key: g.name, label: g.name.trim() }))
+    .filter(({ key, label }) => label && !picks[key] && !picks[label])
+    .map(({ label }) => label);
+  if (missing.length === 0) return null;
+
+  const options = missing.map((name) => withIndefiniteArticle(name));
+  return `Please select ${joinOptionLabels(options)}${missing.length === 1 ? " first" : ""}.`;
+}
+
+function withIndefiniteArticle(label: string): string {
+  const option = label.toLocaleLowerCase();
+  return `${/^[aeiou]/i.test(option) ? "an" : "a"} ${option}`;
+}
+
+function joinOptionLabels(labels: string[]): string {
+  if (labels.length <= 2) return labels.join(" and ");
+  return `${labels.slice(0, -1).join(", ")}, and ${labels[labels.length - 1]}`;
 }
 
 /**

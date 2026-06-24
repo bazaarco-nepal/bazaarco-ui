@@ -1,7 +1,33 @@
 import { deleteData, getData, patchData, postData } from "@/shared/api/http";
-import type { Product } from "@/types";
+import type { Product, ProductQuestion, ProductReview } from "@/types";
+import type { PaginatedData } from "@/shared/api/types";
 import type { StorefrontData } from "./storefront";
 import type { SuborderStatus } from "@/shared/lib/order-utils";
+
+/** A buyer question on one of the seller's products, with the product it belongs to. */
+export interface SellerProductQuestion extends ProductQuestion {
+  product: { id: string; name: string; image: string | null };
+}
+
+export interface SellerQuestionsParams {
+  page?: number;
+  limit?: number;
+  status?: "pending" | "answered";
+  /** Narrow to a single product (per-product deep link from product management). */
+  product?: string;
+}
+
+/** A buyer review on one of the seller's products, with the product it belongs to. */
+export interface SellerProductReview extends ProductReview {
+  product: { id: string; name: string; image: string | null };
+}
+
+export interface SellerProductReviewsParams {
+  page?: number;
+  limit?: number;
+  /** Narrow to a single product (per-product deep link from product management). */
+  product?: string;
+}
 
 // What the Add Product form sends. The owning seller is resolved from auth on
 // the server; icon is inherited from the category.
@@ -96,7 +122,8 @@ export interface SellerOrder {
   id: string;
   buyer: string;
   buyerAvatarUrl: string | null;
-  city: string;
+  email: string;
+  imageUrl: string | null;
   item: string;
   qty: number;
   price: number;
@@ -178,6 +205,27 @@ export const sellerApi = {
 
   getReviews<T = unknown>(): Promise<T> {
     return getData<T>("/seller/reviews");
+  },
+
+  getQuestions(params?: SellerQuestionsParams): Promise<PaginatedData<SellerProductQuestion>> {
+    return getData<PaginatedData<SellerProductQuestion>>("/seller/questions", params);
+  },
+
+  getProductReviews(
+    params?: SellerProductReviewsParams,
+  ): Promise<PaginatedData<SellerProductReview>> {
+    return getData<PaginatedData<SellerProductReview>>("/seller/product-reviews", params);
+  },
+
+  // The owning store is verified server-side; the answer endpoint lives under the
+  // public catalog router and is gated by requireSeller + store-ownership checks.
+  answerQuestion(productId: string, questionId: string, text: string): Promise<ProductQuestion> {
+    return postData<ProductQuestion>(
+      `/catalog/products/${encodeURIComponent(productId)}/questions/${encodeURIComponent(
+        questionId,
+      )}/answer`,
+      { text },
+    );
   },
 
   getChat<T = unknown>(): Promise<T> {

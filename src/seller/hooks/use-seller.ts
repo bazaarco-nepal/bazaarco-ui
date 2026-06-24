@@ -1,6 +1,12 @@
 "use client";
 
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import {
   sellerApi,
   type CreateProductPayload,
@@ -291,6 +297,57 @@ export function useSellerReviews() {
   return useQuery({
     queryKey: queryKeys.seller.reviews,
     queryFn: () => sellerApi.getReviews<SellerReview[]>(),
+    staleTime: STALE_TIME,
+  });
+}
+
+const SELLER_LIST_PAGE_SIZE = 20;
+
+export function useSellerQuestions(opts?: {
+  status?: "pending" | "answered";
+  product?: string | null;
+}) {
+  const status = opts?.status;
+  const product = opts?.product ?? undefined;
+  return useInfiniteQuery({
+    queryKey: queryKeys.seller.questions(`${status ?? "all"}:${product ?? "all"}`),
+    queryFn: ({ pageParam }) =>
+      sellerApi.getQuestions({ page: pageParam, limit: SELLER_LIST_PAGE_SIZE, status, product }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
+    staleTime: STALE_TIME,
+  });
+}
+
+export function useAnswerProductQuestion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      productId,
+      questionId,
+      text,
+    }: {
+      productId: string;
+      questionId: string;
+      text: string;
+    }) => sellerApi.answerQuestion(productId, questionId, text),
+    onSuccess: (_data, { productId }) => {
+      void qc.invalidateQueries({ queryKey: ["seller", "questions"] });
+      void qc.invalidateQueries({ queryKey: queryKeys.catalog.productQuestions(productId) });
+    },
+  });
+}
+
+export function useSellerProductReviews(opts?: { product?: string | null }) {
+  const product = opts?.product ?? undefined;
+  return useInfiniteQuery({
+    queryKey: queryKeys.seller.productReviews(product ?? "all"),
+    queryFn: ({ pageParam }) =>
+      sellerApi.getProductReviews({ page: pageParam, limit: SELLER_LIST_PAGE_SIZE, product }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
     staleTime: STALE_TIME,
   });
 }

@@ -7,7 +7,7 @@ import { useCreateSellerVideo, useUploadVideo } from "@/shared/hooks/use-media-u
 import { useSellerInventory } from "@/seller/hooks/use-seller";
 
 const MIN_DURATION_SEC = 5;
-const MAX_DURATION_SEC = 30;
+const MAX_DURATION_SEC = 60;
 
 // Desktop file dialogs filter by EXTENSION, not MIME — a bare `video/*` can hide
 // everything there. List explicit extensions (plus video/* for mobile galleries)

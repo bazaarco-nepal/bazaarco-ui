@@ -24,6 +24,7 @@ export * from "./screens/ledger";
 export * from "./screens/chat";
 export * from "./screens/bargain";
 export * from "./screens/reviews";
+export * from "./screens/questions";
 export * from "./screens/storefront";
 export * from "./screens/videos";
 export * from "./screens/verification-timeline";

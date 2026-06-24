@@ -4,6 +4,7 @@ import {
   cartesianVariantRows,
   groupedVariantRows,
   matchSelectedVariants,
+  missingVariantSelectionMessage,
   toggleOption,
   variantBacksOption,
   type SelectableVariant,
@@ -118,6 +119,42 @@ describe("toggleOption", () => {
     const prev = { Black: "S" };
     toggleOption(prev, "Black", "S");
     expect(prev).toEqual({ Black: "S" });
+  });
+});
+
+describe("missingVariantSelectionMessage", () => {
+  const tshirtGroups = [
+    { name: "Color", options: ["Red", "Blue"] },
+    { name: "Size", options: ["S", "M", "L"] },
+  ];
+
+  it("names every missing option when nothing is selected", () => {
+    expect(missingVariantSelectionMessage(tshirtGroups, {})).toBe(
+      "Please select a color and a size.",
+    );
+  });
+
+  it("names only the missing option after a partial selection", () => {
+    expect(missingVariantSelectionMessage(tshirtGroups, { Color: "Blue" })).toBe(
+      "Please select a size first.",
+    );
+  });
+
+  it("returns null when every option group has a selection", () => {
+    expect(missingVariantSelectionMessage(tshirtGroups, { Color: "Blue", Size: "M" })).toBeNull();
+  });
+
+  it("keeps the list dynamic for products with more than two option groups", () => {
+    expect(
+      missingVariantSelectionMessage(
+        [
+          { name: "Color", options: ["Black"] },
+          { name: "Size", options: ["M"] },
+          { name: "Fit", options: ["Regular"] },
+        ],
+        {},
+      ),
+    ).toBe("Please select a color, a size, and a fit.");
   });
 });
 

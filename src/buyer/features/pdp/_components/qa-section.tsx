@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button, Chip } from "@/components/ui";
 import { toast } from "@/shared/lib/toast";
-import { useBz } from "@/components/common";
+import { useBz, BuyerAvatar } from "@/components/common";
 import { useProductQuestions, useCreateProductQuestion } from "@/shared/hooks/use-catalog";
 import type { ProductQuestion } from "@/types";
 
@@ -106,33 +106,26 @@ function timeAgo(iso: string): string {
   return `${Math.floor(days / 30)} months ago`;
 }
 
-function Bubble({ kind, children }: { kind: "Q" | "A"; children: React.ReactNode }) {
-  const isQ = kind === "Q";
+function Bubble({ avatar, children }: { avatar: React.ReactNode; children: React.ReactNode }) {
   return (
     <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-      <span
-        aria-hidden
-        style={{
-          width: 28,
-          height: 28,
-          borderRadius: "50%",
-          background: isQ ? "var(--tint-blue-50)" : "rgba(22,163,74,.12)",
-          color: isQ ? "var(--blue)" : "var(--success)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontWeight: 800,
-          flexShrink: 0,
-        }}
-      >
-        {kind}
-      </span>
-      <div style={{ flex: 1 }}>{children}</div>
+      <div style={{ flexShrink: 0 }}>{avatar}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
     </div>
   );
 }
 
-function QuestionRow({ q, isLast }: { q: ProductQuestion; isLast: boolean }) {
+function QuestionRow({
+  q,
+  isLast,
+  sellerName,
+  sellerAvatar,
+}: {
+  q: ProductQuestion;
+  isLast: boolean;
+  sellerName: string;
+  sellerAvatar: string | null;
+}) {
   return (
     <div
       style={{
@@ -140,7 +133,17 @@ function QuestionRow({ q, isLast }: { q: ProductQuestion; isLast: boolean }) {
         padding: "16px 0",
       }}
     >
-      <Bubble kind="Q">
+      <Bubble
+        avatar={
+          <BuyerAvatar
+            src={q.askerAvatarUrl}
+            name={q.askerName}
+            size={28}
+            fontSize=".75rem"
+            style={{ background: "var(--tint-blue-50)", color: "var(--blue)" }}
+          />
+        }
+      >
         <div style={{ fontWeight: 700 }}>{q.text}</div>
         <div style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 4 }}>
           {q.askerName} · {timeAgo(q.createdAt)}
@@ -148,7 +151,17 @@ function QuestionRow({ q, isLast }: { q: ProductQuestion; isLast: boolean }) {
       </Bubble>
       <div style={{ marginTop: 10 }}>
         {q.answer ? (
-          <Bubble kind="A">
+          <Bubble
+            avatar={
+              <BuyerAvatar
+                src={sellerAvatar}
+                name={q.answer.answeredBy ?? sellerName}
+                size={28}
+                fontSize=".75rem"
+                style={{ background: "rgba(22,163,74,.12)", color: "var(--success)" }}
+              />
+            }
+          >
             <div style={{ color: "var(--ink-700)", fontSize: ".8125rem" }}>{q.answer.text}</div>
             <div style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 4 }}>
               {q.answer.answeredBy ?? "Seller"}
@@ -165,7 +178,15 @@ function QuestionRow({ q, isLast }: { q: ProductQuestion; isLast: boolean }) {
   );
 }
 
-export function QASection({ productId }: { productId: string }) {
+export function QASection({
+  productId,
+  sellerName,
+  sellerAvatar,
+}: {
+  productId: string;
+  sellerName: string;
+  sellerAvatar: string | null;
+}) {
   const query = useProductQuestions(productId);
   const [composerOpen, setComposerOpen] = useState(false);
 
@@ -217,7 +238,13 @@ export function QASection({ productId }: { productId: string }) {
         >
           <div style={{ marginTop: -16 }}>
             {questions.map((q, i) => (
-              <QuestionRow key={q.id} q={q} isLast={i === questions.length - 1} />
+              <QuestionRow
+                key={q.id}
+                q={q}
+                isLast={i === questions.length - 1}
+                sellerName={sellerName}
+                sellerAvatar={sellerAvatar}
+              />
             ))}
           </div>
 

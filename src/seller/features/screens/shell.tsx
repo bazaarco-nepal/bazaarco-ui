@@ -13,6 +13,7 @@ import {
   useSellerInbox,
   useSellerBargains,
   useSellerOrganization,
+  useSellerQuestions,
 } from "@/seller/hooks/use-seller";
 import { useChatInbox } from "@/shared/hooks/use-chat";
 import { useBz, LogoutConfirmModal, LanguageToggle } from "@/components/common";
@@ -180,6 +181,7 @@ export function SellerShell({ screen, children }: { screen: string; children: Re
   const { data: organization, isLoading: orgLoading } = useSellerOrganization();
   const { data: inbox = [] } = useSellerInbox();
   const { data: bargains = [] } = useSellerBargains();
+  const { data: pendingQuestions } = useSellerQuestions({ status: "pending" });
   const { data: chatInbox } = useChatInbox();
   const { invalidateInbox } = useInvalidateChat();
   const chatThreads = chatInbox?.threads ?? [];
@@ -193,6 +195,7 @@ export function SellerShell({ screen, children }: { screen: string; children: Re
       (b: { status?: string; accepted?: boolean; rejected?: boolean }) =>
         bargainStatus(b) === "pending",
     ).length,
+    questions: pendingQuestions?.pages[0]?.total ?? 0,
   };
   const [collapsed, setCollapsed] = useState(() => {
     try {

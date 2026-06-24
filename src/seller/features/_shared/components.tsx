@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Chip } from "@/components/ui";
+import { Chip, Placeholder } from "@/components/ui";
 import { SellerIcon } from "@/seller/ui/icons";
 import { formatNPR } from "@/shared/lib/money";
 import { BuyerAvatar } from "@/components/common";
@@ -302,13 +302,27 @@ export function OrderCard({
         gap: 10,
       }}
     >
-      <BuyerAvatar
-        src={o.buyerAvatarUrl}
-        name={o.buyer}
-        size={56}
-        fontSize="1.25rem"
-        style={{ background: "var(--tint-blue-50)", color: "var(--blue)" }}
-      />
+      {o.imageUrl ? (
+        <img
+          src={o.imageUrl}
+          alt=""
+          style={{
+            width: 56,
+            height: 56,
+            flexShrink: 0,
+            borderRadius: "var(--r-md)",
+            objectFit: "cover",
+            border: "1px solid var(--line-200)",
+            background: "var(--line-100)",
+          }}
+        />
+      ) : (
+        <Placeholder
+          icon={o.icon}
+          style={{ width: 56, height: 56, flexShrink: 0 }}
+          radius="var(--r-md)"
+        />
+      )}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
           <Chip tone={tone} size="sm" icon={lbl.icon}>
@@ -328,10 +342,35 @@ export function OrderCard({
             whiteSpace: "nowrap",
           }}
         >
-          {o.buyer}
+          {o.item}
         </div>
-        <div style={{ fontSize: ".75rem", color: "var(--ink-500)", marginTop: 1 }}>
-          {o.city} · {o.item.slice(0, 30)}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            marginTop: 3,
+            minWidth: 0,
+          }}
+        >
+          <BuyerAvatar
+            src={o.buyerAvatarUrl}
+            name={o.buyer}
+            size={20}
+            fontSize=".7rem"
+            style={{ background: "var(--tint-blue-50)", color: "var(--blue)" }}
+          />
+          <span
+            style={{
+              fontSize: ".75rem",
+              color: "var(--ink-500)",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {o.buyer}
+          </span>
         </div>
         <div
           className="tnum"

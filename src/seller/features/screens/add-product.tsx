@@ -1204,6 +1204,10 @@ export function SellerAddProduct({
   // where they left off.
   const draftEnabled = !isEdit;
   const draft = useLocalDraft<ProductDraft>(ADD_PRODUCT_DRAFT_KEY);
+  const variantGroupDefsDraftKey = JSON.stringify(variantGroupDefs);
+  const variantsDraftKey = JSON.stringify(variants);
+  const attrsDraftKey = JSON.stringify(attrs);
+  const optionImageUrlsDraftKey = JSON.stringify(optionImageUrls);
   const buildDraft = (): ProductDraft => ({
     title,
     description,
@@ -1249,9 +1253,9 @@ export function SellerAddProduct({
     stock,
     hasVariants,
     variantImageMode,
-    JSON.stringify(variantGroupDefs),
-    JSON.stringify(variants),
-    JSON.stringify(attrs),
+    variantGroupDefsDraftKey,
+    variantsDraftKey,
+    attrsDraftKey,
     brand,
     keywords,
     warrantyAvailable,
@@ -1264,7 +1268,7 @@ export function SellerAddProduct({
     salePct,
     bargainOk,
     bargainMinPrice,
-    JSON.stringify(optionImageUrls),
+    optionImageUrlsDraftKey,
   ]);
 
   // Push a saved draft back into the form. Photos aren't part of the draft

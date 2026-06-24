@@ -1699,28 +1699,31 @@ export function VideoPlayer({
   useEffect(() => {
     milestoneCbRef.current = onPlaybackMilestone;
   }, [onPlaybackMilestone]);
-  const reportPlayback = useCallback((currentTime, duration) => {
-    if (milestoneFiredRef.current || !(duration > 0)) return;
-    const playbackPercent = (currentTime / duration) * 100;
-    if (playbackPercent < 20) return;
-    milestoneFiredRef.current = true;
-    console.warn("[views-debug] 20% milestone reached", { streamPublicId, src, playbackPercent }); // DEBUG: remove after mobile-view investigation
-    milestoneCbRef.current?.({
-      playbackPercent,
-      watchMs: Math.round(currentTime * 1000),
-      videoDurationMs: Math.round(duration * 1000),
-    });
-  }, []);
+  const streamPublicId = (publicId?.trim() || publicIdFromVideoUrl(src)) ?? null;
+  const useHls = Boolean(streamPublicId && CLOUDINARY_CLOUD_NAME);
+  const hasSrc = useHls || Boolean(src);
+  const shouldAttachStream = hasSrc && (!deferStream || playing || hlsReady);
+  const reportPlayback = useCallback(
+    (currentTime, duration) => {
+      if (milestoneFiredRef.current || !(duration > 0)) return;
+      const playbackPercent = (currentTime / duration) * 100;
+      if (playbackPercent < 20) return;
+      milestoneFiredRef.current = true;
+      console.warn("[views-debug] 20% milestone reached", { streamPublicId, src, playbackPercent }); // DEBUG: remove after mobile-view investigation
+      milestoneCbRef.current?.({
+        playbackPercent,
+        watchMs: Math.round(currentTime * 1000),
+        videoDurationMs: Math.round(duration * 1000),
+      });
+    },
+    [src, streamPublicId],
+  );
   const muted = externalMuted !== undefined ? externalMuted : internalMuted;
   const setMuted = (v) => {
     const next = typeof v === "function" ? v(muted) : v;
     if (onMutedChange) onMutedChange(next);
     else setInternalMuted(next);
   };
-  const streamPublicId = (publicId?.trim() || publicIdFromVideoUrl(src)) ?? null;
-  const useHls = Boolean(streamPublicId && CLOUDINARY_CLOUD_NAME);
-  const hasSrc = useHls || Boolean(src);
-  const shouldAttachStream = hasSrc && (!deferStream || playing || hlsReady);
   // In a feed, only the active reel may play and be audible. When `isActive`
   // isn't passed (e.g. product-card players) the player behaves as a standalone.
   const active = isActive === undefined ? true : isActive;
@@ -1837,7 +1840,18 @@ export function VideoPlayer({
     } else {
       el.pause();
     }
-  }, [playing, muted, active, hasSrc, src, useHls, hlsReady, playbackRate, fastForwarding]);
+  }, [
+    playing,
+    muted,
+    active,
+    hasSrc,
+    src,
+    streamPublicId,
+    useHls,
+    hlsReady,
+    playbackRate,
+    fastForwarding,
+  ]);
 
   useEffect(() => {
     if (useHls) return;

@@ -57,6 +57,7 @@ import { formatNPR } from "@/shared/lib/money";
 import { recordRecentProduct } from "@/buyer/lib/recent-activity";
 import {
   matchSelectedVariants,
+  missingVariantSelectionMessage,
   toggleOption,
   variantBacksOption,
 } from "@/shared/lib/variant-selection";
@@ -992,7 +993,8 @@ export function PDP({ p: pProp }: PdpProps) {
       toast.error(
         selectedVariants.length > 1
           ? "Offers work on one option at a time — keep just one selected."
-          : "Select an option first to make an offer.",
+          : (missingVariantSelectionMessage(variantGroups ?? [], selDimensions) ??
+              "This combination is not available."),
       );
       return;
     }
@@ -1041,7 +1043,10 @@ export function PDP({ p: pProp }: PdpProps) {
       return [resolvedVariantId];
     }
     if (selectedVariants.length === 0) {
-      toast.error("Select an option first");
+      toast.error(
+        missingVariantSelectionMessage(variantGroups ?? [], selDimensions) ??
+          "This combination is not available.",
+      );
       return null;
     }
     const out = selectedVariants.find((v) => (v.stock ?? 0) <= 0);
@@ -1769,7 +1774,11 @@ export function PDP({ p: pProp }: PdpProps) {
           <section className="bz-pdp-msec">
             <h4>Q&amp;A</h4>
             <LocalErrorBoundary label="pdp-qa">
-              <QASection productId={p.id} />
+              <QASection
+                productId={p.id}
+                sellerName={p.sellerInfo?.name ?? "Seller"}
+                sellerAvatar={p.sellerInfo?.avatar ?? null}
+              />
             </LocalErrorBoundary>
           </section>
         </div>
@@ -1882,7 +1891,11 @@ export function PDP({ p: pProp }: PdpProps) {
               Ask questions about product details, warranty, delivery, or usage.
             </p>
             <LocalErrorBoundary label="pdp-qa">
-              <QASection productId={p.id} />
+              <QASection
+                productId={p.id}
+                sellerName={p.sellerInfo?.name ?? "Seller"}
+                sellerAvatar={p.sellerInfo?.avatar ?? null}
+              />
             </LocalErrorBoundary>
           </section>
         </div>

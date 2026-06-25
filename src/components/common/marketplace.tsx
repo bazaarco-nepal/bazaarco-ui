@@ -18,7 +18,12 @@ import {
   AppLink,
 } from "@/components/ui";
 import { useSearchParams } from "next/navigation";
-import { browsePath, categoryIdsFromSearchParams, pathFromScreen } from "@/config/routes";
+import {
+  browsePath,
+  categoryIdsFromSearchParams,
+  pathFromScreen,
+  sellerSignupPath,
+} from "@/config/routes";
 import { categoryImageBySlug } from "@/config/category-images";
 import { useLogout } from "@/shared/hooks/use-auth";
 import { useCategories } from "@/shared/hooks/use-catalog";
@@ -1180,7 +1185,7 @@ export function Navbar() {
           <div className="bz-navbar__utility-inner container">
             {deliverChip}
             <div className="bz-navbar__utility-links">
-              <AppLink href={pathFromScreen("s-onboarding")} className="bz-navbar__util-link">
+              <AppLink href={sellerSignupPath()} className="bz-navbar__util-link">
                 {t("footer.becomeSeller")}
               </AppLink>
               <AppLink href={pathFromScreen("tracking")} className="bz-navbar__util-link">
@@ -1417,8 +1422,9 @@ export function Footer() {
       links: [
         { label: t("footer.aboutBazaarco"), href: pathFromScreen("about") },
         { label: t("footer.howItWorks"), href: pathFromScreen("how-it-works") },
+        { label: t("footer.faq"), href: pathFromScreen("faq") },
         { label: t("footer.contactUs"), href: pathFromScreen("contact") },
-        { label: t("footer.partnerWithUs"), href: pathFromScreen("auth") },
+        { label: t("footer.partnerWithUs"), href: sellerSignupPath() },
         { label: t("footer.legalInformation"), href: legalPath("legal-information") },
       ],
     },
@@ -1440,7 +1446,7 @@ export function Footer() {
     {
       h: t("footer.colSellers"),
       links: [
-        { label: t("footer.becomeSeller"), href: pathFromScreen("auth") },
+        { label: t("footer.becomeSeller"), href: sellerSignupPath() },
         { label: t("footer.sellerPolicy"), href: legalPath("seller-policy") },
         { label: t("footer.sellerAgreement"), href: legalPath("seller-agreement") },
         { label: t("footer.commissionFees"), href: legalPath("commission-information") },

@@ -1953,7 +1953,7 @@ export function ProfileEdit() {
             type="email"
             value={form.email}
             onChange={(e) => set("email", e.target.value)}
-            placeholder="you@example.com"
+            placeholder="sandhyakarki123@example.com"
             style={fieldStyle}
           />
           <p style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 6 }}>

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { AppLink } from "@/components/ui";
-import { pathFromScreen, searchPath } from "@/config/routes";
+import { pathFromScreen, searchPath, sellerSignupPath } from "@/config/routes";
 
 type InfoPageProps = {
   title: string;
@@ -13,7 +13,7 @@ function InfoPageShell({ title, children }: InfoPageProps) {
   return (
     <div
       className="bz-container-pad"
-      style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "28px 28px 80px" }}
+      style={{ maxWidth: "var(--container)", margin: "0 auto", padding: "28px var(--gutter) 80px" }}
     >
       <AppLink
         href={pathFromScreen("profile")}
@@ -88,75 +88,6 @@ export function HelpSupportPage() {
         </li>
         <li>
           <strong>Become a seller</strong> — register as a seller account and complete shop
-          verification from the seller dashboard.
-        </li>
-      </ul>
-    </InfoPageShell>
-  );
-}
-
-export function FAQPage() {
-  return (
-    <InfoPageShell title="Frequently Asked Questions">
-      <p>Find answers to common questions about shopping on BazaarCo.</p>
-
-      <h2 style={{ fontSize: "1.125rem", margin: "24px 0 8px" }}>Payment & orders</h2>
-      <ul style={{ paddingLeft: 20, margin: "0 0 16px" }}>
-        <li>
-          <strong>What payment methods does BazaarCo accept?</strong> — We accept Cash on Delivery
-          (COD), credit/debit cards, digital wallets, and online banking. Choose your preferred
-          method at checkout.
-        </li>
-        <li>
-          <strong>How long does delivery take?</strong> — Standard delivery takes 5–7 business days.
-          Expedited options are available in selected areas. Track your order in real-time from{" "}
-          <AppLink href={pathFromScreen("orders")} style={{ color: "var(--blue)" }}>
-            My orders
-          </AppLink>
-          .
-        </li>
-      </ul>
-
-      <h2 style={{ fontSize: "1.125rem", margin: "24px 0 8px" }}>Returns & refunds</h2>
-      <ul style={{ paddingLeft: 20, margin: "0 0 16px" }}>
-        <li>
-          <strong>What is your return policy?</strong> — Items can be returned within 7 days of
-          delivery if unused and in original condition. Contact the seller via Messages to initiate
-          a return; refunds process within 5–7 business days.
-        </li>
-        <li>
-          <strong>Can I cancel my order?</strong> — Cancel before the seller ships. After shipping,
-          use the return process. Refunds are credited to your original payment method.
-        </li>
-      </ul>
-
-      <h2 style={{ fontSize: "1.125rem", margin: "24px 0 8px" }}>Account & security</h2>
-      <ul style={{ paddingLeft: 20, margin: "0 0 16px" }}>
-        <li>
-          <strong>Is my personal information safe?</strong> — Yes. We use industry-standard
-          encryption, never store payment data, and comply with international security standards.
-        </li>
-        <li>
-          <strong>How do I reset my password?</strong> — Use the &ldquo;Forgot password&rdquo; link
-          on the sign-in page. We&apos;ll send a reset link to your email.
-        </li>
-      </ul>
-
-      <h2 style={{ fontSize: "1.125rem", margin: "24px 0 8px" }}>General support</h2>
-      <ul style={{ paddingLeft: 20, margin: 0 }}>
-        <li>
-          <strong>How do I contact support?</strong> &mdash; Email{" "}
-          <a href="mailto:support@bazaarco.com" style={{ color: "var(--blue)" }}>
-            support@bazaarco.com
-          </a>{" "}
-          or WhatsApp{" "}
-          <a href="https://wa.me/9779700053075" style={{ color: "var(--blue)" }}>
-            +977 9700053075
-          </a>
-          .
-        </li>
-        <li>
-          <strong>How do I become a seller?</strong> — Register a seller account and complete shop
           verification from the seller dashboard.
         </li>
       </ul>
@@ -253,21 +184,6 @@ export function TermsPage() {
   );
 }
 
-export function AboutPage() {
-  return (
-    <InfoPageShell title="About BazaarCo">
-      <p>
-        BazaarCo is a low-commission, video-first marketplace built for how Nepal shops —
-        bargaining, cash on delivery, and trusted local sellers.
-      </p>
-      <p>
-        We are headquartered in Kathmandu and work with sellers across the country to list products
-        with clear photos, honest descriptions, and fast delivery in the valley and beyond.
-      </p>
-    </InfoPageShell>
-  );
-}
-
 export function HowItWorksPage() {
   return (
     <InfoPageShell title="How BazaarCo Works">
@@ -322,7 +238,7 @@ export function HowItWorksPage() {
           Seller Policy
         </AppLink>{" "}
         or{" "}
-        <AppLink href={pathFromScreen("auth")} style={{ color: "var(--blue)" }}>
+        <AppLink href={sellerSignupPath()} style={{ color: "var(--blue)" }}>
           become a seller
         </AppLink>
         .
@@ -335,8 +251,8 @@ export function ContactPage() {
   return (
     <InfoPageShell title="Contact Us">
       <p>
-        We&apos;re here for shoppers and sellers across Nepal. Reach our support team any day from 8
-        AM to 8 PM.
+        We&apos;re here for shoppers and sellers across Nepal. Reach our support team any day from 6
+        AM to 11 PM.
       </p>
       <h2 style={{ fontSize: "1.125rem", margin: "24px 0 8px" }}>Support</h2>
       <ul style={{ paddingLeft: 20, margin: "0 0 16px" }}>
@@ -380,7 +296,7 @@ export function ContactPage() {
         </li>
         <li>
           <strong>Selling on BazaarCo</strong> —{" "}
-          <AppLink href={pathFromScreen("auth")} style={{ color: "var(--blue)" }}>
+          <AppLink href={sellerSignupPath()} style={{ color: "var(--blue)" }}>
             register as a seller
           </AppLink>
           .

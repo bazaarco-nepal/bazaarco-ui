@@ -257,7 +257,7 @@
     "createAccountBtn": "अकाउन्ट खोल्नुहोस्",
     "email": "इमेल",
     "emailAddress": "इमेल एड्रेस",
-    "emailPlaceholder": "you@example.com",
+    "emailPlaceholder": "sandhyakarki123@example.com",
     "emailVerified": "इमेल भेरिफाई भयो",
     "enter6DigitCode": "६ अंकको कोड हाल्नुहोस्",
     "forgotPassword": "पासवर्ड बिर्सनुभयो?",
@@ -265,7 +265,7 @@
     "fullNamePlaceholder": "जस्तै: रक्षा महर्जन",
     "genericError": "केही गडबड भयो। फेरि प्रयास गर्नुहोस्।",
     "invalidEmail": "कृपया सही इमेल एड्रेस हाल्नुहोस्।",
-    "legalRequired": "जारी राख्न तपाईं १८ वर्ष वा सोभन्दा माथिको हुनुहुन्छ र Terms & Conditions र Privacy Policy मान्नुहुन्छ भनी पुष्टि गर्नुहोस्।",
+    "legalRequired": "जारी राख्न कृपया seller terms स्वीकार गर्नुहोस्।",
     "loginSubtitle": "इमेल र पासवर्ड प्रयोग गरेर लगइन गर्नुहोस् — वा Google बाट अगाडि बढ्नुहोस्।",
     "marketingOptIn": "मलाई अफर र अपडेट पठाउनुहोस्",
     "newPassword": "नयाँ पासवर्ड",
@@ -300,7 +300,8 @@
     "verifyTitle": "आफ्नो इमेल भेरिफाई गर्नुहोस्",
     "welcomeBack": "फेरि स्वागत छ",
     "resetConfirmIntro": "<email>{{email}}</email> मा पठाइएको कोड हाल्नुहोस् र नयाँ पासवर्ड छान्नुहोस्।",
-    "legalConsent": "म १८ वर्ष वा माथिको हुँ र <terms>नियम तथा सर्तहरू</terms> र <privacy>गोपनीयता नीति</privacy> मान्छु"
+    "legalConsent": "अकाउन्ट खोल्दा तपाईं BazaarCo Nepal का <terms>Terms & Conditions</terms> र <privacy>Privacy Policy</privacy> स्वीकार गर्नुहुन्छ।",
+    "sellerLegalConsent": "म BazaarCo Nepal का <terms>Terms & Conditions</terms>, <privacy>Privacy Policy</privacy>, <sellerAgreement>Seller Agreement</sellerAgreement>, <commission>Commission & Fees</commission>, <delivery>Delivery & Pickup Policy</delivery>, र <listingRules>Product Listing Rules</listingRules> स्वीकार गर्छु।"
   },
   "home": {
     "hello": "नमस्ते",
@@ -1373,6 +1374,7 @@
     "colLegal": "लीगल (Legal)",
     "aboutBazaarco": "BazaarCo को बारेमा",
     "howItWorks": "BazaarCo ले कसरी काम गर्छ?",
+    "faq": "बारम्बार सोधिने प्रश्न",
     "contactUs": "सम्पर्क गर्नुहोस्",
     "partnerWithUs": "हामीसँग सहकार्य गर्नुहोस्",
     "legalInformation": "कानुनी जानकारी",

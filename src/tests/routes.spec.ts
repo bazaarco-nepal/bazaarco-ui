@@ -8,6 +8,7 @@ import {
   screenFromPath,
   browsePath,
   searchPath,
+  sellerSignupPath,
   titleForScreen,
   searchQueryFromPath,
   categoryIdsFromSearchParams,
@@ -68,6 +69,14 @@ describe("screen <-> path mapping", () => {
     expect(screenFromPath("/product/p123")).toBe("pdp");
     expect(screenFromPath("/store/s9")).toBe("store");
     expect(screenFromPath("/seller/orders/SUB%201")).toBe("s-order-detail");
+  });
+});
+
+describe("sellerSignupPath", () => {
+  it("opens seller registration and returns to onboarding", () => {
+    expect(sellerSignupPath()).toBe(
+      "/auth?intent=seller&mode=register&next=%2Fseller%2Fonboarding",
+    );
   });
 });
 

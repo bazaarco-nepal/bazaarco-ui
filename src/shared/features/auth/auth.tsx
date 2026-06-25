@@ -20,6 +20,7 @@ import { ApiRequestError } from "@/shared/api/http";
 import type { AuthUser, PendingEmailVerification } from "@/types/auth";
 import { isStrongPassword, passwordRequirementMessage } from "@/shared/lib/password-validation";
 import { toast } from "@/shared/lib/toast";
+import "./auth.css";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -82,8 +83,10 @@ export function Auth() {
   const { nav } = useBz();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [mode, setMode] = useState<"login" | "register">("login");
-  const [intent, setIntent] = useState<"buyer" | "seller">("buyer");
+  const requestedMode = searchParams.get("mode") === "register" ? "register" : "login";
+  const requestedIntent = searchParams.get("intent") === "seller" ? "seller" : "buyer";
+  const [mode, setMode] = useState<"login" | "register">(requestedMode);
+  const [intent, setIntent] = useState<"buyer" | "seller">(requestedIntent);
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [loginEmail, setLoginEmail] = useState("");
@@ -96,6 +99,7 @@ export function Auth() {
 
   // Legal acceptance state
   const [acceptedLegal, setAcceptedLegal] = useState(false);
+  const [triedSubmit, setTriedSubmit] = useState(false);
   const [acceptedMarketing, setAcceptedMarketing] = useState(false);
 
   // Forgot password state
@@ -136,7 +140,8 @@ export function Auth() {
   const startGoogle = () => {
     // New accounts must consent before we hand off to Google — the redirect can't
     // carry the checkbox, so the gate has to happen here (and again server-side).
-    if (mode === "register" && !acceptedLegal) {
+    if (mode === "register" && isSeller && !acceptedLegal) {
+      setTriedSubmit(true);
       setError(t("auth.legalRequired"));
       return;
     }
@@ -173,8 +178,14 @@ export function Auth() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (mode === "register") setTriedSubmit(true);
 
     if (emailFormatError || passwordFormatError) {
+      return;
+    }
+
+    if (mode === "register" && isSeller && !acceptedLegal) {
+      setError(t("auth.legalRequired"));
       return;
     }
 
@@ -267,11 +278,11 @@ export function Auth() {
       : email.trim().length > 0 &&
         fullName.trim().length >= 2 &&
         isStrongPassword(password) &&
-        acceptedLegal);
+        (!isSeller || acceptedLegal));
   const canVerify = /^\d{6}$/.test(otp.trim());
   // Signal (but don't hard-disable) the Google button until consent is given, so a
   // click still surfaces the warning rather than doing nothing.
-  const googleBlocked = mode === "register" && !acceptedLegal;
+  const googleBlocked = mode === "register" && isSeller && !acceptedLegal;
 
   const openForgotPassword = () => {
     setForgotMode(true);
@@ -293,6 +304,11 @@ export function Auth() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetRequested]);
+
+  useEffect(() => {
+    if (requestedIntent === "seller") setIntent("seller");
+    if (requestedMode === "register") setMode("register");
+  }, [requestedIntent, requestedMode]);
 
   const handleForgotSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -404,6 +420,7 @@ export function Auth() {
                 onClick={() => {
                   setIntent("buyer");
                   setError(null);
+                  setTriedSubmit(false);
                 }}
                 style={{
                   flex: 1,
@@ -433,6 +450,7 @@ export function Auth() {
                   setIntent("seller");
                   setMode("register");
                   setError(null);
+                  setTriedSubmit(false);
                 }}
                 style={{
                   flex: 1,
@@ -602,21 +620,9 @@ export function Auth() {
                   </Button>
 
                   <div style={{ marginTop: 14, textAlign: "center" }}>
-                    <button
-                      type="button"
-                      onClick={() => setForgotMode(false)}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "var(--blue)",
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        fontSize: ".875rem",
-                        fontFamily: "inherit",
-                      }}
-                    >
+                    <Button variant="link" type="button" onClick={() => setForgotMode(false)}>
                       {t("auth.backToSignIn")}
-                    </button>
+                    </Button>
                   </div>
                 </form>
               ) : (
@@ -732,7 +738,8 @@ export function Auth() {
                       flexWrap: "wrap",
                     }}
                   >
-                    <button
+                    <Button
+                      variant="link"
                       type="button"
                       onClick={() => {
                         setForgotStep(1);
@@ -742,34 +749,17 @@ export function Auth() {
                         setForgotError(null);
                       }}
                       disabled={forgotBusy}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "var(--ink-500)",
-                        fontWeight: 700,
-                        cursor: forgotBusy ? "not-allowed" : "pointer",
-                        fontSize: ".875rem",
-                        fontFamily: "inherit",
-                      }}
                     >
                       {t("auth.changeEmail")}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="link"
                       type="button"
                       onClick={() => setForgotMode(false)}
                       disabled={forgotBusy}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "var(--blue)",
-                        fontWeight: 700,
-                        cursor: forgotBusy ? "not-allowed" : "pointer",
-                        fontSize: ".875rem",
-                        fontFamily: "inherit",
-                      }}
                     >
                       {t("auth.backToSignIn")}
-                    </button>
+                    </Button>
                   </div>
                 </form>
               )
@@ -820,23 +810,16 @@ export function Auth() {
                 </Button>
 
                 <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 14 }}>
-                  <button
+                  <Button
+                    variant="link"
                     type="button"
                     onClick={handleResendVerification}
                     disabled={busy}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "var(--blue)",
-                      fontWeight: 700,
-                      cursor: busy ? "not-allowed" : "pointer",
-                      fontSize: ".875rem",
-                      fontFamily: "inherit",
-                    }}
                   >
                     {t("auth.resendCode")}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="link"
                     type="button"
                     onClick={() => {
                       setPendingVerification(null);
@@ -844,18 +827,9 @@ export function Auth() {
                       setError(null);
                     }}
                     disabled={busy}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "var(--ink-500)",
-                      fontWeight: 700,
-                      cursor: busy ? "not-allowed" : "pointer",
-                      fontSize: ".875rem",
-                      fontFamily: "inherit",
-                    }}
                   >
                     Change email
-                  </button>
+                  </Button>
                 </div>
               </form>
             ) : (
@@ -937,35 +911,129 @@ export function Auth() {
 
                 {mode === "register" && (
                   <div style={{ marginBottom: 16, marginTop: 12 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: 8,
-                        marginBottom: 16,
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        id="acceptedLegal"
-                        checked={acceptedLegal}
-                        onChange={(e) => setAcceptedLegal(e.target.checked)}
+                    {isSeller ? (
+                      <div
                         style={{
-                          marginTop: 4,
-                          width: 18,
-                          height: 18,
-                          cursor: "pointer",
-                          flexShrink: 0,
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: 8,
+                          marginBottom: 16,
                         }}
-                        required
-                      />
-                      <label
-                        htmlFor="acceptedLegal"
+                      >
+                        <input
+                          type="checkbox"
+                          id="acceptedLegal"
+                          checked={acceptedLegal}
+                          onChange={(e) => {
+                            setAcceptedLegal(e.target.checked);
+                            if (e.target.checked) setError(null);
+                          }}
+                          aria-describedby={
+                            triedSubmit && !acceptedLegal ? "sellerLegalError" : undefined
+                          }
+                          style={{
+                            marginTop: 4,
+                            width: 18,
+                            height: 18,
+                            cursor: "pointer",
+                            flexShrink: 0,
+                          }}
+                        />
+                        <label
+                          htmlFor="acceptedLegal"
+                          style={{
+                            fontSize: ".875rem",
+                            color: "var(--ink-700)",
+                            cursor: "pointer",
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          <Trans
+                            i18nKey="auth.sellerLegalConsent"
+                            components={{
+                              terms: (
+                                <a
+                                  href="/legal/terms-and-conditions"
+                                  className="bz-auth-text-link"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{
+                                    color: "var(--blue)",
+                                    fontWeight: 600,
+                                  }}
+                                />
+                              ),
+                              privacy: (
+                                <a
+                                  href="/legal/privacy-policy"
+                                  className="bz-auth-text-link"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{
+                                    color: "var(--blue)",
+                                    fontWeight: 600,
+                                  }}
+                                />
+                              ),
+                              sellerAgreement: (
+                                <a
+                                  href="/legal/seller-agreement"
+                                  className="bz-auth-text-link"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{
+                                    color: "var(--blue)",
+                                    fontWeight: 600,
+                                  }}
+                                />
+                              ),
+                              commission: (
+                                <a
+                                  href="/legal/commission-information"
+                                  className="bz-auth-text-link"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{
+                                    color: "var(--blue)",
+                                    fontWeight: 600,
+                                  }}
+                                />
+                              ),
+                              delivery: (
+                                <a
+                                  href="/legal/seller-delivery-and-pickup-policy"
+                                  className="bz-auth-text-link"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{
+                                    color: "var(--blue)",
+                                    fontWeight: 600,
+                                  }}
+                                />
+                              ),
+                              listingRules: (
+                                <a
+                                  href="/legal/product-listing-rules"
+                                  className="bz-auth-text-link"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{
+                                    color: "var(--blue)",
+                                    fontWeight: 600,
+                                  }}
+                                />
+                              ),
+                            }}
+                          />
+                        </label>
+                      </div>
+                    ) : (
+                      <p
                         style={{
-                          fontSize: ".875rem",
-                          color: "var(--ink-700)",
-                          cursor: "pointer",
-                          lineHeight: 1.4,
+                          fontSize: ".8125rem",
+                          color: "var(--ink-500)",
+                          lineHeight: 1.5,
+                          margin: "0 0 16px",
                         }}
                       >
                         <Trans
@@ -974,11 +1042,11 @@ export function Auth() {
                             terms: (
                               <a
                                 href="/legal/terms-and-conditions"
+                                className="bz-auth-text-link"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 style={{
                                   color: "var(--blue)",
-                                  textDecoration: "none",
                                   fontWeight: 600,
                                 }}
                               />
@@ -986,19 +1054,32 @@ export function Auth() {
                             privacy: (
                               <a
                                 href="/legal/privacy-policy"
+                                className="bz-auth-text-link"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 style={{
                                   color: "var(--blue)",
-                                  textDecoration: "none",
                                   fontWeight: 600,
                                 }}
                               />
                             ),
                           }}
                         />
-                      </label>
-                    </div>
+                      </p>
+                    )}
+                    {isSeller && triedSubmit && !acceptedLegal && (
+                      <p
+                        id="sellerLegalError"
+                        style={{
+                          color: "var(--red)",
+                          fontSize: ".8125rem",
+                          margin: "-8px 0 14px",
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        {t("auth.legalRequired")}
+                      </p>
+                    )}
 
                     <div style={{ borderTop: "1px solid var(--line-200)", paddingTop: 12 }}>
                       <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
@@ -1038,22 +1119,9 @@ export function Auth() {
 
                 {mode === "login" && (
                   <div style={{ textAlign: "right", marginBottom: 12, marginTop: -4 }}>
-                    <button
-                      type="button"
-                      onClick={openForgotPassword}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "var(--blue)",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        fontSize: ".8125rem",
-                        fontFamily: "inherit",
-                        padding: 0,
-                      }}
-                    >
+                    <Button variant="link" type="button" onClick={openForgotPassword}>
                       {t("auth.forgotPassword")}
-                    </button>
+                    </Button>
                   </div>
                 )}
 
@@ -1088,32 +1156,29 @@ export function Auth() {
 
             {!pendingVerification && !forgotMode && (
               <div style={{ marginTop: 16 }}>
-                <button
+                <Button
+                  variant="link"
                   type="button"
                   onClick={() => {
                     setMode(mode === "login" ? "register" : "login");
                     setPendingVerification(null);
                     setOtp("");
                     setError(null);
-                  }}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "var(--blue)",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    fontSize: ".9375rem",
-                    fontFamily: "inherit",
+                    setTriedSubmit(false);
                   }}
                 >
                   {mode === "login" ? t("auth.needAccount") : t("auth.haveAccount")}
-                </button>
+                </Button>
               </div>
             )}
 
             {!pendingVerification && !forgotMode && !isSeller && (
               <div style={{ marginTop: 10 }}>
-                <Button variant="tertiary" full href={pathFromScreen("home")}>
+                <Button
+                  variant="link"
+                  href={pathFromScreen("home")}
+                  style={{ color: "var(--ink-500)" }}
+                >
                   {t("auth.skipForNow")}
                 </Button>
               </div>

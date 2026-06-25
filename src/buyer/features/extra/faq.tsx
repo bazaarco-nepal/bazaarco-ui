@@ -325,7 +325,7 @@ export function FAQPage() {
 
   return (
     <div className="bz-faq">
-      {/* Header card: hero + topic bar in one contained unit */}
+      {/* Header: hero + topic bar in one contained unit */}
       <section className="container">
         <div className="bz-faq__card">
           <div className="bz-faq__header">

@@ -48,13 +48,13 @@ export function postalForCity(city: string): string {
   return CITY_POSTAL[city] ?? "";
 }
 
-export function formatDeliverToLabel(loc: DeliveryLocation): string {
+export function formatDeliverToLabel(loc: DeliveryLocation, locale: "en" | "ne" = "en"): string {
   const city = loc.city?.trim();
   const postal = loc.postal?.trim();
   if (city && postal) return `${city} ${postal}`;
   if (city && loc.area) return `${loc.area}, ${city}`;
   if (city) return city;
-  return "Set location";
+  return locale === "ne" ? "स्थान सेट गर्नुहोस्" : "Set location";
 }
 
 export function readDeliveryFromStorage(): DeliveryLocation {

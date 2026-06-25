@@ -1422,11 +1422,13 @@ export function Price({
   original,
   size = "md",
   color = "var(--blue-deep)",
+  locale = "en",
 }: {
   value?: number;
   original?: number;
   size?: "sm" | "md" | "lg";
   color?: string;
+  locale?: "en" | "ne";
 }) {
   const fs = size === "lg" ? "1.5rem" : size === "sm" ? "0.875rem" : "1rem";
   const safeValue = value ?? 0;
@@ -1434,7 +1436,7 @@ export function Price({
   return (
     <span style={{ display: "inline-flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
       <span className="tnum" style={{ fontSize: fs, fontWeight: 800, color }}>
-        {formatNPR(safeValue)}
+        {formatNPR(safeValue, locale)}
       </span>
       {safeOriginal && (
         <span
@@ -1446,7 +1448,7 @@ export function Price({
             fontWeight: 500,
           }}
         >
-          {formatNPR(safeOriginal)}
+          {formatNPR(safeOriginal, locale)}
         </span>
       )}
     </span>

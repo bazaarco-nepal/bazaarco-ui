@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui";
 import { pathFromScreen } from "@/config/routes";
 import type { Product } from "@/types";
@@ -47,6 +48,7 @@ export function PdpMakeOfferButton({
   size?: ActionSize;
   full?: boolean;
 }) {
+  const { t } = useTranslation();
   const { openProduct } = useBz();
   const unavailable =
     product.outOfStock === true ||
@@ -64,7 +66,7 @@ export function PdpMakeOfferButton({
       disabled={unavailable}
       onClick={() => openProduct(product, { offer: true })}
     >
-      Make an offer
+      {t("pdp.makeOffer")}
     </Button>
   );
 }

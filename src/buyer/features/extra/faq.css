@@ -14,15 +14,11 @@
   line-height: var(--lh-normal);
 }
 
-/* ---------- Header card (hero + topic bar, one contained unit) ---------- */
+/* ---------- Header (hero + topic bar, one contained unit) ---------- */
 .bz-faq__card {
   max-width: var(--faq-measure);
   margin-inline: auto;
   width: 100%;
-  background: var(--card);
-  border: 1px solid var(--line-200);
-  border-radius: var(--r-lg);
-  box-shadow: var(--sh-1);
   padding: var(--space-xl) var(--space-lg);
 }
 .bz-faq__header {

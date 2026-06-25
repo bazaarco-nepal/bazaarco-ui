@@ -56,6 +56,7 @@ import type { PopularStore } from "@/buyer/api/home";
 const WATCH_RAIL_LIMIT = 8;
 
 function WatchSection({ reels }: { reels: VideoFeedItem[] }) {
+  const { t } = useTranslation();
   const { openVideo } = useBz();
   return (
     <section className="bz-watch-rail">
@@ -63,7 +64,7 @@ function WatchSection({ reels }: { reels: VideoFeedItem[] }) {
         <span className="bz-watch-rail__badge" aria-hidden="true">
           <Icon name="play" size={15} color="#fff" />
         </span>
-        <span className="bz-watch-rail__title">BazaarCo Watch</span>
+        <span className="bz-watch-rail__title">{t("home.watchTitle")}</span>
         <Button
           variant="link"
           className="bz-watch-rail__feed"
@@ -72,7 +73,7 @@ function WatchSection({ reels }: { reels: VideoFeedItem[] }) {
           iconRight="arrowRight"
           style={{ marginLeft: "auto" }}
         >
-          Open the feed
+          {t("home.openFeed")}
         </Button>
       </div>
       <div className="bz-watch-rail__scroll no-scrollbar">
@@ -97,12 +98,12 @@ function BargainSection() {
       <div className="bz-sec-head bz-bargain-head">
         <div>
           <h2 className="bz-sec-head__title" style={{ margin: 0 }}>
-            Bargain with the seller
+            {t("home.bargainTitle")}
           </h2>
           <p className="bz-bargain-head__note">{t("home.bargainReassurance")}</p>
         </div>
         <AppLink href={pathFromScreen("bargainable-products")} className="bz-sec-head__action">
-          <span className="bz-hide-mobile">All bargainable products</span>
+          <span className="bz-hide-mobile">{t("home.allBargainableProducts")}</span>
           <span className="bz-show-mobile">All</span>
           <Icon name="arrowRight" size={16} />
         </AppLink>

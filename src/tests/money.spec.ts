@@ -17,6 +17,11 @@ describe("formatNPR", () => {
     expect(formatNPR(undefined)).toBe("Rs. 0");
     expect(formatNPR(Number.NaN)).toBe("Rs. 0");
   });
+
+  it("uses Nepali currency and digits when requested", () => {
+    expect(formatNPR(500, "ne")).toBe("रु. ५००");
+    expect(formatNPR(123456, "ne")).toBe("रु. १,२३,४५६");
+  });
 });
 
 // Percentage-derived money rounds UP to the whole rupee, matching the server.

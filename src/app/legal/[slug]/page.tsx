@@ -61,7 +61,7 @@ export async function generateMetadata({ params }: LegalPageProps) {
   const displayName = getDocumentDisplayName(slug);
 
   return {
-    title: `${displayName} | BazaarCo`,
+    title: displayName,
     description: `BazaarCo ${displayName}. Read our legal terms, policies, and agreements.`,
     robots: {
       index: true,

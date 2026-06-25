@@ -250,7 +250,7 @@ export function storeShareUrl(sellerId: string, origin?: string): string {
   return `${base}${pathFromScreen("store", sellerId)}`;
 }
 
-// Browser-tab label per screen. Rendered as `BazaarCo - <label>`.
+// Browser-tab label per screen. Rendered as the exact page label.
 const SCREEN_TITLES: Record<string, string> = {
   auth: "Sign In",
   "auth-callback": "Signing In",
@@ -280,7 +280,7 @@ const SCREEN_TITLES: Record<string, string> = {
   privacy: "Privacy Policy",
   terms: "Terms & Conditions",
   about: "About Us",
-  "how-it-works": "How BazaarCo Works",
+  "how-it-works": "How BazaarCo Nepal Works",
   contact: "Contact Us",
   "how-to-order": "How to Order",
   "bargaining-guide": "Bargaining Guide",
@@ -307,12 +307,12 @@ const SCREEN_TITLES: Record<string, string> = {
 };
 
 /**
- * Builds the document title for a screen, e.g. `BazaarCo - Home`. Pass `detail`
- * to override the label (the product or store name on detail pages).
+ * Builds the document title for a screen. Pass `detail` to override the label
+ * (the product or store name on detail pages).
  */
 export function titleForScreen(screen: string, detail?: string): string {
   const label = detail?.trim() || SCREEN_TITLES[screen] || "Shop";
-  return `BazaarCo - ${label}`;
+  return label;
 }
 
 export function searchQueryFromPath(pathname: string): string {

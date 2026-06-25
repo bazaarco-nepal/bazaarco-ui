@@ -96,7 +96,9 @@ const imgOverlayBtn = (color: string): React.CSSProperties => ({
    BazaarCo — Product Detail Page (video-led)
    ============================================================ */
 function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
+  const { t } = useTranslation();
   const { addToCart, nav } = useBz();
+  const locale = useBazaarStore((s) => s.locale);
   const sellerName = p.sellerInfo?.name ?? "seller";
   const createOffer = useCreateBargainOffer();
   // Social proof: other buyers bargaining on this item right now (excludes you).
@@ -243,7 +245,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
             marginBottom: 18,
           }}
         >
-          <Icon name="bargain" size={22} color="var(--blue)" /> Make an offer
+          <Icon name="bargain" size={22} color="var(--blue)" /> {t("pdp.makeOffer")}
         </div>
         <div style={{ display: "flex", gap: 14, marginBottom: 20 }}>
           {p.img ? (
@@ -258,7 +260,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
           <div>
             <div style={{ fontWeight: 600 }}>{p.name}</div>
             <div style={{ marginTop: 4 }}>
-              <Price value={listed} original={original ?? undefined} size="sm" />
+              <Price value={listed} original={original ?? undefined} size="sm" locale={locale} />
             </div>
             <div style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 2 }}>
               Listed price
@@ -431,8 +433,8 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
             </div>
             <h3 style={{ margin: 0, fontSize: "1.25rem" }}>Offer sent!</h3>
             <p style={{ color: "var(--ink-500)", marginTop: 8 }}>
-              {sellerName} got your offer of <b className="tnum">{formatNPR(offerValue)}</b>. They
-              can accept, counter, or decline — we'll show their reply in My Offers.
+              {sellerName} got your offer of <b className="tnum">{formatNPR(offerValue, locale)}</b>
+              . They can accept, counter, or decline — we'll show their reply in My Offers.
             </p>
             <p style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 6 }}>
               {bargainExpiryLabel(offerExpires)
@@ -475,8 +477,8 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
             </div>
             <h3 style={{ margin: 0, fontSize: "1.25rem" }}>Offer accepted! 🎉</h3>
             <p style={{ color: "var(--ink-500)", marginTop: 8 }}>
-              {sellerName} accepted <b className="tnum">{formatNPR(offerValue)}</b>. Add it to your
-              cart at this price.
+              {sellerName} accepted <b className="tnum">{formatNPR(offerValue, locale)}</b>. Add it
+              to your cart at this price.
             </p>
             {bargainExpiryLabel(offerExpires) && (
               <p style={{ fontSize: ".75rem", color: "var(--ink-400)", marginTop: 6 }}>
@@ -496,7 +498,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
                   onClose();
                 }}
               >
-                Add to cart · {formatNPR(offerValue)}
+                Add to cart · {formatNPR(offerValue, locale)}
               </Button>
             </div>
           </div>
@@ -523,7 +525,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
             </div>
             <h3 style={{ margin: 0, fontSize: "1.125rem" }}>Seller countered</h3>
             <p style={{ color: "var(--ink-500)", marginTop: 8 }}>
-              That's a little low. They can do <b className="tnum">{formatNPR(counter)}</b>.
+              That's a little low. They can do <b className="tnum">{formatNPR(counter, locale)}</b>.
             </p>
             <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
               <Button
@@ -560,7 +562,7 @@ function BargainModal({ p, variantId = null, listedPrice, original, onClose }) {
                   onClose();
                 }}
               >
-                Accept {formatNPR(counter)}
+                Accept {formatNPR(counter, locale)}
               </Button>
             </div>
           </div>
@@ -590,6 +592,8 @@ function BuyNowSheet({
   onConfirm,
   onClose,
 }) {
+  const locale = useBazaarStore((s) => s.locale);
+
   return (
     <div
       role="dialog"
@@ -653,7 +657,7 @@ function BuyNowSheet({
               {p.name}
             </div>
             <div style={{ marginTop: 6 }}>
-              <Price value={price} original={original ?? undefined} size="md" />
+              <Price value={price} original={original ?? undefined} size="md" locale={locale} />
             </div>
           </div>
         </div>
@@ -694,7 +698,7 @@ function BuyNowSheet({
                     soldOut={(v.stock ?? 0) <= 0}
                     trailing={
                       <span className="tnum" style={{ fontSize: ".8125rem", opacity: 0.85 }}>
-                        {formatNPR(v.price)}
+                        {formatNPR(v.price, locale)}
                       </span>
                     }
                     onClick={() => onPickVariant(v.id)}
@@ -783,7 +787,11 @@ export function PDP({ p: pProp }: PdpProps) {
     const url = productShareUrl(p.id);
     try {
       if (navigator.share) {
-        await navigator.share({ title: p.name, text: `${p.name} · ${formatNPR(p.price)}`, url });
+        await navigator.share({
+          title: p.name,
+          text: `${p.name} · ${formatNPR(p.price, locale)}`,
+          url,
+        });
         return;
       }
       if (navigator.clipboard) {
@@ -1358,7 +1366,12 @@ export function PDP({ p: pProp }: PdpProps) {
                 {isMultiDimVariant && selectedVariants.length === 0 && (
                   <span style={{ fontSize: ".875rem", color: "var(--ink-500)" }}>From</span>
                 )}
-                <Price value={shownPrice} original={displayOriginal ?? undefined} size="lg" />
+                <Price
+                  value={shownPrice}
+                  original={displayOriginal ?? undefined}
+                  size="lg"
+                  locale={locale}
+                />
                 {showDiscount && <Badge tone="saffron">-{disc}% OFF</Badge>}
               </div>
             </div>
@@ -1577,7 +1590,12 @@ export function PDP({ p: pProp }: PdpProps) {
                 {isMultiDimVariant && selectedVariants.length === 0 && (
                   <span style={{ fontSize: ".875rem", color: "var(--ink-500)" }}>From</span>
                 )}
-                <Price value={shownPrice} original={displayOriginal ?? undefined} size="lg" />
+                <Price
+                  value={shownPrice}
+                  original={displayOriginal ?? undefined}
+                  size="lg"
+                  locale={locale}
+                />
                 {showDiscount && <Badge tone="saffron">-{disc}% OFF</Badge>}
               </div>
             </div>

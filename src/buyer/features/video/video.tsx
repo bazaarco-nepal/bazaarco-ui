@@ -119,15 +119,16 @@ function ShopActions({ item, size = "lg" }: { item: VideoFeedItem; size?: "md" |
 }
 
 function ProductSummary({ item }: { item: VideoFeedItem }) {
+  const locale = useBazaarStore((s) => s.locale);
   const discount = discountPercent(item);
   return (
     <>
       <div className="watch__product-name">{item.name}</div>
       <div className="watch__price-row">
-        <span className="watch__price">{formatNPR(item.price)}</span>
+        <span className="watch__price">{formatNPR(item.price, locale)}</span>
         {item.original && item.original > item.price ? (
           <>
-            <span className="watch__price-was">{formatNPR(item.original)}</span>
+            <span className="watch__price-was">{formatNPR(item.original, locale)}</span>
             <span className="watch__discount">-{discount}%</span>
           </>
         ) : null}
@@ -168,6 +169,7 @@ function ProductDock({ item }: { item: VideoFeedItem }) {
   const product = asProduct(item);
   const discount = discountPercent(item);
   const { openProduct } = useBz();
+  const locale = useBazaarStore((s) => s.locale);
 
   return (
     <div className="watch__dock">
@@ -180,7 +182,7 @@ function ProductDock({ item }: { item: VideoFeedItem }) {
         <span className="watch__dock-info">
           <span className="watch__dock-name">{item.name}</span>
           <span className="watch__dock-price">
-            {formatNPR(item.price)}
+            {formatNPR(item.price, locale)}
             {item.original && item.original > item.price ? (
               <span className="watch__dock-discount">-{discount}%</span>
             ) : null}

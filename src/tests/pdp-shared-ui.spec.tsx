@@ -1,13 +1,31 @@
 import React from "react";
-import { describe, it, expect, vi } from "vitest";
+import { beforeEach, describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { Badge, OptionChip, RatingInline } from "@/components/ui";
 import { TrustChips } from "@/buyer/features/pdp/_components/trust-chips";
+import { SellerCard } from "@/buyer/features/pdp/_components/seller-card";
+import { BazaarCtx } from "@/components/common";
 import type { Product } from "@/types";
 
 // The PDP consistency refactor pulls badges, option chips and the compact rating
 // into shared kit components. These guard the behaviour those components are
 // responsible for — not their pixel styling.
+
+const routerPush = vi.hoisted(() => vi.fn());
+
+vi.mock("next/navigation", () => {
+  const router = { push: routerPush, replace: vi.fn() };
+  return {
+    useRouter: () => router,
+    usePathname: () => "/product/p1",
+    useSearchParams: () => new URLSearchParams(""),
+  };
+});
+
+beforeEach(() => {
+  routerPush.mockClear();
+  window.scrollTo = vi.fn();
+});
 
 describe("Badge", () => {
   it("renders a leading status dot only when asked", () => {
@@ -94,5 +112,43 @@ describe("TrustChips", () => {
     render(<TrustChips product={{ stockStatus: "out_of_stock" } as unknown as Product} />);
     expect(screen.getByText("Out of stock")).toBeInTheDocument();
     expect(screen.queryByText("In stock")).toBeNull();
+  });
+});
+
+describe("SellerCard", () => {
+  it("links the PDP seller identity to the public store slug", () => {
+    const value = {
+      nav: vi.fn(),
+      authed: true,
+      promptLogin: vi.fn(),
+    } as unknown as React.ContextType<typeof BazaarCtx>;
+
+    render(
+      <BazaarCtx.Provider value={value}>
+        <SellerCard
+          sellerId="s2"
+          seller={{ id: "s2", name: "Mero Pasal", avatar: "", rating: 0, reviews: 0 }}
+          trust={{
+            id: "s2",
+            slug: "mero-pasal",
+            name: "Mero Pasal",
+            avatar: "",
+            verified: true,
+            rating: 4.6,
+            reviewsCount: 12,
+            joinedAt: "2026-01-01T00:00:00.000Z",
+            ordersCompleted: 8,
+            productsSold: 15,
+            positiveRatingPct: 96,
+          }}
+          embedded
+        />
+      </BazaarCtx.Provider>,
+    );
+
+    const storeLink = screen.getByText("Mero Pasal").closest("a") as HTMLAnchorElement;
+    expect(storeLink).toHaveAttribute("href", "/store/mero-pasal");
+    fireEvent.click(storeLink);
+    expect(routerPush).toHaveBeenCalledWith("/store/mero-pasal", { scroll: false });
   });
 });

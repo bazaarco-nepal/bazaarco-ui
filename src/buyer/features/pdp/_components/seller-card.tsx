@@ -1,8 +1,9 @@
 "use client";
 
-import type { KeyboardEvent } from "react";
-import { Icon, StoreAvatar, Button } from "@/components/ui";
+import React from "react";
+import { Icon, StoreAvatar, Button, AppLink } from "@/components/ui";
 import { useBz } from "@/components/common";
+import { pathFromScreen } from "@/config/routes";
 import type { ProductSeller, SellerTrust } from "@/types";
 
 type SellerCardProps = {
@@ -31,21 +32,15 @@ export function SellerCard({
   embedded = false,
   slim = false,
 }: SellerCardProps) {
-  const { nav, authed, promptLogin, openStore } = useBz();
+  const { nav, authed, promptLogin } = useBz();
 
   const name = trust?.name ?? seller?.name ?? "Seller";
   // The store's logo (avatar). Use the first non-empty source so an empty string
   // from one doesn't suppress a real logo from the other.
   const avatar = (trust?.avatar || seller?.avatar || "").trim();
   const rating = trust?.rating ?? seller?.rating ?? 0;
-
-  const goToStore = () => openStore(sellerId);
-  const onStoreKey = (e: KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      goToStore();
-    }
-  };
+  const storeHandle = trust?.slug || sellerId;
+  const storeHref = pathFromScreen("store", storeHandle);
 
   const openChat = () => {
     if (!authed) {
@@ -82,16 +77,13 @@ export function SellerCard({
           borderTop: "1px solid var(--line-200)",
         }}
       >
-        <span
-          role="link"
-          tabIndex={0}
+        <AppLink
+          href={storeHref}
           aria-label={`Visit ${name} store`}
-          onClick={goToStore}
-          onKeyDown={onStoreKey}
           style={{ cursor: "pointer", display: "inline-flex", flex: "0 0 auto" }}
         >
           <StoreAvatar src={avatar || null} name={name} size={36} />
-        </span>
+        </AppLink>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div
             style={{
@@ -103,21 +95,19 @@ export function SellerCard({
               color: "var(--ink-900)",
             }}
           >
-            <span
-              role="link"
-              tabIndex={0}
+            <AppLink
+              href={storeHref}
               className="bz-hover-underline"
-              onClick={goToStore}
-              onKeyDown={onStoreKey}
               style={{
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
                 cursor: "pointer",
+                color: "inherit",
               }}
             >
               {name}
-            </span>
+            </AppLink>
             {trust?.verified && <Icon name="badgeCheck" size={13} color="var(--blue)" />}
           </div>
           <div
@@ -175,16 +165,13 @@ export function SellerCard({
         {/* The store's uploaded logo when set; otherwise the shared brand-mark
             monogram (store initial on a deterministic tint) — never a generic
             icon, so every seller reads as a real shop. */}
-        <span
-          role="link"
-          tabIndex={0}
+        <AppLink
+          href={storeHref}
           aria-label={`Visit ${name} store`}
-          onClick={goToStore}
-          onKeyDown={onStoreKey}
           style={{ cursor: "pointer", display: "inline-flex", flexShrink: 0 }}
         >
           <StoreAvatar src={avatar || null} name={name} size={44} />
-        </span>
+        </AppLink>
         <div style={{ minWidth: 0 }}>
           <div
             style={{
@@ -196,21 +183,19 @@ export function SellerCard({
               fontSize: ".9375rem",
             }}
           >
-            <span
-              role="link"
-              tabIndex={0}
+            <AppLink
+              href={storeHref}
               className="bz-hover-underline"
-              onClick={goToStore}
-              onKeyDown={onStoreKey}
               style={{
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
                 cursor: "pointer",
+                color: "inherit",
               }}
             >
               {name}
-            </span>
+            </AppLink>
             {trust?.verified && <Icon name="badgeCheck" size={15} color="var(--blue)" />}
           </div>
           <div style={{ fontSize: ".8125rem", color: "var(--ink-500)", marginTop: 2 }}>

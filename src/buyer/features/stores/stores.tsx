@@ -11,7 +11,6 @@ import {
   StoreAvatar,
 } from "@/components/ui";
 import { useTranslation } from "react-i18next";
-import { useBz } from "@/components/common";
 import { useSellers } from "@/shared/hooks/use-catalog";
 import { pathFromScreen } from "@/config/routes";
 import type { Seller } from "@/types";
@@ -27,7 +26,6 @@ const SORTS: { value: SortKey; labelKey: string }[] = [
  *  sortable, laid out as a dense brand grid (2-up on mobile, 4-up on desktop). */
 export function Stores() {
   const { t } = useTranslation();
-  const { openStore } = useBz();
   const sellersQuery = useSellers();
   const sellers = useMemo(() => sellersQuery.data ?? [], [sellersQuery.data]);
 
@@ -230,7 +228,7 @@ export function Stores() {
         ) : (
           <div className="bz-stores-grid" style={{ paddingBottom: 8 }}>
             {filtered.map((seller) => (
-              <StoreCard key={seller.id} seller={seller} onOpen={() => openStore(seller.id)} />
+              <StoreCard key={seller.id} seller={seller} />
             ))}
           </div>
         )}
@@ -239,13 +237,13 @@ export function Stores() {
   );
 }
 
-function StoreCard({ seller, onOpen }: { seller: Seller; onOpen: () => void }) {
+function StoreCard({ seller }: { seller: Seller }) {
   const { t } = useTranslation();
   const hasReviews = seller.reviews > 0;
+  const storeHandle = seller.slug || seller.id;
   return (
     <AppLink
-      href={pathFromScreen("store", seller.id)}
-      onNavigate={onOpen}
+      href={pathFromScreen("store", storeHandle)}
       className="bz-store-card"
       ariaLabel={t("stores.visitStoreAria", { name: seller.name })}
     >

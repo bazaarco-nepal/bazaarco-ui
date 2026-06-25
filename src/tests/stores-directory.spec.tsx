@@ -6,8 +6,10 @@ import { render, screen, fireEvent, within } from "@testing-library/react";
 // city, sortable, with zero-review stores hiding their star row. These tests pin
 // that behaviour and the "no match" state.
 
+const routerPush = vi.hoisted(() => vi.fn());
+
 vi.mock("next/navigation", () => {
-  const router = { push: vi.fn(), replace: vi.fn() };
+  const router = { push: routerPush, replace: vi.fn() };
   return {
     useRouter: () => router,
     usePathname: () => "/stores",
@@ -27,6 +29,7 @@ const SELLERS = [
   },
   {
     id: "s2",
+    slug: "pokhara-crafts",
     name: "Pokhara Crafts",
     rating: 4.2,
     reviews: 40,
@@ -66,22 +69,15 @@ vi.mock("@/shared/hooks/use-catalog", () => ({
   useSellers: () => useSellersMock(),
 }));
 
-import { BazaarCtx } from "@/components/common";
 import { Stores } from "@/buyer/features/stores/stores";
 
-const openStore = vi.fn();
-
 function Harness() {
-  const value = { openStore } as unknown as React.ContextType<typeof BazaarCtx>;
-  return (
-    <BazaarCtx.Provider value={value}>
-      <Stores />
-    </BazaarCtx.Provider>
-  );
+  return <Stores />;
 }
 
 beforeEach(() => {
-  openStore.mockClear();
+  routerPush.mockClear();
+  window.scrollTo = vi.fn();
   useSellersMock.mockReturnValue({ data: SELLERS, isLoading: false, isError: false, error: null });
 });
 
@@ -138,20 +134,26 @@ it("shows an empty state when nothing matches", () => {
   expect(screen.getByText("No stores match your search")).toBeInTheDocument();
 });
 
-it("clicking a store opens that store by id", () => {
+it("clicking a store opens that store by slug when available", () => {
   render(<Harness />);
   const card = screen.getByText("Pokhara Crafts").closest("a") as HTMLAnchorElement;
-  expect(card).toHaveAttribute("href", "/store/s2");
+  expect(card).toHaveAttribute("href", "/store/pokhara-crafts");
   fireEvent.click(within(card).getByText("Pokhara Crafts"));
-  expect(openStore).toHaveBeenCalledWith("s2");
+  expect(routerPush).toHaveBeenCalledWith("/store/pokhara-crafts", { scroll: false });
 });
 
 it("gives every card a store-specific accessible name", () => {
   render(<Harness />);
   // Each card is one link with an aria-label tied to its store, so screen
   // readers announce which shop they're about to visit.
-  expect(screen.getByLabelText("Visit Pokhara Crafts store")).toHaveAttribute("href", "/store/s2");
-  expect(screen.getByLabelText("Visit Bhimsen Naturals store")).toBeInTheDocument();
+  expect(screen.getByLabelText("Visit Pokhara Crafts store")).toHaveAttribute(
+    "href",
+    "/store/pokhara-crafts",
+  );
+  expect(screen.getByLabelText("Visit Bhimsen Naturals store")).toHaveAttribute(
+    "href",
+    "/store/s4",
+  );
 });
 
 it("renders one identical CTA on every card, regardless of review state", () => {

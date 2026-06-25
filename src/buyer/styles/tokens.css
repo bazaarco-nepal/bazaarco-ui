@@ -3017,10 +3017,14 @@ body {
 .bz-pdp-mobile__viewport {
   position: relative;
   /* Break out of the PDP page padding so the hero image is edge-to-edge,
-     while the thumbnail strip and content below stay inset. */
+     while the content below stays inset. */
   width: auto;
   margin: -12px -16px 0;
-  height: min(50vh, 408px);
+  /* Height follows the current image's real aspect ratio (set inline from the
+     loaded image). Square is the fallback until the first image reports its size;
+     the cap only guards against pathologically tall images eating the screen. */
+  aspect-ratio: 1 / 1;
+  max-height: 90vh;
   overflow: hidden;
   border-radius: 0;
   background: #fff;
@@ -3062,50 +3066,6 @@ body {
   object-fit: contain;
   display: block;
   pointer-events: none;
-}
-
-.bz-pdp-mobile__thumbs {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-  overflow-x: auto;
-  padding-bottom: 2px;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-
-.bz-pdp-mobile__thumb {
-  flex: 1 0 0;
-  min-width: 64px;
-  width: auto;
-  height: 52px;
-  padding: 0;
-  border-radius: var(--r-md);
-  overflow: hidden;
-  border: 1px solid var(--line-200);
-  background: var(--line-100);
-  cursor: pointer;
-  position: relative;
-}
-
-.bz-pdp-mobile__thumb[aria-selected="true"] {
-  border-color: var(--blue-deep);
-}
-
-.bz-pdp-mobile__thumb[aria-selected="true"]::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: var(--r-md);
-  box-shadow: inset 0 0 0 2px var(--blue-deep);
-  pointer-events: none;
-}
-
-.bz-pdp-mobile__thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
 }
 
 .bz-pdp-price-row {

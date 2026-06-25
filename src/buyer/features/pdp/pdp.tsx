@@ -891,6 +891,18 @@ export function PDP({ p: pProp }: PdpProps) {
     return slides;
   }, [variantHeroUrl, gallery]);
 
+  // Natural aspect ratio (w/h) per image, captured on load, so the gallery frame
+  // sizes to the real image instead of forcing it into a fixed box (which left smaller
+  // photos surrounded by white space). Defaults to square until the current one loads.
+  const [ratioBySrc, setRatioBySrc] = useState<Record<string, number>>({});
+  const recordRatio = (src: string, el: HTMLImageElement) => {
+    const ratio = el.naturalWidth / el.naturalHeight;
+    if (!Number.isFinite(ratio) || ratio <= 0) return;
+    setRatioBySrc((prev) => (prev[src] === ratio ? prev : { ...prev, [src]: ratio }));
+  };
+  const currentMediaSrc = gallerySlides[mediaIdx] ?? gallerySlides[0] ?? null;
+  const currentMediaRatio = (currentMediaSrc ? ratioBySrc[currentMediaSrc] : undefined) ?? 1;
+
   // When the selection brings its own featured image, jump to slide 0 (the hero).
   useEffect(() => {
     if (variantHeroUrl) setMediaIdx(0);
@@ -1198,6 +1210,7 @@ export function PDP({ p: pProp }: PdpProps) {
               <>
                 <div
                   className="bz-pdp-mobile__viewport"
+                  style={{ aspectRatio: String(currentMediaRatio) }}
                   onTouchStart={(e) => {
                     touchStartX.current = e.touches[0].clientX;
                     touchStartY.current = e.touches[0].clientY;
@@ -1238,7 +1251,12 @@ export function PDP({ p: pProp }: PdpProps) {
                           className="bz-pdp-mobile__zoom-hit"
                           onClick={openPhotoLightbox}
                         >
-                          <img src={src} alt={p.name} draggable={false} />
+                          <img
+                            src={src}
+                            alt={p.name}
+                            draggable={false}
+                            onLoad={(e) => recordRatio(src, e.currentTarget)}
+                          />
                         </button>
                       </div>
                     ))}
@@ -1310,26 +1328,6 @@ export function PDP({ p: pProp }: PdpProps) {
                     </div>
                   )}
                 </div>
-                {gallerySlides.filter((src) => src !== variantHeroUrl).length > 1 && (
-                  <div className="bz-pdp-mobile__thumbs" role="tablist" aria-label="Product photos">
-                    {gallerySlides.map((src, i) => {
-                      if (src === variantHeroUrl) return null;
-                      return (
-                        <button
-                          key={i}
-                          type="button"
-                          role="tab"
-                          aria-label="View product photo"
-                          aria-selected={i === mediaIdx}
-                          className="bz-pdp-mobile__thumb"
-                          onClick={() => setMediaIdx(i)}
-                        >
-                          <img src={src} alt="" />
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
               </>
             ) : (
               <Placeholder icon={p.icon} ratio="1 / 1" radius="var(--r-lg)" />
@@ -1468,7 +1466,9 @@ export function PDP({ p: pProp }: PdpProps) {
                     position: "relative",
                     width: "100%",
                     maxWidth: 420,
-                    height: 552,
+                    // Frame follows the image's real aspect ratio (capped at 72vh) so
+                    // it isn't boxed into a fixed height with white space around it.
+                    aspectRatio: String(currentMediaRatio),
                     maxHeight: "72vh",
                     borderRadius: "var(--r-lg)",
                     overflow: "hidden",
@@ -1497,11 +1497,14 @@ export function PDP({ p: pProp }: PdpProps) {
                       src={gallerySlides[mediaIdx] ?? gallerySlides[0]}
                       alt={p.name}
                       draggable={false}
+                      onLoad={(e) =>
+                        recordRatio(gallerySlides[mediaIdx] ?? gallerySlides[0], e.currentTarget)
+                      }
                       style={{
                         width: "100%",
                         height: "100%",
-                        // Preserve the whole product photo. Tall listing images
-                        // use the extra vertical room instead of being cropped.
+                        // Frame matches the image ratio, so contain fills it with no
+                        // letterboxing for the active photo.
                         objectFit: "contain",
                         pointerEvents: "none",
                       }}

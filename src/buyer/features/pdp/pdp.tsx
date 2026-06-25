@@ -1339,29 +1339,21 @@ export function PDP({ p: pProp }: PdpProps) {
           {/* Product header — no own L/R padding; it sits on the page's single
               16px gutter (same as the homepage and every other block). */}
           <div style={{ padding: "14px 0 16px" }}>
-            <div
+            {/* Title takes the full row so it wraps at its natural width; rating sits
+                below it (primary hierarchy: title → rating → price). */}
+            <h1
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                gap: 10,
+                margin: 0,
+                fontSize: "1.0625rem",
+                fontWeight: 700,
+                color: "var(--ink-900)",
+                lineHeight: 1.32,
               }}
             >
-              <h1
-                style={{
-                  margin: 0,
-                  flex: 1,
-                  fontSize: "1.0625rem",
-                  fontWeight: 700,
-                  color: "var(--ink-900)",
-                  lineHeight: 1.32,
-                }}
-              >
-                {p.name}
-              </h1>
-              <div style={{ marginTop: 4, whiteSpace: "nowrap" }}>
-                <RatingInline rating={p.rating} count={p.reviews} size={14} />
-              </div>
+              {p.name}
+            </h1>
+            <div style={{ marginTop: 8 }}>
+              <RatingInline rating={p.rating} count={p.reviews} size={14} />
             </div>
             <div className="bz-pdp-price-row">
               <div className="bz-pdp-price-row__main">

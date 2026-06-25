@@ -277,6 +277,9 @@ body {
 .bz-hover-dim:hover {
   opacity: 0.75;
 }
+.bz-hover-underline {
+  text-decoration: none;
+}
 .bz-hover-underline:hover {
   text-decoration: underline;
 }

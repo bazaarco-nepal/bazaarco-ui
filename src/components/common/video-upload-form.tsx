@@ -121,7 +121,7 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
 
     try {
       setProgress(0);
-      const uploaded = await uploadVideo.mutateAsync({
+      const { publicId } = await uploadVideo.mutateAsync({
         file,
         onProgress: setProgress,
       });
@@ -130,11 +130,9 @@ export function VideoUploadForm({ onSuccess, onCancel }: VideoUploadFormProps) {
         title: selectedProduct.name,
         product: selectedProduct.name,
         productId: selectedProduct.id,
-        videoUrl: uploaded.url,
-        thumbUrl: uploaded.thumbnailUrl ?? uploaded.url,
-        publicId: uploaded.publicId,
+        // The Core API resolves the video URL, thumbnail and duration from this id.
+        publicId,
         status,
-        duration: durationSec ?? 0,
       });
       setProgress(null);
       onSuccess(status);

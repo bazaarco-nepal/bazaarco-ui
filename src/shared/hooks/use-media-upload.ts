@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { mediaApi } from "@/shared/api/media";
+import { uploadSellerVideo } from "@/shared/api/cloudinary-upload";
 import { queryKeys } from "@/shared/api/query-keys";
 
 export function useUploadImage() {
@@ -14,7 +15,7 @@ export function useUploadImage() {
 export function useUploadVideo() {
   return useMutation({
     mutationFn: ({ file, onProgress }: { file: File; onProgress?: (pct: number) => void }) =>
-      mediaApi.uploadVideo(file, onProgress),
+      uploadSellerVideo(file, onProgress),
   });
 }
 

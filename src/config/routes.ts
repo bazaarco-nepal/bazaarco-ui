@@ -160,6 +160,15 @@ export function pathFromScreen(
   return SCREEN_PATH[screen] ?? "/home";
 }
 
+export function sellerSignupPath(): string {
+  const params = new URLSearchParams({
+    intent: "seller",
+    mode: "register",
+    next: pathFromScreen("s-onboarding"),
+  });
+  return `${pathFromScreen("auth")}?${params.toString()}`;
+}
+
 export type BrowsePathOptions = {
   q?: string;
   cat?: string | string[];

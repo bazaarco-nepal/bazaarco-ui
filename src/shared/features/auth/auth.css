@@ -1,0 +1,10 @@
+.bz-auth-text-link {
+  text-decoration: none;
+}
+
+.bz-auth-text-link:hover,
+.bz-auth-text-link:focus-visible {
+  color: var(--blue-deep) !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

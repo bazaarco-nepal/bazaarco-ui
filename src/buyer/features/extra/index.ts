@@ -3,12 +3,12 @@ export { Saved } from "./extra";
 export { Bargains } from "./extra";
 export {
   HelpSupportPage,
-  FAQPage,
   PrivacyPolicyPage,
   TermsPage,
-  AboutPage,
   HowItWorksPage,
   ContactPage,
   HowToOrderPage,
   BargainingGuidePage,
 } from "./info-pages";
+export { AboutPage } from "./about";
+export { FAQPage } from "./faq";

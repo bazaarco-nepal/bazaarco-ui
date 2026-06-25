@@ -1,0 +1,291 @@
+/* About BazaarCo Nepal — landing layout. Built on existing tokens + the
+   .bz-band / .container patterns; no raw colors, no gradients. One local
+   reading-width var (--about-measure) since the system has no prose-width token. */
+
+.bz-about {
+  --about-measure: 820px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--section-gap);
+  padding-bottom: var(--section-gap);
+  background: var(--page);
+  color: var(--ink-700);
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+}
+
+.bz-about p {
+  margin: 0 0 var(--space-md);
+}
+.bz-about p:last-child {
+  margin-bottom: 0;
+}
+
+/* Constrained reading column for prose-led sections */
+.bz-about__prose {
+  max-width: var(--about-measure);
+  margin-inline: auto;
+}
+
+/* ---------- Hero ---------- */
+.bz-about__hero {
+  padding-top: var(--section-gap);
+}
+.bz-about__hero-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: var(--section-gap);
+  align-items: center;
+}
+.bz-about__logo {
+  margin-bottom: var(--space-md);
+}
+.bz-about__title {
+  font-family: var(--font-display);
+  font-weight: var(--w-hero);
+  font-size: var(--fs-h1);
+  color: var(--blue-deep);
+  margin: 0 0 var(--space-xs);
+  line-height: var(--lh-tight, 1.15);
+}
+.bz-about__lede {
+  font-family: var(--font-display);
+  font-weight: var(--w-heading);
+  font-size: var(--fs-h2);
+  color: var(--blue);
+  margin: 0 0 var(--space-lg);
+}
+.bz-about__cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+.bz-about__hero-art {
+  aspect-ratio: 1 / 1;
+  background: var(--bz-img-bg);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+.bz-about__hero-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* ---------- Highlighted statement (left-rail, tinted) ---------- */
+.bz-about__statement {
+  border-left: 3px solid var(--blue);
+  background: var(--tint-blue-50);
+  border-radius: var(--r-md);
+  padding: var(--space-md) var(--space-lg);
+  color: var(--blue-deep);
+  font-family: var(--font-display);
+  font-weight: var(--w-heading);
+  font-size: var(--fs-lg, 1.125rem);
+}
+.bz-about__statement--lead {
+  font-size: var(--fs-h2);
+}
+
+/* The page's signature belief line */
+.bz-about__belief {
+  font-family: var(--font-display);
+  font-weight: var(--w-hero);
+  font-size: var(--fs-h1);
+  color: var(--blue-deep);
+  text-align: center;
+  margin: var(--space-lg) 0;
+}
+
+/* ---------- Two-line emphasis pair (fairness lines) ---------- */
+.bz-about__pair {
+  display: grid;
+  gap: var(--space-sm, 8px);
+  border-left: 3px solid var(--blue);
+  background: var(--tint-blue-50);
+  border-radius: var(--r-md);
+  padding: var(--space-md) var(--space-lg);
+}
+.bz-about__pair span {
+  color: var(--blue-deep);
+  font-weight: var(--w-heading);
+}
+
+/* ---------- Buyer / seller cards ---------- */
+.bz-about__duo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--grid-gap);
+}
+.bz-about__card {
+  background: var(--card);
+  border: 1px solid var(--line-200);
+  border-radius: var(--r-lg);
+  padding: var(--space-lg);
+}
+.bz-about__card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm, 8px);
+  margin-bottom: var(--space-md);
+}
+.bz-about__card-chip {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-md);
+  background: var(--tint-blue-50);
+  color: var(--blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.bz-about__card-title {
+  font-family: var(--font-display);
+  font-weight: var(--w-heading);
+  font-size: var(--fs-lg);
+  color: var(--blue-deep);
+}
+.bz-about__list {
+  list-style: none;
+  margin: var(--space-md) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-sm, 8px);
+}
+.bz-about__list li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm, 8px);
+  color: var(--ink-700);
+}
+.bz-about__list li svg {
+  color: var(--blue);
+  margin-top: 2px;
+}
+
+/* ---------- Chips (verbatim list items as pills) ---------- */
+.bz-about__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm, 8px);
+}
+.bz-about__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--tint-blue-50);
+  color: var(--blue-deep);
+  font-weight: var(--w-heading);
+  font-size: var(--fs-sm, 0.8125rem);
+}
+.bz-about__chip svg {
+  color: var(--blue);
+}
+
+/* ---------- Center cluster (closing lines per section) ---------- */
+.bz-about__center {
+  text-align: center;
+  max-width: var(--about-measure);
+  margin-inline: auto;
+}
+.bz-about__center .bz-about__emph {
+  font-family: var(--font-display);
+  font-weight: var(--w-heading);
+  color: var(--blue-deep);
+}
+
+/* ---------- Icon row (decorative) ---------- */
+.bz-about__iconrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-lg);
+  margin-top: var(--space-lg);
+  color: var(--blue);
+}
+.bz-about__iconrow > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-700);
+}
+
+/* ---------- Mission band (navy) ---------- */
+.bz-band--watch .bz-about__mission-title {
+  font-family: var(--font-display);
+  font-weight: var(--w-hero);
+  font-size: var(--fs-h1);
+  color: var(--on-navy-100);
+  margin: 0 0 var(--space-lg);
+  text-align: center;
+}
+.bz-about__mgrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--grid-gap);
+  max-width: var(--about-measure);
+  margin: 0 auto var(--space-xl);
+}
+.bz-about__mgrid li {
+  list-style: none;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--r-md);
+  padding: var(--space-md) var(--space-lg);
+  color: var(--on-navy-100);
+  font-family: var(--font-display);
+  font-weight: var(--w-heading);
+}
+.bz-band--watch .bz-about__mission-close {
+  text-align: center;
+  color: var(--on-navy-100);
+  max-width: var(--about-measure);
+  margin-inline: auto;
+}
+.bz-band--watch .bz-about__mission-close .bz-about__emph {
+  font-family: var(--font-display);
+  font-weight: var(--w-heading);
+  font-size: var(--fs-lg, 1.125rem);
+}
+
+/* ---------- Final CTA (on cream, separates the two navy zones) ---------- */
+.bz-about__cta {
+  text-align: center;
+}
+.bz-about__cta-title {
+  font-family: var(--font-display);
+  font-weight: var(--w-hero);
+  font-size: var(--fs-h1);
+  color: var(--blue-deep);
+  margin: 0 0 var(--space-lg);
+}
+.bz-about__cta .bz-about__cta-row {
+  justify-content: center;
+  margin-top: 0;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+  .bz-about__hero-inner {
+    grid-template-columns: 1fr;
+    gap: var(--space-xl);
+  }
+  .bz-about__hero-art {
+    order: -1;
+    max-width: 280px;
+    margin-inline: auto;
+  }
+  .bz-about__mgrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .bz-about__cta-row .btn {
+    width: 100%;
+  }
+}

@@ -187,7 +187,7 @@
   /* Homepage vertical rhythm. The contrast is the point: the gap BETWEEN
      sections must read clearly larger than the gaps WITHIN one (card/grid).
      --section-gap is ~3-4x --grid-gap so sections chunk into separate "rooms".
-     One token, one place — the home stack's flex gap consumes --section-gap. */
+     One token, one place: the home stack's flex gap consumes --section-gap. */
   --home-hero-top: clamp(20px, 1vw + 12px, 28px);
   --section-gap: clamp(48px, 4vw, 80px); /* between sections */
   --section-header: clamp(16px, 1.5vw, 24px); /* section title → its content */
@@ -2747,10 +2747,8 @@ body {
   }
 }
 
-/* Equal-weight card: fixed internal layout (head → single meta line → footer)
-   so every card is the same height with the CTA pinned to the bottom. No lift
-   or colour-fill on hover — this is a browse grid with no single primary card,
-   so nothing should read as "selected". */
+/* Equal-weight card: fixed internal layout (head -> single meta line -> footer)
+   so every card is the same height with the CTA pinned to the bottom. */
 .bz-store-card {
   display: flex;
   flex-direction: column;
@@ -2760,7 +2758,7 @@ body {
   border-radius: var(--r-lg);
   border: 1px solid var(--line-200);
   background: var(--card);
-  box-shadow: var(--sh-1);
+  box-shadow: none;
   text-decoration: none;
   color: inherit;
   transition:
@@ -2768,7 +2766,7 @@ body {
     border-color var(--dur-standard) var(--ease);
 }
 .bz-store-card:hover {
-  box-shadow: var(--sh-2);
+  box-shadow: var(--sh-1);
   border-color: var(--ink-300);
 }
 @media (min-width: 1024px) {
@@ -2862,21 +2860,21 @@ body {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  border: 1px solid #e9ebf0;
-  border-radius: 16px;
+  border: 1px solid var(--line-200);
+  border-radius: var(--r-lg);
   background: var(--card);
-  box-shadow: 0 1px 2px rgba(20, 30, 60, 0.04);
+  box-shadow: none;
   color: inherit;
   cursor: pointer;
   transition:
     box-shadow var(--dur-standard) var(--ease),
-    transform var(--dur-standard) var(--ease);
+    border-color var(--dur-standard) var(--ease);
 }
 
 .bz-popular-store-card:hover,
 .bz-popular-store-card:focus-visible {
-  box-shadow: 0 12px 28px rgba(16, 24, 58, 0.12);
-  transform: translateY(-3px);
+  border-color: var(--ink-300);
+  box-shadow: var(--sh-1);
   outline: none;
 }
 
@@ -3627,18 +3625,9 @@ body {
   gap: var(--section-gap);
   padding-bottom: 8px;
 }
-/* Hero hidden: the first section would otherwise hug the navbar, so the page
-   carries the hero's old top offset instead. Remove this rule + the class in
-   home.tsx when the hero is restored (the hero then owns its own top spacing). */
+/* Keeps the first homepage section from hugging the navbar. */
 .bz-home--no-hero {
   padding-top: var(--home-hero-top);
-}
-/* The hero is the first item, so the stack gap can't offset it from the navbar —
-   it carries its own top spacing. (Mobile hero sets this inline.) */
-@media (min-width: 769px) {
-  .bz-home-hero {
-    padding-top: var(--home-hero-top) !important;
-  }
 }
 
 /* Section headings use the display face (Bricolage Grotesque) per the revamp. */
@@ -3819,457 +3808,6 @@ body {
 @media (min-width: 1181px) {
   .bz-category-browser-grid {
     grid-template-columns: repeat(auto-fill, minmax(min(128px, 100%), 1fr));
-  }
-}
-
-/* ---------- Homepage hero carousel (hardcoded marketing slides) ---------- */
-@keyframes bz-pulse {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.4;
-    transform: scale(0.8);
-  }
-}
-
-.bz-hero {
-  position: relative;
-  width: 100%;
-  border-radius: 16px;
-  overflow: hidden;
-  background: var(--blue-deep);
-  box-shadow: var(--sh-1);
-  aspect-ratio: 1672 / 941;
-}
-.bz-hero__track {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  height: 100%;
-  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.bz-hero__slide {
-  flex: 0 0 100%;
-  display: block;
-  height: 100%;
-}
-.bz-hero__img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-.bz-hero__arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 40px;
-  height: 40px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(16, 44, 101, 0.5);
-  color: #fff;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(3px);
-  transition: background var(--dur-standard) var(--ease);
-}
-.bz-hero__arrow:hover {
-  background: rgba(16, 44, 101, 0.85);
-}
-.bz-hero__arrow--prev {
-  left: 14px;
-}
-.bz-hero__arrow--next {
-  right: 14px;
-}
-.bz-hero__dots {
-  position: absolute;
-  bottom: 14px;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: center;
-  gap: 7px;
-}
-.bz-hero__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--r-full);
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  background: rgba(255, 255, 255, 0.55);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-  transition: width var(--dur-standard) var(--ease);
-}
-.bz-hero__dot[data-active="true"] {
-  width: 22px;
-  background: #fff;
-}
-
-/* Desktop — hero keeps its current footprint while the right slot waits for the
-   Smart Shopping panel. Row height is capped so the carousel stays compact. */
-@media (min-width: 769px) {
-  .bz-home-herorow {
-    display: flex;
-    gap: 18px;
-    align-items: stretch;
-    height: 440px;
-  }
-  .bz-home-herorow .bz-hero {
-    flex: 1 1 auto;
-    min-width: 0;
-    height: 100%;
-    width: auto;
-  }
-  .bz-home-smart-slot {
-    flex: 0 1 clamp(300px, 32vw, 470px);
-    width: clamp(300px, 32vw, 470px);
-    min-width: 300px;
-    min-height: 0;
-  }
-}
-
-/* Smart Shopping panel — the hero-right "mini control center", composed from
-   shared SmartPanel primitives (header/title, lead card, tile grid, metric row,
-   quick links). Every value is a token, so a :root change restyles it with the
-   rest of the site. Content flows top-to-bottom at the panel's own gap so the
-   CTA stays with its content. The guest panel adds --fill to match the hero
-   height: its trailing "Popular searches" block grows to take up the slack, so
-   the card fills the slot with real content instead of empty space. */
-.bz-smart-panel {
-  width: 100%;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-  padding: var(--space-md);
-  background: var(--card);
-  border: 0.5px solid var(--bz-card-border);
-  border-radius: var(--r-lg);
-  box-shadow: var(--sh-1);
-  overflow: hidden;
-}
-.bz-smart-panel--fill {
-  height: 100%;
-}
-.bz-smart-panel__header {
-  min-width: 0;
-}
-.bz-smart-panel__title {
-  margin: 0;
-  color: var(--blue-deep);
-  font-size: var(--fs-h2);
-  font-weight: var(--w-emphasis);
-  line-height: 1.15;
-  letter-spacing: 0;
-}
-.bz-smart-panel__subtitle {
-  margin: var(--space-2xs) 0 0;
-  color: var(--ink-500);
-  font-size: var(--fs-caption);
-  line-height: 1.35;
-}
-
-/* Lead card — the one prominent action/status block. */
-.bz-smart-lead {
-  min-width: 0;
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-sm);
-  padding: var(--space-sm);
-  background: var(--line-100);
-  border-radius: var(--r-md);
-}
-.bz-smart-lead--bargain {
-  background: var(--tint-red-50);
-}
-.bz-smart-lead__icon {
-  flex: none;
-  width: 36px;
-  height: 36px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--blue-deep);
-  background: var(--card);
-  border-radius: var(--r-md);
-}
-.bz-smart-lead--bargain .bz-smart-lead__icon {
-  color: var(--red);
-}
-.bz-smart-lead__thumb {
-  flex: none;
-  width: 48px;
-  height: 48px;
-  object-fit: cover;
-  background: var(--line-100);
-  border: 1px solid var(--line-200);
-  border-radius: var(--r-md);
-}
-.bz-smart-lead__body {
-  min-width: 0;
-}
-.bz-smart-lead__title {
-  margin: 0;
-  color: var(--blue-deep);
-  font-size: var(--fs-base);
-  font-weight: var(--w-emphasis);
-  line-height: 1.25;
-}
-.bz-smart-lead__line {
-  margin: var(--space-2xs) 0 0;
-  color: var(--ink-500);
-  font-size: var(--fs-caption);
-  line-height: 1.3;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-}
-.bz-smart-lead__meta {
-  display: block;
-  margin-top: var(--space-2xs);
-  color: var(--ink-400);
-  font-size: 12px;
-  line-height: 1.3;
-}
-
-/* Tile grid — compact 2-up navigation tiles (icon chip + title + subtext). */
-.bz-smart-tiles {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-xs);
-}
-.bz-smart-tile {
-  min-width: 0;
-  min-height: 56px;
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-xs) var(--space-sm);
-  background: var(--line-100);
-  border: 1px solid transparent;
-  border-radius: var(--r-md);
-  text-decoration: none;
-  transition:
-    background var(--dur-micro) var(--ease),
-    border-color var(--dur-micro) var(--ease);
-}
-.bz-smart-tile:hover {
-  background: var(--card);
-  border-color: var(--line-200);
-}
-.bz-smart-tile__chip {
-  flex: none;
-  width: 34px;
-  height: 34px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--blue-deep);
-  background: var(--card);
-  border: 0.5px solid var(--line-200);
-  border-radius: var(--r-md);
-  transition:
-    background var(--dur-micro) var(--ease),
-    color var(--dur-micro) var(--ease);
-}
-.bz-smart-tile:hover .bz-smart-tile__chip {
-  background: var(--line-100);
-  color: var(--blue);
-}
-.bz-smart-tile__text {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-.bz-smart-tile__title {
-  color: var(--ink-700);
-  font-size: var(--fs-caption);
-  font-weight: var(--w-emphasis);
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.bz-smart-tile__sub {
-  color: var(--ink-400);
-  font-size: 11.5px;
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Metric row — number-over-label tiles on a tinted surface (mirrors .bz-stat). */
-.bz-smart-metrics {
-  min-width: 0;
-  display: grid;
-  gap: var(--space-xs);
-}
-.bz-smart-metric {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 10px 12px;
-  background: var(--line-100);
-  border-radius: var(--r-md);
-}
-.bz-smart-metric__value {
-  color: var(--blue-deep);
-  font-size: 1.125rem;
-  font-weight: var(--w-emphasis);
-  line-height: 1.1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.bz-smart-metric__label {
-  color: var(--ink-400);
-  font-size: 11.5px;
-}
-
-/* Quick links — an optionally-labelled wrapped row of blue text links/buttons
-   (used for both the per-state quick actions and the guest "Popular now" row). */
-.bz-smart-quick-group {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-}
-.bz-smart-quick__label {
-  color: var(--ink-500);
-  font-size: var(--fs-caption);
-  font-weight: var(--w-emphasis);
-}
-/* Popular searches — tappable pill topics. On --fill panels this block grows to
-   absorb the slack between the CTA and the bottom of the hero-height card. */
-.bz-smart-topics-group {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-}
-.bz-smart-panel--fill .bz-smart-topics-group {
-  flex: 1 1 auto;
-}
-.bz-smart-topics {
-  min-width: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: var(--space-xs);
-}
-.bz-smart-panel--fill .bz-smart-topics {
-  flex: 1 1 auto;
-}
-.bz-smart-topic {
-  display: inline-flex;
-  align-items: center;
-  min-height: 32px;
-  padding: 0 var(--space-sm);
-  background: var(--line-100);
-  border: 1px solid transparent;
-  border-radius: var(--r-pill);
-  color: var(--ink-700);
-  font-size: var(--fs-caption);
-  font-weight: var(--w-emphasis);
-  text-decoration: none;
-  transition:
-    background var(--dur-micro) var(--ease),
-    border-color var(--dur-micro) var(--ease),
-    color var(--dur-micro) var(--ease);
-}
-.bz-smart-topic:hover {
-  background: var(--card);
-  border-color: var(--line-200);
-  color: var(--blue);
-}
-.bz-smart-quick {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-sm);
-  min-height: 24px;
-}
-.bz-smart-quick a,
-.bz-smart-quick button {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--blue);
-  font: inherit;
-  font-size: var(--fs-caption);
-  font-weight: var(--w-emphasis);
-  text-decoration: none;
-  cursor: pointer;
-}
-.bz-smart-quick a:hover,
-.bz-smart-quick button:hover {
-  text-decoration: underline;
-}
-.bz-smart-panel__helper {
-  margin: 0;
-  color: var(--ink-400);
-  font-size: 12px;
-  line-height: 1.3;
-}
-
-/* Skeleton mirrors the panel's natural flow (header → lead → metrics → CTA). */
-.bz-smart-skel {
-  background: linear-gradient(90deg, var(--line-100), var(--line-200), var(--line-100));
-  background-size: 200% 100%;
-  border-radius: var(--r-md);
-  animation: bz-skel 1.4s ease infinite;
-}
-.bz-smart-skel--title {
-  width: 54%;
-  height: 24px;
-}
-.bz-smart-skel--line {
-  width: 82%;
-  height: 14px;
-}
-.bz-smart-skel--lead {
-  height: 72px;
-}
-.bz-smart-skel--cta {
-  height: 40px;
-}
-.bz-smart-skel-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-xs);
-}
-.bz-smart-skel-row span {
-  height: 56px;
-  background: var(--line-100);
-  border-radius: var(--r-md);
-}
-
-/* The Smart Shopping panel is desktop-only (its slot lives in .bz-hide-mobile),
-   so it needs no mobile/responsive rules. */
-@media (max-width: 768px) {
-  .bz-hero__arrow {
-    width: 30px;
-    height: 30px;
-  }
-  .bz-hero__arrow--prev {
-    left: 8px;
-  }
-  .bz-hero__arrow--next {
-    right: 8px;
   }
 }
 

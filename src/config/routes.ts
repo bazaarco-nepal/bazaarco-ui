@@ -154,6 +154,9 @@ export function pathFromScreen(
   if (screen === "tracking" && orderId) {
     return `/orders/tracking/${encodeURIComponent(orderId)}`;
   }
+  if (screen === "s-order-detail" && orderId) {
+    return `/seller/orders/${encodeURIComponent(orderId)}`;
+  }
   return SCREEN_PATH[screen] ?? "/home";
 }
 
@@ -330,6 +333,9 @@ export function screenFromPath(pathname: string): string {
   }
   if (pathname.startsWith("/orders/tracking")) {
     return "tracking";
+  }
+  if (pathname.match(/^\/seller\/orders\/[^/?#]+/)) {
+    return "s-order-detail";
   }
   const base = pathname.split("?")[0] ?? pathname;
   return PATH_SCREEN[base] ?? "home";

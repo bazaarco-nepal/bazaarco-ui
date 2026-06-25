@@ -73,6 +73,56 @@ export const INBOX_TAB_STATUSES: Record<string, SuborderStatus[]> = {
   cancelled: ["cancelled"],
 };
 
+export const SELLER_BOARD_COLUMNS: Array<{
+  id: string;
+  title: string;
+  hint: string;
+  statuses: SuborderStatus[];
+}> = [
+  {
+    id: "new_order",
+    title: "New",
+    hint: "Review and start preparing",
+    statuses: ["new_order"],
+  },
+  {
+    id: "seller_processing",
+    title: "Preparing",
+    hint: "Pack the buyer's item",
+    statuses: ["seller_processing"],
+  },
+  {
+    id: "ready_for_hub",
+    title: "Ready for hub",
+    hint: "Parcel is ready to move",
+    statuses: ["ready_for_hub"],
+  },
+  {
+    id: "on_the_way_to_hub",
+    title: "On the way",
+    hint: "Dropped off or sent for pickup",
+    statuses: ["on_the_way_to_hub"],
+  },
+  {
+    id: "received_at_hub",
+    title: "Hub check",
+    hint: "Received and being verified",
+    statuses: ["received_at_hub", "verified"],
+  },
+  {
+    id: "packed",
+    title: "Packed",
+    hint: "Done for seller",
+    statuses: ["packed"],
+  },
+  {
+    id: "attention",
+    title: "Needs attention",
+    hint: "Issue or cancellation",
+    statuses: ["issue_found", "cancelled"],
+  },
+];
+
 // Seller-driven transitions — mirrors ALLOWED_SELLER_TRANSITIONS in the orders
 // service (app/orders/fulfillment.py). First entry is the happy-path advance;
 // any extra entry (e.g. `issue_found`) is a secondary action.
@@ -102,9 +152,28 @@ export const INBOX_DATE_RANGES = [
   { id: "30d", label: "30 days" },
 ];
 
+export function formatInboxTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-NP", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
 export function inDateRange(o: { time: string }, range: string) {
   if (range === "all") return true;
-  // Time strings in mock data: "2 min ago", "1 hr ago", "3 hr ago", "yesterday", "2 days ago".
+  const placedAt = new Date(o.time);
+  if (!Number.isNaN(placedAt.getTime())) {
+    const now = new Date();
+    const ageMs = now.getTime() - placedAt.getTime();
+    const oneDay = 24 * 60 * 60 * 1000;
+    if (range === "today") return placedAt.toDateString() === now.toDateString();
+    if (range === "7d") return ageMs >= 0 && ageMs <= 7 * oneDay;
+    if (range === "30d") return ageMs >= 0 && ageMs <= 30 * oneDay;
+  }
+
+  // Legacy mock strings: "2 min ago", "1 hr ago", "yesterday", "2 days ago".
   const t = o.time.toLowerCase();
   const isToday = t.includes("min") || t.includes("hr");
   const isThisWeek = isToday || t.includes("yesterday") || /^[1-6] days?/.test(t);

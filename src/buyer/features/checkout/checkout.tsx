@@ -765,7 +765,14 @@ export function Cart() {
   );
 }
 
-export function ConfirmModal({ title, message, confirmLabel, onConfirm, onCancel }) {
+export function ConfirmModal({
+  title,
+  message,
+  confirmLabel,
+  confirmVariant = "danger",
+  onConfirm,
+  onCancel,
+}) {
   const dialogRef = useRef(null);
 
   const trapFocus = useCallback((e) => {
@@ -831,7 +838,7 @@ export function ConfirmModal({ title, message, confirmLabel, onConfirm, onCancel
           <Button variant="primary" full onClick={onCancel} style={{ flex: 2 }}>
             Keep
           </Button>
-          <Button variant="secondary" onClick={onConfirm} style={{ flex: 1 }}>
+          <Button variant={confirmVariant} onClick={onConfirm} style={{ flex: 1 }}>
             {confirmLabel}
           </Button>
         </div>

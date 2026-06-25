@@ -178,6 +178,51 @@ function orderStatusMeta(status: string) {
   return ORDER_STATUS_META[status] ?? DEFAULT_ORDER_STATUS_META;
 }
 
+function formatOrderDate(value?: string | null) {
+  if (!value) return "recently";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-NP", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function deliveryLocation(address) {
+  if (!address) return "";
+  return [address.area, address.city, address.landmark].filter(Boolean).join(", ");
+}
+
+function orderLineSummaries(order, byId) {
+  const lines = order.lineItems?.length
+    ? order.lineItems
+    : order.items.map((productId) => {
+        const product = byId(productId);
+        return {
+          productId,
+          productName: product?.name,
+          imageUrl: product?.img,
+          quantity: 1,
+        };
+      });
+
+  return lines.map((line) => {
+    const product = byId(line.productId);
+    return {
+      ...line,
+      productName: line.productName || product?.name || "Product",
+      imageUrl: line.imageUrl || product?.img || null,
+      fallbackIcon: product?.icon || "package",
+    };
+  });
+}
+
+function orderSummaryTitle(lines) {
+  if (lines.length === 0) return "Order items";
+  if (lines.length === 1) return lines[0].productName;
+  return `${lines[0].productName} + ${lines.length - 1} more`;
+}
+
 // The product a delivered order's "Rate & review" targets. Set before
 // nav("review") and read by MarketplaceScreen to render the right product —
 // same module-ref handoff as `editProductRef` in seller.tsx.
@@ -220,6 +265,121 @@ export function Orders() {
   return (
     <ApiState isLoading={isLoading} isError={isError} error={error}>
       <div className="container" style={{ paddingTop: 28, paddingBottom: 96 }}>
+        <style>{`
+          .bz-order-card {
+            background: #fff;
+            border: 1px solid var(--line-200);
+            border-radius: var(--r-lg);
+            padding: 16px;
+          }
+          .bz-order-card__main {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            min-width: 0;
+          }
+          .bz-order-card__media {
+            width: 72px;
+            height: 72px;
+            flex-shrink: 0;
+            border-radius: var(--r-md);
+            overflow: hidden;
+            background: var(--bz-img-bg);
+            border: 1px solid var(--line-200);
+          }
+          .bz-order-card__media img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+          }
+          .bz-order-card__body {
+            flex: 1;
+            min-width: 0;
+          }
+          .bz-order-card__top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+          }
+          .bz-order-card__title {
+            font-weight: 800;
+            color: var(--ink-900);
+            font-size: 1rem;
+            line-height: 1.25;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+          .bz-order-card__meta {
+            font-size: .8125rem;
+            color: var(--ink-500);
+            margin-top: 4px;
+          }
+          .bz-order-card__total {
+            font-weight: 800;
+            color: var(--blue-deep);
+            font-size: 1.0625rem;
+            white-space: nowrap;
+          }
+          .bz-order-card__status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+          }
+          .bz-order-card__location {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            color: var(--ink-500);
+            font-size: .8125rem;
+            line-height: 1.35;
+          }
+          .bz-order-card__actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+          }
+          @media (min-width: 900px) {
+            .bz-order-card {
+              padding: 18px;
+            }
+            .bz-order-card__media {
+              width: 88px;
+              height: 88px;
+            }
+            .bz-order-card__actions {
+              justify-content: flex-end;
+            }
+          }
+          @media (max-width: 600px) {
+            .bz-order-card__main {
+              gap: 12px;
+            }
+            .bz-order-card__media {
+              width: 64px;
+              height: 64px;
+            }
+            .bz-order-card__top {
+              flex-direction: column;
+              gap: 6px;
+            }
+            .bz-order-card__title {
+              white-space: normal;
+              display: -webkit-box;
+              -webkit-line-clamp: 2;
+              -webkit-box-orient: vertical;
+            }
+            .bz-order-card__actions .btn {
+              flex: 1 1 100%;
+            }
+          }
+        `}</style>
         <h1
           style={{
             margin: "0 0 24px",
@@ -255,84 +415,53 @@ export function Orders() {
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {orders.map((o) => {
               const meta = orderStatusMeta(o.status);
-              const items = o.items.map(byId).filter(Boolean);
+              const lines = orderLineSummaries(o, byId);
+              const leadLine = lines[0];
+              const location = deliveryLocation(o.deliveryAddress);
               return (
-                <div
-                  key={o.id}
-                  style={{
-                    background: "#fff",
-                    border: "1px solid var(--line-200)",
-                    borderRadius: "var(--r-lg)",
-                    padding: 18,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      justifyContent: "space-between",
-                      gap: 12,
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <div>
-                      <div
-                        style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}
-                      >
-                        <span className="tnum" style={{ fontWeight: 800, color: "var(--ink-900)" }}>
-                          #{o.id}
-                        </span>
+                <div key={o.id} className="bz-order-card">
+                  <div className="bz-order-card__main">
+                    <div className="bz-order-card__media">
+                      {leadLine?.imageUrl ? (
+                        <img src={leadLine.imageUrl} alt={leadLine.productName} />
+                      ) : (
+                        <Placeholder
+                          icon={leadLine?.fallbackIcon || "package"}
+                          style={{ width: "100%", height: "100%" }}
+                          radius="var(--r-md)"
+                        />
+                      )}
+                    </div>
+
+                    <div className="bz-order-card__body">
+                      <div className="bz-order-card__top">
+                        <div style={{ minWidth: 0 }}>
+                          <div className="bz-order-card__title">{orderSummaryTitle(lines)}</div>
+                          <div className="bz-order-card__meta tnum">
+                            Order #{o.id} · Placed {formatOrderDate(o.placed)}
+                          </div>
+                        </div>
+                        <span className="bz-order-card__total tnum">{formatNPR(o.total)}</span>
+                      </div>
+
+                      <div className="bz-order-card__status">
                         <Chip tone={meta.tone}>{meta.label}</Chip>
-                      </div>
-                      <div style={{ fontSize: ".8125rem", color: "var(--ink-400)", marginTop: 4 }}>
-                        Placed {o.placed}
-                      </div>
-                    </div>
-                    <span
-                      className="tnum"
-                      style={{ fontWeight: 800, color: "var(--blue-deep)", fontSize: "1.125rem" }}
-                    >
-                      {formatNPR(o.total)}
-                    </span>
-                  </div>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "14px 0" }}>
-                    <div style={{ display: "flex" }}>
-                      {items.slice(0, 3).map((it, i) => (
-                        <span
-                          key={it.id}
-                          style={{
-                            width: 44,
-                            height: 44,
-                            borderRadius: "50%",
-                            border: "2px solid #fff",
-                            marginLeft: i === 0 ? 0 : -12,
-                            overflow: "hidden",
-                            boxShadow: "var(--sh-1)",
-                          }}
-                        >
-                          {it.img ? (
-                            <img
-                              src={it.img}
-                              alt=""
-                              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                            />
-                          ) : (
-                            <Placeholder
-                              icon={it.icon}
-                              style={{ width: 44, height: 44 }}
-                              radius="50%"
-                            />
-                          )}
+                        <span style={{ fontSize: ".8125rem", color: "var(--ink-500)" }}>
+                          {lines.length} {lines.length === 1 ? "item" : "items"}
+                          {leadLine?.quantity ? ` · Qty ${leadLine.quantity}` : ""}
                         </span>
-                      ))}
+                      </div>
+
+                      {location && (
+                        <div className="bz-order-card__location">
+                          <Icon name="mapPin" size={14} color="var(--ink-400)" />
+                          <span>{location}</span>
+                        </div>
+                      )}
                     </div>
-                    <span style={{ fontSize: ".875rem", color: "var(--ink-500)" }}>
-                      {items.length === 1 ? items[0].name : `${items.length} items`}
-                    </span>
                   </div>
 
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <div className="bz-order-card__actions">
                     {o.status === "cancelled" ? (
                       <Button variant="secondary" onClick={() => nav("home")}>
                         Order again
@@ -341,19 +470,11 @@ export function Orders() {
                       <Button
                         variant={meta.actionVariant}
                         onClick={() => {
-                          if (
-                            o.status === "placed" ||
-                            o.status === "accepted" ||
-                            o.status === "packaging_started" ||
-                            o.status === "ready_for_pickup" ||
-                            o.status === "picked_up" ||
-                            o.status === "arrived_at_hub" ||
-                            o.status === "out_for_delivery"
-                          )
-                            openTracking(o.id);
-                          else if (o.status === "delivered") {
+                          if (o.status === "delivered" || o.status === "completed") {
                             reviewProductRef.current = o.items[0] ?? null;
                             nav("review");
+                          } else {
+                            openTracking(o.id);
                           }
                         }}
                         icon={o.status === "out_for_delivery" ? "phone" : undefined}
@@ -363,7 +484,7 @@ export function Orders() {
                     )}
                     {canCancelOrder(o) && (
                       <Button
-                        variant="secondary"
+                        variant="danger"
                         disabled={cancelOrder.isPending}
                         onClick={() => setCancelTarget(o)}
                       >
@@ -387,7 +508,7 @@ export function Orders() {
       {cancelTarget && (
         <ConfirmModal
           title="Cancel order?"
-          message={`Cancel order #${cancelTarget.id}? You can only cancel before BazaarCo pickup collects it from the seller.`}
+          message={`Cancel ${orderSummaryTitle(orderLineSummaries(cancelTarget, byId))} from order #${cancelTarget.id}? You can only cancel before BazaarCo receives and packs it for delivery.`}
           confirmLabel={cancelOrder.isPending ? "Cancelling…" : "Cancel order"}
           onConfirm={async () => {
             try {

@@ -500,8 +500,17 @@ export function Store() {
                 />
               ) : (
                 <div className="bz-storefront-grid">
-                  {products.map((p) => (
-                    <ProductCard key={p.id} p={p} onClick={openProduct} />
+                  {products.map((p, index) => (
+                    <ProductCard
+                      key={p.id}
+                      p={p}
+                      onClick={openProduct}
+                      source={{
+                        page: "seller_store",
+                        section: "store_products",
+                        position: index + 1,
+                      }}
+                    />
                   ))}
                 </div>
               )}

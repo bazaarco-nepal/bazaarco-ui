@@ -170,12 +170,17 @@ function ProductDock({ item }: { item: VideoFeedItem }) {
   const discount = discountPercent(item);
   const { openProduct } = useBz();
   const locale = useBazaarStore((s) => s.locale);
+  const source = { page: "video_feed", section: "foryou" };
+  const hrefParams = new URLSearchParams({
+    srcPage: source.page,
+    srcSection: source.section,
+  });
 
   return (
     <div className="watch__dock">
       <AppLink
-        href={pathFromScreen("pdp", item.id)}
-        onNavigate={() => openProduct(product)}
+        href={`${pathFromScreen("pdp", item.id)}?${hrefParams.toString()}`}
+        onNavigate={() => openProduct(product, { source })}
         className="watch__dock-product"
         ariaLabel={`View ${item.name}`}
       >

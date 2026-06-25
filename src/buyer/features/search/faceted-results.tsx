@@ -26,6 +26,8 @@ export interface FacetedResultsLayoutProps {
   total: number;
   isLoading: boolean;
   onOpenProduct: (p: Product) => void;
+  sourcePage?: string;
+  sourceSection?: string;
   page: number;
   pageCount: number;
   onPage: (n: number) => void;
@@ -41,6 +43,8 @@ export function FacetedResultsLayout({
   total,
   isLoading,
   onOpenProduct,
+  sourcePage = "search",
+  sourceSection = "search_results",
   page,
   pageCount,
   onPage,
@@ -215,8 +219,17 @@ export function FacetedResultsLayout({
           ) : (
             <>
               <div className="bz-search-grid" style={gridStyle}>
-                {items.map((p) => (
-                  <ProductCard key={p.id} p={p} onClick={onOpenProduct} />
+                {items.map((p, index) => (
+                  <ProductCard
+                    key={p.id}
+                    p={p}
+                    onClick={onOpenProduct}
+                    source={{
+                      page: sourcePage,
+                      section: sourceSection,
+                      position: index + 1,
+                    }}
+                  />
                 ))}
               </div>
               <PageBar

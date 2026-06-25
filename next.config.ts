@@ -22,8 +22,8 @@ const nextConfig: NextConfig = {
     if (ordersServiceUrl) {
       return [
         {
-          source: "/api/v1/orders/:path*",
-          destination: `${ordersServiceUrl}/orders/:path*`,
+          source: "/api/v1/orders/:path+",
+          destination: `${ordersServiceUrl}/orders/:path+`,
         },
         {
           source: "/api/v1/orders",

@@ -3,6 +3,7 @@
 import React from "react";
 import { Icon, StoreAvatar, Button, AppLink } from "@/components/ui";
 import { useBz } from "@/components/common";
+import { buyerEventsApi } from "@/buyer/api/buyer-events";
 import { pathFromScreen } from "@/config/routes";
 import type { ProductSeller, SellerTrust } from "@/types";
 
@@ -10,6 +11,7 @@ type SellerCardProps = {
   sellerId: string;
   /** Inline snapshot from the product payload — used until the trust query resolves. */
   seller: ProductSeller | null;
+  fromProductId?: string;
   trust?: SellerTrust;
   loading?: boolean;
   /** Drop the outer card chrome so it can sit inside another card (e.g. the buy box). */
@@ -27,6 +29,7 @@ type SellerCardProps = {
 export function SellerCard({
   sellerId,
   seller,
+  fromProductId,
   trust,
   loading,
   embedded = false,
@@ -51,6 +54,19 @@ export function SellerCard({
       sessionStorage.setItem("bz_open_chat_seller", sellerId);
     }
     nav("messages");
+  };
+
+  const recordSellerOpen = () => {
+    if (!authed) return;
+    void buyerEventsApi
+      .record({
+        eventType: "seller_profile_opened",
+        storeId: sellerId,
+        sourcePage: "product_detail",
+        sourceSection: "seller_info",
+        metadata: fromProductId ? { from_product_id: fromProductId } : null,
+      })
+      .catch(() => undefined);
   };
 
   const stats = trust ? buildStats(trust) : [];
@@ -79,6 +95,7 @@ export function SellerCard({
       >
         <AppLink
           href={storeHref}
+          onClickCapture={recordSellerOpen}
           aria-label={`Visit ${name} store`}
           style={{ cursor: "pointer", display: "inline-flex", flex: "0 0 auto" }}
         >
@@ -97,6 +114,7 @@ export function SellerCard({
           >
             <AppLink
               href={storeHref}
+              onClickCapture={recordSellerOpen}
               className="bz-hover-underline"
               style={{
                 overflow: "hidden",
@@ -167,6 +185,7 @@ export function SellerCard({
             icon, so every seller reads as a real shop. */}
         <AppLink
           href={storeHref}
+          onClickCapture={recordSellerOpen}
           aria-label={`Visit ${name} store`}
           style={{ cursor: "pointer", display: "inline-flex", flexShrink: 0 }}
         >
@@ -185,6 +204,7 @@ export function SellerCard({
           >
             <AppLink
               href={storeHref}
+              onClickCapture={recordSellerOpen}
               className="bz-hover-underline"
               style={{
                 overflow: "hidden",

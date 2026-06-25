@@ -64,6 +64,7 @@ import {
 import { optionImageFor, selectionHeroImage, variantSwatchImage } from "@/buyer/lib/variant-images";
 import { cartLineKey } from "@/buyer/lib/cart-selection";
 import { ApiRequestError } from "@/shared/api/http";
+import { buyerEventsApi } from "@/buyer/api/buyer-events";
 import { toast } from "@/shared/lib/toast";
 import type { PdpProps } from "@/types";
 import {
@@ -737,6 +738,9 @@ export function PDP({ p: pProp }: PdpProps) {
   const productId = pProp.id;
   const router = useRouter();
   const searchParams = useSearchParams();
+  const openedEventKeyRef = useRef<string | null>(null);
+  const variantTouchedRef = useRef(false);
+  const loggedVariantKeysRef = useRef<Set<string>>(new Set());
   const { data: productFromApi, isLoading, isError, error } = useProduct(productId);
   const { data: categories = [] } = useCategories();
   const locale = useBazaarStore((s) => s.locale);
@@ -814,7 +818,7 @@ export function PDP({ p: pProp }: PdpProps) {
   // Priced variants (the seller's real SKUs) drive the price a buyer pays and
   // what's added to the cart. The cosmetic template swatches below are suppressed
   // when these exist, so there's a single source of truth for the selection.
-  const pricedVariants = p.variants ?? [];
+  const pricedVariants = useMemo(() => p.variants ?? [], [p.variants]);
   const hasPricedVariants = pricedVariants.length > 0;
   const variantGroups = p.variantGroups ?? null;
   const isMultiDimVariant = hasPricedVariants && variantGroups && variantGroups.length > 0;
@@ -958,6 +962,61 @@ export function PDP({ p: pProp }: PdpProps) {
         ? (selVariant.original ?? null)
         : p.original;
   const disc = shownOriginal ? Math.round((1 - shownPrice / shownOriginal) * 100) : 0;
+
+  useEffect(() => {
+    if (!authed || !productFromApi) return;
+    if (hasPricedVariants && !isMultiDimVariant && !resolvedVariantId) return;
+    const sourcePage = searchParams.get("srcPage");
+    const sourceSection = searchParams.get("srcSection");
+    const rawPosition = Number(searchParams.get("srcPos"));
+    const sourcePosition = Number.isInteger(rawPosition) && rawPosition > 0 ? rawPosition : null;
+    const key = `${p.id}:${sourcePage ?? ""}:${sourceSection ?? ""}:${sourcePosition ?? ""}`;
+    if (openedEventKeyRef.current === key) return;
+    openedEventKeyRef.current = key;
+    void buyerEventsApi.record({
+      eventType: "product_opened",
+      productId: p.id,
+      variantId: resolvedVariantId,
+      storeId: p.seller,
+      categoryId: p.cat,
+      price: shownPrice,
+      sourcePage,
+      sourceSection,
+      sourcePosition,
+    });
+  }, [
+    authed,
+    productFromApi,
+    hasPricedVariants,
+    isMultiDimVariant,
+    resolvedVariantId,
+    p.id,
+    p.seller,
+    p.cat,
+    shownPrice,
+    searchParams,
+  ]);
+
+  useEffect(() => {
+    if (!authed || !productFromApi || !variantTouchedRef.current || !resolvedVariantId) return;
+    const variant = pricedVariants.find((v) => v.id === resolvedVariantId);
+    if (!variant) return;
+    const key = `${p.id}:${resolvedVariantId}`;
+    if (loggedVariantKeysRef.current.has(key)) return;
+    loggedVariantKeysRef.current.add(key);
+    void buyerEventsApi.record({
+      eventType: "variant_selected",
+      productId: p.id,
+      variantId: resolvedVariantId,
+      storeId: p.seller,
+      categoryId: p.cat,
+      price: variant.price,
+      sourcePage: "product_detail",
+      metadata: {
+        option_values: variant.optionValues ?? { name: variant.name },
+      },
+    });
+  }, [authed, productFromApi, resolvedVariantId, pricedVariants, p.id, p.seller, p.cat]);
   // A trivial discount (< 5%) reads like a bug — "-1% OFF" with a near-identical
   // strikethrough. Below the threshold we hide both the badge AND the original
   // price everywhere it's shown, so the price simply reads as the price.
@@ -1120,9 +1179,10 @@ export function PDP({ p: pProp }: PdpProps) {
                           image={swatchImg}
                           imageAlt={opt}
                           // Tapping the active option unselects it — nothing is forced.
-                          onClick={() =>
-                            setSelDimensions((prev) => toggleOption(prev, group.name, opt))
-                          }
+                          onClick={() => {
+                            variantTouchedRef.current = true;
+                            setSelDimensions((prev) => toggleOption(prev, group.name, opt));
+                          }}
                         />
                       );
                     })}
@@ -1155,7 +1215,10 @@ export function PDP({ p: pProp }: PdpProps) {
                     soldOut={(v.stock ?? 0) <= 0}
                     image={swatchImg}
                     imageAlt={v.name}
-                    onClick={() => setSelVariantId(v.id)}
+                    onClick={() => {
+                      variantTouchedRef.current = true;
+                      setSelVariantId(v.id);
+                    }}
                   />
                 );
               })}
@@ -1405,6 +1468,7 @@ export function PDP({ p: pProp }: PdpProps) {
             <SellerCard
               sellerId={p.seller}
               seller={s}
+              fromProductId={p.id}
               trust={sellerTrust}
               loading={trustLoading}
               slim
@@ -1918,8 +1982,17 @@ export function PDP({ p: pProp }: PdpProps) {
             <div className="bz-pdp-similar">
               <SectionHead title="Similar items" />
               <div className="bz-picks-grid">
-                {similarItems.map((rp) => (
-                  <ProductCard key={rp.id} p={rp} onClick={openProduct} />
+                {similarItems.map((rp, index) => (
+                  <ProductCard
+                    key={rp.id}
+                    p={rp}
+                    onClick={openProduct}
+                    source={{
+                      page: "product_detail",
+                      section: "similar_items",
+                      position: index + 1,
+                    }}
+                  />
                 ))}
               </div>
             </div>

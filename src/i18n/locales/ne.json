@@ -233,7 +233,11 @@
     "visitStore": "पसल हेर्नुहोस्",
     "priceBreakdown": "{{item}} सामानको + {{delivery}} डेलिभरी = <strong>{{total}} तिर्नुपर्ने</strong>",
     "store": "पसल",
-    "videoTag": "भिडियो"
+    "videoTag": "भिडियो",
+    "videoProcessing": {
+      "title": "तपाईंको भिडियो प्रशोधन हुँदैछ",
+      "message": "केही क्षण लाग्छ। तयार भएपछि स्वतः बज्नेछ।"
+    }
   },
   "auth": {
     "pleaseSignIn": "कृपया साइन इन गर्नुहोस्",

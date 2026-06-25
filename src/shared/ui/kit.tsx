@@ -1632,6 +1632,13 @@ export function Placeholder({
 }
 
 /* ---------- Simulated video player ---------- */
+
+// A just-uploaded reel's HLS rendition can still be transcoding, so Cloudinary returns a
+// source error until it's ready. We retry on this cadence (≈ up to 1 min) before giving
+// up, showing a calm "processing" state in the meantime instead of a hard error.
+const HLS_RETRY_MS = 5000;
+const HLS_MAX_RETRIES = 12;
+
 export function VideoPlayer({
   tint = "blue",
   icon = "shirt",
@@ -1687,6 +1694,10 @@ export function VideoPlayer({
   const videoRef = useRef(null);
   const cloudinaryPlayerRef = useRef(null);
   const [hlsReady, setHlsReady] = useState(false);
+  // True while a fresh reel's HLS rendition is still transcoding — drives the calm
+  // "processing" overlay and the auto-retry below, instead of a dead player.
+  const [processing, setProcessing] = useState(false);
+  const retryTimerRef = useRef(null);
   const [playing, setPlaying] = useState(!!autoplay);
   const [t, setT] = useState(0);
   const [dur, setDur] = useState(18);
@@ -1732,7 +1743,9 @@ export function VideoPlayer({
     if (!useHls || !videoRef.current || !shouldAttachStream) return;
 
     let disposed = false;
+    let retries = 0;
     setHlsReady(false);
+    setProcessing(false);
 
     import("cloudinary-video-player").then((cloudinaryjs) => {
       if (disposed || !videoRef.current) return;
@@ -1752,10 +1765,30 @@ export function VideoPlayer({
 
       cloudinaryPlayerRef.current = player;
 
-      player.source(streamPublicId, {
-        sourceTypes: ["hls"],
-        transformation: { streaming_profile: streamProfile },
+      const attachSource = () =>
+        player.source(streamPublicId, {
+          sourceTypes: ["hls"],
+          transformation: { streaming_profile: streamProfile },
+        });
+
+      // While the rendition is still transcoding the source load errors; show the
+      // processing state and retry on a fixed cadence rather than dying. The clip
+      // attaches and plays itself once Cloudinary finishes.
+      player.on("error", () => {
+        if (disposed || retries >= HLS_MAX_RETRIES) return;
+        setProcessing(true);
+        retries += 1;
+        retryTimerRef.current = window.setTimeout(() => {
+          if (!disposed) attachSource();
+        }, HLS_RETRY_MS);
       });
+      player.on("loadeddata", () => {
+        if (disposed) return;
+        setProcessing(false);
+        retries = 0;
+      });
+
+      attachSource();
 
       // Cloudinary's lazy player is a deferred proxy — wait until the real
       // VideoPlayer exists before calling play/mute (wrong names like .muted()
@@ -1772,6 +1805,11 @@ export function VideoPlayer({
     return () => {
       disposed = true;
       setHlsReady(false);
+      setProcessing(false);
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
       if (cloudinaryPlayerRef.current?.dispose) {
         cloudinaryPlayerRef.current.dispose();
         cloudinaryPlayerRef.current = null;
@@ -2042,8 +2080,35 @@ export function VideoPlayer({
           </span>
         </div>
       )}
+      {/* still transcoding — calm processing state over the poster, auto-recovers */}
+      {processing && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 5,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            padding: 24,
+            textAlign: "center",
+            background: "rgba(11,18,32,.5)",
+            backdropFilter: "blur(2px)",
+          }}
+        >
+          <Spinner size={26} color="#fff" />
+          <div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>
+            {translate("common.videoProcessing.title")}
+          </div>
+          <div style={{ color: "rgba(255,255,255,.82)", fontSize: 12, maxWidth: 240 }}>
+            {translate("common.videoProcessing.message")}
+          </div>
+        </div>
+      )}
       {/* center play */}
-      {!playing && (
+      {!playing && !processing && (
         <div
           style={{
             position: "absolute",

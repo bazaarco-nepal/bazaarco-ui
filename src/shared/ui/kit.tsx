@@ -1633,11 +1633,11 @@ export function Placeholder({
 
 /* ---------- Simulated video player ---------- */
 
-// A just-uploaded reel's HLS rendition can still be transcoding, so Cloudinary returns a
-// source error until it's ready. We retry on this cadence (≈ up to 1 min) before giving
-// up, showing a calm "processing" state in the meantime instead of a hard error.
-const HLS_RETRY_MS = 5000;
-const HLS_MAX_RETRIES = 12;
+// A just-uploaded reel's MP4 rendition can still be transcoding, so the <video> load
+// errors until it's ready. We retry on this cadence (≈ up to 1 min) behind a calm
+// "processing" overlay instead of a hard failure.
+const VIDEO_RETRY_MS = 5000;
+const VIDEO_MAX_RETRIES = 12;
 
 export function VideoPlayer({
   tint = "blue",
@@ -1661,6 +1661,8 @@ export function VideoPlayer({
   onPlaybackMilestone,
   deferStream,
   streamProfile = "hd",
+  streaming = true,
+  nativeControls,
 }: {
   tint?: string;
   icon?: string;
@@ -1689,6 +1691,13 @@ export function VideoPlayer({
   /** Wait for a play tap before attaching HLS / video src — keeps PDP light. */
   deferStream?: boolean;
   streamProfile?: "auto" | "hd" | "sd" | "full_hd" | "full_hd_wifi";
+  /** Use Cloudinary HLS streaming. Off → play the (browser-friendly) `src` MP4
+   *  directly via <video>, exactly like the buyer watch feed. */
+  streaming?: boolean;
+  /** Show the browser's native controls (play/pause, scrubber, volume, fullscreen)
+   *  instead of the custom immersive overlay — for management views like the seller
+   *  library where a standard player is expected. Implies the MP4 (non-HLS) path. */
+  nativeControls?: boolean;
 }) {
   const { t: translate } = useTranslation();
   const videoRef = useRef(null);
@@ -1698,6 +1707,7 @@ export function VideoPlayer({
   // "processing" overlay and the auto-retry below, instead of a dead player.
   const [processing, setProcessing] = useState(false);
   const retryTimerRef = useRef(null);
+  const retryCountRef = useRef(0);
   const [playing, setPlaying] = useState(!!autoplay);
   const [t, setT] = useState(0);
   const [dur, setDur] = useState(18);
@@ -1710,10 +1720,18 @@ export function VideoPlayer({
   useEffect(() => {
     milestoneCbRef.current = onPlaybackMilestone;
   }, [onPlaybackMilestone]);
+  useEffect(
+    () => () => {
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+    },
+    [],
+  );
   const streamPublicId = (publicId?.trim() || publicIdFromVideoUrl(src)) ?? null;
-  const useHls = Boolean(streamPublicId && CLOUDINARY_CLOUD_NAME);
+  const useHls = streaming && Boolean(streamPublicId && CLOUDINARY_CLOUD_NAME);
   const hasSrc = useHls || Boolean(src);
-  const shouldAttachStream = hasSrc && (!deferStream || playing || hlsReady);
+  // Native-controls players render the <video> straight away (preload="none" keeps it
+  // light — only the poster loads until the viewer hits the browser's play button).
+  const shouldAttachStream = hasSrc && (nativeControls || !deferStream || playing || hlsReady);
   const reportPlayback = useCallback(
     (currentTime, duration) => {
       if (milestoneFiredRef.current || !(duration > 0)) return;
@@ -1743,9 +1761,7 @@ export function VideoPlayer({
     if (!useHls || !videoRef.current || !shouldAttachStream) return;
 
     let disposed = false;
-    let retries = 0;
     setHlsReady(false);
-    setProcessing(false);
 
     import("cloudinary-video-player").then((cloudinaryjs) => {
       if (disposed || !videoRef.current) return;
@@ -1765,30 +1781,10 @@ export function VideoPlayer({
 
       cloudinaryPlayerRef.current = player;
 
-      const attachSource = () =>
-        player.source(streamPublicId, {
-          sourceTypes: ["hls"],
-          transformation: { streaming_profile: streamProfile },
-        });
-
-      // While the rendition is still transcoding the source load errors; show the
-      // processing state and retry on a fixed cadence rather than dying. The clip
-      // attaches and plays itself once Cloudinary finishes.
-      player.on("error", () => {
-        if (disposed || retries >= HLS_MAX_RETRIES) return;
-        setProcessing(true);
-        retries += 1;
-        retryTimerRef.current = window.setTimeout(() => {
-          if (!disposed) attachSource();
-        }, HLS_RETRY_MS);
+      player.source(streamPublicId, {
+        sourceTypes: ["hls"],
+        transformation: { streaming_profile: streamProfile },
       });
-      player.on("loadeddata", () => {
-        if (disposed) return;
-        setProcessing(false);
-        retries = 0;
-      });
-
-      attachSource();
 
       // Cloudinary's lazy player is a deferred proxy — wait until the real
       // VideoPlayer exists before calling play/mute (wrong names like .muted()
@@ -1805,11 +1801,6 @@ export function VideoPlayer({
     return () => {
       disposed = true;
       setHlsReady(false);
-      setProcessing(false);
-      if (retryTimerRef.current) {
-        clearTimeout(retryTimerRef.current);
-        retryTimerRef.current = null;
-      }
       if (cloudinaryPlayerRef.current?.dispose) {
         cloudinaryPlayerRef.current.dispose();
         cloudinaryPlayerRef.current = null;
@@ -1962,11 +1953,11 @@ export function VideoPlayer({
         cursor: "pointer",
         touchAction: "pan-y",
       }}
-      onClick={togglePlay}
-      onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerUp}
-      onPointerCancel={handlePointerUp}
+      onClick={nativeControls ? undefined : togglePlay}
+      onPointerDown={nativeControls ? undefined : handlePointerDown}
+      onPointerUp={nativeControls ? undefined : handlePointerUp}
+      onPointerLeave={nativeControls ? undefined : handlePointerUp}
+      onPointerCancel={nativeControls ? undefined : handlePointerUp}
     >
       {fastForwarding && (
         <div
@@ -2008,8 +1999,30 @@ export function VideoPlayer({
             loop
             muted={muted}
             preload="none"
+            controls={nativeControls && !useHls ? true : undefined}
             className={
               useHls ? (fill ? "cld-video-player" : "cld-video-player cld-fluid") : undefined
+            }
+            onLoadedData={
+              useHls
+                ? undefined
+                : () => {
+                    setProcessing(false);
+                    retryCountRef.current = 0;
+                  }
+            }
+            onError={
+              useHls
+                ? undefined
+                : (event) => {
+                    // A fresh reel's MP4 rendition may still be transcoding — show the
+                    // processing state and reload on a fixed cadence rather than dying.
+                    const video = event.currentTarget;
+                    if (retryCountRef.current >= VIDEO_MAX_RETRIES) return;
+                    setProcessing(true);
+                    retryCountRef.current += 1;
+                    retryTimerRef.current = window.setTimeout(() => video.load(), VIDEO_RETRY_MS);
+                  }
             }
             style={{
               position: "absolute",
@@ -2108,7 +2121,7 @@ export function VideoPlayer({
         </div>
       )}
       {/* center play */}
-      {!playing && !processing && (
+      {!nativeControls && !playing && !processing && (
         <div
           style={{
             position: "absolute",
@@ -2142,82 +2155,86 @@ export function VideoPlayer({
       )}
       {/* product overlay */}
       {overlay}
-      {/* controls */}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 0,
-          padding: "20px 12px 10px",
-          background: "linear-gradient(transparent, rgba(11,18,32,.55))",
-          display: "flex",
-          flexDirection: "column",
-          gap: 6,
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
+      {/* controls — custom overlay; native-controls players use the browser bar */}
+      {!nativeControls && (
         <div
           style={{
-            height: 4,
-            borderRadius: 2,
-            background: "rgba(255,255,255,.35)",
-            position: "relative",
-            cursor: "pointer",
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            padding: "20px 12px 10px",
+            background: "linear-gradient(transparent, rgba(11,18,32,.55))",
+            display: "flex",
+            flexDirection: "column",
+            gap: 6,
           }}
-          onClick={(e) => {
-            const r = e.currentTarget.getBoundingClientRect();
-            seekTo(((e.clientX - r.left) / r.width) * dur);
-          }}
+          onClick={(e) => e.stopPropagation()}
         >
           <div
             style={{
-              position: "absolute",
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: `${(t / dur) * 100}%`,
-              background: "var(--blue)",
+              height: 4,
               borderRadius: 2,
+              background: "rgba(255,255,255,.35)",
+              position: "relative",
+              cursor: "pointer",
             }}
-          />
-        </div>
-        {!compact && (
-          <div style={{ display: "flex", alignItems: "center", gap: 12, color: "#fff" }}>
-            <button
-              aria-label={playing ? translate("common.a11y.pause") : translate("common.a11y.play")}
-              onClick={() => setPlaying((p) => !p)}
+            onClick={(e) => {
+              const r = e.currentTarget.getBoundingClientRect();
+              seekTo(((e.clientX - r.left) / r.width) * dur);
+            }}
+          >
+            <div
               style={{
-                background: "none",
-                border: "none",
-                color: "#fff",
-                cursor: "pointer",
-                padding: 0,
-                display: "flex",
+                position: "absolute",
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: `${(t / dur) * 100}%`,
+                background: "var(--blue)",
+                borderRadius: 2,
               }}
-            >
-              <Icon name={playing ? "pause" : "play"} size={18} fill="#fff" />
-            </button>
-            <button
-              aria-label={muted ? translate("common.a11y.unmute") : translate("common.a11y.mute")}
-              onClick={() => setMuted((m) => !m)}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#fff",
-                cursor: "pointer",
-                padding: 0,
-                display: "flex",
-              }}
-            >
-              <Icon name={muted ? "mute" : "volume"} size={18} />
-            </button>
-            <span className="tnum" style={{ fontSize: 12, fontWeight: 600 }}>
-              {fmt(t)} / {fmt(dur)}
-            </span>
+            />
           </div>
-        )}
-      </div>
+          {!compact && (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, color: "#fff" }}>
+              <button
+                aria-label={
+                  playing ? translate("common.a11y.pause") : translate("common.a11y.play")
+                }
+                onClick={() => setPlaying((p) => !p)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#fff",
+                  cursor: "pointer",
+                  padding: 0,
+                  display: "flex",
+                }}
+              >
+                <Icon name={playing ? "pause" : "play"} size={18} fill="#fff" />
+              </button>
+              <button
+                aria-label={muted ? translate("common.a11y.unmute") : translate("common.a11y.mute")}
+                onClick={() => setMuted((m) => !m)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#fff",
+                  cursor: "pointer",
+                  padding: 0,
+                  display: "flex",
+                }}
+              >
+                <Icon name={muted ? "mute" : "volume"} size={18} />
+              </button>
+              <span className="tnum" style={{ fontSize: 12, fontWeight: 600 }}>
+                {fmt(t)} / {fmt(dur)}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

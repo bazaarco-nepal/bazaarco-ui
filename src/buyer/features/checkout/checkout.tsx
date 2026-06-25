@@ -70,6 +70,7 @@ import {
 } from "@/buyer/lib/delivery-options";
 import { useOrder } from "@/buyer/hooks/use-orders";
 import { EsewaRedirectForm } from "@/components/payment/esewa-redirect-form";
+import { buyerEventsApi } from "@/buyer/api/buyer-events";
 import type { EsewaPaymentInit } from "@/buyer/api/orders";
 import {
   selectedLines,
@@ -88,6 +89,11 @@ function lineMaxQty(line) {
   return typeof line.availableStock === "number" && line.availableStock > 0
     ? Math.min(line.availableStock, 99)
     : 99;
+}
+
+function productHrefFromCart(productId) {
+  const params = new URLSearchParams({ srcPage: "cart", srcSection: "cart_item" });
+  return `${pathFromScreen("pdp", productId)}?${params.toString()}`;
 }
 
 export function priceBreakdown(cart, deliveryTier = "standard") {
@@ -342,8 +348,23 @@ export function Cart() {
 
   const goToCheckout = () => {
     if (selectedCount === 0) return;
-    if (authed) nav("checkout");
-    else promptLogin(t("checkout.signInCheckout"));
+    if (!authed) {
+      promptLogin(t("checkout.signInCheckout"));
+      return;
+    }
+    void buyerEventsApi.record({
+      eventType: "checkout_started",
+      quantity: selectedCart.reduce((sum, item) => sum + item.qty, 0),
+      price: bd.subtotal,
+      sourcePage: "cart",
+      sourceSection: "checkout_cta",
+      metadata: {
+        checkout_source: "cart",
+        item_count: selectedCount,
+        selected_item_ids: selectedCart.map(cartLineKey),
+      },
+    });
+    nav("checkout");
   };
 
   const setQty = (line, q) => {
@@ -524,8 +545,10 @@ export function Cart() {
                   label={`${sel ? "Deselect" : "Select"} ${it.name}`}
                 />
                 <AppLink
-                  href={pathFromScreen("pdp", it.id)}
-                  onNavigate={() => openProduct(it)}
+                  href={productHrefFromCart(it.id)}
+                  onNavigate={() =>
+                    openProduct(it, { source: { page: "cart", section: "cart_item" } })
+                  }
                   className="bz-cart-card__media"
                   style={{ cursor: "pointer", flexShrink: 0, alignSelf: "flex-start" }}
                 >
@@ -551,8 +574,10 @@ export function Cart() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
                     <AppLink
-                      href={pathFromScreen("pdp", it.id)}
-                      onNavigate={() => openProduct(it)}
+                      href={productHrefFromCart(it.id)}
+                      onNavigate={() =>
+                        openProduct(it, { source: { page: "cart", section: "cart_item" } })
+                      }
                       style={{ cursor: "pointer", textDecoration: "none", minWidth: 0 }}
                     >
                       <div style={{ fontWeight: 600, fontSize: ".9375rem" }}>{it.name}</div>
@@ -972,6 +997,28 @@ export function Checkout() {
   // (an empty id list would otherwise be read server-side as "the whole cart").
   const hasSelection = selectedCart.length > 0;
   const canPlaceOrder = phoneComplete && addressComplete && addressDeliverable && hasSelection;
+
+  const recordDeliveryChecked = (tier: string) => {
+    const choice = deliveryChoices(selectedCart).find((c) => c.tier === tier);
+    for (const line of selectedCart) {
+      void buyerEventsApi.record({
+        eventType: "delivery_checked",
+        productId: line.id,
+        variantId: line.variantId ?? null,
+        storeId: line.seller,
+        categoryId: line.cat,
+        quantity: line.qty,
+        price: line.price,
+        sourcePage: "checkout",
+        sourceSection: "delivery_options",
+        metadata: {
+          delivery_area: address.city || "Kathmandu",
+          delivery_fee_shown: choice?.fee ?? null,
+          delivery_tier: tier,
+        },
+      });
+    }
+  };
 
   // Late hydration of the saved phone — prefill only while the field is untouched.
   useEffect(() => {
@@ -1627,7 +1674,10 @@ export function Checkout() {
           <DeliveryOptionPicker
             cart={selectedCart}
             tier={deliveryTier}
-            onChange={setDeliveryTier}
+            onChange={(tier) => {
+              setDeliveryTier(tier);
+              recordDeliveryChecked(tier);
+            }}
           />
 
           {/* Cancellation + refund policy — shown before order is placed */}

@@ -19,6 +19,7 @@ function ProductSection({
   isFetchingNextPage,
   onLoadMore,
   seeAllHref,
+  sourceSection,
   hideWhenEmpty = false,
 }: {
   title: string;
@@ -28,6 +29,7 @@ function ProductSection({
   isFetchingNextPage: boolean;
   onLoadMore: () => void;
   seeAllHref?: string;
+  sourceSection: string;
   hideWhenEmpty?: boolean;
 }) {
   const { t } = useTranslation();
@@ -54,7 +56,14 @@ function ProductSection({
       <div className="bz-picks-grid">
         {isLoading
           ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
-          : items.map((p) => <ProductCard key={p.id} p={p} onClick={openProduct} />)}
+          : items.map((p, index) => (
+              <ProductCard
+                key={p.id}
+                p={p}
+                onClick={openProduct}
+                source={{ page: "home", section: sourceSection, position: index + 1 }}
+              />
+            ))}
       </div>
 
       {!isLoading && items.length === 0 && (
@@ -144,6 +153,7 @@ export function PicksSections({
           )
         }
         seeAllHref="/browse?sort=popular"
+        sourceSection="top_picks"
         hideWhenEmpty
       />
     </>

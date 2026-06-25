@@ -3,10 +3,19 @@ import type { CheckoutPayload, EsewaPaymentInit } from "@/buyer/api/orders";
 
 export type { ToastVariant } from "@/shared/lib/toast";
 
+export interface ProductOpenSource {
+  page: string;
+  section: string;
+  position?: number;
+}
+
 export interface BazaarContextValue {
   screen: string;
   nav: (screen: string, options?: { cat?: string; product?: string }) => void;
-  openProduct: (product: Product, options?: { offer?: boolean }) => void;
+  openProduct: (
+    product: Product,
+    options?: { offer?: boolean; source?: ProductOpenSource },
+  ) => void;
   openStore: (sellerId: string) => void;
   /** Open the watch feed; pass a product id to open that reel first. */
   openVideo: (productId?: string) => void;

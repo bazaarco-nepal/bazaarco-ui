@@ -40,8 +40,9 @@ import { SOCIAL_LINKS } from "@/config/site";
 import { BuyerAvatar } from "@/components/common/buyer-avatar";
 import { LogoutConfirmModal } from "@/components/common/logout-confirm-modal";
 import { LanguageToggle } from "@/components/common/language-toggle";
+import { buyerEventsApi } from "@/buyer/api/buyer-events";
 
-import type { BazaarContextValue } from "@/types/bazaar";
+import type { BazaarContextValue, ProductOpenSource } from "@/types/bazaar";
 import type { Category, Product, Seller } from "@/types";
 import type { AuthUser } from "@/types/auth";
 import type { DeliveryLocation } from "@/shared/lib/delivery-location";
@@ -170,10 +171,22 @@ export function SellerRow({
 // line only once the saving clears this floor (rupees) — below it a trivial
 // "Save Rs. 17" just adds noise.
 const SAVINGS_THRESHOLD = 50;
+const loggedProductImpressions = new Set<string>();
+
+function productHref(productId: string, source?: ProductOpenSource) {
+  const path = pathFromScreen("pdp", productId);
+  if (!source) return path;
+  const params = new URLSearchParams();
+  params.set("srcPage", source.page);
+  params.set("srcSection", source.section);
+  if (source.position) params.set("srcPos", String(source.position));
+  return `${path}?${params.toString()}`;
+}
 
 export function ProductCard({
   p,
   onClick,
+  source,
   preview = false,
   savable = true,
   ctaLabel,
@@ -181,7 +194,8 @@ export function ProductCard({
   onCta,
 }: {
   p: Product;
-  onClick: (p: Product) => void;
+  onClick: (p: Product, options?: { source?: ProductOpenSource }) => void;
+  source?: ProductOpenSource;
   /** Static, non-interactive render (no PDP link, no save toggle) — used by
       the Add Product live preview so sellers see the exact buyer card. */
   preview?: boolean;
@@ -191,8 +205,9 @@ export function ProductCard({
   onCta?: (p: Product) => void;
 }) {
   const { t } = useTranslation();
-  const { toggleSaved, savedProducts } = useBz();
+  const { toggleSaved, savedProducts, authed } = useBz();
   const locale = useBazaarStore((s) => s.locale);
+  const cardRef = useRef<HTMLDivElement | null>(null);
   const productName = displayProductName(p, locale);
   const [hov, setHov] = useState(false);
   const isSaved = savable && savedProducts.includes(p.id);
@@ -203,8 +218,53 @@ export function ProductCard({
     p.original && p.original > p.price
       ? Math.round(((p.original - p.price) / p.original) * 100)
       : 0;
+
+  useEffect(() => {
+    if (!authed || preview) return;
+    const node = cardRef.current;
+    if (!node) return;
+    const key = `${p.id}:${source?.page ?? ""}:${source?.section ?? ""}:${source?.position ?? ""}`;
+    if (loggedProductImpressions.has(key)) return;
+
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const visibleEnough = entry.isIntersecting && entry.intersectionRatio >= 0.5;
+        if (!visibleEnough) {
+          if (timer) clearTimeout(timer);
+          timer = null;
+          return;
+        }
+        if (timer) return;
+        timer = setTimeout(() => {
+          loggedProductImpressions.add(key);
+          observer.disconnect();
+          void buyerEventsApi.record({
+            eventType: "product_impression",
+            productId: p.id,
+            storeId: p.seller,
+            categoryId: p.cat,
+            price: p.price,
+            sourcePage: source?.page ?? null,
+            sourceSection: source?.section ?? null,
+            sourcePosition: source?.position ?? null,
+            metadata: { visible_percent: 50 },
+          });
+        }, 1000);
+      },
+      { threshold: [0, 0.5, 1] },
+    );
+
+    observer.observe(node);
+    return () => {
+      if (timer) clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [authed, preview, p.id, p.seller, p.cat, p.price, source]);
+
   return (
     <div
+      ref={cardRef}
       className="bz-product-card"
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
@@ -230,8 +290,8 @@ export function ProductCard({
           there's no live product to open yet. */}
       {!preview && (
         <AppLink
-          href={pathFromScreen("pdp", p.id)}
-          onNavigate={() => onClick(p)}
+          href={productHref(p.id, source)}
+          onNavigate={() => onClick(p, { source })}
           ariaLabel={productName}
           style={{ position: "absolute", inset: 0, zIndex: 1 }}
         />
@@ -458,8 +518,13 @@ export function ProductRail({
       className="bz-grid-cards"
       style={{ display: "grid", gridTemplateColumns: `repeat(${cols || 5}, 1fr)`, gap: 18 }}
     >
-      {items.map((p) => (
-        <ProductCard key={p.id} p={p} onClick={onOpen} />
+      {items.map((p, index) => (
+        <ProductCard
+          key={p.id}
+          p={p}
+          onClick={onOpen}
+          source={{ page: "product_rail", section: "products", position: index + 1 }}
+        />
       ))}
     </div>
   );

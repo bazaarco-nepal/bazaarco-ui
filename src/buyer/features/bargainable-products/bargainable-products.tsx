@@ -92,12 +92,26 @@ export function BargainableProducts() {
         ) : (
           <>
             <div className="bz-bargain-grid">
-              {products.map((product) => (
+              {products.map((product, index) => (
                 <BargainProductCard
                   key={product.id}
                   p={product}
                   onOpen={openProduct}
-                  onOffer={(prod) => openProduct(prod, { offer: true })}
+                  onOffer={(prod) =>
+                    openProduct(prod, {
+                      offer: true,
+                      source: {
+                        page: "category_page",
+                        section: "bargainable_products",
+                        position: index + 1,
+                      },
+                    })
+                  }
+                  source={{
+                    page: "category_page",
+                    section: "bargainable_products",
+                    position: index + 1,
+                  }}
                 />
               ))}
             </div>

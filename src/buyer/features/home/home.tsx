@@ -124,7 +124,13 @@ function BargainSection() {
               key={product.id}
               p={product}
               onOpen={openProduct}
-              onOffer={(prod) => openProduct(prod, { offer: true })}
+              onOffer={(prod) =>
+                openProduct(prod, {
+                  offer: true,
+                  source: { page: "home", section: "bargain_with_seller" },
+                })
+              }
+              source={{ page: "home", section: "bargain_with_seller" }}
             />
           )}
         />
@@ -411,9 +417,18 @@ export function Home() {
               <div className="bz-picks-grid" ref={picksGridRef}>
                 {homeLoading && exploreFeed.items.length === 0
                   ? Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
-                  : exploreFeed.items
-                      .slice(0, exploreVisibleCount)
-                      .map((p) => <ProductCard key={p.id} p={p} onClick={openProduct} />)}
+                  : exploreFeed.items.slice(0, exploreVisibleCount).map((p, index) => (
+                      <ProductCard
+                        key={p.id}
+                        p={p}
+                        onClick={openProduct}
+                        source={{
+                          page: "home",
+                          section: "recommended_for_you",
+                          position: index + 1,
+                        }}
+                      />
+                    ))}
               </div>
               {exploreAutoLoad ? (
                 <div

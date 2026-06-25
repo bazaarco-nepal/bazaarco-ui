@@ -18,6 +18,7 @@ import {
   videoPath,
 } from "@/config/routes";
 import { ordersApi } from "@/buyer/api/orders";
+import { buyerEventsApi } from "@/buyer/api/buyer-events";
 import { ApiRequestError } from "@/shared/api/http";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { queryKeys } from "@/shared/api/query-keys";
@@ -30,6 +31,20 @@ import {
 import { toast } from "@/shared/lib/toast";
 import type { CheckoutPayload, EsewaPaymentInit } from "@/buyer/api/orders";
 import type { Product } from "@/types";
+import type { ProductOpenSource } from "@/types/bazaar";
+
+function productPath(productId: string, options?: { offer?: boolean; source?: ProductOpenSource }) {
+  const path = pathFromScreen("pdp", productId);
+  const params = new URLSearchParams();
+  if (options?.offer) params.set("offer", "1");
+  if (options?.source) {
+    params.set("srcPage", options.source.page);
+    params.set("srcSection", options.source.section);
+    if (options.source.position) params.set("srcPos", String(options.source.position));
+  }
+  const qs = params.toString();
+  return qs ? `${path}?${qs}` : path;
+}
 
 export function BazaarProvider({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
@@ -258,15 +273,14 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
   }, [router, scrollTop, pathname]);
 
   const openProduct = useCallback(
-    (product: Product, options?: { offer?: boolean }) => {
+    (product: Product, options?: { offer?: boolean; source?: ProductOpenSource }) => {
       setActiveProduct(product);
       // Optimistic screen — avoids flashing the previous page (e.g. browse)
       // while Next.js updates the URL to /product/:id.
       useBazaarStore.getState().setScreenOverride("pdp");
       // `?offer=1` carries the "Make an offer" intent from the bargain rails so the
       // PDP opens the bargain modal on arrival — same path as its own offer button.
-      const path = pathFromScreen("pdp", product.id);
-      router.push(options?.offer ? `${path}?offer=1` : path, { scroll: false });
+      router.push(productPath(product.id, options), { scroll: false });
       setTimeout(scrollTop, 0);
     },
     [router, scrollTop, setActiveProduct],
@@ -389,6 +403,21 @@ export function BazaarProvider({ children }: { children: React.ReactNode }) {
         setSelectedCartIds(
           variantIds.map((vid) => cartLineKey({ id: product.id, variantId: vid })),
         );
+        void buyerEventsApi.record({
+          eventType: "checkout_started",
+          productId: product.id,
+          variantId: variantIds.length === 1 ? variantIds[0] : null,
+          storeId: product.seller,
+          categoryId: product.cat,
+          quantity: qty,
+          price: product.price,
+          sourcePage: "product_detail",
+          sourceSection: "buy_now",
+          metadata: {
+            checkout_source: "buy_now",
+            variant_ids: variantIds.filter((id): id is string => Boolean(id)),
+          },
+        });
         nav("checkout");
       } catch (error) {
         const msg = error instanceof ApiRequestError ? error.message : t("toast.couldNotAddToCart");

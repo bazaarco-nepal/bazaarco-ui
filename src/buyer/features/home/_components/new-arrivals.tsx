@@ -39,8 +39,13 @@ export function NewArrivalsSection({
       <div className="bz-picks-grid" ref={gridRef}>
         {loading
           ? Array.from({ length: visibleCount }).map((_, i) => <SkeletonCard key={i} />)
-          : visibleProducts.map((product) => (
-              <ProductCard key={product.id} p={product} onClick={openProduct} />
+          : visibleProducts.map((product, index) => (
+              <ProductCard
+                key={product.id}
+                p={product}
+                onClick={openProduct}
+                source={{ page: "home", section: "new_arrivals", position: index + 1 }}
+              />
             ))}
       </div>
     </>

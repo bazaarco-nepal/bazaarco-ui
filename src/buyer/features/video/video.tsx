@@ -12,7 +12,7 @@ import {
   PdpViewProductLink,
   PdpWishlistButton,
 } from "@/buyer/features/pdp/_components/product-actions";
-import { AppLink, Button, EmptyState, Icon, IconButton } from "@/components/ui";
+import { AppLink, Button, EmptyState, Icon, IconButton, Spinner } from "@/components/ui";
 import { useBz } from "@/components/common";
 import { useBazaarStore } from "@/store/bazaar-store";
 import { pathFromScreen, productShareUrl, searchPath } from "@/config/routes";
@@ -199,6 +199,11 @@ function ProductDock({ item }: { item: VideoFeedItem }) {
   );
 }
 
+// A reel whose MP4 rendition is still transcoding errors on load; retry on this cadence
+// (≈ up to 1 min) behind a calm "processing" overlay instead of a dead frame.
+const VIDEO_RETRY_MS = 5000;
+const VIDEO_MAX_RETRIES = 12;
+
 function WatchSlide({
   item,
   index,
@@ -234,6 +239,17 @@ function WatchSlide({
   registerSlide: (index: number, el: HTMLDivElement | null) => void;
 }) {
   const [progress, setProgress] = useState(0);
+  // A fresh reel's rendition can still be transcoding — surface a calm "processing"
+  // state and auto-retry the load instead of a frozen black frame.
+  const [processing, setProcessing] = useState(false);
+  const retryCountRef = useRef(0);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+    },
+    [],
+  );
   const { savedProducts, toggleSaved } = useBz();
   const saved = savedProducts.includes(item.id);
 
@@ -259,7 +275,45 @@ function WatchSlide({
             setProgress(next);
             onRecordView(item, next, video.duration, video.currentTime);
           }}
+          onLoadedData={() => {
+            setProcessing(false);
+            retryCountRef.current = 0;
+          }}
+          onError={(event) => {
+            const video = event.currentTarget;
+            if (retryCountRef.current >= VIDEO_MAX_RETRIES) return;
+            setProcessing(true);
+            retryCountRef.current += 1;
+            retryTimerRef.current = setTimeout(() => video.load(), VIDEO_RETRY_MS);
+          }}
         />
+
+        {processing ? (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 4,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 10,
+              padding: 24,
+              textAlign: "center",
+              background: "rgba(11,18,32,.5)",
+              backdropFilter: "blur(2px)",
+            }}
+          >
+            <Spinner size={26} color="#fff" />
+            <span style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>
+              Processing your video
+            </span>
+            <span style={{ color: "rgba(255,255,255,.82)", fontSize: 12, maxWidth: 240 }}>
+              This takes a moment. It&apos;ll play automatically when ready.
+            </span>
+          </div>
+        ) : null}
 
         <div className="watch__player-top">
           <IconButton
@@ -274,7 +328,7 @@ function WatchSlide({
           />
         </div>
 
-        {active && !playing ? (
+        {active && !playing && !processing ? (
           <span className="watch__play-overlay" aria-hidden="true">
             <Icon name="play" size={30} fill="currentColor" />
           </span>

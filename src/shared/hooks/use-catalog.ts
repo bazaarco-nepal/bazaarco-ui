@@ -165,24 +165,9 @@ export function useBargainableProducts(limit = 6) {
   return useProducts({ bargainable: true, page: 1, limit });
 }
 
-const BARGAINABLE_PAGE_SIZE = 24;
-
 /** Discrete page of bargainable products for large catalog listings. */
-export function useBargainableProductsPage(page = 1, limit = BARGAINABLE_PAGE_SIZE) {
+export function useBargainableProductsPage(page = 1, limit = 24) {
   return useProducts({ bargainable: true, page, limit }, keepPreviousData);
-}
-
-/** Paginated bargainable products for the full "All bargainable products" listing. */
-export function useBargainableProductsInfinite() {
-  return useInfiniteQuery({
-    queryKey: queryKeys.catalog.products({ bargainable: true, infinite: true }),
-    queryFn: ({ pageParam }) =>
-      catalogApi.getProducts({ bargainable: true, page: pageParam, limit: BARGAINABLE_PAGE_SIZE }),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) =>
-      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
-    staleTime: STALE_TIME,
-  });
 }
 
 export function useProduct(id: string | null) {

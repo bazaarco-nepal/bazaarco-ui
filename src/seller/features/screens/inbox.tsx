@@ -2,10 +2,11 @@
 
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useRouter } from "next/navigation";
 import { ChipGroup, usePages, PageBar, ApiState } from "@/components/ui";
 import { SellerIcon } from "@/seller/ui/icons";
 import { useSellerInbox } from "@/seller/hooks/use-seller";
-import { useBz } from "@/components/common";
+import { pathFromScreen } from "@/config/routes";
 import {
   OrderCard,
   SellerHelpBar,
@@ -17,6 +18,7 @@ import {
 import {
   INBOX_DATE_RANGES,
   INBOX_TAB_STATUSES,
+  SELLER_BOARD_COLUMNS,
   inboxLabel,
   inboxTone,
   inDateRange,
@@ -26,7 +28,7 @@ import { type SellerInboxOrderItem } from "../_shared/types";
 
 export function SellerInbox() {
   const { t } = useTranslation();
-  const { nav } = useBz();
+  const router = useRouter();
   const { data: INBOX_ORDERS = [], isLoading, isError, error } = useSellerInbox();
   const [tab, setTab] = useState("all");
   const [view, setView] = useState("list"); // list | kanban
@@ -53,7 +55,7 @@ export function SellerInbox() {
   );
   const openOrder = (o: SellerInboxOrderItem) => {
     sellerOrderRef.current = o;
-    nav("s-order-detail");
+    router.push(pathFromScreen("s-order-detail", undefined, undefined, o.id), { scroll: false });
   };
   const filtersActive = search.trim() || range !== "all" || tab !== "all";
   const clearFilters = () => {
@@ -62,6 +64,7 @@ export function SellerInbox() {
     setTab("all");
   };
   const ordersPaged = usePages(list, 8, `${tab}|${q}|${range}`);
+  const boardOrders = tab === "all" ? baseFiltered : list;
 
   const tabs = [
     { id: "all", label: t("seller.inbox.tabAll") },
@@ -83,7 +86,8 @@ export function SellerInbox() {
           actions={
             <button
               onClick={() => setView((v) => (v === "list" ? "kanban" : "list"))}
-              className="bz-mobile-hide bz-hover-border"
+              className="bz-hover-border"
+              aria-pressed={view === "kanban"}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -205,79 +209,37 @@ export function SellerInbox() {
         </div>
 
         {view === "kanban" ? (
-          <div className="bz-kanban">
-            {(["new", "processing", "shipped", "completed"] as const).map((colId) => {
-              const statuses = INBOX_TAB_STATUSES[colId] ?? [];
-              const sampleStatus = statuses[0] ?? "";
+          <div className="bz-seller-board" aria-label="Seller order fulfillment board">
+            {SELLER_BOARD_COLUMNS.map((column) => {
+              const sampleStatus = column.statuses[0] ?? "";
               const lbl = inboxLabel(sampleStatus);
               const tone = inboxTone(sampleStatus);
-              const items = baseFiltered.filter((o) => statuses.includes(o.status));
+              const items = boardOrders.filter((o) => column.statuses.includes(o.status));
               return (
-                <div
-                  key={colId}
-                  style={{
-                    background: "var(--line-100)",
-                    borderRadius: "var(--r-lg)",
-                    padding: 10,
-                    minHeight: 200,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "4px 6px 10px",
-                    }}
-                  >
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
-                        fontWeight: 600,
-                        fontSize: ".875rem",
-                        color: "var(--ink-900)",
-                      }}
-                    >
-                      <SellerIcon
-                        name={lbl.icon}
-                        size={16}
-                        color={`var(--${tone === "success" ? "success" : tone})`}
-                      />
-                      {lbl.en}
-                    </span>
-                    <span
-                      className="tnum"
-                      style={{
-                        background: "#fff",
-                        padding: "2px 8px",
-                        borderRadius: 999,
-                        fontSize: ".7rem",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {items.length}
-                    </span>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {items.length === 0 && (
-                      <div
-                        style={{
-                          padding: 20,
-                          textAlign: "center",
-                          color: "var(--ink-400)",
-                          fontSize: ".8125rem",
-                        }}
-                      >
-                        None
+                <section key={column.id} className="bz-seller-board__column">
+                  <div className="bz-seller-board__head">
+                    <div style={{ minWidth: 0 }}>
+                      <div className="bz-seller-board__title">
+                        <SellerIcon
+                          name={lbl.icon}
+                          size={16}
+                          color={`var(--${tone === "success" ? "success" : tone})`}
+                        />
+                        <span>{column.title}</span>
                       </div>
+                      <div className="bz-seller-board__hint">{column.hint}</div>
+                    </div>
+                    <span className="bz-seller-board__count tnum">{items.length}</span>
+                  </div>
+                  <div className="bz-seller-board__cards">
+                    {items.length === 0 && (
+                      <div className="bz-seller-board__empty">No orders in this step</div>
                     )}
                     {items.map((o) => (
                       <OrderCard key={o.id} o={o} onOpen={openOrder} />
                     ))}
                   </div>
-                </div>
+                </section>
               );
             })}
           </div>

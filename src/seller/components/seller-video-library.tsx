@@ -271,19 +271,20 @@ function VideoCard({
   return (
     <article className="bz-seller-video-card">
       <div className="bz-seller-video-card__media">
-        {/* Same VideoPlayer the buyer watch feed uses, so tapping play streams
-            the clip over Cloudinary HLS exactly as buyers see it. deferStream
-            keeps the grid light — HLS only attaches once the seller hits play. */}
+        {/* Seller review view: play the browser-friendly MP4 with native controls
+            (play/pause, scrubber, volume, fullscreen) — not the buyer's immersive
+            overlay. preload="none" keeps the grid light until play is pressed. */}
         <VideoPlayer
           ratio="4 / 5"
           radius="0"
-          deferStream
+          nativeControls
           label={false}
           tint={video.tint}
           icon={video.icon}
           thumb={video.thumb}
           src={video.videoUrl}
           publicId={video.videoPublicId}
+          streaming={false}
         />
       </div>
       <div className="bz-seller-video-card__body">

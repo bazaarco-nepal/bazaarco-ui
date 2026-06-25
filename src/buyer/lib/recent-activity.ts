@@ -56,12 +56,6 @@ function upsert(item: RecentActivityItem) {
   writeRaw(next);
 }
 
-export function readRecentActivity(): RecentActivityItem[] {
-  return readRaw()
-    .sort((a, b) => b.at - a.at)
-    .slice(0, LIMIT);
-}
-
 export function recordRecentSearch(query: string) {
   const label = query.trim();
   if (!label) return;
@@ -82,8 +76,4 @@ export function recordRecentProduct(product: Pick<Product, "id" | "name">) {
     href: `/product/${encodeURIComponent(product.id)}`,
     at: Date.now(),
   });
-}
-
-export function clearRecentActivity() {
-  writeRaw([]);
 }

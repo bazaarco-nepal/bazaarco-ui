@@ -11,9 +11,19 @@ import { useSellerInbox, useUpdateSellerOrderStatus } from "@/seller/hooks/use-s
 import { useBz, BuyerAvatar } from "@/components/common";
 import { pathFromScreen } from "@/config/routes";
 import { SellerHelpBar } from "../_shared/components";
-import { inboxLabel, inboxTone, SELLER_ADVANCE } from "../_shared/inbox";
+import { formatInboxTime, inboxLabel, inboxTone, SELLER_ADVANCE } from "../_shared/inbox";
 import { sellerOrderRef } from "../_shared/refs";
 import { ConfirmModal } from "@/seller/components/confirm-modal";
+
+const SELLER_STATUS_STEPS: SuborderStatus[] = [
+  "new_order",
+  "seller_processing",
+  "ready_for_hub",
+  "on_the_way_to_hub",
+  "received_at_hub",
+  "verified",
+  "packed",
+];
 
 /* A tappable buyer-contact line: tinted icon chip + value, links out via tel:/mailto:. */
 function ContactRow({ icon, href, value }: { icon: string; href: string; value: string }) {
@@ -99,6 +109,7 @@ export function SellerOrderDetail() {
     issue_found: t("seller.orderDetail.actionReportIssue"),
   };
   const [advancePrimary, advanceSecondary] = SELLER_ADVANCE[o.status] ?? [];
+  const currentStepIndex = SELLER_STATUS_STEPS.indexOf(o.status);
 
   const moveOrder = async (status: SuborderStatus) => {
     try {
@@ -127,7 +138,71 @@ export function SellerOrderDetail() {
         padding: "20px 28px 100px",
       }}
     >
-      <div style={{ maxWidth: 620, margin: "0 auto" }}>
+      <style>{`
+        .bz-seller-order-detail {
+          max-width: 980px;
+          margin: 0 auto;
+        }
+        .bz-seller-order-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr);
+          gap: 14px;
+          align-items: start;
+        }
+        .bz-seller-order-stack {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .bz-seller-status-path {
+          display: grid;
+          grid-template-columns: repeat(7, minmax(0, 1fr));
+          gap: 8px;
+          margin: 12px 0 18px;
+        }
+        .bz-seller-status-step {
+          min-width: 0;
+          border: 1px solid var(--line-200);
+          background: #fff;
+          border-radius: var(--r-md);
+          padding: 9px 8px;
+          color: var(--ink-500);
+          font-size: .75rem;
+          font-weight: 600;
+          line-height: 1.25;
+          text-align: center;
+        }
+        .bz-seller-status-step.is-done {
+          border-color: var(--blue);
+          background: var(--tint-blue-50);
+          color: var(--blue-deep);
+        }
+        .bz-seller-status-step.is-current {
+          border-color: var(--blue);
+          background: var(--blue);
+          color: #fff;
+        }
+        @media (max-width: 860px) {
+          .bz-seller-order-detail {
+            max-width: 620px;
+          }
+          .bz-seller-order-grid {
+            grid-template-columns: 1fr;
+          }
+          .bz-seller-status-path {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+        @media (max-width: 560px) {
+          .bz-seller-status-path {
+            grid-template-columns: 1fr;
+          }
+          .bz-seller-order-detail .btn {
+            width: 100% !important;
+          }
+        }
+      `}</style>
+      <div className="bz-seller-order-detail">
         <SellerHelpBar />
 
         <AppLink
@@ -203,236 +278,282 @@ export function SellerOrderDetail() {
                   {inboxLabel(o.status).en}
                 </div>
                 <div style={{ fontSize: ".8125rem", color: "var(--ink-700)" }}>
-                  {o.time} · {t("seller.orderDetail.orderNumber", { id: o.id })}
+                  {formatInboxTime(o.time)} · {t("seller.orderDetail.orderNumber", { id: o.id })}
                 </div>
               </div>
             </div>
           );
         })()}
 
-        {/* Buyer */}
-        <div
-          style={{
-            background: "#fff",
-            border: "1px solid var(--line-200)",
-            borderRadius: "var(--r-lg)",
-            padding: 18,
-            marginBottom: 12,
-          }}
-        >
-          <div
-            style={{
-              fontSize: ".75rem",
-              color: "var(--ink-400)",
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: ".06em",
-              marginBottom: 8,
-            }}
-          >
-            {t("seller.orderDetail.buyer")}
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
-            <BuyerAvatar
-              src={o.buyerAvatarUrl}
-              name={o.buyer}
-              email={o.email}
-              size={56}
-              fontSize="1.5rem"
-              style={{ background: "var(--tint-blue-50)", color: "var(--blue)" }}
-            />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 600, fontSize: "1.0625rem" }}>{o.buyer}</div>
-            </div>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {o.phone && <ContactRow icon="phone" href={`tel:${o.phone}`} value={o.phone} />}
-            {o.email && <ContactRow icon="mail" href={`mailto:${o.email}`} value={o.email} />}
-          </div>
+        <div className="bz-seller-status-path" aria-label="Seller order status path">
+          {SELLER_STATUS_STEPS.map((status, index) => {
+            const isCurrent = status === o.status;
+            const isDone = currentStepIndex >= 0 && index < currentStepIndex;
+            return (
+              <div
+                key={status}
+                className={`bz-seller-status-step${isDone ? " is-done" : ""}${isCurrent ? " is-current" : ""}`}
+              >
+                {inboxLabel(status).en}
+              </div>
+            );
+          })}
         </div>
 
-        {/* Item */}
-        <div
-          style={{
-            background: "#fff",
-            border: "1px solid var(--line-200)",
-            borderRadius: "var(--r-lg)",
-            padding: 18,
-            marginBottom: 12,
-          }}
-        >
-          <div
-            style={{
-              fontSize: ".75rem",
-              color: "var(--ink-400)",
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: ".06em",
-              marginBottom: 8,
-            }}
-          >
-            {t("seller.orderDetail.item")}
-          </div>
-          <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-            {o.imageUrl ? (
-              <img
-                src={o.imageUrl}
-                alt=""
-                style={{
-                  width: 70,
-                  height: 70,
-                  flexShrink: 0,
-                  borderRadius: "var(--r-md)",
-                  objectFit: "cover",
-                  border: "1px solid var(--line-200)",
-                  background: "var(--line-100)",
-                }}
-              />
-            ) : (
-              <Placeholder icon={o.icon} style={{ width: 70, height: 70 }} radius="var(--r-md)" />
-            )}
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600 }}>{o.item}</div>
+        <div className="bz-seller-order-grid">
+          <div className="bz-seller-order-stack">
+            {/* Buyer */}
+            <div
+              style={{
+                background: "#fff",
+                border: "1px solid var(--line-200)",
+                borderRadius: "var(--r-lg)",
+                padding: 18,
+              }}
+            >
               <div
-                className="tnum"
-                style={{ fontSize: ".875rem", color: "var(--ink-500)", marginTop: 2 }}
+                style={{
+                  fontSize: ".75rem",
+                  color: "var(--ink-400)",
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: ".06em",
+                  marginBottom: 8,
+                }}
               >
-                {t("seller.orderDetail.qty", { count: o.qty })}
+                {t("seller.orderDetail.buyer")}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
+                <BuyerAvatar
+                  src={o.buyerAvatarUrl}
+                  name={o.buyer}
+                  email={o.email}
+                  size={56}
+                  fontSize="1.5rem"
+                  style={{ background: "var(--tint-blue-50)", color: "var(--blue)" }}
+                />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: "1.0625rem" }}>{o.buyer}</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {o.phone && <ContactRow icon="phone" href={`tel:${o.phone}`} value={o.phone} />}
+                {o.email && <ContactRow icon="mail" href={`mailto:${o.email}`} value={o.email} />}
+              </div>
+            </div>
+
+            {/* Item */}
+            <div
+              style={{
+                background: "#fff",
+                border: "1px solid var(--line-200)",
+                borderRadius: "var(--r-lg)",
+                padding: 18,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: ".75rem",
+                  color: "var(--ink-400)",
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: ".06em",
+                  marginBottom: 8,
+                }}
+              >
+                {t("seller.orderDetail.item")}
+              </div>
+              <div style={{ display: "flex", gap: 14, alignItems: "center", minWidth: 0 }}>
+                {o.imageUrl ? (
+                  <img
+                    src={o.imageUrl}
+                    alt=""
+                    style={{
+                      width: 70,
+                      height: 70,
+                      flexShrink: 0,
+                      borderRadius: "var(--r-md)",
+                      objectFit: "cover",
+                      border: "1px solid var(--line-200)",
+                      background: "var(--line-100)",
+                    }}
+                  />
+                ) : (
+                  <Placeholder
+                    icon={o.icon}
+                    style={{ width: 70, height: 70 }}
+                    radius="var(--r-md)"
+                  />
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, overflowWrap: "anywhere" }}>{o.item}</div>
+                  <div
+                    className="tnum"
+                    style={{ fontSize: ".875rem", color: "var(--ink-500)", marginTop: 2 }}
+                  >
+                    {t("seller.orderDetail.qty", { count: o.qty })}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Payment */}
-        <div
-          style={{
-            background: "#fff",
-            border: "1px solid var(--line-200)",
-            borderRadius: "var(--r-lg)",
-            padding: 18,
-            marginBottom: 18,
-          }}
-        >
-          <div
-            style={{
-              fontSize: ".75rem",
-              color: "var(--ink-400)",
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: ".06em",
-              marginBottom: 10,
-            }}
-          >
-            {t("seller.orderDetail.payment")}
-          </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 6,
-            }}
-          >
-            <span style={{ color: "var(--ink-700)" }}>{t("seller.orderDetail.buyerPays")}</span>
-            <span
-              className="tnum"
-              style={{ fontWeight: 600, fontSize: "1.25rem", color: "var(--ink-900)" }}
+          <div className="bz-seller-order-stack">
+            {/* Payment */}
+            <div
+              style={{
+                background: "#fff",
+                border: "1px solid var(--line-200)",
+                borderRadius: "var(--r-lg)",
+                padding: 18,
+              }}
             >
-              {formatNPR(o.price)}
-            </span>
-          </div>
-          <div
-            style={{
-              paddingTop: 10,
-              borderTop: "1px dashed var(--line-200)",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <span style={{ fontWeight: 600, color: "var(--ink-900)" }}>
-              {t("seller.orderDetail.youGet")}
-            </span>
-            <span
-              className="tnum"
-              style={{ fontWeight: 600, fontSize: "1.375rem", color: "var(--success)" }}
-            >
-              {formatNPR(o.price)}
-            </span>
-          </div>
-          <div style={{ marginTop: 8, fontSize: ".75rem", color: "var(--ink-500)" }}>
-            {t("seller.orderDetail.method", { method: o.pay })}
-          </div>
-        </div>
-
-        {/* Status actions */}
-        {o.awaitingOtherSellers ? (
-          <div
-            style={{
-              background: "var(--tint-blue-50)",
-              border: "1.5px solid var(--blue)",
-              borderRadius: "var(--r-lg)",
-              padding: 16,
-              textAlign: "center",
-              color: "var(--ink-900)",
-              fontWeight: 600,
-            }}
-          >
-            <SellerIcon name="check" size={18} /> {t("seller.orderDetail.awaitingOtherSellers")}
-          </div>
-        ) : advancePrimary ? (
-          <>
-            <Button
-              variant="primary"
-              size="md"
-              full
-              loading={updateStatus.isPending}
-              onClick={() => void moveOrder(advancePrimary)}
-              icon="check"
-            >
-              {advanceLabel[advancePrimary]}
-            </Button>
-            {advanceSecondary && (
-              <Button
-                variant="ghost"
-                size="md"
-                full
-                disabled={updateStatus.isPending}
-                onClick={() => void moveOrder(advanceSecondary)}
-                icon="alertCircle"
-                style={{ marginTop: 8 }}
+              <div
+                style={{
+                  fontSize: ".75rem",
+                  color: "var(--ink-400)",
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: ".06em",
+                  marginBottom: 10,
+                }}
               >
-                {advanceLabel[advanceSecondary]}
-              </Button>
-            )}
-          </>
-        ) : (
-          <Button variant="ghost" size="md" full disabled>
-            {inboxLabel(o.status).en}
-          </Button>
-        )}
-        {o.canCancel && (
-          <button
-            type="button"
-            disabled={updateStatus.isPending}
-            onClick={reject}
-            style={{
-              marginTop: 10,
-              width: "auto",
-              background: "transparent",
-              border: "none",
-              padding: "8px 0",
-              cursor: "pointer",
-              fontSize: ".8125rem",
-              fontWeight: 600,
-              color: "var(--danger)",
-              textDecoration: "underline",
-              textUnderlineOffset: 2,
-            }}
-          >
-            {t("seller.orderDetail.cantFulfill")}
-          </button>
-        )}
+                {t("seller.orderDetail.payment")}
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 6,
+                  gap: 12,
+                }}
+              >
+                <span style={{ color: "var(--ink-700)" }}>{t("seller.orderDetail.buyerPays")}</span>
+                <span
+                  className="tnum"
+                  style={{ fontWeight: 600, fontSize: "1.25rem", color: "var(--ink-900)" }}
+                >
+                  {formatNPR(o.price)}
+                </span>
+              </div>
+              <div
+                style={{
+                  paddingTop: 10,
+                  borderTop: "1px dashed var(--line-200)",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 12,
+                }}
+              >
+                <span style={{ fontWeight: 600, color: "var(--ink-900)" }}>
+                  {t("seller.orderDetail.youGet")}
+                </span>
+                <span
+                  className="tnum"
+                  style={{ fontWeight: 600, fontSize: "1.375rem", color: "var(--success)" }}
+                >
+                  {formatNPR(o.price)}
+                </span>
+              </div>
+              <div style={{ marginTop: 8, fontSize: ".75rem", color: "var(--ink-500)" }}>
+                {t("seller.orderDetail.method", { method: o.pay })}
+              </div>
+            </div>
+
+            {/* Status actions */}
+            <div
+              style={{
+                background: "#fff",
+                border: "1px solid var(--line-200)",
+                borderRadius: "var(--r-lg)",
+                padding: 18,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: ".75rem",
+                  color: "var(--ink-400)",
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: ".06em",
+                  marginBottom: 10,
+                }}
+              >
+                Next action
+              </div>
+              {o.awaitingOtherSellers ? (
+                <div
+                  style={{
+                    background: "var(--tint-blue-50)",
+                    border: "1.5px solid var(--blue)",
+                    borderRadius: "var(--r-lg)",
+                    padding: 16,
+                    textAlign: "center",
+                    color: "var(--ink-900)",
+                    fontWeight: 600,
+                  }}
+                >
+                  <SellerIcon name="check" size={18} />{" "}
+                  {t("seller.orderDetail.awaitingOtherSellers")}
+                </div>
+              ) : advancePrimary ? (
+                <>
+                  <Button
+                    variant="primary"
+                    size="md"
+                    full
+                    loading={updateStatus.isPending}
+                    onClick={() => void moveOrder(advancePrimary)}
+                    icon="check"
+                  >
+                    {advanceLabel[advancePrimary]}
+                  </Button>
+                  {advanceSecondary && (
+                    <Button
+                      variant="ghost"
+                      size="md"
+                      full
+                      disabled={updateStatus.isPending}
+                      onClick={() => void moveOrder(advanceSecondary)}
+                      icon="alertCircle"
+                      style={{ marginTop: 8 }}
+                    >
+                      {advanceLabel[advanceSecondary]}
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <Button variant="ghost" size="md" full disabled>
+                  {inboxLabel(o.status).en}
+                </Button>
+              )}
+              {o.canCancel && (
+                <button
+                  type="button"
+                  disabled={updateStatus.isPending}
+                  onClick={reject}
+                  style={{
+                    marginTop: 10,
+                    width: "auto",
+                    background: "transparent",
+                    border: "none",
+                    padding: "8px 0",
+                    cursor: "pointer",
+                    fontSize: ".8125rem",
+                    fontWeight: 600,
+                    color: "var(--danger)",
+                    textDecoration: "underline",
+                    textUnderlineOffset: 2,
+                  }}
+                >
+                  {t("seller.orderDetail.cantFulfill")}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
 
         <ConfirmModal
           open={cancelOpen}

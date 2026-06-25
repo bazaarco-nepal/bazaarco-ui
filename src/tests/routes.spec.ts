@@ -56,6 +56,9 @@ describe("screen <-> path mapping", () => {
     expect(pathFromScreen("tracking", undefined, undefined, "ORD 1")).toBe(
       "/orders/tracking/ORD%201",
     );
+    expect(pathFromScreen("s-order-detail", undefined, undefined, "SUB 1")).toBe(
+      "/seller/orders/SUB%201",
+    );
   });
 
   it("extracts ids back out of dynamic paths", () => {
@@ -64,6 +67,7 @@ describe("screen <-> path mapping", () => {
     expect(orderIdFromPath("/orders/tracking/ORD%201")).toBe("ORD 1");
     expect(screenFromPath("/product/p123")).toBe("pdp");
     expect(screenFromPath("/store/s9")).toBe("store");
+    expect(screenFromPath("/seller/orders/SUB%201")).toBe("s-order-detail");
   });
 });
 

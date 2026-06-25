@@ -506,10 +506,14 @@ export function SellerProductView({ item }: { item: SellerInventoryItem | null }
             >
               {t("seller.productView.productVideo")}
             </h3>
+            {/* Seller review view: browser-friendly MP4 with native controls, not the
+                HLS streaming player (which chokes on fresh reels). */}
             <VideoPlayer
               src={product.videoUrl}
               thumb={product.videoThumb}
               publicId={product.videoPublicId}
+              streaming={false}
+              nativeControls
             />
           </div>
         )}

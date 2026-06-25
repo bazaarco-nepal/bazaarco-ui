@@ -4,8 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Chip, Placeholder } from "@/components/ui";
 import { SellerIcon } from "@/seller/ui/icons";
 import { formatNPR } from "@/shared/lib/money";
-import { BuyerAvatar } from "@/components/common";
-import { inboxLabel, inboxTone } from "./inbox";
+import { formatInboxTime, inboxLabel, inboxTone } from "./inbox";
 import { type SellerInboxOrderItem } from "./types";
 
 /* ---------- Shared seller chrome ---------- */
@@ -289,95 +288,40 @@ export function OrderCard({
   return (
     <button
       onClick={() => onOpen(o)}
-      className="bz-hover-lift"
+      className="bz-order-row bz-hover-lift"
       style={{
-        background: "#fff",
         border: `1.5px solid ${o.status === "new_order" ? "var(--blue)" : "var(--line-200)"}`,
-        borderRadius: "var(--r-lg)",
-        padding: 12,
-        textAlign: "left",
-        cursor: "pointer",
-        width: "100%",
-        display: "flex",
-        gap: 10,
       }}
     >
-      {o.imageUrl ? (
-        <img
-          src={o.imageUrl}
-          alt=""
-          style={{
-            width: 56,
-            height: 56,
-            flexShrink: 0,
-            borderRadius: "var(--r-md)",
-            objectFit: "cover",
-            border: "1px solid var(--line-200)",
-            background: "var(--line-100)",
-          }}
-        />
-      ) : (
-        <Placeholder
-          icon={o.icon}
-          style={{ width: 56, height: 56, flexShrink: 0 }}
-          radius="var(--r-md)"
-        />
-      )}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+      <div className="bz-order-row__top">
+        {o.imageUrl ? (
+          <img src={o.imageUrl} alt="" className="bz-order-row__image" />
+        ) : (
+          <span className="bz-order-row__image">
+            <Placeholder
+              icon={o.icon}
+              style={{ width: "100%", height: "100%" }}
+              radius="var(--r-md)"
+            />
+          </span>
+        )}
+        <div className="bz-order-row__summary">
+          <div className="bz-order-row__title">{o.item}</div>
+        </div>
+      </div>
+
+      <div className="bz-order-row__meta">
+        <div style={{ minWidth: 0 }}>
           <Chip tone={tone} size="sm" icon={lbl.icon}>
             {lbl.en}
           </Chip>
-          <span style={{ fontSize: ".68rem", color: "var(--ink-400)", marginLeft: "auto" }}>
-            {o.time}
-          </span>
         </div>
-        <div
-          style={{
-            fontWeight: 600,
-            color: "var(--ink-900)",
-            fontSize: ".875rem",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {o.item}
-        </div>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            marginTop: 3,
-            minWidth: 0,
-          }}
-        >
-          <BuyerAvatar
-            src={o.buyerAvatarUrl}
-            name={o.buyer}
-            size={20}
-            fontSize=".7rem"
-            style={{ background: "var(--tint-blue-50)", color: "var(--blue)" }}
-          />
-          <span
-            style={{
-              fontSize: ".75rem",
-              color: "var(--ink-500)",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {o.buyer}
-          </span>
-        </div>
-        <div
-          className="tnum"
-          style={{ fontSize: ".875rem", color: "var(--ink-900)", fontWeight: 600, marginTop: 4 }}
-        >
-          {formatNPR(o.price)}
-        </div>
+        <span className="bz-order-row__time">{formatInboxTime(o.time)}</span>
+      </div>
+
+      <div className="bz-order-row__foot">
+        <span className="bz-order-row__qty tnum">Qty {o.qty}</span>
+        <span className="bz-order-row__price tnum">{formatNPR(o.price)}</span>
       </div>
     </button>
   );

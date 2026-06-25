@@ -1,12 +1,10 @@
 import { apiClient, uploadClient } from "./http";
 import type { ApiSuccessResponse } from "./types";
 
-// Media uploads stream large files (a video can be up to 100 MB) and then wait
-// on Cloudinary transcoding, which routinely exceeds the client's default 30s
-// request timeout on mobile networks. Give the upload calls their own generous
-// timeout so a real upload isn't aborted mid-flight; the global 30s still
-// guards every other request.
-const VIDEO_UPLOAD_TIMEOUT_MS = 5 * 60_000;
+// Image uploads still stream through our API (multer → Cloudinary) and can exceed
+// the client's default 30s timeout on mobile networks, so give them a generous one.
+// Videos no longer use this client — they upload directly to Cloudinary (see
+// cloudinary-upload.ts).
 const IMAGE_UPLOAD_TIMEOUT_MS = 2 * 60_000;
 
 export interface MediaUploadResult {
@@ -26,15 +24,13 @@ export type SellerVideoStatus = "draft" | "published";
 export interface CreateSellerVideoPayload {
   title: string;
   product: string;
-  videoUrl: string;
-  thumbUrl: string;
-  publicId?: string;
+  // The video uploads directly to Cloudinary; the Core API resolves the canonical
+  // videoUrl/thumbUrl/duration from this public_id, so they aren't sent from here.
+  publicId: string;
   productId?: string;
   tint?: string;
   icon?: string;
   status?: SellerVideoStatus;
-  // Required by the Core API (/seller/videos): video length in seconds, min 5.
-  duration: number;
 }
 
 export interface SellerVideoAnalytics {
@@ -82,23 +78,6 @@ export const mediaApi = {
       form,
       {
         timeout: IMAGE_UPLOAD_TIMEOUT_MS,
-        onUploadProgress: (event) => {
-          if (!onProgress || !event.total) return;
-          onProgress(Math.round((event.loaded / event.total) * 100));
-        },
-      },
-    );
-    return data.data;
-  },
-
-  async uploadVideo(file: File, onProgress?: (pct: number) => void): Promise<MediaUploadResult> {
-    const form = new FormData();
-    form.append("file", file);
-    const { data } = await uploadClient.post<ApiSuccessResponse<MediaUploadResult>>(
-      "/media/upload/video",
-      form,
-      {
-        timeout: VIDEO_UPLOAD_TIMEOUT_MS,
         onUploadProgress: (event) => {
           if (!onProgress || !event.total) return;
           onProgress(Math.round((event.loaded / event.total) * 100));

@@ -233,7 +233,11 @@
     "visitStore": "Visit store",
     "priceBreakdown": "{{item}} for item + {{delivery}} delivery = <strong>{{total}} to pay</strong>",
     "store": "Store",
-    "videoTag": "VIDEO"
+    "videoTag": "VIDEO",
+    "videoProcessing": {
+      "title": "Processing your video",
+      "message": "This takes a moment. It'll play automatically when ready."
+    }
   },
   "auth": {
     "pleaseSignIn": "Please sign in",

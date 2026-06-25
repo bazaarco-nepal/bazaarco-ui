@@ -49,11 +49,7 @@ import {
 } from "@/components/common";
 import { PicksSections } from "./_components/picks-tabs";
 import type { VideoFeedItem } from "@/types/video";
-// Temporarily hidden alongside the Smart Shopping panel — restore with the hero blocks below.
-// import { HomeHero } from "./_components/home-hero";
 import { NewArrivalsSection } from "./_components/new-arrivals";
-// Temporarily hidden — restore alongside the slot in the desktop hero below.
-// import { SmartShoppingPanel } from "./_components/smart-shopping-panel";
 import { ReelCard } from "./_components/reel-card";
 import type { PopularStore } from "@/buyer/api/home";
 
@@ -335,35 +331,8 @@ export function Home() {
   const catalogLoading = homeLoading && !categories;
   return (
     <>
-      {/* bz-home--no-hero adds the top breathing room the hero used to carry;
-          drop that class when the hero blocks below are restored. */}
       <div className="bz-home bz-home--no-hero">
         <BackToTop />
-        {/* Hero carousel + Smart Shopping panel temporarily hidden. To restore,
-            un-comment this desktop block, the mobile hero block below, and the
-            HomeHero / SmartShoppingPanel imports. Original layout is preserved:
-            hero on the left, Smart Shopping panel on the right.
-
-        <div className="bz-hide-mobile">
-          <W className="bz-home-hero" style={{ paddingTop: 22 }}>
-            <div className="bz-home-herorow">
-              <HomeHero />
-              <div className="bz-home-smart-slot">
-                <SmartShoppingPanel />
-              </div>
-            </div>
-          </W>
-        </div>
-        */}
-
-        {/* Mobile hero placement (under the header, above categories) — hidden too.
-
-        <div className="bz-show-mobile">
-          <W style={{ paddingTop: 14 }}>
-            <HomeHero />
-          </W>
-        </div>
-        */}
 
         {/* Shop by categories — bordered card tiles (revamp). */}
         <W className="bz-home-section bz-home-categories">

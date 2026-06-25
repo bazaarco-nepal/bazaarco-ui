@@ -21,13 +21,17 @@ const nextConfig: NextConfig = {
 
     if (ordersServiceUrl) {
       return [
-        {
-          source: "/api/v1/orders/:path+",
-          destination: `${ordersServiceUrl}/orders/:path+`,
-        },
+        // Exact match FIRST: bare /api/v1/orders must resolve to `.../orders`
+        // (no trailing slash). If the wildcard matched it, the destination
+        // becomes `.../orders/`, which FastAPI 307-redirects to an http:// URL
+        // and the browser blocks as mixed-content on the https site.
         {
           source: "/api/v1/orders",
           destination: `${ordersServiceUrl}/orders`,
+        },
+        {
+          source: "/api/v1/orders/:path+",
+          destination: `${ordersServiceUrl}/orders/:path+`,
         },
         {
           source: "/api/v1/payments/:path*",

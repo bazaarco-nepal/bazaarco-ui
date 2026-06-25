@@ -413,10 +413,12 @@ export function ProductCard({
         {/* Reserves price + struck + savings space so no-discount and discount
             cards stay equal height. Bump the min-height once to realign all. */}
         <div className="bz-pcard__price" style={{ marginTop: "auto", minHeight: 56, minWidth: 0 }}>
-          <Price value={p.price} original={p.original} size="md" />
+          <Price value={p.price} original={p.original} size="md" locale={locale} />
           {savings >= SAVINGS_THRESHOLD && (
             <div style={{ marginTop: 6 }}>
-              <Badge tone="success">{t("common.saveAmount", { amount: formatNPR(savings) })}</Badge>
+              <Badge tone="success">
+                {t("common.saveAmount", { amount: formatNPR(savings, locale) })}
+              </Badge>
             </div>
           )}
         </div>
@@ -945,7 +947,7 @@ export function Navbar() {
   const [deliverOpen, setDeliverOpen] = useState(false);
   const deliveryLocation = useBazaarStore((s) => s.deliveryLocation);
   const setDeliveryLocation = useBazaarStore((s) => s.setDeliveryLocation);
-  const deliverLabel = formatDeliverToLabel(deliveryLocation);
+  const deliverLabel = formatDeliverToLabel(deliveryLocation, locale);
   const { data: savedAddresses = [] } = useAddresses(authed);
   const createAddress = useCreateAddress();
   // Only open the "Deliver to" picker while the buyer has no saved address yet.
@@ -1218,7 +1220,9 @@ export function Navbar() {
                 </span>
                 <span className="bz-navbar__action-text">
                   <span className="bz-navbar__action-cap">{t("nav.cart")}</span>
-                  <span className="bz-navbar__action-main tnum">{formatNPR(cartTotal)}</span>
+                  <span className="bz-navbar__action-main tnum">
+                    {formatNPR(cartTotal, locale)}
+                  </span>
                 </span>
               </AppLink>
               <AppLink
@@ -1364,7 +1368,7 @@ export function Navbar() {
         onSave={async (loc: DeliveryLocation) => {
           setDeliveryLocation(loc);
           setDeliverOpen(false);
-          toast.info(t("delivery.deliveringTo", { label: formatDeliverToLabel(loc) }));
+          toast.info(t("delivery.deliveringTo", { label: formatDeliverToLabel(loc, locale) }));
           // Mirror checkout: persist the entered address to the buyer's profile
           // so it becomes their (first, default) saved address.
           if (authed) {
@@ -1424,7 +1428,6 @@ export function Footer() {
         { label: t("footer.howItWorks"), href: pathFromScreen("how-it-works") },
         { label: t("footer.faq"), href: pathFromScreen("faq") },
         { label: t("footer.contactUs"), href: pathFromScreen("contact") },
-        { label: t("footer.partnerWithUs"), href: sellerSignupPath() },
         { label: t("footer.legalInformation"), href: legalPath("legal-information") },
       ],
     },

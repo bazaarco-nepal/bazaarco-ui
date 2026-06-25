@@ -2,6 +2,7 @@
 
 import { Icon, AppLink } from "@/components/ui";
 import { formatNPR } from "@/shared/lib/money";
+import { useBazaarStore } from "@/store/bazaar-store";
 import type { VideoFeedItem } from "@/types/video";
 
 // Dark backdrops sit behind the reel video, mirroring the prototype's reel tints.
@@ -33,6 +34,7 @@ export function ReelCard({
   href: string;
   onNavigate?: () => void;
 }) {
+  const locale = useBazaarStore((s) => s.locale);
   const cover = reel.videoThumb ?? reel.img;
   const seller = reel.seller;
   const initial = (seller?.name ?? "?").trim().charAt(0).toUpperCase() || "?";
@@ -73,7 +75,7 @@ export function ReelCard({
             <Icon name="tag" size={14} />
           </span>
           <span className="bz-reel-card__pill-name">{reel.name}</span>
-          <span className="bz-reel-card__price">{formatNPR(reel.price)}</span>
+          <span className="bz-reel-card__price">{formatNPR(reel.price, locale)}</span>
         </div>
       </div>
     </AppLink>

@@ -323,6 +323,10 @@
     "watchFeed": "Watch feed",
     "visit": "Visit",
     "liveNow": "Live now",
+    "watchTitle": "BazaarCo Watch",
+    "openFeed": "Open the feed",
+    "bargainTitle": "Bargain with the seller",
+    "allBargainableProducts": "All bargainable products",
     "bargainReassurance": "You tell your price, bargain just like offline market",
     "more": "more",
     "products": "products",
@@ -1202,7 +1206,7 @@
     "kycAddress": "Address on document"
   },
   "meta": {
-    "title": "BazaarCo - {{label}}",
+    "title": "{{label}}",
     "shop": "Shop"
   },
   "cart": {
@@ -1288,6 +1292,10 @@
     "privacy": "Privacy Policy",
     "terms": "Terms & Conditions",
     "about": "About Us",
+    "how-it-works": "How BazaarCo Nepal Works",
+    "contact": "Contact Us",
+    "how-to-order": "How to Order",
+    "bargaining-guide": "Bargaining Guide",
     "s-onboarding": "Become a Seller",
     "s-dashboard": "Seller Dashboard",
     "s-inbox": "Orders",
@@ -1339,8 +1347,8 @@
     "colBuyers": "For Buyers",
     "colSellers": "For Sellers",
     "colLegal": "Legal",
-    "aboutBazaarco": "About BazaarCo",
-    "howItWorks": "How BazaarCo Works",
+    "aboutBazaarco": "About Us",
+    "howItWorks": "How BazaarCo Nepal Works",
     "faq": "FAQs",
     "contactUs": "Contact Us",
     "partnerWithUs": "Partner With Us",

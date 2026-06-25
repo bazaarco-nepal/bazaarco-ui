@@ -146,12 +146,12 @@ describe("query helpers", () => {
 });
 
 describe("titleForScreen", () => {
-  it("prefixes BazaarCo and uses the screen label", () => {
-    expect(titleForScreen("home")).toBe("BazaarCo - Home");
-    expect(titleForScreen("review")).toBe("BazaarCo - Write a Review");
+  it("uses the exact screen label", () => {
+    expect(titleForScreen("home")).toBe("Home");
+    expect(titleForScreen("review")).toBe("Write a Review");
   });
 
   it("uses a detail override when provided", () => {
-    expect(titleForScreen("pdp", "Red Shoes")).toBe("BazaarCo - Red Shoes");
+    expect(titleForScreen("pdp", "Red Shoes")).toBe("Red Shoes");
   });
 });

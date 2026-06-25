@@ -1,0 +1,220 @@
+/* Contact — help-center support layout. Built on existing tokens + .container;
+   no gradients, no glows, red never used as a primary. One local width var. */
+
+.bz-contact {
+  --contact-measure: 960px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xl);
+  padding-top: var(--space-2xl);
+  padding-bottom: var(--space-2xl);
+  background: var(--page);
+  color: var(--ink-700);
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+}
+
+/* ---------- Hero ---------- */
+.bz-contact__hero {
+  max-width: var(--contact-measure);
+  margin-inline: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-xs);
+  padding: var(--space-xl) var(--space-lg);
+}
+.bz-contact__title {
+  font-family: var(--font-display);
+  font-weight: var(--w-hero);
+  font-size: var(--fs-h1);
+  color: var(--blue-deep);
+  margin: 0;
+}
+.bz-contact__intro {
+  margin: 0;
+  max-width: 56ch;
+  color: var(--ink-500);
+}
+.bz-contact__hours {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin: var(--space-xs) 0 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--tint-blue-50);
+  color: var(--blue-deep);
+  font-size: var(--fs-sm);
+  font-weight: var(--w-heading);
+}
+.bz-contact__hours svg {
+  color: var(--blue);
+  flex: none;
+}
+
+/* ---------- Shared section + grid ---------- */
+.bz-contact__section {
+  max-width: var(--contact-measure);
+  margin-inline: auto;
+  width: 100%;
+}
+.bz-contact__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-md);
+}
+
+/* ---------- Contact method cards (clickable links) ---------- */
+.bz-contact__method {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  background: var(--card);
+  border: 1px solid var(--line-200);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-1);
+  padding: var(--space-lg);
+  text-decoration: none;
+  color: inherit;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.bz-contact__method:hover {
+  border-color: var(--blue);
+  box-shadow: var(--sh-2);
+}
+.bz-contact__method:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+.bz-contact__chip {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-md);
+  background: var(--tint-blue-50);
+  color: var(--blue);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.bz-contact__method-title {
+  font-weight: var(--w-heading);
+  color: var(--blue-deep);
+}
+.bz-contact__method-value {
+  color: var(--blue);
+  font-weight: var(--w-heading);
+  word-break: break-word;
+}
+.bz-contact__method-desc {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--ink-500);
+}
+
+/* ---------- Action cards ---------- */
+.bz-contact__action {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  background: var(--card);
+  border: 1px solid var(--line-200);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-1);
+  padding: var(--space-lg);
+}
+.bz-contact__action-title {
+  font-weight: var(--w-heading);
+  color: var(--blue-deep);
+}
+.bz-contact__action-desc {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--ink-500);
+}
+.bz-contact__action .btn {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+/* ---------- Grievance block ---------- */
+.bz-contact__grievance {
+  max-width: var(--contact-measure);
+  margin-inline: auto;
+  width: 100%;
+  display: flex;
+  gap: var(--space-md);
+  background: var(--tint-blue-50);
+  border: 1px solid var(--line-200);
+  border-radius: var(--r-lg);
+  padding: var(--space-xl) var(--space-lg);
+}
+.bz-contact__grievance .bz-contact__chip {
+  background: var(--card);
+}
+.bz-contact__grievance-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+.bz-contact__grievance-title {
+  font-family: var(--font-display);
+  font-weight: var(--w-hero);
+  font-size: var(--fs-h3);
+  color: var(--blue-deep);
+  margin: 0;
+}
+.bz-contact__grievance-body p {
+  margin: 0;
+  max-width: 64ch;
+}
+.bz-contact__grievance-body .btn {
+  margin-top: var(--space-xs);
+  align-self: flex-start;
+}
+
+/* ---------- Final CTA ---------- */
+.bz-contact__cta {
+  max-width: var(--contact-measure);
+  margin-inline: auto;
+  width: 100%;
+  text-align: center;
+  background: var(--card);
+  border: 1px solid var(--line-200);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-1);
+  padding: var(--space-2xl) var(--space-lg);
+}
+.bz-contact__cta-title {
+  font-family: var(--font-display);
+  font-weight: var(--w-hero);
+  font-size: var(--fs-h2);
+  color: var(--blue-deep);
+  margin: 0 0 var(--space-sm);
+}
+.bz-contact__cta p {
+  margin: 0 auto var(--space-lg);
+  max-width: 56ch;
+  color: var(--ink-500);
+}
+.bz-contact__cta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-md);
+}
+
+@media (max-width: 600px) {
+  .bz-contact__grievance {
+    flex-direction: column;
+  }
+  .bz-contact__cta-actions .btn {
+    width: 100%;
+  }
+}

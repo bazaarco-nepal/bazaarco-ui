@@ -10,10 +10,13 @@ export function ceilRs(amount: number): number {
   return Math.ceil(Math.round(amount * 100) / 100);
 }
 
-export function formatNPR(value: number | null | undefined): string {
+export function formatNPR(value: number | null | undefined, locale: "en" | "ne" = "en"): string {
   const amount = typeof value === "number" && Number.isFinite(value) ? value : 0;
   const hasFraction = !Number.isInteger(amount);
-  return `Rs. ${amount.toLocaleString("en-IN", {
+  const numberLocale = locale === "ne" ? "ne-NP" : "en-IN";
+  const prefix = locale === "ne" ? "रु." : "Rs.";
+
+  return `${prefix} ${amount.toLocaleString(numberLocale, {
     minimumFractionDigits: hasFraction ? 2 : 0,
     maximumFractionDigits: 2,
   })}`;

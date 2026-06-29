@@ -16,7 +16,8 @@ import {
   useSellerQuestions,
 } from "@/seller/hooks/use-seller";
 import { useChatInbox } from "@/shared/hooks/use-chat";
-import { useBz, LogoutConfirmModal, LanguageToggle } from "@/components/common";
+import { useBz, LogoutConfirmModal, LanguageToggle, NotificationBell } from "@/components/common";
+import { useBazaarStore } from "@/store/bazaar-store";
 import { connectChatSocket } from "@/shared/lib/chat-socket";
 import { useInvalidateChat } from "@/shared/hooks/use-chat";
 import { bargainStatus } from "../_shared/bargain";
@@ -178,6 +179,8 @@ export function SellerSidebar({
 export function SellerShell({ screen, children }: { screen: string; children: React.ReactNode }) {
   const { t } = useTranslation();
   const { nav } = useBz();
+  const authed = useBazaarStore((s) => s.authed);
+  const locale = useBazaarStore((s) => s.locale);
   const { data: organization, isLoading: orgLoading } = useSellerOrganization();
   const { data: inbox = [] } = useSellerInbox();
   const { data: bargains = [] } = useSellerBargains();
@@ -352,6 +355,7 @@ export function SellerShell({ screen, children }: { screen: string; children: Re
               stores={sidebarStores}
               activeSellerId={organization?.sellerId ?? null}
             />
+            <NotificationBell authed={authed} locale={locale} variant="seller" />
           </div>
           {organization?.linked &&
             organization.verification &&

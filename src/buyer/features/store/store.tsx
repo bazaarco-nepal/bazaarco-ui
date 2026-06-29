@@ -28,7 +28,7 @@ import {
 import { storeIdFromPath, pathFromScreen } from "@/config/routes";
 import { useBazaarStore } from "@/store/bazaar-store";
 import type { StoreProductSort } from "@/shared/api/catalog";
-import type { Seller } from "@/types";
+import type { Seller, SellerReview } from "@/types";
 import { SortSelect } from "@/buyer/features/search/faceted-results";
 
 const RATING_LABEL_KEYS = [
@@ -46,9 +46,27 @@ function formatReviewDate(iso: string): string {
   return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
-function RateStoreModal({ seller, onClose }: { seller: Seller; onClose: () => void }) {
+function ratingDistribution(reviews: SellerReview[]) {
+  const total = reviews.length;
+  return [5, 4, 3, 2, 1].map((s) => {
+    const count = reviews.filter((r) => r.stars === s).length;
+    return { s, count, pct: total > 0 ? Math.round((count / total) * 100) : 0 };
+  });
+}
+
+function RateStoreModal({
+  seller,
+  storeCacheKey,
+  onClose,
+  onPosted,
+}: {
+  seller: Seller;
+  storeCacheKey: string;
+  onClose: () => void;
+  onPosted: () => void;
+}) {
   const { t } = useTranslation();
-  const createReview = useCreateSellerReview(seller.id);
+  const createReview = useCreateSellerReview(seller.id, storeCacheKey);
   const [stars, setStars] = useState(0);
   const [hover, setHover] = useState(0);
   const [text, setText] = useState("");
@@ -60,6 +78,7 @@ function RateStoreModal({ seller, onClose }: { seller: Seller; onClose: () => vo
     try {
       await createReview.mutateAsync({ stars, text: text.trim() });
       toast.success(t("store.reviewPosted"));
+      onPosted();
       onClose();
     } catch {
       toast.error(t("store.reviewPostFailed"));
@@ -247,15 +266,17 @@ export function Store() {
   );
 
   const sellerQuery = useSeller(storeId);
-  const reviewsQuery = useSellerReviews(storeId);
+  const seller = sellerQuery.data;
+  const reviewsQuery = useSellerReviews(seller?.id ?? null);
   const productsQuery = useSellerProducts(storeId, productParams);
   const allProductsQuery = useSellerProducts(storeId);
   const categoriesQuery = useCategories();
   const followQuery = useSellerFollowState(storeId, authed);
   const followMutation = useSellerFollowMutation(storeId);
 
-  const seller = sellerQuery.data;
   const reviews = reviewsQuery.data ?? [];
+  const reviewCount = seller?.reviews ?? reviews.length;
+  const distRows = useMemo(() => ratingDistribution(reviews), [reviews]);
   const productsPage = productsQuery.data;
   const products = productsPage?.items ?? [];
   const baseProductCount = allProductsQuery.data?.total ?? productsPage?.total ?? products.length;
@@ -425,7 +446,7 @@ export function Store() {
             {(
               [
                 { id: "products", label: t("store.tabProducts"), count: baseProductCount },
-                { id: "reviews", label: t("store.tabReviews"), count: reviews.length },
+                { id: "reviews", label: t("store.tabReviews"), count: reviewCount },
               ] as const
             ).map((t) => {
               const active = tab === t.id;
@@ -528,37 +549,87 @@ export function Store() {
                     onCta={openRate}
                   />
                 ) : (
-                  <div className="bz-storefront-review-list">
-                    {reviews.map((r) => (
-                      <div key={r.id} className="bz-storefront-review">
-                        <div className="bz-storefront-review__head">
-                          <BuyerAvatar
-                            src={r.avatar}
-                            name={r.buyer}
-                            size={34}
-                            fontSize=".875rem"
-                            border="1.5px solid var(--line-200)"
-                          />
-                          <div className="bz-storefront-review__buyer">{r.buyer}</div>
-                          <RatingStars value={r.stars} size={13} />
+                  <>
+                    <div className="bz-store-reviews-summary">
+                      <div className="bz-store-reviews-summary__score">
+                        <div className="bz-store-reviews-summary__rating-row">
+                          <span className="bz-store-reviews-summary__num tnum">
+                            {(seller?.rating ?? 0).toFixed(1)}
+                          </span>
+                          <span className="bz-store-reviews-summary__of">/5</span>
                         </div>
-                        <div className="bz-storefront-review__date">{formatReviewDate(r.time)}</div>
-                        <p>{r.text}</p>
-                        {r.replied && r.reply && (
-                          <div className="bz-storefront-review__reply">
-                            <div>{t("store.replyFrom", { name: seller.name })}</div>
-                            <p>{r.reply}</p>
-                          </div>
-                        )}
+                        <RatingStars value={seller?.rating ?? 0} size={16} />
+                        <span className="bz-store-reviews-summary__count tnum">
+                          {t("store.reviewCountLabel", { count: reviewCount })}
+                        </span>
                       </div>
-                    ))}
-                  </div>
+                      <div className="bz-store-reviews-summary__bars">
+                        {distRows.map((row) => (
+                          <div key={row.s} className="bz-store-reviews-bar">
+                            <span className="bz-store-reviews-bar__label tnum">{row.s}</span>
+                            <Icon name="star" size={12} color="var(--gold)" fill="var(--gold)" />
+                            <div className="bz-store-reviews-bar__track">
+                              <div
+                                className="bz-store-reviews-bar__fill"
+                                style={{ width: `${String(row.pct)}%` }}
+                              />
+                            </div>
+                            <span className="bz-store-reviews-bar__pct tnum">{row.pct}%</span>
+                          </div>
+                        ))}
+                      </div>
+                      <Button variant="primary" size="md" icon="star" onClick={openRate}>
+                        {t("reviews.writeReview")}
+                      </Button>
+                    </div>
+
+                    <div className="bz-storefront-review-list">
+                      {reviews.map((r) => (
+                        <article key={r.id} className="bz-storefront-review">
+                          <div className="bz-storefront-review__head">
+                            <BuyerAvatar
+                              src={r.avatar}
+                              name={r.buyer}
+                              size={40}
+                              fontSize=".875rem"
+                              border="1.5px solid var(--line-200)"
+                            />
+                            <div className="bz-storefront-review__meta">
+                              <div className="bz-storefront-review__buyer">{r.buyer}</div>
+                              <div className="bz-storefront-review__sub">
+                                <RatingStars value={r.stars} size={13} />
+                                <span className="bz-storefront-review__date">
+                                  {formatReviewDate(r.time)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <p className="bz-storefront-review__body">{r.text}</p>
+                          {r.replied && r.reply && (
+                            <div className="bz-storefront-review__reply">
+                              <div className="bz-storefront-review__reply-label">
+                                {t("store.replyFrom", { name: seller.name })}
+                              </div>
+                              <p>{r.reply}</p>
+                            </div>
+                          )}
+                        </article>
+                      ))}
+                    </div>
+                  </>
                 )}
               </div>
             </LocalErrorBoundary>
           )}
 
-          {rating && <RateStoreModal seller={seller} onClose={() => setRating(false)} />}
+          {rating && seller && storeId && (
+            <RateStoreModal
+              seller={seller}
+              storeCacheKey={storeId}
+              onClose={() => setRating(false)}
+              onPosted={() => setTab("reviews")}
+            />
+          )}
         </div>
       )}
     </ApiState>

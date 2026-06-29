@@ -44,6 +44,9 @@
     "error": "Could not load notifications",
     "retry": "Try again",
     "empty": "You're all caught up — no notifications yet.",
+    "emptyTitle": "All caught up",
+    "unreadBadge_one": "{{count}} new",
+    "unreadBadge_other": "{{count}} new",
     "types": {
       "user": "Account",
       "maintenance": "Maintenance",

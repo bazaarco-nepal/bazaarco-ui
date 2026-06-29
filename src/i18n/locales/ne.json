@@ -44,6 +44,9 @@
     "error": "सूचनाहरू लोड गर्न सकिएन",
     "retry": "फेरि प्रयास गर्नुहोस्",
     "empty": "कुनै सूचना छैन — सबै अपडेट भइसकेको छ।",
+    "emptyTitle": "सबै अपडेट भयो",
+    "unreadBadge_one": "{{count}} नयाँ",
+    "unreadBadge_other": "{{count}} नयाँ",
     "types": {
       "user": "खाता",
       "maintenance": "मर्मत",

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Icon, Button } from "@/shared/ui/kit";
+import { Icon, Button, Spinner } from "@/shared/ui/kit";
 import type { NotificationItem, NotificationType } from "@/shared/api/notifications";
 import {
   useMarkAllNotificationsRead,
@@ -32,6 +32,18 @@ function typeLabel(type: NotificationType, t: (key: string) => string): string {
   return label === key ? type : label;
 }
 
+const TYPE_VISUAL: Record<
+  NotificationType,
+  { icon: string; className: string }
+> = {
+  maintenance: { icon: "alertTriangle", className: "bz-notif-panel__icon--maintenance" },
+  order: { icon: "package", className: "bz-notif-panel__icon--order" },
+  seller: { icon: "store", className: "bz-notif-panel__icon--seller" },
+  bargain: { icon: "bargain", className: "bz-notif-panel__icon--bargain" },
+  user: { icon: "user", className: "bz-notif-panel__icon--user" },
+  system: { icon: "settings", className: "bz-notif-panel__icon--system" },
+};
+
 function NotificationRow({
   item,
   locale,
@@ -44,6 +56,7 @@ function NotificationRow({
   busy: boolean;
 }) {
   const { t } = useTranslation();
+  const visual = TYPE_VISUAL[item.type] ?? TYPE_VISUAL.system;
 
   return (
     <button
@@ -54,15 +67,22 @@ function NotificationRow({
       }}
       disabled={busy}
     >
-      <div className="bz-notif-panel__item-head">
-        <span className="bz-notif-panel__item-title">{item.title}</span>
-        {!item.isRead && <span className="bz-notif-panel__dot" aria-hidden />}
-      </div>
-      <p className="bz-notif-panel__item-msg">{item.message}</p>
-      <div className="bz-notif-panel__item-meta">
-        <span className="bz-notif-panel__type">{typeLabel(item.type, t)}</span>
-        <span className="bz-notif-panel__time">{formatNotificationTime(item.createdAt, locale)}</span>
-      </div>
+      <span className={`bz-notif-panel__icon ${visual.className}`} aria-hidden>
+        <Icon name={visual.icon} size={18} color="currentColor" />
+      </span>
+      <span className="bz-notif-panel__content">
+        <span className="bz-notif-panel__item-top">
+          <span className="bz-notif-panel__item-title">{item.title}</span>
+          {!item.isRead && <span className="bz-notif-panel__dot" aria-hidden />}
+        </span>
+        <span className="bz-notif-panel__item-msg">{item.message}</span>
+        <span className="bz-notif-panel__item-meta">
+          <span className={`bz-notif-panel__chip bz-notif-panel__chip--${item.type}`}>
+            {typeLabel(item.type, t)}
+          </span>
+          <span className="bz-notif-panel__time">{formatNotificationTime(item.createdAt, locale)}</span>
+        </span>
+      </span>
     </button>
   );
 }
@@ -70,7 +90,6 @@ function NotificationRow({
 export interface NotificationBellProps {
   authed: boolean;
   locale: string;
-  /** Navy header (buyer) vs light seller chrome */
   variant?: "navbar" | "seller";
   className?: string;
   iconSize?: number;
@@ -151,7 +170,14 @@ export function NotificationBell({
       {open && (
         <div role="menu" className="bz-notif-panel" aria-label={t("notifications.panelAria")}>
           <div className="bz-notif-panel__head">
-            <span className="bz-notif-panel__title">{t("notifications.title")}</span>
+            <div className="bz-notif-panel__head-main">
+              <span className="bz-notif-panel__title">{t("notifications.title")}</span>
+              {unreadCount > 0 && (
+                <span className="bz-notif-panel__unread-pill tnum">
+                  {t("notifications.unreadBadge", { count: unreadCount })}
+                </span>
+              )}
+            </div>
             {unreadCount > 0 && (
               <button
                 type="button"
@@ -166,10 +192,16 @@ export function NotificationBell({
 
           <div className="bz-notif-panel__body">
             {isLoading && (
-              <div className="bz-notif-panel__state">{t("notifications.loading")}</div>
+              <div className="bz-notif-panel__state">
+                <Spinner size={28} />
+                <p>{t("notifications.loading")}</p>
+              </div>
             )}
             {isError && (
               <div className="bz-notif-panel__state bz-notif-panel__state--error">
+                <span className="bz-notif-panel__state-icon bz-notif-panel__icon--maintenance">
+                  <Icon name="alertCircle" size={22} color="currentColor" />
+                </span>
                 <p>{error instanceof Error ? error.message : t("notifications.error")}</p>
                 <Button variant="secondary" size="sm" onClick={() => void refetch()}>
                   {t("notifications.retry")}
@@ -177,9 +209,12 @@ export function NotificationBell({
               </div>
             )}
             {!isLoading && !isError && items.length === 0 && (
-              <div className="bz-notif-panel__state">
-                <Icon name="bell" size={28} color="var(--ink-300)" />
-                <p>{t("notifications.empty")}</p>
+              <div className="bz-notif-panel__state bz-notif-panel__state--empty">
+                <span className="bz-notif-panel__empty-ring">
+                  <Icon name="bell" size={26} color="var(--blue)" />
+                </span>
+                <p className="bz-notif-panel__empty-title">{t("notifications.emptyTitle")}</p>
+                <p className="bz-notif-panel__empty-msg">{t("notifications.empty")}</p>
               </div>
             )}
             {!isLoading &&

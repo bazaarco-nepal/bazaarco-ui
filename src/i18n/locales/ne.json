@@ -1487,6 +1487,8 @@
     "reviewPlaceholder": "यस स्टोरसँगको आफ्नो अनुभव लेख्नुहोस्…",
     "reviewPostFailed": "रिभ्यु पोस्ट गर्न सकिएन। फेरि प्रयास गर्नुहोस्।",
     "reviewPosted": "धन्यवाद! तपाईंको रिभ्यु पोस्ट भयो।",
+    "reviewCountLabel_one": "{{count}} रिभ्यु",
+    "reviewCountLabel_other": "{{count}} रिभ्युहरू",
     "signInToChat": "सेलरसँग च्याट गर्न कृपया लगइन गर्नुहोस्।",
     "signInToReview": "रिभ्यु लेख्न कृपया लगइन गर्नुहोस्।",
     "starsAria_one": "{{count}} स्टार",

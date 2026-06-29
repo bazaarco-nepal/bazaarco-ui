@@ -266,17 +266,21 @@ export function Store() {
   );
 
   const sellerQuery = useSeller(storeId);
-  const seller = sellerQuery.data;
-  const reviewsQuery = useSellerReviews(seller?.id ?? null);
   const productsQuery = useSellerProducts(storeId, productParams);
   const allProductsQuery = useSellerProducts(storeId);
   const categoriesQuery = useCategories();
   const followQuery = useSellerFollowState(storeId, authed);
   const followMutation = useSellerFollowMutation(storeId);
 
+  const seller = sellerQuery.data;
+  const reviewsQuery = useSellerReviews(seller?.id ?? null);
+
   const reviews = reviewsQuery.data ?? [];
   const reviewCount = seller?.reviews ?? reviews.length;
-  const distRows = useMemo(() => ratingDistribution(reviews), [reviews]);
+  const distRows = useMemo(
+    () => ratingDistribution(reviewsQuery.data ?? []),
+    [reviewsQuery.data],
+  );
   const productsPage = productsQuery.data;
   const products = productsPage?.items ?? [];
   const baseProductCount = allProductsQuery.data?.total ?? productsPage?.total ?? products.length;
@@ -391,17 +395,19 @@ export function Store() {
             <span>{seller.name}</span>
           </div>
 
-          {seller.bannerUrl ? (
-            <div className="bz-storefront-banner">
-              <img src={seller.bannerUrl} alt="" />
-            </div>
-          ) : null}
+          <div className={`bz-storefront-hero${seller.bannerUrl ? " has-banner" : ""}`}>
+            {seller.bannerUrl ? (
+              <div className="bz-storefront-banner">
+                <img src={seller.bannerUrl} alt="" />
+                <div className="bz-storefront-banner__fade" aria-hidden />
+              </div>
+            ) : null}
 
-          <section className={`bz-storefront-card${seller.bannerUrl ? " has-banner" : ""}`}>
-            <div className="bz-storefront-logo">
-              <StoreAvatar src={seller.avatar} name={seller.name} size={96} />
-            </div>
-            <div className="bz-storefront-info">
+            <section className={`bz-storefront-card${seller.bannerUrl ? " has-banner" : ""}`}>
+              <div className="bz-storefront-logo">
+                <StoreAvatar src={seller.avatar} name={seller.name} size={96} />
+              </div>
+              <div className="bz-storefront-info">
               <div className="bz-storefront-title-row">
                 <h1>{seller.name}</h1>
                 {seller.verified ? <Icon name="badgeCheck" size={18} color="var(--blue)" /> : null}
@@ -416,8 +422,8 @@ export function Store() {
                 <span className="tnum">{followerCount.toLocaleString("en-IN")} followers</span>
               </div>
               {seller.aboutText ? <p className="bz-storefront-bio">{seller.aboutText}</p> : null}
-            </div>
-            <div className="bz-storefront-actions">
+              </div>
+              <div className="bz-storefront-actions">
               <Button
                 variant="primary"
                 size="md"
@@ -439,8 +445,9 @@ export function Store() {
               >
                 Share
               </Button>
-            </div>
-          </section>
+              </div>
+            </section>
+          </div>
 
           <div className="bz-storefront-tabs">
             {(

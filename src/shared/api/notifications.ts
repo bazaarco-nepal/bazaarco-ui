@@ -36,7 +36,7 @@ export interface ListNotificationsParams {
 
 export const notificationsApi = {
   list(params: ListNotificationsParams = {}): Promise<PaginatedData<NotificationItem>> {
-    return getData<PaginatedData<NotificationItem>>("/notifications", { params });
+    return getData<PaginatedData<NotificationItem>>("/notifications", params);
   },
 
   check(): Promise<NotificationCheckResult> {

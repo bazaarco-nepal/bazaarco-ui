@@ -142,6 +142,24 @@ export interface PagedParams {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function mapSellerReview(raw: any): SellerReview {
+  return {
+    id: raw.id,
+    sellerId: raw.sellerId ?? raw.storeId,
+    buyer: raw.buyer ?? raw.buyerName ?? "Buyer",
+    avatar: raw.avatar ?? raw.buyerAvatar ?? null,
+    stars: raw.stars,
+    text: raw.text ?? raw.body ?? "",
+    time:
+      raw.time ??
+      (raw.createdAt ? new Date(raw.createdAt).toISOString() : new Date().toISOString()),
+    replied: raw.replied ?? raw.reply != null,
+    reply: raw.reply ?? null,
+    low: raw.low ?? raw.isLow ?? false,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function mapSeller(raw: any): Seller {
   return {
     ...raw,
@@ -165,8 +183,9 @@ export const catalogApi = {
     return mapSeller(await getData<Seller>(`/catalog/sellers/${id}`));
   },
 
-  getSellerReviews(id: string): Promise<SellerReview[]> {
-    return getData<SellerReview[]>(`/catalog/sellers/${id}/reviews`);
+  async getSellerReviews(id: string): Promise<SellerReview[]> {
+    const raw = await getData<SellerReview[]>(`/catalog/sellers/${id}/reviews`);
+    return raw.map(mapSellerReview);
   },
 
   async getSellerProducts(id: string): Promise<Product[]> {
@@ -190,8 +209,9 @@ export const catalogApi = {
     return getData<SellerTrust>(`/catalog/sellers/${id}/trust`);
   },
 
-  createSellerReview(id: string, payload: CreateSellerReviewPayload): Promise<SellerReview> {
-    return postData<SellerReview>(`/catalog/sellers/${id}/reviews`, payload);
+  async createSellerReview(id: string, payload: CreateSellerReviewPayload): Promise<SellerReview> {
+    const raw = await postData<SellerReview>(`/catalog/sellers/${id}/reviews`, payload);
+    return mapSellerReview(raw);
   },
 
   getSellerFollowState(id: string): Promise<StoreFollowState> {

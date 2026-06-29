@@ -46,6 +46,10 @@ export const queryKeys = {
     inbox: ["chat", "inbox"] as const,
     messages: (conversationId: string) => ["chat", "messages", conversationId] as const,
   },
+  notifications: {
+    list: ["notifications", "list"] as const,
+    check: ["notifications", "check"] as const,
+  },
   seller: {
     organization: ["seller", "organization"] as const,
     dashboard: (range: string) => ["seller", "dashboard", range] as const,

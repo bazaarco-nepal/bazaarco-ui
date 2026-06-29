@@ -30,7 +30,31 @@
     "your": "Your",
     "saved": "Saved",
     "all": "All",
-    "go": "Go"
+    "go": "Go",
+    "notifications": "Notifications"
+  },
+  "notifications": {
+    "bellAria": "Notifications",
+    "panelAria": "Notification panel",
+    "title": "Notifications",
+    "label": "Your",
+    "updates": "Updates",
+    "markAllRead": "Mark all read",
+    "loading": "Loading notifications…",
+    "error": "Could not load notifications",
+    "retry": "Try again",
+    "empty": "You're all caught up — no notifications yet.",
+    "emptyTitle": "All caught up",
+    "unreadBadge_one": "{{count}} new",
+    "unreadBadge_other": "{{count}} new",
+    "types": {
+      "user": "Account",
+      "maintenance": "Maintenance",
+      "seller": "Seller",
+      "order": "Order",
+      "bargain": "Bargain",
+      "system": "System"
+    }
   },
   "trust": {
     "shopping": "TikTok-style shopping",
@@ -1433,6 +1457,8 @@
     "reviewPlaceholder": "Share your experience with this store…",
     "reviewPostFailed": "Could not post review. Try again.",
     "reviewPosted": "Thanks! Your review is posted.",
+    "reviewCountLabel_one": "{{count}} review",
+    "reviewCountLabel_other": "{{count}} reviews",
     "signInToChat": "Please sign in to chat with this store.",
     "signInToReview": "Please sign in to review this store.",
     "starsAria_one": "{{count}} star",

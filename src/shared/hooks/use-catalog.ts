@@ -18,7 +18,7 @@ import {
 } from "@/shared/api/catalog";
 import { throwOnCriticalError } from "@/shared/api/http";
 import { queryKeys } from "@/shared/api/query-keys";
-import type { CategoryAttributeField, Product, Seller } from "@/types";
+import type { CategoryAttributeField, Product, Seller, SellerReview } from "@/types";
 
 const STALE_TIME = 5 * 60 * 1000;
 const CATEGORY_DISPLAY_ORDER = [
@@ -124,18 +124,40 @@ export function useSellerFollowMutation(id: string | null) {
   });
 }
 
-export function useCreateSellerReview(sellerId: string | null) {
+export function useCreateSellerReview(sellerId: string | null, aliasCacheKey?: string | null) {
   const queryClient = useQueryClient();
+  const cacheKeys = [...new Set([sellerId, aliasCacheKey].filter(Boolean))] as string[];
+
   return useMutation({
     mutationFn: (payload: CreateSellerReviewPayload) =>
       catalogApi.createSellerReview(sellerId!, payload),
-    onSuccess: async () => {
+    onSuccess: async (review) => {
       if (!sellerId) return;
-      // Refresh the store's reviews + its denormalized rating, and the seller
-      // lists/cards that surface that rating elsewhere.
+
+      for (const key of cacheKeys) {
+        queryClient.setQueryData<SellerReview[]>(
+          queryKeys.catalog.sellerReviews(key),
+          (prev) => {
+            const withoutDup = (prev ?? []).filter((r) => r.id !== review.id);
+            return [review, ...withoutDup];
+          },
+        );
+
+        queryClient.setQueryData<Seller | undefined>(queryKeys.catalog.seller(key), (prev) => {
+          if (!prev) return prev;
+          const oldCount = prev.reviews;
+          const newCount = oldCount + 1;
+          const newRating =
+            Math.round(((prev.rating * oldCount + review.stars) / newCount) * 10) / 10;
+          return { ...prev, reviews: newCount, rating: newRating };
+        });
+      }
+
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.catalog.sellerReviews(sellerId) }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.catalog.seller(sellerId) }),
+        ...cacheKeys.flatMap((key) => [
+          queryClient.invalidateQueries({ queryKey: queryKeys.catalog.sellerReviews(key) }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.catalog.seller(key) }),
+        ]),
         queryClient.invalidateQueries({ queryKey: queryKeys.catalog.sellers }),
       ]);
     },

@@ -38,6 +38,7 @@ import { toast } from "@/shared/lib/toast";
 import { ASSETS } from "@/config/assets";
 import { SOCIAL_LINKS } from "@/config/site";
 import { BuyerAvatar } from "@/components/common/buyer-avatar";
+import { NotificationBell } from "@/components/common/notification-bell";
 import { LogoutConfirmModal } from "@/components/common/logout-confirm-modal";
 import { LanguageToggle } from "@/components/common/language-toggle";
 import { buyerEventsApi } from "@/buyer/api/buyer-events";
@@ -1314,6 +1315,7 @@ export function Navbar() {
                   <span className="bz-navbar__action-main">{t("nav.saved")}</span>
                 </span>
               </AppLink>
+              <NotificationBell authed={authed} locale={locale} />
               <div ref={desktopMenuRef} className="bz-navbar__account-wrap">
                 <button
                   type="button"
@@ -1393,6 +1395,7 @@ export function Navbar() {
                 <Logo height={24} />
               </AppLink>
               <div className="bz-navbar__m-icons">
+                <NotificationBell authed={authed} locale={locale} className="bz-notif-bell-wrap--mobile" />
                 <AppLink
                   href={pathFromScreen("saved")}
                   ariaLabel={t("nav.saved")}

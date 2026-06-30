@@ -93,10 +93,13 @@
   --band-watch-bg: #16264a; /* deep navy — the headline video zone */
   --band-bargain-bg: #f6ecd8; /* warm cream, a faint shift off --page */
 
-  /* Type */
-  --font-sans: var(--font-sans-loaded), "IBM Plex Sans", system-ui, sans-serif;
-  --font-mono: var(--font-mono-loaded), "IBM Plex Mono", ui-monospace, monospace;
-  --font-display: var(--font-display-loaded), "Bricolage Grotesque", var(--font-sans);
+  /* Type — buyer UI is Poppins everywhere (body, money, headings). --font-mono
+     stays a distinct token (its tabular-nums callers rely on it) but resolves to
+     Poppins, which carries tabular figures. Seller overrides --font-sans to
+     Segoe UI under [data-skin="fluent"]. */
+  --font-sans: var(--font-poppins), "Poppins", system-ui, sans-serif;
+  --font-mono: var(--font-poppins), "Poppins", ui-monospace, monospace;
+  --font-display: var(--font-poppins), "Poppins", var(--font-sans);
   --fs-h1: clamp(20px, 1.4vw + 14px, 26px);
   --fs-h2: clamp(18px, 1vw + 13px, 22px);
   --fs-h3: 1.5rem;
@@ -3912,7 +3915,7 @@ body {
   padding-top: var(--home-hero-top);
 }
 
-/* Section headings use the display face (Bricolage Grotesque) per the revamp. */
+/* Section headings use the display face (--font-display, now Poppins). */
 /* One canonical section-title style — shared by SectionHead and the Watch rail
    title so every section header is identical (family, size, weight, color).
    Change it here and every section header moves together. */

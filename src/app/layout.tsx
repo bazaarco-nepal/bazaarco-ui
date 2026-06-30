@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { cookies } from "next/headers";
-import { Bricolage_Grotesque, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { Poppins } from "next/font/google";
 import { AppProviders } from "@/providers/app-providers";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
@@ -23,27 +23,15 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { organizationSchema, websiteSchema } from "@/shared/lib/seo/structured-data";
 import "@/styles/globals.css";
 
-const ibmPlexSans = IBM_Plex_Sans({
+// One face for the whole buyer UI — body, tabular money (--font-mono, kept for
+// its tabular-nums treatment), and display headings all read Poppins from
+// tokens.css. The seller UI is unaffected: it overrides --font-sans to Segoe UI
+// under [data-skin="fluent"]. All weights the buyer uses (400–800) are loaded so
+// no weight falls back to a synthesized bold.
+const poppins = Poppins({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-sans-loaded",
-  display: "swap",
-});
-
-// Tabular numerics across the buyer UI (prices, badges, countdowns) read from
-// --font-mono so money lines up — see tokens.css.
-const ibmPlexMono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-mono-loaded",
-  display: "swap",
-});
-
-// Display face for section headings / hero — see --font-display in tokens.css.
-const bricolage = Bricolage_Grotesque({
-  subsets: ["latin"],
-  weight: ["600", "700", "800"],
-  variable: "--font-display-loaded",
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-poppins",
   display: "swap",
 });
 
@@ -103,10 +91,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const locale: Locale = raw && isLocale(raw) ? raw : DEFAULT_LOCALE;
 
   return (
-    <html
-      lang={locale === "ne" ? "ne" : "en"}
-      className={`${ibmPlexSans.variable} ${ibmPlexMono.variable} ${bricolage.variable}`}
-    >
+    <html lang={locale === "ne" ? "ne" : "en"} className={poppins.variable}>
       {/* Browser extensions (ColorZilla, Grammarly, etc.) inject attributes like
           `cz-shortcut-listen` onto <body> before React hydrates. Suppress the
           resulting attribute-only mismatch — it's external and not a real bug. */}

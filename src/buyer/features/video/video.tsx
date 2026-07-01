@@ -430,6 +430,7 @@ export function VideoTheater() {
   );
   const progressSentIds = useRef(new Set<string>());
   const activeVideoIdRef = useRef<string | null>(null);
+  const appliedStartProductIdRef = useRef<string | null>(null);
   // URL wins once it commits; fall back to the id seeded by openVideo so an
   // optimistic open lands on the clicked reel rather than the feed's first item.
   const startProductId =
@@ -469,9 +470,15 @@ export function VideoTheater() {
 
   // Deep link: ?product=<id> opens that reel.
   useEffect(() => {
-    if (!startProductId || items.length === 0) return;
+    if (!startProductId) {
+      appliedStartProductIdRef.current = null;
+      return;
+    }
+    if (items.length === 0) return;
+    if (appliedStartProductIdRef.current === startProductId) return;
     const index = items.findIndex((item) => item.id === startProductId);
     if (index < 0) return;
+    appliedStartProductIdRef.current = startProductId;
     setActiveIndex(index);
     scrollToSlide(index, false);
   }, [items, scrollToSlide, startProductId]);
